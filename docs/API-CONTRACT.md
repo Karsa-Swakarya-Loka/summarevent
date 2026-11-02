@@ -1,8 +1,12 @@
 # Summarevent — Kontrak API untuk Backend
 
-Frontend sudah jalan penuh dengan **mock di browser** (`frontend/src/api/mock`). Begitu backend siap,
-set `VITE_API_URL=https://api-kamu` saat build, dan UI otomatis memakai `frontend/src/api/http.ts`
-tanpa mengubah satu layar pun. Dokumen ini adalah kontraknya.
+Frontend jalan penuh dengan **mock di browser** (`frontend/src/api/mock`) dan juga dengan backend lewat
+`frontend/src/api/http.ts` tanpa mengubah satu layar pun. Dokumen ini kontraknya.
+
+**Implementasi acuan sudah ada di [`backend/`](../backend/README.md)** (Node + Hono + PostgreSQL): menjalankan
+logika inti yang sama di server, dengan hold/konfirmasi/tiket/pembayaran dijaga SQL. Lolos 13 tes backend, uji
+rebutan 100 request lintas 2 server, dan ketujuh suite end-to-end frontend dalam mode backend. Semua path di bawah
+berada di bawah prefix `/api` (contoh: `https://summarevent-live.vercel.app/api/events`).
 
 - Sumber kebenaran tipe: `frontend/src/domain/types.ts` (entitas) dan `frontend/src/api/contract.ts` (DTO).
 - Logika bisnis yang harus di-port ada di `frontend/src/domain/rules.ts` (fungsi murni) dan
@@ -18,10 +22,17 @@ tanpa mengubah satu layar pun. Dokumen ini adalah kontraknya.
 | Method | Path | Body | Balikan |
 | --- | --- | --- | --- |
 | POST | `/auth/otp/request` | `{ phone }` | `{ simulatedCode, expiresAt }` — kode ditampilkan di layar (simulasi). Rate limit 3×/menit/nomor → `429 RATE_LIMIT`. |
-| POST | `/auth/otp/verify` | `{ phone, code, name? }` | `{ user, isNew, token }`. Nomor baru tanpa `name` → `400 NEED_NAME`. Pesanan tamu (hold sebelum login) diklaim ke user ini. |
+| POST | `/auth/otp/verify` | `{ phone, code, name? }` | `{ user, isNew, token }`. Nomor baru tanpa `name` → `200 { needName: true, message }`. Pesanan tamu (hold sebelum login) diklaim ke user ini. |
 | POST | `/auth/demo-login` | `{ role: 'ADMIN' \| 'STAFF' \| 'VISITOR', user_id? }` | `{ user, token }` — akun demo untuk juri. `user_id` memilih akun petugas tertentu; akun nonaktif → `403 FORBIDDEN`. |
 
-Token dikirim sebagai `Authorization: Bearer <token>`. Path `/admin/*` butuh role ADMIN, `/staff/*` butuh STAFF.
+Token dikirim sebagai `Authorization: Bearer <token>`. Path `/admin/*` butuh role ADMIN, `/staff/*` butuh STAFF
+(tanpa token yang cocok → `401 NEED_LOGIN`).
+
+Setiap request juga membawa header `X-Guest-Id: guest_…` (id acak per browser). Itulah identitas pengunjung yang
+belum login, supaya kursi bisa ditahan dulu lalu pesanannya diklaim saat verifikasi OTP.
+
+Nomor baru yang belum mengirim `name` di `/auth/otp/verify` mendapat `200 { needName: true, message }` (langkah kedua
+login, bukan error), lalu klien mengirim ulang dengan `name`.
 
 ## Publik & pengunjung
 
@@ -44,6 +55,8 @@ Token dikirim sebagai `Authorization: Bearer <token>`. Path `/admin/*` butuh rol
 | POST | `/sessions/:id/waitlist` | Body `{ category_id, qty }` → `WaitlistItem` (`position` = urutan). Hanya untuk user login (`401 NEED_LOGIN`) dan kalau tempat memang kurang dari `qty` (PV-14). |
 | DELETE | `/waitlist/:id` | Keluar dari daftar tunggu |
 | GET | `/me/waitlist` | `WaitlistItem[]` (+ event, sesi, kategori) |
+| GET | `/receipt-photos/:id?sig=` | Foto struk yang diunggah (disimpan terpisah dari data pesanan). Hanya bisa dibuka lewat link bertanda tangan HMAC yang ada di `receipt.photoUrl`. |
+| GET | `/health` | `{ ok, database, version, demo }` |
 
 `HoldResult`:
 ```json
@@ -75,6 +88,7 @@ Token dikirim sebagai `Authorization: Bearer <token>`. Path `/admin/*` butuh rol
 
 | Method | Path | Fungsi |
 | --- | --- | --- |
+| GET | `/staff/accounts` | `StaffAccount[]` aktif, untuk pengganti akun petugas di layar demo |
 | POST | `/staff/checkins` | Body `{ qr_token, session_id }` → `CheckinResponse` dengan `result` ∈ `VALID`, `ALREADY_USED` (+`firstScan`), `INVALID`, `WRONG_SESSION`, `OUTSIDE_WINDOW` |
 | GET | `/staff/tickets?q=&event_id=` | Cari manual (kode tiket, kode pesanan, HP, nama) |
 | GET | `/staff/sessions/:id/checkins` | `{ checkedIn, capacity, recent[] }` |
@@ -124,5 +138,14 @@ CREATE UNIQUE INDEX one_ticket_per_seat ON tickets (session_id, seat_id)
 - **Akun petugas (AD-13)**: `users.active` (default true); check-in dari akun nonaktif ditolak.
 - **OCR struk (PV-16)** berjalan di browser (tesseract.js); backend tidak perlu endpoint khusus.
 
+## Kode error
+
+`400` BAD_REQUEST, INVALID, NEED_REASON, BAD_PHONE, BAD_OTP, OTP_EXPIRED, RULE · `401` NEED_LOGIN · `403` FORBIDDEN ·
+`404` NOT_FOUND · `409` CONFLICT, BAD_STATE, HOLD_EXPIRED, SEAT_TAKEN, SOLD_OUT, LOCKED_LAYOUT, DUPLICATE,
+DUPLICATE_PAYMENT, ALREADY_USED · `429` RATE_LIMIT · `503` NOT_READY. Klien menampilkan `message` apa adanya; kalau
+server tidak terjangkau, klien membuat error `OFFLINE` sendiri.
+
 ## Uji beban (untuk QA)
 `qa/k6-hold-race.js` menembak 100 hold bersamaan ke kursi yang sama. Hasil yang diharapkan: tepat 1 `ok: true`.
+Tanpa k6: `node qa/race-two-servers.mjs` menembak 100 hold yang dibagi ke dua instance API (hasil terakhir: 1 berhasil,
+99 bentrok, 184 ms, kedua server melihat status yang sama).

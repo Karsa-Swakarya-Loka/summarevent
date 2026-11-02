@@ -63,9 +63,11 @@ export interface ScanResultProps {
   nextLabel: string
   /** VALID results go back on their own after this many ms (paused while more tickets can be admitted). */
   autoDismissMs?: number
+  /** Checked offline against the phone's ticket list; synced when the connection is back (PT-07). */
+  offline?: boolean
 }
 
-export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs }: ScanResultProps) {
+export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, offline }: ScanResultProps) {
   const kind = kindOf(res.result)
   const Icon = ICON[res.result]
   const label = CHECKIN_RESULT_LABEL[res.result]
@@ -75,7 +77,7 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs }:
     onNextRef.current = onNext
   }, [onNext])
 
-  const canGroup = res.result === 'VALID' && !!res.order && !!res.ticket
+  const canGroup = res.result === 'VALID' && !!res.order && !!res.ticket && !offline
   const [group, setGroup] = useState<Group>(() => (canGroup ? { phase: 'loading' } : { phase: 'none' }))
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
 
@@ -226,6 +228,11 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs }:
             <Icon className="size-16 shrink-0" strokeWidth={2.5} aria-hidden />
             <h2 className="text-5xl font-black leading-[1.05] tracking-tight">{label}</h2>
           </div>
+          {offline && (
+            <p className={cn('mt-3 inline-flex rounded-full px-3 py-1 text-base font-bold', PANEL[kind])} data-testid="offline-badge">
+              Diperiksa offline · {res.result === 'VALID' ? 'disinkronkan saat sinyal kembali' : 'dari daftar tiket di HP ini'}
+            </p>
+          )}
           {body}
         </div>
 

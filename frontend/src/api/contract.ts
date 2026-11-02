@@ -263,6 +263,27 @@ export interface CheckinResponse {
   firstScan: (Checkin & { staffName: string }) | null
 }
 
+/**
+ * PT-07: what a staff phone keeps so check-in still works when the venue loses signal. QR tokens are
+ * not included, only their SHA-256, so a lost phone cannot be used to make valid QR codes.
+ */
+export interface OfflineManifest {
+  sessionId: string
+  generatedAt: string
+  event: EventItem
+  session: Session
+  categories: TicketCategory[]
+  /** Every ticket of the event, so a ticket for another session still shows "Sesi lain". */
+  tickets: OfflineTicket[]
+}
+
+export interface OfflineTicket {
+  tokenHash: string
+  ticket: Omit<Ticket, 'qrToken'>
+  order: { id: string; code: string; buyerName: string }
+  session: Session
+}
+
 export interface TicketSearchRow {
   ticket: Ticket
   order: Order
@@ -311,6 +332,8 @@ export interface AdminApi {
 export interface StaffApi {
   /** GET /staff/accounts – active staff accounts, for the demo account switcher on the staff home */
   accounts(): Promise<StaffAccount[]>
+  /** GET /staff/sessions/:id/offline-manifest – tickets to check against while offline (PT-07) */
+  offlineManifest(sessionId: string): Promise<OfflineManifest>
   /** POST /staff/checkins { qr_token, session_id } */
   checkin(qrToken: string, sessionId: string): Promise<CheckinResponse>
   /** GET /staff/tickets?q= */

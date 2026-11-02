@@ -8894,6 +8894,22 @@ function createMockApi() {
       async accounts() {
         return (await api.admin.listStaff()).filter((s) => s.active);
       },
+      async offlineManifest(sessionId) {
+        const snapshot = await read((db, now) => {
+          const session = sessionOf(db, sessionId, now);
+          const event = eventOf(db, session.eventId);
+          const sessions = new Map(db.sessions.filter((x) => x.eventId === event.id).map((x) => [x.id, resolveSession(x, now)]));
+          const orders = new Map(db.orders.filter((o) => o.eventId === event.id).map((o) => [o.id, o]));
+          const rows2 = db.tickets.filter((t) => t.eventId === event.id).map(({ qrToken, ...ticket }) => {
+            const order2 = orders.get(ticket.orderId);
+            return { qrToken, ticket, order: { id: ticket.orderId, code: order2?.code ?? "", buyerName: order2?.buyerName ?? "" }, session: sessions.get(ticket.sessionId) ?? session };
+          });
+          return { sessionId, generatedAt: now.toISOString(), event, session, categories: db.categories.filter((c) => c.eventId === event.id), rows: rows2 };
+        });
+        const { rows, ...rest } = snapshot;
+        const tickets = await Promise.all(rows.map(async ({ qrToken, ...row }) => ({ tokenHash: await sha256Hex(qrToken), ...row })));
+        return { ...rest, tickets };
+      },
       async checkin(qrToken, sessionId) {
         const parsed = await verifyQrToken(qrToken);
         return write((db, now) => {
@@ -11261,6 +11277,7 @@ function createApp(store2, opts = {}) {
   });
   app.get("/staff/tickets", async (c) => ok(c, await api.staff.searchTickets(c.req.query("q") ?? "", c.req.query("event_id") || void 0)));
   app.get("/staff/sessions/:id/checkins", async (c) => ok(c, await api.staff.recentCheckins(c.req.param("id"))));
+  app.get("/staff/sessions/:id/offline-manifest", async (c) => ok(c, await api.staff.offlineManifest(c.req.param("id"))));
   app.get("/staff/receipts", async (c) => ok(c, await api.staff.listReceipts(c.req.query("event_id") || void 0)));
   app.patch("/staff/receipts/:id", async (c) => {
     const b = await body(c);

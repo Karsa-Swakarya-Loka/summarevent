@@ -298,6 +298,8 @@ export function createApp(store: PgStore, opts: AppOptions = {}) {
   })
   app.get('/staff/tickets', async (c) => ok(c, await api.staff.searchTickets(c.req.query('q') ?? '', c.req.query('event_id') || undefined)))
   app.get('/staff/sessions/:id/checkins', async (c) => ok(c, await api.staff.recentCheckins(c.req.param('id'))))
+  // PT-07: ticket list for offline check-in (QR token hashes only, never the tokens)
+  app.get('/staff/sessions/:id/offline-manifest', async (c) => ok(c, await api.staff.offlineManifest(c.req.param('id'))))
   app.get('/staff/receipts', async (c) => ok(c, await api.staff.listReceipts(c.req.query('event_id') || undefined)))
   app.patch('/staff/receipts/:id', async (c) => {
     const b = await body<{ decision?: ReviewDecision; reason?: string }>(c)

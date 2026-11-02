@@ -13,6 +13,7 @@ import {
   type EventSummary,
   type HoldRequest,
   type HoldResult,
+  type OfflineManifest,
   type OrderDetail,
   type OrderRow,
   type PassItem,
@@ -26,7 +27,7 @@ import {
   type WaitlistItem,
 } from '@/api/contract'
 import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL, TICKET_STATUS_LABEL } from '@/domain/labels'
-import { makeQrToken, verifyQrToken } from '@/domain/qr'
+import { makeQrToken, sha256Hex, verifyQrToken } from '@/domain/qr'
 import {
   attendeeEditPolicy,
   buildSeats,
@@ -1581,6 +1582,26 @@ export function createMockApi(): Api {
     staff: {
       async accounts() {
         return (await api.admin.listStaff()).filter((s) => s.active)
+      },
+
+      async offlineManifest(sessionId): Promise<OfflineManifest> {
+        const snapshot = await read((db, now) => {
+          const session = sessionOf(db, sessionId, now)
+          const event = eventOf(db, session.eventId)
+          const sessions = new Map(db.sessions.filter((x) => x.eventId === event.id).map((x) => [x.id, resolveSession(x, now)]))
+          const orders = new Map(db.orders.filter((o) => o.eventId === event.id).map((o) => [o.id, o]))
+          const rows = db.tickets
+            .filter((t) => t.eventId === event.id)
+            .map(({ qrToken, ...ticket }) => {
+              const order = orders.get(ticket.orderId)
+              return { qrToken, ticket, order: { id: ticket.orderId, code: order?.code ?? '', buyerName: order?.buyerName ?? '' }, session: sessions.get(ticket.sessionId) ?? session }
+            })
+          return { sessionId, generatedAt: now.toISOString(), event, session, categories: db.categories.filter((c) => c.eventId === event.id), rows }
+        })
+        const { rows, ...rest } = snapshot
+        // only a hash of each QR token leaves the server
+        const tickets = await Promise.all(rows.map(async ({ qrToken, ...row }) => ({ tokenHash: await sha256Hex(qrToken), ...row })))
+        return { ...rest, tickets }
       },
 
       async checkin(qrToken, sessionId) {

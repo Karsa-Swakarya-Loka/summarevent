@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
-import { ArrowLeft, CalendarX2, CameraOff, ChevronDown, CircleAlert, Clock, FlaskConical, RotateCcw, Search, ShieldX, Shuffle } from 'lucide-react'
+import { toast } from 'sonner'
+import { ArrowLeft, CalendarX2, CameraOff, ChevronDown, CircleAlert, Clock, CloudOff, FlaskConical, RefreshCw, RotateCcw, Search, ShieldX, Shuffle } from 'lucide-react'
 import { api } from '@/api'
 import { CameraView } from '@/components/staff/CameraView'
 import { cameraPrecheck, type CameraProblem } from '@/components/staff/camera'
 import { ScanResult } from '@/components/staff/ScanResult'
 import { unlockAudio } from '@/components/staff/beep'
 import { fetchEventTickets, pickRandom, tamperToken } from '@/components/staff/demoTickets'
+import { loadQueue, offlineCapable, QUEUE_EVENT, refreshManifest, syncQueue, type SyncConflict } from '@/components/staff/offline'
 import { sessionName, sessionWindow, useStaffSession } from '@/components/staff/session'
 import { useCheckin } from '@/components/staff/useCheckin'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
@@ -133,6 +135,8 @@ export default function Scanner() {
         </div>
       </header>
 
+      <OfflineBar sessionId={sessionId} />
+
       {win && win.state !== 'OPEN' && (
         <div className="flex shrink-0 items-start gap-2 bg-status-warn px-4 py-2 text-sm font-bold text-ink" role="status">
           <Clock className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -176,9 +180,97 @@ export default function Scanner() {
           onNext={dismiss}
           nextLabel="Scan berikutnya"
           autoDismissMs={VALID_AUTO_DISMISS_MS}
+          offline={checkin.current.offline}
         />
       )}
     </DarkShell>
+  )
+}
+
+/**
+ * PT-07 (live version): keeps the session's ticket list on the phone, says when the scanner is working
+ * offline, and sends queued scans once the connection is back. Silent while everything is online.
+ */
+function OfflineBar({ sessionId }: { sessionId: string }) {
+  const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine !== false)
+  const [queued, setQueued] = useState(() => loadQueue().length)
+  const [syncing, setSyncing] = useState(false)
+  const [conflicts, setConflicts] = useState<SyncConflict[]>([])
+
+  const sync = useCallback(async () => {
+    if (!loadQueue().length || navigator.onLine === false) return
+    setSyncing(true)
+    try {
+      const r = await syncQueue()
+      if (r.synced) toast.success(`${r.synced} scan offline sudah tersimpan di server.`)
+      if (r.conflicts.length) setConflicts((c) => [...c, ...r.conflicts])
+    } finally {
+      setSyncing(false)
+      setQueued(loadQueue().length)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!offlineCapable) return
+    const refresh = () => {
+      if (navigator.onLine !== false) refreshManifest(sessionId).catch(() => undefined)
+    }
+    const goOnline = () => {
+      setOnline(true)
+      refresh()
+      void sync()
+    }
+    const goOffline = () => setOnline(false)
+    const queueChanged = () => setQueued(loadQueue().length)
+    refresh()
+    const first = setTimeout(() => void sync(), 0) // scans left from an earlier visit
+    const timer = setInterval(() => {
+      refresh()
+      void sync()
+    }, 30_000)
+    window.addEventListener('online', goOnline)
+    window.addEventListener('offline', goOffline)
+    window.addEventListener(QUEUE_EVENT, queueChanged)
+    return () => {
+      clearTimeout(first)
+      clearInterval(timer)
+      window.removeEventListener('online', goOnline)
+      window.removeEventListener('offline', goOffline)
+      window.removeEventListener(QUEUE_EVENT, queueChanged)
+    }
+  }, [sessionId, sync])
+
+  if (!offlineCapable || (online && !queued && !conflicts.length)) return null
+  return (
+    <div className="shrink-0" data-testid="offline-bar">
+      {(!online || queued > 0) && (
+        <div className="flex items-start gap-2 bg-status-warn px-4 py-2 text-sm font-bold text-ink" role="status">
+          {online ? <RefreshCw className={cn('mt-0.5 size-4 shrink-0', syncing && 'animate-spin')} aria-hidden /> : <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden />}
+          <span>
+            {!online
+              ? `Offline. Scan tetap jalan dari daftar tiket di HP ini${queued ? `, ${queued} menunggu sinkron` : ''}.`
+              : syncing
+                ? `Menyinkronkan ${queued} scan offline…`
+                : `${queued} scan offline menunggu sinkron.`}
+          </span>
+        </div>
+      )}
+      {conflicts.length > 0 && (
+        <div className="bg-white px-4 py-3 text-sm text-ink" role="alert" data-testid="offline-conflicts">
+          <p className="font-bold text-status-invalid">{conflicts.length} scan offline ditolak server. Cek ke meja bantuan:</p>
+          <ul className="mt-1 list-disc pl-5">
+            {conflicts.map((c) => (
+              <li key={`${c.ticketId}-${c.scannedAt}`}>
+                {c.label} ({fmtDateTime(c.scannedAt)}): {c.message}
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="mt-1 min-h-11 font-bold underline" onClick={() => setConflicts([])}>
+            Tutup
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 

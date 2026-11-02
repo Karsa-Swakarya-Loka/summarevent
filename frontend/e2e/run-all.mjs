@@ -13,6 +13,7 @@ const suites = [
   ['wizard (mobile)', ['e2e/wizard.mjs', 'mobile']],
   ['staff', ['e2e/staff.mjs']],
   ['staff & admin P1', ['e2e/staff-admin-p1.mjs']],
+  ...(process.env.API_URL ? [['offline scan (live)', ['e2e/offline.mjs']]] : []),
 ]
 const results = []
 for (const [name, args] of suites) {

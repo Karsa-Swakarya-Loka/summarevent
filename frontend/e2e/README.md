@@ -8,6 +8,7 @@ npm run dev          # terminal 1
 npm run e2e          # terminal 2: semua suite, hasil PASS/FAIL per suite
 node e2e/visitor.mjs conflict   # satu alur saja
 BASE=https://alamat-deploy npm run e2e   # uji hasil deploy
+API_URL=http://localhost:8787/api BASE=http://localhost:5174 npm run e2e   # versi live (app dengan VITE_API_URL), data di-reset tiap suite
 ```
 
 | Suite | Yang diuji |
@@ -16,6 +17,7 @@ BASE=https://alamat-deploy npm run e2e   # uji hasil deploy
 | `admin.mjs` | Setujui struk, minta revisi, tandai lunas, unduh 2 CSV (cek BOM dan isi), peta kursi live, layar laptop dan HP |
 | `wizard.mjs` | Buat event bernomor kursi (2 kategori, preset tukar struk, denah 6×10, 1 kursi diblokir, 2 sesi), publish, buka di app pengunjung |
 | `staff.mjs` | Valid, Sudah digunakan, Tidak valid, Sesi lain, Di luar jam check-in, cari manual, check-in rombongan, fallback kamera |
+| `offline.mjs` | Versi live saja (`API_URL`): sinyal putus → Valid / Sudah digunakan / Tidak valid tetap jalan dari daftar tiket di HP, antrean terkirim saat online, tiket yang lebih dulu dipindai pintu lain muncul sebagai konflik |
 | `staff-admin-p1.mjs` | Panitia menambah dan menonaktifkan akun petugas, petugas menyetujui struk di desk, ganti akun petugas |
 
 Variabel: `BASE` (alamat app), `E2E_OUT` (folder screenshot, default `e2e/out/`, tidak masuk git),

@@ -149,6 +149,7 @@ export function createHttpApi(baseUrl: string): Api {
 
     staff: {
       accounts: () => req('GET', '/staff/accounts'),
+      offlineManifest: (sessionId) => req('GET', `/staff/sessions/${sessionId}/offline-manifest`),
       checkin: (qrToken, sessionId) => req('POST', '/staff/checkins', { qr_token: qrToken, session_id: sessionId }),
       searchTickets: (q, eventId) => req('GET', `/staff/tickets?q=${encodeURIComponent(q)}${eventId ? `&event_id=${eventId}` : ''}`),
       recentCheckins: (sessionId) => req('GET', `/staff/sessions/${sessionId}/checkins`),

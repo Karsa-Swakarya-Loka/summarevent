@@ -234,3 +234,17 @@ describe('akses & data', () => {
     expect(forged.status).toBe(404)
   })
 })
+
+describe('scan offline (PT-07)', () => {
+  it('manifest hanya berisi hash token QR, bukan token-nya', async () => {
+    const staff = await call('POST', '/auth/demo-login', { body: { role: 'STAFF' } })
+    const m = await call('GET', '/staff/sessions/ses_sk_demo/offline-manifest', { token: staff.body.token })
+    expect(m.status).toBe(200)
+    expect(m.body.tickets.length).toBeGreaterThan(0)
+    const raw = JSON.stringify(m.body)
+    expect(raw).not.toContain('SEV1.')
+    expect(m.body.tickets.every((t: any) => /^[0-9a-f]{64}$/.test(t.tokenHash) && !('qrToken' in t.ticket))).toBe(true)
+    const anon = await call('GET', '/staff/sessions/ses_sk_demo/offline-manifest')
+    expect(anon.status).toBe(401)
+  })
+})

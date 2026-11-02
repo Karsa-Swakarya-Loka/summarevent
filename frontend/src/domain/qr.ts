@@ -8,16 +8,23 @@
 const DEMO_SECRET = 'summarevent-demo-secret-2026'
 const PREFIX = 'SEV1'
 
+let secret = DEMO_SECRET
 let keyPromise: Promise<CryptoKey> | null = null
 function key(): Promise<CryptoKey> {
   keyPromise ??= crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(DEMO_SECRET),
+    new TextEncoder().encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify'],
   )
   return keyPromise
+}
+
+/** Backend only: sign QR tokens with a server-side secret (env QR_SECRET) instead of the demo key. */
+export function setQrSecret(next: string) {
+  secret = next
+  keyPromise = null
 }
 
 function b64url(buf: ArrayBuffer): string {

@@ -107,8 +107,8 @@ export default function StaffHome() {
 
 /** Demo: switch between staff accounts (AD-13) so "dipindai oleh …" shows different people. */
 function StaffSwitcher({ userId, onSwitch }: { userId: string | null; onSwitch: (u: User) => void }) {
-  const staff = useLive(() => api.admin.listStaff(), [])
-  const options = (staff.data ?? []).filter((s) => s.active)
+  const staff = useLive(() => api.staff.accounts(), [])
+  const options = staff.data ?? []
   if (options.length < 2) return null
   return (
     <label className="mt-3 flex items-center gap-2 text-xs font-semibold text-white/85">

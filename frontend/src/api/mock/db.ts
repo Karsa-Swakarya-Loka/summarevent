@@ -1,10 +1,12 @@
 /**
- * In-browser mock database (localStorage) with real transactions.
+ * Storage for the core API (adapter.ts), behind a small driver interface.
  *
- * Every write runs inside `transaction()`, which takes a cross-tab Web Lock
- * (navigator.locks) and re-reads the latest state before mutating. That is the
- * browser equivalent of the backend's DB transaction + row lock (PRD §8): two tabs
- * that try to hold the same seat at the same moment are serialised, so exactly one wins.
+ * - Browser (default): localStorage with real transactions. Every write runs inside
+ *   `transaction()`, which takes a cross-tab Web Lock (navigator.locks) and re-reads the latest
+ *   state before mutating, so two tabs that try to hold the same seat at the same moment are
+ *   serialised and exactly one wins.
+ * - Server: backend/src/store.ts plugs in a PostgreSQL driver through `setDbDriver()`, so the
+ *   very same business logic runs on the backend, with guarded SQL and unique indexes underneath.
  */
 import type {
   AppNotification,
@@ -58,6 +60,28 @@ export interface Db {
   waitlist: WaitlistEntry[]
 }
 
+/** Everything the core API needs from its environment: storage, change events and "who is calling". */
+export interface DbDriver {
+  hasDb(): boolean
+  /** Latest committed state (read-only snapshot – do not mutate). */
+  readDb(): Db | null
+  replaceDb(db: Db): void | Promise<void>
+  clearDb(): void | Promise<void>
+  notify(): void
+  subscribe(listener: () => void): () => void
+  /** Run `fn` on a mutable copy; commit only if it resolves, roll everything back if it throws. */
+  transaction<T>(fn: (db: Db) => T | Promise<T>): Promise<T>
+  getSessionUserId(role: string): string | null
+  setSessionUserId(role: string, userId: string | null): void
+  /** Anonymous visitor id so seats can be held before login (PRD flow: hold → login). */
+  guestId(): string
+  clearClientSessions(): void
+}
+
+/* ================================================================== */
+/* browser driver (localStorage + Web Locks)                           */
+/* ================================================================== */
+
 const DB_KEY = 'summarevent:db:v3'
 const LOCK_NAME = 'summarevent-db'
 const CHANNEL = 'summarevent'
@@ -84,12 +108,7 @@ function writeRaw(raw: string) {
   }
 }
 
-export function hasDb(): boolean {
-  return readRaw() != null
-}
-
-/** Latest committed state (read-only snapshot – do not mutate). */
-export function readDb(): Db | null {
+function browserReadDb(): Db | null {
   const raw = readRaw()
   if (raw == null) return null
   if (raw === cacheRaw && cacheDb) return cacheDb
@@ -104,50 +123,32 @@ export function readDb(): Db | null {
   }
 }
 
-export function replaceDb(db: Db) {
-  const raw = JSON.stringify(db)
-  writeRaw(raw)
-  cacheRaw = raw
-  cacheDb = db
-  notify()
-}
-
-export function clearDb() {
-  try {
-    localStorage.removeItem(DB_KEY)
-  } catch {
-    /* ignore */
-  }
-  memoryRaw = null
-  cacheRaw = null
-  cacheDb = null
-}
-
-/* ---------------- change notifications ---------------- */
+/* ---------------- change notifications (created on first use) ---------------- */
 
 const local = new EventTarget()
 let channel: BroadcastChannel | null = null
-try {
-  channel = new BroadcastChannel(CHANNEL)
-  channel.onmessage = () => local.dispatchEvent(new Event('change'))
-} catch {
-  channel = null
-}
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key === DB_KEY) local.dispatchEvent(new Event('change'))
-  })
+let wired = false
+
+function wireCrossTab() {
+  if (wired) return
+  wired = true
+  try {
+    channel = new BroadcastChannel(CHANNEL)
+    channel.onmessage = () => local.dispatchEvent(new Event('change'))
+  } catch {
+    channel = null
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (e) => {
+      if (e.key === DB_KEY) local.dispatchEvent(new Event('change'))
+    })
+  }
 }
 
-export function notify() {
+function browserNotify() {
+  wireCrossTab()
   local.dispatchEvent(new Event('change'))
   channel?.postMessage('change')
-}
-
-export function subscribe(listener: () => void): () => void {
-  const h = () => listener()
-  local.addEventListener('change', h)
-  return () => local.removeEventListener('change', h)
 }
 
 /* ---------------- transactions ---------------- */
@@ -165,71 +166,113 @@ function withLock<T>(fn: () => Promise<T>): Promise<T> {
   return run
 }
 
-/**
- * Run `fn` with exclusive access to a fresh, mutable copy of the DB.
- * Changes are committed only if `fn` resolves; a thrown error rolls everything back.
- */
-export function transaction<T>(fn: (db: Db) => T | Promise<T>): Promise<T> {
-  return withLock(async () => {
-    const raw = readRaw()
-    if (raw == null) throw new Error('Database belum siap')
-    const draft = JSON.parse(raw) as Db
-    const before = raw
-    const result = await fn(draft)
-    const after = JSON.stringify(draft)
-    if (after !== before) {
-      draft.version += 1
-      const committed = JSON.stringify(draft)
-      writeRaw(committed)
-      cacheRaw = committed
-      cacheDb = draft
-      notify()
-    }
-    return result
-  })
-}
-
 /* ---------------- client session (who is logged in, per role) ---------------- */
 
 const SESSION_KEY = (role: string) => `summarevent:session:${role}`
 const GUEST_KEY = 'summarevent:guest'
 
-export function getSessionUserId(role: string): string | null {
-  try {
-    return localStorage.getItem(SESSION_KEY(role))
-  } catch {
-    return null
-  }
-}
-
-export function setSessionUserId(role: string, userId: string | null) {
-  try {
-    if (userId) localStorage.setItem(SESSION_KEY(role), userId)
-    else localStorage.removeItem(SESSION_KEY(role))
-  } catch {
-    /* ignore */
-  }
-}
-
-/** Anonymous visitor id so seats can be held before login (PRD flow: hold → login). */
-export function guestId(): string {
-  try {
-    let id = localStorage.getItem(GUEST_KEY)
-    if (!id) {
-      id = `guest_${crypto.randomUUID().slice(0, 12)}`
-      localStorage.setItem(GUEST_KEY, id)
+export const browserDriver: DbDriver = {
+  hasDb: () => readRaw() != null,
+  readDb: browserReadDb,
+  replaceDb(db) {
+    const raw = JSON.stringify(db)
+    writeRaw(raw)
+    cacheRaw = raw
+    cacheDb = db
+    browserNotify()
+  },
+  clearDb() {
+    try {
+      localStorage.removeItem(DB_KEY)
+    } catch {
+      /* ignore */
     }
-    return id
-  } catch {
-    return 'guest_memory'
-  }
+    memoryRaw = null
+    cacheRaw = null
+    cacheDb = null
+  },
+  notify: browserNotify,
+  subscribe(listener) {
+    wireCrossTab()
+    const h = () => listener()
+    local.addEventListener('change', h)
+    return () => local.removeEventListener('change', h)
+  },
+  transaction<T>(fn: (db: Db) => T | Promise<T>): Promise<T> {
+    return withLock(async () => {
+      const raw = readRaw()
+      if (raw == null) throw new Error('Database belum siap')
+      const draft = JSON.parse(raw) as Db
+      const before = raw
+      const result = await fn(draft)
+      const after = JSON.stringify(draft)
+      if (after !== before) {
+        draft.version += 1
+        const committed = JSON.stringify(draft)
+        writeRaw(committed)
+        cacheRaw = committed
+        cacheDb = draft
+        browserNotify()
+      }
+      return result
+    })
+  },
+  getSessionUserId(role) {
+    try {
+      return localStorage.getItem(SESSION_KEY(role))
+    } catch {
+      return null
+    }
+  },
+  setSessionUserId(role, userId) {
+    try {
+      if (userId) localStorage.setItem(SESSION_KEY(role), userId)
+      else localStorage.removeItem(SESSION_KEY(role))
+    } catch {
+      /* ignore */
+    }
+  },
+  guestId() {
+    try {
+      let id = localStorage.getItem(GUEST_KEY)
+      if (!id) {
+        id = `guest_${crypto.randomUUID().slice(0, 12)}`
+        localStorage.setItem(GUEST_KEY, id)
+      }
+      return id
+    } catch {
+      return 'guest_memory'
+    }
+  },
+  clearClientSessions() {
+    try {
+      for (const role of ['VISITOR', 'ADMIN', 'STAFF']) localStorage.removeItem(SESSION_KEY(role))
+      localStorage.removeItem(GUEST_KEY)
+    } catch {
+      /* ignore */
+    }
+  },
 }
 
-export function clearClientSessions() {
-  try {
-    for (const role of ['VISITOR', 'ADMIN', 'STAFF']) localStorage.removeItem(SESSION_KEY(role))
-    localStorage.removeItem(GUEST_KEY)
-  } catch {
-    /* ignore */
-  }
+/* ================================================================== */
+/* active driver                                                       */
+/* ================================================================== */
+
+let driver: DbDriver = browserDriver
+
+/** The backend calls this once at startup with its PostgreSQL driver. */
+export function setDbDriver(next: DbDriver) {
+  driver = next
 }
+
+export const hasDb = () => driver.hasDb()
+export const readDb = () => driver.readDb()
+export const replaceDb = (db: Db) => driver.replaceDb(db)
+export const clearDb = () => driver.clearDb()
+export const notify = () => driver.notify()
+export const subscribe = (listener: () => void) => driver.subscribe(listener)
+export const transaction = <T>(fn: (db: Db) => T | Promise<T>): Promise<T> => driver.transaction(fn)
+export const getSessionUserId = (role: string) => driver.getSessionUserId(role)
+export const setSessionUserId = (role: string, userId: string | null) => driver.setSessionUserId(role, userId)
+export const guestId = () => driver.guestId()
+export const clearClientSessions = () => driver.clearClientSessions()

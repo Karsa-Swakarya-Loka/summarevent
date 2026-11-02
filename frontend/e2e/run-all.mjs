@@ -1,6 +1,8 @@
 // Runs every end-to-end suite against a running app (default http://localhost:5173).
 //   npm run dev            # in another terminal (or BASE=https://your-deploy npm run e2e)
 //   npm run e2e
+// Backend mode: API_URL=http://localhost:8787/api BASE=http://localhost:5174 npm run e2e
+//   (the app must be built/served with VITE_API_URL=API_URL; the data is reset before every suite)
 import { spawnSync } from 'node:child_process'
 
 const suites = [
@@ -14,6 +16,10 @@ const suites = [
 ]
 const results = []
 for (const [name, args] of suites) {
+  if (process.env.API_URL) {
+    const r = await fetch(process.env.API_URL.replace(/\/$/, '') + '/demo/reset', { method: 'POST' })
+    if (!r.ok) throw new Error(`reset failed: HTTP ${r.status}`)
+  }
   const t0 = Date.now()
   const r = spawnSync(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', env: process.env })
   const out = (r.stdout || '') + (r.stderr || '')

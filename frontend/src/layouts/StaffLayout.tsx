@@ -14,7 +14,7 @@ export function StaffLayout() {
   return (
     <div className="min-h-dvh bg-[#efece6]">
       <div className="mx-auto min-h-dvh w-full max-w-md bg-background">
-        <Outlet />
+        {user ? <Outlet /> : <p className="py-16 text-center text-sm text-muted-foreground">Menyiapkan akses petugas…</p>}
       </div>
       {!scanning && <DemoMenu className="bottom-4 left-4" />}
     </div>

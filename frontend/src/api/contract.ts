@@ -309,6 +309,8 @@ export interface AdminApi {
 }
 
 export interface StaffApi {
+  /** GET /staff/accounts – active staff accounts, for the demo account switcher on the staff home */
+  accounts(): Promise<StaffAccount[]>
   /** POST /staff/checkins { qr_token, session_id } */
   checkin(qrToken: string, sessionId: string): Promise<CheckinResponse>
   /** GET /staff/tickets?q= */

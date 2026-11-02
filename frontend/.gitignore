@@ -27,3 +27,5 @@ dist-ssr
 shots/
 scripts/tmp/
 e2e/out/
+.vercel
+.env*

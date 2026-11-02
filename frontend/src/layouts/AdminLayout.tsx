@@ -25,7 +25,8 @@ export function AdminLayout() {
     if (!user) void api.demoLogin('ADMIN').then(setUser)
   }, [user])
 
-  const pending = useLive(() => api.admin.listReceipts('PENDING').then((r) => r.length), [])
+  // Pages load only after the demo login, so the backend never sees a request without a token.
+  const pending = useLive(() => api.admin.listReceipts('PENDING').then((r) => r.length), [], { enabled: !!user })
 
   const nav = (
     <nav className="flex flex-col gap-1" aria-label="Menu panitia">
@@ -88,7 +89,7 @@ export function AdminLayout() {
       {open && <div className="border-b bg-card p-3 lg:hidden">{nav}</div>}
 
       <main className="min-w-0 p-4 pb-24 lg:p-8">
-        <Outlet />
+        {user ? <Outlet /> : <p className="py-16 text-center text-sm text-muted-foreground">Menyiapkan akses panitia…</p>}
       </main>
       <DemoMenu className="bottom-4 left-4" />
     </div>

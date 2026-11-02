@@ -87,7 +87,7 @@ const isPending = (o: Order) => PENDING.includes(o.status)
 let ready: Promise<void> | null = null
 export function ensureMockDb(): Promise<void> {
   ready ??= (async () => {
-    if (!hasDb() || !readDb()) replaceDb(await buildSeed())
+    if (!hasDb() || !readDb()) await replaceDb(await buildSeed())
   })()
   return ready
 }
@@ -1579,6 +1579,10 @@ export function createMockApi(): Api {
 
     /* ---------- staff ---------- */
     staff: {
+      async accounts() {
+        return (await api.admin.listStaff()).filter((s) => s.active)
+      },
+
       async checkin(qrToken, sessionId) {
         const parsed = await verifyQrToken(qrToken)
         return write((db, now): CheckinResponse => {
@@ -1698,10 +1702,10 @@ export function createMockApi(): Api {
     /* ---------- demo ---------- */
     demo: {
       async reset() {
-        clearDb()
+        await clearDb()
         clearClientSessions()
         ready = null
-        replaceDb(await buildSeed())
+        await replaceDb(await buildSeed())
         ready = Promise.resolve()
       },
 

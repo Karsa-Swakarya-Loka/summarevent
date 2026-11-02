@@ -1,0 +1,9 @@
+node_modules
+dist
+e2e/out
+shots
+scripts/tmp
+.DS_Store
+*.log
+.env*
+.vercel

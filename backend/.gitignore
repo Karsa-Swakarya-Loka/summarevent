@@ -1,0 +1,6 @@
+node_modules
+dist
+.pglite
+*.log
+.env
+.env.*

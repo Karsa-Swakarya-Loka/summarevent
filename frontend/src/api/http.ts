@@ -4,10 +4,12 @@
  * endpoints; the UI does not change.
  */
 import { ApiError, type Api } from './contract'
+import { browserDriver } from './mock/db'
 import type { Role, User } from '@/domain/types'
 
 const TOKEN_KEY = (role: Role) => `summarevent:token:${role}`
 const USER_KEY = (role: Role) => `summarevent:user:${role}`
+const ROLES: Role[] = ['VISITOR', 'ADMIN', 'STAFF']
 
 function store(key: string, value: string | null) {
   try {
@@ -37,14 +39,26 @@ export function createHttpApi(baseUrl: string): Api {
 
   async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
     const token = load(TOKEN_KEY(roleForPath(path)))
-    const res = await fetch(base + path, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    })
+    let res: Response
+    try {
+      res = await fetch(base + path, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          // anonymous visitor id: seats can be held before login, then claimed at OTP verify
+          'X-Guest-Id': browserDriver.guestId(),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      })
+    } catch {
+      throw new ApiError('OFFLINE', 'Tidak terhubung ke server. Cek koneksi internet lalu coba lagi.')
+    }
+    if (res.status === 401 && roleForPath(path) !== 'VISITOR') {
+      // token no longer accepted (server secret rotated, data reset elsewhere): log in again on next load
+      store(TOKEN_KEY(roleForPath(path)), null)
+      store(USER_KEY(roleForPath(path)), null)
+    }
     if (!res.ok) {
       let code = `HTTP_${res.status}`
       let message = 'Terjadi kesalahan di server.'
@@ -70,7 +84,9 @@ export function createHttpApi(baseUrl: string): Api {
 
     requestOtp: (phone) => req('POST', '/auth/otp/request', { phone }),
     async verifyOtp(phone, code, name) {
-      const r = await req<{ user: User; isNew: boolean; token: string }>('POST', '/auth/otp/verify', { phone, code, name })
+      const r = await req<{ user: User; isNew: boolean; token: string } | { needName: true; message: string }>('POST', '/auth/otp/verify', { phone, code, name })
+      // new number: step two of the login asks for a name (a normal answer, not an HTTP error)
+      if ('needName' in r) throw new ApiError('NEED_NAME', r.message)
       store(TOKEN_KEY('VISITOR'), r.token)
       store(USER_KEY('VISITOR'), JSON.stringify(r.user))
       return { user: r.user, isNew: r.isNew }
@@ -132,6 +148,7 @@ export function createHttpApi(baseUrl: string): Api {
     },
 
     staff: {
+      accounts: () => req('GET', '/staff/accounts'),
       checkin: (qrToken, sessionId) => req('POST', '/staff/checkins', { qr_token: qrToken, session_id: sessionId }),
       searchTickets: (q, eventId) => req('GET', `/staff/tickets?q=${encodeURIComponent(q)}${eventId ? `&event_id=${eventId}` : ''}`),
       recentCheckins: (sessionId) => req('GET', `/staff/sessions/${sessionId}/checkins`),
@@ -140,7 +157,15 @@ export function createHttpApi(baseUrl: string): Api {
     },
 
     demo: {
-      reset: () => req('POST', '/demo/reset'),
+      async reset() {
+        await req('POST', '/demo/reset')
+        // same as the mock: everyone starts logged out with a fresh guest id
+        for (const role of ROLES) {
+          store(TOKEN_KEY(role), null)
+          store(USER_KEY(role), null)
+        }
+        browserDriver.clearClientSessions()
+      },
       fakeBuyer: (sessionId, categoryId, seatIds) => req('POST', `/demo/sessions/${sessionId}/fake-buyer`, { category_id: categoryId, seat_ids: seatIds }),
       expireHold: (orderId) => req('POST', `/demo/orders/${orderId}/expire`),
     },

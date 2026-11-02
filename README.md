@@ -99,7 +99,7 @@ pengguna. Uji bebannya: `node qa/race-two-servers.mjs` atau `qa/k6-hold-race.js`
 | Pembatalan, refund, perubahan data peserta (fitur tambahan) | Batalkan tiket sampai 24 jam sebelum sesi dengan refund simulasi, ubah nama peserta sampai sesi selesai, panitia bisa membatalkan + refund |
 | Daftar tunggu, ringkasan penjualan (fitur tambahan) | Daftar tunggu per kategori yang habis (urutan + kabar WA otomatis saat ada tempat lepas), dashboard penjualan per kategori/sesi |
 | Antarmuka nyaman dari ponsel | Mobile-first 390 px, target sentuh ≥ 44 px, PWA (manifest + service worker) |
-| Pendukung lain (P1 PRD) | Bonus N pembeli pertama (tampil di e-ticket dan layar scan), verifikasi struk di desk oleh petugas, kelola akun petugas, baca struk otomatis (OCR di browser), pasang ke layar utama + notifikasi perangkat (simulasi Web Push) |
+| Pendukung lain (P1–P2 PRD) | Bonus N pembeli pertama (tampil di e-ticket dan layar scan), verifikasi struk di desk oleh petugas, kelola akun petugas, baca struk otomatis (OCR di browser), pasang ke layar utama + notifikasi perangkat (simulasi Web Push), scan offline di versi live (daftar tiket di HP berisi hash QR saja, antrean tersinkron saat online, konflik antar-pintu dilaporkan) |
 | Pembayaran, notifikasi, data simulasi | Semua simulasi; data contoh fiktif; struk contoh bertanda "STRUK CONTOH" |
 
 ## Struktur

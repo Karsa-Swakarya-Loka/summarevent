@@ -1,6 +1,14 @@
 {
-  "rewrites": [{ "source": "/((?!assets/|brand/|.*\\.(?:js|css|png|svg|ico|webmanifest|txt)$).*)", "destination": "/index.html" }],
+  "regions": ["sin1"],
+  "functions": {
+    "api/index.js": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/((?!api/|assets/|brand/|.*\\.(?:js|css|png|svg|ico|webmanifest|txt)$).*)", "destination": "/index.html" }
+  ],
   "headers": [
-    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    { "source": "/api/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
   ]
 }

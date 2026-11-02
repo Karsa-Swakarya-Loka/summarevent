@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { FlaskConical, RotateCcw, ScanLine, Store, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
-import { api } from '@/api'
+import { api, apiMode } from '@/api'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -47,7 +47,7 @@ export function DemoMenu({ className }: { className?: string }) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-60">
-          <DropdownMenuLabel>Mode demo juri</DropdownMenuLabel>
+          <DropdownMenuLabel>{apiMode === 'live' ? 'Versi live (data bersama)' : 'Mode demo juri'}</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => void go('VISITOR')}>
             <UserRound /> Masuk sebagai Pengunjung
           </DropdownMenuItem>
@@ -69,7 +69,11 @@ export function DemoMenu({ className }: { className?: string }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reset data demo?</DialogTitle>
-            <DialogDescription>Semua pesanan, struk, dan check-in yang dibuat di browser ini dihapus, lalu data contoh dimuat ulang.</DialogDescription>
+            <DialogDescription>
+              {apiMode === 'live'
+                ? 'Versi live dipakai bersama: semua pesanan, struk, dan check-in dari semua HP dihapus, lalu data contoh dimuat ulang.'
+                : 'Semua pesanan, struk, dan check-in yang dibuat di browser ini dihapus, lalu data contoh dimuat ulang.'}
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" size="lg" onClick={() => setConfirm(false)}>

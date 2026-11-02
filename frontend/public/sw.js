@@ -1,5 +1,5 @@
 /* Summarevent service worker: cache the app shell so the basic UI opens offline (PRD §12, PWA). */
-const CACHE = 'summarevent-shell-v2'
+const CACHE = 'summarevent-shell-v3'
 const SHELL = ['/', '/app', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/brand/summarevent-symbol.svg', '/brand/summarevent-lockup.svg']
 
 self.addEventListener('install', (e) => {
@@ -14,7 +14,10 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const req = e.request
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return
+  const url = new URL(req.url)
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return
+  // live version: API answers are never cached (seat status must always be fresh)
+  if (url.pathname.startsWith('/api/')) return
   // SPA navigations: network first, fall back to the cached shell
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req).catch(() => caches.match('/app').then((r) => r || caches.match('/'))))

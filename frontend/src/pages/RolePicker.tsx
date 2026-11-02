@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ArrowRight, RotateCcw, ScanLine, Store, UserRound } from 'lucide-react'
+import { ArrowRight, RadioTower, RotateCcw, ScanLine, Smartphone, Store, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
-import { api } from '@/api'
+import { api, apiMode, DEMO_URL, LIVE_URL } from '@/api'
 import { BrandAppIcon, CoBrand } from '@/components/common/Brand'
 import { SundaText } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,21 @@ import { Button } from '@/components/ui/button'
 export default function RolePicker() {
   const navigate = useNavigate()
   const [busy, setBusy] = useState<string | null>(null)
+  const live = apiMode === 'live'
+  const [liveReady, setLiveReady] = useState(false)
+
+  // Demo version: offer the live version (shared backend, real two-phone test) only when it is up.
+  useEffect(() => {
+    if (live) return
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), 5000)
+    fetch(`${LIVE_URL}/api/health`, { signal: ctl.signal })
+      .then((r) => (r.ok ? (r.json() as Promise<{ ok?: boolean }>) : null))
+      .then((j) => setLiveReady(!!j?.ok))
+      .catch(() => setLiveReady(false))
+      .finally(() => clearTimeout(timer))
+    return () => ctl.abort()
+  }, [live])
 
   const enter = async (role: 'VISITOR' | 'VISITOR_RINA' | 'ADMIN' | 'STAFF') => {
     setBusy(role)
@@ -52,7 +67,9 @@ export default function RolePicker() {
       <div className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-8 sm:px-6">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <CoBrand tone="light" />
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">Bandung Build Challenge 2026 · Prototype</span>
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">
+            Bandung Build Challenge 2026 · {live ? 'Versi live' : 'Prototype'}
+          </span>
         </header>
 
         <section className="mt-10 grid gap-8 lg:mt-16 lg:grid-cols-[1.1fr_1fr] lg:items-end">
@@ -97,12 +114,38 @@ export default function RolePicker() {
           ))}
         </section>
 
+        {live ? (
+          <section className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-white/10 p-4 text-sm ring-1 ring-white/20">
+            <RadioTower className="size-5 shrink-0 text-brand-yellow" aria-hidden />
+            <p className="min-w-0 flex-1">
+              <strong>Versi live:</strong> semua HP dan laptop memakai data yang sama di server. Buka denah yang sama di dua HP, pilih
+              kursi yang sama, lalu tekan Hayu ngiring berbarengan: hanya satu yang berhasil.
+            </p>
+            <a href={DEMO_URL} className="font-semibold text-brand-yellow underline-offset-4 hover:underline">
+              Versi demo (data per browser) →
+            </a>
+          </section>
+        ) : (
+          liveReady && (
+            <section className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-white/10 p-4 text-sm ring-1 ring-white/20">
+              <Smartphone className="size-5 shrink-0 text-brand-yellow" aria-hidden />
+              <p className="min-w-0 flex-1">
+                Mau uji rebutan kursi pakai <strong>dua HP sungguhan</strong>? Versi live memakai server dan database bersama.
+              </p>
+              <a href={LIVE_URL} className="font-semibold text-brand-yellow underline-offset-4 hover:underline">
+                Buka versi live →
+              </a>
+            </section>
+          )
+        )}
+
         <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-10 text-xs text-white/70">
           <span>Data contoh · pembayaran, OTP, dan WA/email disimulasikan · bukan transaksi sungguhan</span>
           <button
             type="button"
             className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 font-semibold text-white ring-1 ring-white/30 hover:bg-white/10"
             onClick={async () => {
+              if (live && !window.confirm('Versi live dipakai bersama. Reset akan menghapus pesanan dan check-in dari semua HP. Lanjut?')) return
               await api.demo.reset()
               toast.success('Data demo dikembalikan ke awal.')
             }}

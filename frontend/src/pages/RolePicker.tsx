@@ -1,0 +1,116 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { ArrowRight, RotateCcw, ScanLine, Store, UserRound } from 'lucide-react'
+import { toast } from 'sonner'
+import { api } from '@/api'
+import { BrandAppIcon, CoBrand } from '@/components/common/Brand'
+import { SundaText } from '@/components/common/bits'
+import { Button } from '@/components/ui/button'
+
+/** DM-01: one link, three roles – so judges can try every side of the system. */
+export default function RolePicker() {
+  const navigate = useNavigate()
+  const [busy, setBusy] = useState<string | null>(null)
+
+  const enter = async (role: 'VISITOR' | 'VISITOR_RINA' | 'ADMIN' | 'STAFF') => {
+    setBusy(role)
+    try {
+      if (role === 'VISITOR_RINA') await api.demoLogin('VISITOR')
+      if (role === 'ADMIN' || role === 'STAFF') await api.demoLogin(role)
+      navigate(role === 'ADMIN' ? '/admin' : role === 'STAFF' ? '/staff' : role === 'VISITOR_RINA' ? '/app/pass' : '/app')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const roles = [
+    {
+      key: 'VISITOR' as const,
+      icon: UserRound,
+      title: 'Pengunjung',
+      body: 'Pilih event, pilih kursi di denah, bayar (simulasi) atau tukar struk, lalu dapat e-ticket QR.',
+      cta: 'Masuk sebagai pengunjung',
+    },
+    {
+      key: 'ADMIN' as const,
+      icon: Store,
+      title: 'Panitia',
+      body: 'Atur event, kategori, harga, denah & periode jual. Pantau kursi, transaksi, struk, dan kehadiran.',
+      cta: 'Masuk sebagai panitia',
+    },
+    {
+      key: 'STAFF' as const,
+      icon: ScanLine,
+      title: 'Petugas',
+      body: 'Scan QR di pintu masuk: Valid, Sudah digunakan, atau Tidak valid. Cari tiket manual kalau QR rusak.',
+      cta: 'Masuk sebagai petugas',
+    },
+  ]
+
+  return (
+    <div className="min-h-dvh bg-brand text-white">
+      <div className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-8 sm:px-6">
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <CoBrand tone="light" />
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">Bandung Build Challenge 2026 · Prototype</span>
+        </header>
+
+        <section className="mt-10 grid gap-8 lg:mt-16 lg:grid-cols-[1.1fr_1fr] lg:items-end">
+          <div>
+            <SundaText k="welcome" size="xl" />
+            <h1 className="mt-6 text-3xl font-extrabold leading-tight text-balance sm:text-5xl">
+              Satu pass untuk semua event <span className="text-brand-yellow">Summarecon Mall Bandung</span>.
+            </h1>
+            <p className="mt-4 max-w-xl text-base text-white/80 sm:text-lg">
+              Pilih kursi langsung dari denah. Bayar, daftar gratis, atau tukar struk belanja — semuanya berakhir di satu e-ticket QR.
+            </p>
+          </div>
+          <div className="hidden justify-end lg:flex">
+            <BrandAppIcon className="size-48 drop-shadow-2xl" />
+          </div>
+        </section>
+
+        <section className="mt-10 grid gap-4 md:grid-cols-3" aria-label="Pilih role demo">
+          {roles.map(({ key, icon: Icon, title, body, cta }) => (
+            <div key={key} className="flex flex-col rounded-2xl bg-white p-5 text-ink shadow-lg">
+              <div className="flex items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                  <Icon className="size-5" />
+                </span>
+                <h2 className="text-lg font-bold">{title}</h2>
+              </div>
+              <p className="mt-3 flex-1 text-sm text-muted-foreground">{body}</p>
+              <Button size="lg" className="mt-4 h-12 text-base" disabled={busy !== null} onClick={() => void enter(key)}>
+                {cta} <ArrowRight />
+              </Button>
+              {key === 'VISITOR' && (
+                <button
+                  type="button"
+                  className="mt-2 min-h-11 text-sm font-medium text-brand underline-offset-4 hover:underline"
+                  onClick={() => void enter('VISITOR_RINA')}
+                  disabled={busy !== null}
+                >
+                  atau masuk cepat sebagai Rina (persona) →
+                </button>
+              )}
+            </div>
+          ))}
+        </section>
+
+        <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-10 text-xs text-white/70">
+          <span>Data contoh · pembayaran, OTP, dan WA/email disimulasikan · bukan transaksi sungguhan</span>
+          <button
+            type="button"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 font-semibold text-white ring-1 ring-white/30 hover:bg-white/10"
+            onClick={async () => {
+              await api.demo.reset()
+              toast.success('Data demo dikembalikan ke awal.')
+            }}
+          >
+            <RotateCcw className="size-3.5" /> Reset data demo
+          </button>
+        </footer>
+      </div>
+    </div>
+  )
+}

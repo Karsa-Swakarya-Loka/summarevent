@@ -1,0 +1,205 @@
+/** Shared UI bits for the panitia screens. */
+import type { ReactNode } from 'react'
+import { Link } from 'react-router'
+import { AlertCircle, RefreshCw } from 'lucide-react'
+import type { EventSummary } from '@/api/contract'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import { errorMessage } from '@/hooks/useLive'
+import { cn } from '@/lib/utils'
+import { fmtClock } from './lib'
+
+export function PageHeader({ title, description, actions, className }: { title: string; description?: ReactNode; actions?: ReactNode; className?: string }) {
+  return (
+    <div className={cn('mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between', className)}>
+      <div className="min-w-0">
+        <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{title}</h1>
+        {description && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    </div>
+  )
+}
+
+export function KpiTile({
+  label,
+  value,
+  hint,
+  icon,
+  to,
+  tone = 'default',
+  loading,
+  className,
+}: {
+  label: string
+  value: ReactNode
+  hint?: ReactNode
+  icon?: ReactNode
+  to?: string
+  tone?: 'default' | 'warn'
+  loading?: boolean
+  className?: string
+}) {
+  const body = (
+    <>
+      <div className="flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground">
+        <span>{label}</span>
+        {icon && <span className={cn('[&_svg]:size-4', tone === 'warn' ? 'text-[#7a5600]' : 'text-brand')}>{icon}</span>}
+      </div>
+      {loading ? <Skeleton className="mt-2 h-9 w-24" /> : <div className="mt-1 text-3xl font-extrabold tracking-tight tabular-nums xl:text-[1.6rem] 2xl:text-3xl">{value}</div>}
+      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+    </>
+  )
+  const cls = cn(
+    'block rounded-xl bg-card p-4 ring-1 ring-foreground/10',
+    tone === 'warn' && 'bg-status-warn/10 ring-status-warn/50',
+    to && 'transition hover:ring-brand/40 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
+    className,
+  )
+  return to ? (
+    <Link to={to} className={cls}>
+      {body}
+    </Link>
+  ) : (
+    <div className={cls}>{body}</div>
+  )
+}
+
+/** "● Diperbarui 10.21.33 · tiap 5 detik" */
+export function LiveIndicator({ at, everySec, className }: { at?: string; everySec: number; className?: string }) {
+  return (
+    <span className={cn('inline-flex items-center gap-2 text-xs text-muted-foreground', className)} aria-live="off">
+      <span className="relative flex size-2.5" aria-hidden>
+        <span className="absolute inline-flex size-full animate-ping rounded-full bg-status-valid opacity-60 motion-reduce:hidden" />
+        <span className="relative inline-flex size-2.5 rounded-full bg-status-valid" />
+      </span>
+      <span>
+        {at ? <>Diperbarui {fmtClock(at)}</> : 'Memuat…'} · otomatis tiap {everySec} detik
+      </span>
+    </span>
+  )
+}
+
+export function EventSelect({
+  events,
+  value,
+  onChange,
+  allowAll,
+  id = 'event-select',
+  className,
+  label = 'Event',
+  hideLabel,
+}: {
+  events: EventSummary[] | undefined
+  value: string
+  onChange: (id: string) => void
+  allowAll?: boolean
+  id?: string
+  className?: string
+  label?: string
+  hideLabel?: boolean
+}) {
+  return (
+    <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
+      <Label htmlFor={id} className={cn('text-xs text-muted-foreground', hideLabel && 'sr-only')}>
+        {label}
+      </Label>
+      <Select value={value} onValueChange={onChange} disabled={!events}>
+        <SelectTrigger id={id} className="h-10 w-full min-w-0 bg-card sm:w-72" aria-label={label}>
+          <SelectValue placeholder={events ? 'Pilih event' : 'Memuat event…'} />
+        </SelectTrigger>
+        <SelectContent position="popper" className="max-w-[min(92vw,28rem)]">
+          {allowAll && <SelectItem value="ALL">Semua event</SelectItem>}
+          {(events ?? []).map((e) => (
+            <SelectItem key={e.event.id} value={e.event.id}>
+              <span className="truncate">{e.event.title}</span>
+              {e.event.status === 'DRAFT' && <span className="text-xs text-muted-foreground">(draft)</span>}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
+export function LoadError({ error, onRetry, className }: { error: unknown; onRetry?: () => void; className?: string }) {
+  return (
+    <div role="alert" className={cn('flex flex-wrap items-center gap-3 rounded-xl border border-status-invalid/30 bg-status-invalid/5 p-4 text-sm', className)}>
+      <AlertCircle className="size-5 text-status-invalid" aria-hidden />
+      <span className="flex-1">{errorMessage(error)}</span>
+      {onRetry && (
+        <Button variant="outline" size="lg" onClick={onRetry}>
+          <RefreshCw /> Coba lagi
+        </Button>
+      )}
+    </div>
+  )
+}
+
+/** Label + control + hint/error, with ids wired for screen readers. */
+export function Field({
+  id,
+  label,
+  hint,
+  error,
+  children,
+  className,
+  optional,
+}: {
+  id: string
+  label: ReactNode
+  hint?: ReactNode
+  error?: string
+  children: ReactNode
+  className?: string
+  optional?: boolean
+}) {
+  return (
+    <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
+      <Label htmlFor={id} className="text-sm font-semibold">
+        {label}
+        {optional && <span className="font-normal text-muted-foreground"> (opsional)</span>}
+      </Label>
+      {children}
+      {error ? (
+        <p id={`${id}-error`} className="flex items-start gap-1 text-xs font-medium text-status-invalid">
+          <AlertCircle className="mt-px size-3.5 shrink-0" aria-hidden />
+          {error}
+        </p>
+      ) : hint ? (
+        <p id={`${id}-hint`} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+export function SectionCard({ title, description, actions, children, className }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <section className={cn('rounded-xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5', className)}>
+      {(title || actions) && (
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            {title && <h2 className="text-base font-bold">{title}</h2>}
+            {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
+          </div>
+          {actions}
+        </div>
+      )}
+      {children}
+    </section>
+  )
+}
+
+export function ListSkeleton({ rows = 5, className }: { rows?: number; className?: string }) {
+  return (
+    <div className={cn('flex flex-col gap-2', className)} aria-busy="true" aria-label="Memuat">
+      {Array.from({ length: rows }, (_, i) => (
+        <Skeleton key={i} className="h-14 w-full rounded-lg" />
+      ))}
+    </div>
+  )
+}

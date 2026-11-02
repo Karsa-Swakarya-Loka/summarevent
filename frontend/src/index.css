@@ -1,0 +1,166 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/plus-jakarta-sans";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Summarevent theme.
+ * Brand colours are sampled from the official Summarecon logo (summarecon.com):
+ *   green #006426 · orange #F26F22 · amber #F9A61B · yellow #FEDC01 · ink #231F20
+ * Rule from the PRD: green/yellow/red of the STATUS scale are only used for scan results and status.
+ * The brand green is deliberately darker than the status green so the two never get confused.
+ */
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-amber: var(--brand-amber);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-ink: var(--ink);
+
+  --color-status-valid: var(--status-valid);
+  --color-status-warn: var(--status-warn);
+  --color-status-invalid: var(--status-invalid);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Summarecon brand */
+  --brand: #006426;
+  --brand-foreground: #ffffff;
+  --brand-soft: #e6f2ea;
+  --brand-orange: #f26f22;
+  --brand-amber: #f9a61b;
+  --brand-yellow: #fedc01;
+  --ink: #231f20;
+
+  /* Status scale (scan results, seat/ticket status only) */
+  --status-valid: #12a150;
+  --status-warn: #f5b400;
+  --status-invalid: #dc2626;
+
+  --background: #fbfaf7;
+  --foreground: #231f20;
+  --card: #ffffff;
+  --card-foreground: #231f20;
+  --popover: #ffffff;
+  --popover-foreground: #231f20;
+  --primary: #006426;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f1ec;
+  --secondary-foreground: #231f20;
+  --muted: #f3f1ec;
+  --muted-foreground: #6b6560;
+  --accent: #fff1e8;
+  --accent-foreground: #8a3a0c;
+  --destructive: #dc2626;
+  --border: #e7e3dc;
+  --input: #ddd8cf;
+  --ring: #006426;
+  --chart-1: #006426;
+  --chart-2: #f26f22;
+  --chart-3: #f9a61b;
+  --chart-4: #2563eb;
+  --chart-5: #7c3aed;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #231f20;
+  --sidebar-primary: #006426;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e6f2ea;
+  --sidebar-accent-foreground: #004a1c;
+  --sidebar-border: #e7e3dc;
+  --sidebar-ring: #006426;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Ticket notch motif (logo + Pass Saya cards) */
+.ticket-notch {
+  --notch: 14px;
+  mask:
+    radial-gradient(circle var(--notch) at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--notch) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+
+/* Subtle shine on active passes; disabled for reduced motion */
+@keyframes pass-shine {
+  0% { transform: translateX(-120%) skewX(-18deg); }
+  60%, 100% { transform: translateX(220%) skewX(-18deg); }
+}
+.pass-shine {
+  position: relative;
+  overflow: hidden;
+}
+.pass-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  animation: pass-shine 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pass-shine::after { animation: none; display: none; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

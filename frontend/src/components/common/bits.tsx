@@ -1,0 +1,119 @@
+import type { ReactNode } from 'react'
+import { Link } from 'react-router'
+import { ArrowLeft, Clock } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { SUNDA, type Tone } from '@/domain/labels'
+import { fmtCountdown } from '@/lib/format'
+import { cn } from '@/lib/utils'
+import { useNow } from '@/hooks/useLive'
+
+/* ---------- Sundanese microcopy + Indonesian meaning (PRD §1, NFR aksesibilitas) ---------- */
+export function SundaText({ k, className, size = 'lg' }: { k: keyof typeof SUNDA; className?: string; size?: 'sm' | 'lg' | 'xl' }) {
+  const t = SUNDA[k]
+  return (
+    <span className={cn('inline-flex flex-col leading-tight', className)}>
+      <span className={cn('font-bold', size === 'xl' ? 'text-4xl' : size === 'lg' ? 'text-2xl' : 'text-base')}>{t.su}</span>
+      <span className={cn('opacity-75', size === 'xl' ? 'text-lg' : 'text-xs')}>{t.id}</span>
+    </span>
+  )
+}
+
+/** Button label with the Sundanese CTA on top and Indonesian below. */
+export function SundaLabel({ k }: { k: keyof typeof SUNDA }) {
+  const t = SUNDA[k]
+  return (
+    <span className="flex flex-col items-center leading-tight">
+      <span className="font-bold">{t.su}</span>
+      <span className="text-[0.7rem] font-normal opacity-85">{t.id}</span>
+    </span>
+  )
+}
+
+/* ---------- Status badge (green/yellow/red only for status) ---------- */
+const TONE_CLASS: Record<Tone, string> = {
+  valid: 'bg-status-valid/12 text-[#0b6b35] ring-status-valid/30',
+  warn: 'bg-status-warn/18 text-[#7a5600] ring-status-warn/40',
+  invalid: 'bg-status-invalid/10 text-[#a11b1b] ring-status-invalid/30',
+  neutral: 'bg-muted text-muted-foreground ring-border',
+  brand: 'bg-brand-soft text-brand ring-brand/20',
+  info: 'bg-blue-50 text-blue-800 ring-blue-200',
+}
+const DOT: Record<Tone, string> = {
+  valid: 'bg-status-valid',
+  warn: 'bg-status-warn',
+  invalid: 'bg-status-invalid',
+  neutral: 'bg-muted-foreground/60',
+  brand: 'bg-brand',
+  info: 'bg-blue-600',
+}
+
+export function StatusBadge({ tone, children, className }: { tone: Tone; children: ReactNode; className?: string }) {
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset whitespace-nowrap', TONE_CLASS[tone], className)}>
+      <span className={cn('size-1.5 rounded-full', DOT[tone])} aria-hidden />
+      {children}
+    </span>
+  )
+}
+
+/* ---------- Countdown ---------- */
+export function Countdown({ to, className, onDone, prefix }: { to: string; className?: string; onDone?: () => void; prefix?: ReactNode }) {
+  const now = useNow(1000)
+  const ms = new Date(to).getTime() - now.getTime()
+  if (ms <= 0 && onDone) queueMicrotask(onDone)
+  const urgent = ms < 2 * 60_000
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 font-semibold tabular-nums', urgent && 'text-status-invalid', className)} role="timer" aria-live="off">
+      <Clock className="size-4" aria-hidden />
+      {prefix}
+      {ms <= 0 ? '00:00' : fmtCountdown(ms)}
+    </span>
+  )
+}
+
+/* ---------- Page header with back link ---------- */
+export function BackHeader({ to, title, right }: { to: string; title?: ReactNode; right?: ReactNode }) {
+  return (
+    <div className="sticky top-0 z-20 flex min-h-14 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur">
+      <Link to={to} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-muted" aria-label="Kembali">
+        <ArrowLeft className="size-5" />
+      </Link>
+      <div className="min-w-0 flex-1 truncate font-semibold">{title}</div>
+      {right}
+    </div>
+  )
+}
+
+export function EmptyState({ icon, title, children, action }: { icon?: ReactNode; title: string; children?: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card px-6 py-10 text-center">
+      {icon && <div className="text-muted-foreground [&_svg]:size-10">{icon}</div>}
+      <div className="font-semibold">{title}</div>
+      {children && <div className="max-w-xs text-sm text-muted-foreground">{children}</div>}
+      {action}
+    </div>
+  )
+}
+
+/* ---------- QR ---------- */
+export function TicketQr({ value, size = 200, className }: { value: string; size?: number; className?: string }) {
+  return (
+    <div className={cn('rounded-xl bg-white p-3', className)}>
+      <QRCodeSVG value={value} size={size} level="M" marginSize={0} fgColor="#231f20" bgColor="#ffffff" title="QR e-ticket" />
+    </div>
+  )
+}
+
+/* ---------- Category swatch ---------- */
+export function Swatch({ color, className }: { color: string; className?: string }) {
+  return <span className={cn('inline-block size-3 shrink-0 rounded-[4px]', className)} style={{ background: color }} aria-hidden />
+}
+
+/** "Data contoh" ribbon so nobody mistakes the prototype for live data. */
+export function DemoNotice({ className }: { className?: string }) {
+  return (
+    <div className={cn('rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground', className)}>
+      Prototype dengan data contoh. Pembayaran, OTP, dan pesan WA/email disimulasikan.
+    </div>
+  )
+}

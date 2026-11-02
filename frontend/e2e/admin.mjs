@@ -1,0 +1,104 @@
+// Panitia flows: receipts approve/revise, mark paid, CSV export, live seats.
+// Usage: dev server running (npm run dev), then node e2e/admin.mjs [desktop|mobile]
+// Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
+import { chromium } from 'playwright-core'
+import fs from 'node:fs'
+import path from 'node:path'
+const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'admin')
+const BASE = process.env.BASE || 'http://localhost:5173'
+fs.mkdirSync(OUT, { recursive: true })
+const mobile = process.argv[2] === 'mobile'
+const P = mobile ? 'am' : 'ad'
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true })
+const ctx = await browser.newContext(mobile ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, acceptDownloads: true } : { viewport: { width: 1366, height: 900 }, acceptDownloads: true })
+const page = await ctx.newPage()
+const errors = []
+page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}`) })
+page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
+const shot = async (name, full = true) => {
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: `${OUT}/${P}-${name}.png`, fullPage: full })
+  const sw = await page.evaluate(() => document.documentElement.scrollWidth)
+  const vw = await page.evaluate(() => window.innerWidth)
+  console.log('shot', name, sw > vw ? `!! scrollWidth ${sw} > ${vw}` : '')
+}
+await page.goto(BASE + '/admin', { waitUntil: 'networkidle' })
+await page.waitForTimeout(1200)
+await shot('dashboard')
+
+// ---- receipts
+await page.goto(BASE + '/admin/receipts', { waitUntil: 'networkidle' })
+await page.waitForTimeout(800)
+const queue = page.getByRole('list', { name: 'Antrean struk' }).getByRole('listitem')
+console.log('queue items:', await queue.count())
+if (mobile) await queue.first().getByRole('button').click()
+await shot('receipts')
+// approve the first (Rina, 2 receipts, valid)
+await page.getByRole('button', { name: 'Setujui' }).click()
+await page.waitForTimeout(400)
+if (await page.getByRole('button', { name: 'Tetap setujui' }).count()) { console.log('!! approve-anyway dialog shown'); await page.getByRole('button', { name: 'Tetap setujui' }).click() }
+await page.getByText(/Struk disetujui/).waitFor()
+console.log('approved first')
+await page.waitForTimeout(600)
+// second (Yudi, below minimum) -> revision
+if (mobile && !(await page.getByRole('button', { name: 'Minta revisi' }).isVisible())) await queue.first().getByRole('button').click()
+await page.getByRole('button', { name: 'Minta revisi' }).click()
+await page.getByRole('button', { name: 'Nominal tidak terbaca' }).click()
+await shot('receipts-revise-dialog', false)
+await page.getByRole('button', { name: 'Kirim permintaan revisi' }).click()
+await page.getByText(/Permintaan revisi dikirim/).waitFor()
+console.log('revision requested')
+await page.waitForTimeout(500)
+await shot('receipts-empty')
+await page.getByRole('tab', { name: 'Semua' }).click()
+await page.waitForTimeout(500)
+if (mobile) await queue.first().getByRole('button').click()
+await shot('receipts-all')
+
+// ---- orders
+await page.goto(BASE + '/admin/orders', { waitUntil: 'networkidle' })
+await page.waitForTimeout(800)
+await shot('orders')
+await page.getByRole('button', { name: /^Menunggu pembayaran/ }).click()
+await page.waitForTimeout(400)
+const firstOrder = mobile
+  ? page.getByRole('list', { name: 'Daftar pesanan' }).getByRole('button').filter({ hasText: 'Bayu' }).first()
+  : page.locator('tbody tr').filter({ hasText: 'Bayu' }).first().getByRole('button').first()
+const code = (await firstOrder.innerText()).split('\n')[0]
+console.log('opening order', code)
+await firstOrder.click()
+await page.waitForTimeout(500)
+await shot('orders-sheet', false)
+const markBtn = page.getByRole('button', { name: /Tandai lunas|Konfirmasi pendaftaran/ })
+if (await markBtn.count()) {
+  await markBtn.click()
+  await page.getByText(/ditandai lunas|dikonfirmasi/).first().waitFor()
+  console.log('marked paid')
+  await page.waitForTimeout(500)
+  await shot('orders-sheet-paid', false)
+}
+await page.keyboard.press('Escape')
+await page.waitForTimeout(300)
+for (const [label, type] of [['Unduh data peserta', 'peserta'], ['Unduh laporan transaksi', 'transaksi']]) {
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: label }).click()])
+  const file = `${OUT}/${P}-${type}.csv`
+  await dl.saveAs(file)
+  const txt = fs.readFileSync(file, 'utf8')
+  const lines = txt.split('\n')
+  console.log(`${type}.csv: ${dl.suggestedFilename()} ${lines.length - 1} rows, BOM=${txt.charCodeAt(0) === 0xfeff}`)
+  console.log('  ' + lines.slice(0, 3).join('\n  '))
+}
+
+// ---- live seats
+await page.goto(BASE + '/admin/live?event=evt_sangkuriang&session=ses_sk_16', { waitUntil: 'networkidle' })
+await page.waitForTimeout(800)
+await page.getByRole('button', { name: 'Simulasikan pembeli lain' }).click()
+await page.getByText(/Pembeli lain \(simulasi\) sedang memesan/).waitFor()
+await page.waitForTimeout(600)
+await page.getByRole('button', { name: /Baris C nomor 7,/ }).first().click({ force: true })
+await page.waitForTimeout(400)
+await shot('live')
+
+console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no console errors')
+if (errors.length) process.exitCode = 1
+await browser.close()

@@ -1,0 +1,82 @@
+// Event wizard: create a RESERVED event, publish it, open it as a visitor.
+// Usage: dev server running (npm run dev), then node e2e/wizard.mjs [desktop|mobile]
+// Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
+import { chromium } from 'playwright-core'
+import fs from 'node:fs'
+import path from 'node:path'
+const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'wizard')
+const BASE = process.env.BASE || 'http://localhost:5173'
+fs.mkdirSync(OUT, { recursive: true })
+const mobile = process.argv[2] === 'mobile'
+const P = mobile ? 'wm' : 'wd'
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true })
+const ctx = await browser.newContext(mobile ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true } : { viewport: { width: 1366, height: 900 } })
+const page = await ctx.newPage()
+const errors = []
+page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}`) })
+page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
+const shot = async (name, full = true) => {
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: `${OUT}/${P}-${name}.png`, fullPage: full })
+  const sw = await page.evaluate(() => document.documentElement.scrollWidth)
+  const vw = await page.evaluate(() => window.innerWidth)
+  console.log('shot', name, sw > vw ? `!! scrollWidth ${sw} > ${vw}` : '')
+}
+const next = async () => { await page.getByRole('button', { name: /^Lanjut/ }).click(); await page.waitForTimeout(500) }
+const t0 = Date.now()
+await page.goto(BASE + '/admin/events/new', { waitUntil: 'networkidle' })
+await page.waitForTimeout(800)
+const TITLE = 'Teater Boneka Si Kabayan'
+await page.getByRole('textbox', { name: 'Judul event' }).fill(TITLE)
+await page.getByRole('textbox', { name: 'Deskripsi' }).fill('Pertunjukan boneka 45 menit tentang Si Kabayan. Cocok untuk anak 3 tahun ke atas.')
+await next()
+// categories
+const cats = page.getByRole('textbox', { name: 'Nama kategori' })
+await cats.nth(0).fill('Premium')
+await page.getByLabel('Harga per kursi', { exact: true }).nth(0).fill('75000')
+await page.getByRole('button', { name: 'Tambah kategori' }).click()
+await page.waitForTimeout(300)
+await cats.nth(1).fill('Tukar Struk')
+const method2 = page.getByRole('radiogroup').filter({ has: page.getByRole('radio', { name: 'Tukar Struk' }) }).nth(1)
+await method2.getByRole('radio', { name: 'Tukar Struk' }).click()
+await page.getByRole('button', { name: 'Pakai preset umum mal' }).click()
+await shot('2-kategori')
+await next()
+// layout
+await page.getByRole('button', { name: /Teater kecil/ }).click()
+await page.waitForTimeout(400)
+await page.getByRole('button', { name: /^Baris A nomor 1,/ }).first().click({ force: true })
+await page.waitForTimeout(300)
+await shot('3-denah')
+await next()
+// sessions
+await page.getByRole('button', { name: 'Tambah sesi' }).click()
+await page.waitForTimeout(300)
+await shot('4-sesi')
+await next()
+await shot('5-review')
+await page.getByRole('button', { name: /Simpan & publish/ }).click()
+await page.waitForTimeout(1200)
+await shot('6-published')
+console.log(`wizard done in ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+// visitor
+await page.goto(BASE + '/app', { waitUntil: 'networkidle' })
+await page.waitForTimeout(600)
+const card = page.getByRole('link').filter({ hasText: TITLE })
+console.log('visitor card found:', await card.count())
+await card.first().click()
+await page.waitForTimeout(600)
+await page.getByRole('button', { name: 'Pilih kursi' }).click()
+await page.waitForURL(/\/s\//)
+await page.waitForTimeout(800)
+const blocked = await page.getByRole('img', { name: /Baris A nomor 1,.*tidak dijual/ }).count()
+console.log('seat A1 shows Tidak dijual:', blocked > 0)
+await page.getByRole('radiogroup', { name: 'Kategori tiket' }).getByRole('radio', { name: /Premium/ }).click()
+await page.getByRole('button', { name: /Pilihkan 2 kursi/ }).click()
+await page.waitForTimeout(500)
+const holdBtn = page.getByRole('button', { name: /Hayu ngiring/ })
+console.log('hold button enabled:', await holdBtn.isEnabled())
+await shot('7-visitor-seatmap', false)
+console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no console errors')
+if (errors.length) process.exitCode = 1
+await browser.close()

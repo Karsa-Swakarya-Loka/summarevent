@@ -1,0 +1,17 @@
+{
+  "name": "Summarevent",
+  "short_name": "Summarevent",
+  "description": "Satu pass untuk semua event Summarecon Mall Bandung: pilih kursi, bayar atau tukar struk, dapat e-ticket QR.",
+  "lang": "id",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#006426",
+  "background_color": "#fbfaf7",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

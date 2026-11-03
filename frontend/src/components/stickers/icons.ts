@@ -54,7 +54,8 @@ export const kursi: Icon = {
   extrude: EXT,
   still: 110,
   layers: [
-    { id: 'seat', a: [0, 140], p: [252, 318], m: hop, shapes: [] },
+    // placed so the seat, its badge and its hop sit in the middle of the square and never touch an edge
+    { id: 'seat', a: [0, 140], p: [236, 392], m: hop, shapes: [] },
     {
       parent: 'seat',
       tilt: FACE,

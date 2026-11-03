@@ -3,11 +3,12 @@
  */
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { CalendarDays, ChevronRight, CircleCheck, Gift, Hourglass, MapPin, Maximize2, Sun, Ticket as TicketIcon, UserRound } from 'lucide-react'
+import { CalendarDays, ChevronRight, CircleCheck, Gift, Hourglass, MapPin, Maximize2, Sun, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail, PassItem } from '@/api/contract'
 import { Countdown, EmptyState, StatusBadge, SundaText, Swatch, TicketQr } from '@/components/common/bits'
+import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -110,7 +111,7 @@ export default function MyPass() {
         ) : !all.length ? (
           user ? (
             <EmptyState
-              icon={<TicketIcon />}
+              icon={<Illustration name="tiket" className="w-32" />}
               title="Belum ada e-ticket"
               action={
                 <Button asChild className="h-11">
@@ -122,7 +123,7 @@ export default function MyPass() {
             </EmptyState>
           ) : (
             <EmptyState
-              icon={<UserRound />}
+              icon={<Illustration name="padlock" className="w-28" />}
               title="Masuk untuk melihat e-ticket"
               action={
                 <div className="flex w-full flex-col gap-2">
@@ -163,7 +164,7 @@ export default function MyPass() {
               })
             ) : checkedIn.length > 0 ? null : (
               <EmptyState
-                icon={<TicketIcon />}
+                icon={<Illustration name="tiket" className="w-28" />}
                 title="Tidak ada tiket aktif"
                 action={
                   <Button asChild className="h-11">

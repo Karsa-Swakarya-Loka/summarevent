@@ -187,6 +187,23 @@
   background-size: 18px 18px;
 }
 
+/* A seat the visitor taps pops in and draws its check. */
+.seat-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: seat-pop 0.34s var(--ease-pop) both;
+}
+.seat-check {
+  stroke-dasharray: 1;
+  animation: seat-check 0.26s 0.1s var(--ease-soft) both;
+}
+@keyframes seat-pop {
+  from { transform: scale(0.7); }
+}
+@keyframes seat-check {
+  from { stroke-dashoffset: 1; }
+}
+
 /* Subtle shine on active passes; disabled for reduced motion */
 @keyframes pass-shine {
   0% { transform: translateX(-120%) skewX(-18deg); }

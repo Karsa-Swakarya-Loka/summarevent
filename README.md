@@ -61,7 +61,7 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
   - App bar menempel di atas dengan judul besar yang mengecil saat di-scroll.
   - Dialog naik dari bawah sebagai sheet yang bisa ditarik turun.
   - Tab bar hanya ada di empat tab utama, dan tombol utama selalu dalam jangkauan jempol.
-  - Beranda dibuka dengan panggung SUMMABA bergambar, kartu status, pintasan, dan sorotan yang bisa digeser. Akun berbentuk profil dengan baris pengaturan, dan nama serta email bisa diubah di Profil.
+  - Beranda dibuka dengan panggung SUMMABA bergambar, kartu status, pintasan, dan sorotan yang bisa digeser. Akun berbentuk profil dengan baris pengaturan, dan foto, nama, serta email bisa diubah di Profil.
   - Pesan tampil seperti aplikasi chat: daftar pesan, lalu tiap WhatsApp atau email terbuka di layarnya sendiri.
   - Di Android, mengetuk kursi memberi getaran halus.
 - **PWA.** Bisa dipasang di layar utama, dengan notifikasi perangkat selama app terbuka.

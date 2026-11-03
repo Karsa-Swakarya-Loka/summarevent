@@ -2,7 +2,7 @@
 // Usage: dev server running (npm run dev), then node e2e/admin.mjs [desktop|mobile]
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import { chromium } from 'playwright-core'
-import { skipIntro } from './skip-intro.mjs'
+import { signIn, skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'admin')
@@ -25,6 +25,7 @@ const shot = async (name, full = true) => {
   console.log('shot', name, sw > vw ? `!! scrollWidth ${sw} > ${vw}` : '')
   if (sw > vw) errors.push(`${name}: scrollWidth ${sw} > ${vw} (geser horizontal)`)
 }
+await signIn(page, 'ADMIN', BASE)
 await page.goto(BASE + '/admin', { waitUntil: 'networkidle' })
 await page.waitForTimeout(1200)
 await shot('dashboard')

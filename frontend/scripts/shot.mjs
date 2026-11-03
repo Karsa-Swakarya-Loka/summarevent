@@ -4,12 +4,13 @@
  *   node scripts/shot.mjs [--base http://localhost:5173] [--desktop] [--out shots] /app /app/pass ...
  * Prints console errors / page errors so broken pages are caught.
  * Note: each run is a fresh browser profile → the mock seeds fresh demo data. The splash and the first-run onboarding
- * are skipped; open /app/mulai to capture the onboarding itself.
+ * are skipped (open /app/mulai, /admin/mulai or /staff/mulai to capture one), and panitia and petugas pages are opened
+ * signed in with the demo account.
  */
 import { chromium } from 'playwright-core'
 import fs from 'node:fs'
 import path from 'node:path'
-import { skipIntro } from '../e2e/skip-intro.mjs'
+import { signIn, skipIntro } from '../e2e/skip-intro.mjs'
 
 const args = process.argv.slice(2)
 let base = 'http://localhost:5173'
@@ -32,7 +33,13 @@ await skipIntro(ctx)
 const page = await ctx.newPage()
 page.on('console', (m) => { if (m.type() === 'error') console.log(`[console.error] ${m.text()}`) })
 page.on('pageerror', (e) => console.log(`[pageerror] ${e.message}`))
+const signedIn = new Set()
 for (const p of paths) {
+  const role = /^\/admin(\/|$)/.test(p) ? 'ADMIN' : /^\/staff(\/|$)/.test(p) ? 'STAFF' : null
+  if (role && !signedIn.has(role) && !/\/(masuk|mulai)\/?$/.test(p)) {
+    await signIn(page, role, base)
+    signedIn.add(role)
+  }
   await page.goto(base + p, { waitUntil: 'networkidle' })
   await page.waitForTimeout(600)
   const file = path.join(out, (desktop ? 'd' : 'm') + (p.replace(/[^a-z0-9]+/gi, '_') || '_root') + '.png')

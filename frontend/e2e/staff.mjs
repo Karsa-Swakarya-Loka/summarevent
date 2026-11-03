@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Staff (petugas) QA walk-through. Usage: node scripts/tmp/staff-qa.mjs [outDir]
 import { chromium } from 'playwright-core'
-import { skipIntro } from './skip-intro.mjs'
+import { signIn, skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -47,7 +47,8 @@ const check = (ok, msg) => {
   if (!ok) logs.push(`[check] ${msg}`)
 }
 
-// 1. Home
+// 1. Home, after signing in
+await signIn(page, 'STAFF', BASE)
 await page.goto(BASE + '/staff', { waitUntil: 'networkidle' })
 await page.getByText('Halo,').waitFor()
 await page.locator('[data-session="ses_sk_demo"]').waitFor()
@@ -180,6 +181,7 @@ const ctx2 = await browser2.newContext({ viewport: { width: 390, height: 844 }, 
 await skipIntro(ctx2)
 const page2 = await ctx2.newPage()
 watch(page2, 'nocam')
+await signIn(page2, 'STAFF', BASE)
 await page2.goto(BASE + '/staff/scan/ses_sk_demo', { waitUntil: 'networkidle' })
 const fallback = await page2.getByText('Tempel kode QR').first().waitFor({ timeout: 12_000 }).then(() => true, () => false)
 check(fallback, 'tanpa kamera, panel "Tempel kode QR" tidak muncul')

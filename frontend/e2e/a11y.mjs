@@ -4,7 +4,7 @@
 // Env: BASE (default http://localhost:5173), CHROME_PATH (installed Chrome).
 import { createRequire } from 'node:module'
 import { chromium } from 'playwright-core'
-import { skipIntro } from './skip-intro.mjs'
+import { signIn, skipIntro } from './skip-intro.mjs'
 
 const BASE = process.env.BASE || 'http://localhost:5173'
 const AXE = createRequire(import.meta.url).resolve('axe-core/axe.min.js')
@@ -129,6 +129,12 @@ const receiptReview = async (page) => {
   await page.waitForTimeout(600)
 }
 
+// a sign-in sent empty: the error the screen shows
+const signInError = async (page) => {
+  await page.getByRole('button', { name: 'Masuk', exact: true }).click()
+  await page.getByRole('alert').waitFor()
+}
+
 const onboardingLast = async (page) => {
   await page.getByRole('button', { name: /^Lanjut/ }).click()
   await page.getByRole('button', { name: /^Lanjut/ }).click()
@@ -188,12 +194,17 @@ const screens = [
   [phone, '/', rinaInbox],
   [phone, '/', rinaMessage],
   [phone, '/app/akun'],
+  [phone, '/staff/mulai'],
+  [phone, '/staff/masuk'],
+  [phone, '/staff/masuk', signInError],
   [phone, '/staff'],
   [phone, '/staff/scan/ses_sk_demo'],
   [phone, '/staff/scan/ses_sk_demo', scanResult],
   [phone, '/staff/search/ses_sk_demo'],
   [phone, '/staff/search/ses_sk_demo', rinaAfterCheckin],
   [phone, '/staff/receipts'],
+  [phone, '/admin/mulai'],
+  [phone, '/admin/masuk'],
   [phone, '/admin'],
   [phone, '/admin/events'],
   [phone, '/admin/events/new', wizardCategories],
@@ -201,6 +212,7 @@ const screens = [
   [phone, '/admin/orders', orderDetail],
   [phone, '/admin/receipts', receiptReview],
   [phone, '/admin/staff'],
+  [laptop, '/admin/masuk'],
   [laptop, '/admin'],
   [laptop, '/admin/events'],
   [laptop, '/admin/events/new'],
@@ -214,6 +226,9 @@ for (const [device, path, prep] of screens) {
   await skipIntro(ctx)
   const page = await ctx.newPage()
   page.on('pageerror', (e) => errors.push(`${path}: ${e.message}`))
+  // panitia and petugas pages open signed in; their onboarding and sign-in screens do not need it
+  const area = /^\/(admin|staff)(\/|$)/.exec(path)
+  if (area && !/\/(masuk|mulai)\/?$/.test(path)) await signIn(page, area[1] === 'admin' ? 'ADMIN' : 'STAFF', BASE)
   await page.goto(BASE + path, { waitUntil: 'networkidle' })
   if (prep) await prep(page)
   await page.waitForTimeout(600)

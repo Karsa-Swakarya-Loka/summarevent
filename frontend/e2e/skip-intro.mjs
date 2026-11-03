@@ -1,9 +1,21 @@
 /**
- * The splash and the first-run onboarding play once per visitor. Suites and screenshot scripts about something else
- * start past them; e2e/onboarding.mjs tests both on purpose.
+ * The splash plays once per session for the web and for each role, and every role has a first-run onboarding. Suites
+ * and screenshot scripts about something else start past them; e2e/onboarding.mjs tests them on purpose.
  */
 export const skipIntro = (ctx) =>
   ctx.addInitScript(() => {
-    sessionStorage.setItem('summarevent:splash', '1')
-    localStorage.setItem('summarevent:onboarding', 'done')
+    for (const scope of ['', ':app', ':admin', ':staff']) sessionStorage.setItem(`summarevent:splash${scope}`, '1')
+    for (const role of ['', ':admin', ':staff']) localStorage.setItem(`summarevent:onboarding${role}`, 'done')
   })
+
+/**
+ * Panitia and petugas sign in before their pages open: through the sign-in screen with its demo account, so the same
+ * step works against the mock and against a backend.
+ */
+export async function signIn(page, role, base = process.env.BASE || 'http://localhost:5173') {
+  const area = role === 'ADMIN' ? 'admin' : 'staff'
+  await page.goto(`${base}/${area}/masuk`, { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: 'Isi otomatis' }).click()
+  await page.getByRole('button', { name: 'Masuk', exact: true }).click()
+  await page.waitForURL((url) => url.pathname.startsWith(`/${area}`) && !url.pathname.endsWith('/masuk'))
+}

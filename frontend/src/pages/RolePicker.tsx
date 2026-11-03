@@ -62,7 +62,7 @@ export default function RolePicker() {
   ]
 
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-brand text-white">
+    <main className="relative min-h-dvh overflow-hidden bg-brand text-white">
       {/* the splash's seat-grid dots carry on behind the page, so the splash hands over without a seam */}
       <div className="seat-dots pointer-events-none absolute inset-0 text-white/[0.07]" aria-hidden />
       <div className="relative mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-8 sm:px-6">
@@ -157,6 +157,6 @@ export default function RolePicker() {
           </button>
         </footer>
       </div>
-    </div>
+    </main>
   )
 }

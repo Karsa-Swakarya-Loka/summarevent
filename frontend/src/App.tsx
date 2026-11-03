@@ -8,14 +8,10 @@ import { StaffLayout } from '@/layouts/StaffLayout'
 import { VisitorLayout } from '@/layouts/VisitorLayout'
 import NotFound from '@/pages/NotFound'
 import RolePicker from '@/pages/RolePicker'
-import Account from '@/pages/visitor/Account'
-import Checkout from '@/pages/visitor/Checkout'
 import EventDetail from '@/pages/visitor/EventDetail'
 import Home from '@/pages/visitor/Home'
-import Inbox from '@/pages/visitor/Inbox'
-import MyPass from '@/pages/visitor/MyPass'
-import OrderStatus from '@/pages/visitor/OrderStatus'
 import SeatSelect from '@/pages/visitor/SeatSelect'
+import { screen } from '@/screens'
 
 /**
  * Panitia and petugas screens load on demand, so a visitor's phone never downloads the
@@ -70,11 +66,11 @@ const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'e/:slug', element: <EventDetail /> },
       { path: 'e/:slug/s/:sessionId', element: <SeatSelect /> },
-      { path: 'checkout/:orderId', element: <Checkout /> },
-      { path: 'orders/:orderId', element: <OrderStatus /> },
-      { path: 'pass', element: <MyPass /> },
-      { path: 'inbox', element: <Inbox /> },
-      { path: 'akun', element: <Account /> },
+      { path: 'checkout/:orderId', lazy: screen('checkout') },
+      { path: 'orders/:orderId', lazy: screen('order') },
+      { path: 'pass', lazy: screen('pass') },
+      { path: 'inbox', lazy: screen('inbox') },
+      { path: 'akun', lazy: screen('account') },
       { path: 'mulai', element: page(Onboarding) },
       { path: 'masuk', element: page(SignIn) },
       { path: 'daftar', element: page(SignUp) },

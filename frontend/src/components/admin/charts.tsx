@@ -37,10 +37,10 @@ export function CategoryChart({ data }: { data: EventStats['byCategory'] }) {
     <div>
       <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label="Keterangan grafik">
         <li className="flex items-center gap-1.5">
-          <span className="size-3 rounded-[3px] bg-[#7c3aed]" aria-hidden /> Terjual (warna kategori)
+          <span className="size-3 rounded-[3px] bg-[#8b2c6a]" aria-hidden /> Terjual (warna kategori)
         </li>
         <li className="flex items-center gap-1.5">
-          <span className="size-3 rounded-[3px] bg-[#7c3aed]/35" aria-hidden /> Sedang dipesan
+          <span className="size-3 rounded-[3px] bg-[#8b2c6a]/35" aria-hidden /> Sedang dipesan
         </li>
         <li className="flex items-center gap-1.5">
           <span className="size-3 rounded-[3px] bg-[#e7e3dc]" aria-hidden /> Tersedia
@@ -86,7 +86,7 @@ const TONE_FILL: Record<Tone, string> = {
   invalid: '#dc2626',
   neutral: '#a8a29e',
   brand: '#006426',
-  info: '#2563eb',
+  info: '#2d4c8f',
 }
 
 export function StatusChart({ data }: { data: EventStats['transactions'] }) {

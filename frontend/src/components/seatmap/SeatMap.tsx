@@ -323,7 +323,7 @@ function SeatShape({ visual, color, pop = false }: { visual: SeatVisual; color: 
 }
 
 /** Small inline seat sample for legends (same drawing as the map). */
-export function SeatSample({ visual, color = '#2563eb', size = 18 }: { visual: SeatVisual; color?: string; size?: number }) {
+export function SeatSample({ visual, color = '#0e7c7b', size = 18 }: { visual: SeatVisual; color?: string; size?: number }) {
   return (
     <svg viewBox={`0 0 ${SEAT} ${SEAT}`} width={size} height={size} aria-hidden className="shrink-0">
       <defs>

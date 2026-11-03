@@ -19,7 +19,7 @@ const STEPS: ReadonlyArray<{ art: ReadonlyArray<{ name: ArtName; label?: string 
     panel: 'bg-brand-soft',
     dots: 'text-brand/15',
     title: 'Pilih kursimu sendiri',
-    body: 'Lihat denahnya, ketuk kursi yang masih kosong, atau biar kami pilihkan yang berdampingan. Kursi pilihanmu ditahan selama kamu menyelesaikan pesanan.',
+    body: 'Ketuk kursi kosong di denah, atau biar kami pilihkan yang berdampingan.',
   },
   {
     art: [
@@ -30,14 +30,14 @@ const STEPS: ReadonlyArray<{ art: ReadonlyArray<{ name: ArtName; label?: string 
     panel: 'bg-[#fff1e2]',
     dots: 'text-brand-orange/20',
     title: 'Bayar, gratis, atau tukar struk',
-    body: 'Tiap kategori kursi punya caranya sendiri: bayar lewat QRIS atau Virtual Account, daftar gratis, atau tukar struk belanja di tenant SUMMABA.',
+    body: 'QRIS, Virtual Account, gratis, atau struk belanja di tenant SUMMABA.',
   },
   {
     art: [{ name: 'tiket' }],
     panel: 'bg-[#fff7c7]',
     dots: 'text-[#8a6d00]/15',
     title: 'Satu QR untuk masuk',
-    body: 'E-ticket QR tersimpan di Pass Saya, satu untuk tiap kursi. Tunjukkan ke petugas di pintu, langsung masuk.',
+    body: 'Satu e-ticket per kursi, tersimpan di Pass Saya. Tunjukkan di pintu.',
   },
 ]
 
@@ -114,7 +114,7 @@ export default function Onboarding() {
           <p className="text-sm font-semibold text-brand">
             Langkah {step + 1} dari {STEPS.length}
           </p>
-          <h1 id="onboarding-title" className="mt-1 text-[1.75rem] leading-tight font-extrabold tracking-tight text-balance">
+          <h1 id="onboarding-title" className="mt-1.5 font-poster text-[2.5rem] leading-[0.95] text-balance uppercase">
             {s.title}
           </h1>
           <p className="mt-3 text-base leading-relaxed text-muted-foreground">{s.body}</p>

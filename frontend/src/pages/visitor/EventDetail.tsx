@@ -11,7 +11,6 @@ import { CategoryLegend } from '@/components/seatmap/SeatLegend'
 import { Button } from '@/components/ui/button'
 import { BottomBar, LoadError, PageSkeleton, SectionTitle } from '@/components/visitor/Common'
 import { priceHint, recallSession, rememberSession, sessionName } from '@/components/visitor/helpers'
-import { ACCESS_METHOD_LABEL } from '@/domain/labels'
 import { saleState } from '@/domain/rules'
 import { useLive, useNow } from '@/hooks/useLive'
 import { fmtDate, fmtRange, fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
@@ -106,12 +105,12 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
       {/* the page itself rides up over the poster like a sheet */}
       <div className="relative -mt-7 flex-1 space-y-6 rounded-t-[1.75rem] bg-background px-4 pt-6 pb-6">
         <header>
-          <p className="text-[0.7rem] font-bold tracking-wide text-brand uppercase">{POSTER_THEMES[event.posterTheme].label}</p>
-          <h1 className="mt-1 text-[1.75rem] leading-tight font-extrabold tracking-tight text-balance">{event.title}</h1>
+          <p className="text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{POSTER_THEMES[event.posterTheme].label}</p>
+          <h1 className="mt-1.5 font-poster text-[2.6rem] leading-[0.92] text-balance uppercase">{event.title}</h1>
           {event.subtitle && <p className="mt-1 text-muted-foreground">{event.subtitle}</p>}
-          <ul className="mt-4 divide-y overflow-hidden rounded-2xl border bg-card text-sm">
+          <ul className="mt-4 divide-y overflow-hidden rounded-[1.4rem] bg-card text-sm shadow-xs">
             <li className="flex min-h-12 items-center gap-3 px-3.5 py-2.5">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-ink/[0.06]">
                 <CalendarDays className="size-4" aria-hidden />
               </span>
               <span>
@@ -120,7 +119,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
               </span>
             </li>
             <li className="flex min-h-12 items-center gap-3 px-3.5 py-2.5">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-ink/[0.06]">
                 <MapPin className="size-4" aria-hidden />
               </span>
               <span>{venue.name}, Summarecon Mall Bandung</span>
@@ -128,15 +127,15 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
           </ul>
           <p className={cn('mt-4 text-[0.95rem] leading-relaxed text-foreground/85', longText && !more && 'line-clamp-3')}>{event.description}</p>
           {longText && (
-            <button type="button" onClick={() => setMore((m) => !m)} className="-ml-1 inline-flex min-h-11 items-center px-1 text-sm font-bold text-brand" aria-expanded={more}>
+            <button type="button" onClick={() => setMore((m) => !m)} className="-ml-1 inline-flex min-h-11 items-center px-1 text-sm font-bold underline underline-offset-4" aria-expanded={more}>
               {more ? 'Tampilkan lebih sedikit' : 'Selengkapnya'}
             </button>
           )}
         </header>
 
         {event.infoOnly ? (
-          <section className="rounded-2xl bg-brand-soft p-4 text-sm">
-            <p className="flex items-center gap-2 text-base font-bold text-brand">
+          <section className="rounded-[1.4rem] bg-[#ffe7a3] p-4 text-sm">
+            <p className="flex items-center gap-2 text-base font-bold">
               <DoorOpen className="size-5" aria-hidden /> Masuk bebas, tanpa tiket
             </p>
             <p className="mt-1 text-foreground/80">Datang kapan saja selama jam buka mal. Tidak perlu daftar atau pilih kursi.</p>
@@ -144,7 +143,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
         ) : (
           <>
             <section aria-labelledby="sesi-title">
-              <SectionTitle right={<span className="text-xs text-muted-foreground">Geser untuk sesi lain</span>}>
+              <SectionTitle>
                 <span id="sesi-title">Pilih sesi</span>
               </SectionTitle>
               <div role="radiogroup" aria-labelledby="sesi-title" className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4 pt-0.5 pb-1.5 [scrollbar-width:none]">
@@ -162,14 +161,14 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                       onClick={() => onPick(s.id)}
                       className={cn(
                         'w-44 shrink-0 snap-start rounded-2xl border bg-card p-3 text-left transition active:scale-[0.97] disabled:opacity-55',
-                        active ? 'border-brand bg-brand-soft ring-2 ring-brand/25' : 'hover:border-foreground/30',
+                        active ? 'border-ink ring-1 ring-ink' : 'hover:border-foreground/30',
                         s.demoLive && !active && 'border-dashed',
                       )}
                     >
                       <span className="block text-[1.05rem] leading-tight font-extrabold tabular-nums">{fmtRange(s.startAt, s.endAt)}</span>
                       <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                         {s.demoLive ? (
-                          <span className="inline-flex items-center gap-1 font-semibold text-brand">
+                          <span className="inline-flex items-center gap-1 font-semibold text-[#c2410c]">
                             <Radio className="size-3.5" aria-hidden /> Sesi demo juri
                           </span>
                         ) : (
@@ -188,7 +187,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                         )}
                       </span>
                       <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-foreground/10" aria-hidden>
-                        <span className="block h-full rounded-full bg-brand/70" style={{ width: `${pct}%` }} />
+                        <span className="block h-full rounded-full bg-ink/70" style={{ width: `${pct}%` }} />
                       </span>
                     </button>
                   )
@@ -206,7 +205,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                 .map((c) => {
                   const left = selected?.availability.find((a) => a.categoryId === c.id)?.bonusLeft
                   return (
-                    <p key={c.id} className="mt-2 flex items-start gap-2 rounded-xl bg-brand-soft px-3 py-2.5 text-sm text-brand">
+                    <p key={c.id} className="mt-2 flex items-start gap-2 rounded-xl bg-[#ffe7a3] px-3 py-2.5 text-sm">
                       <Gift className="mt-0.5 size-4 shrink-0" aria-hidden />
                       <span>
                         <strong>Bonus {c.name}:</strong> {c.bonusDesc} untuk {c.bonusFirstN} tiket pertama tiap sesi
@@ -215,23 +214,11 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                     </p>
                   )
                 })}
-              <ul className="mt-2 space-y-1 px-1 text-xs text-muted-foreground">
-                {[...new Set(categories.map((c) => c.accessMethod))].map((m) => (
-                  <li key={m}>
-                    <span className="font-semibold text-foreground">{ACCESS_METHOD_LABEL[m]}:</span>{' '}
-                    {m === 'PAID'
-                      ? 'bayar lewat QRIS atau Virtual Account (simulasi).'
-                      : m === 'RECEIPT'
-                        ? 'gratis, tukar struk belanja di tenant SUMMABA.'
-                        : 'gratis, cukup daftar.'}
-                  </li>
-                ))}
-              </ul>
             </section>
 
-            <details className="group rounded-2xl border bg-card">
+            <details className="group rounded-[1.4rem] bg-card shadow-xs">
               <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 font-bold [&::-webkit-details-marker]:hidden">
-                <CircleCheck className="size-5 shrink-0 text-brand" aria-hidden />
+                <CircleCheck className="size-5 shrink-0" aria-hidden />
                 <span className="flex-1">Syarat & ketentuan</span>
                 <span className="text-xs font-semibold text-muted-foreground">{list.length} poin</span>
                 <ChevronDown className="size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" aria-hidden />
@@ -239,7 +226,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
               <ul className="space-y-2 border-t px-4 py-3.5 text-sm">
                 {list.map((t) => (
                   <li key={t} className="flex items-start gap-2.5">
-                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
+                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-ink/40" aria-hidden />
                     <span>{t}</span>
                   </li>
                 ))}

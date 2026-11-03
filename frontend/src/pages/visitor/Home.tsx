@@ -8,7 +8,7 @@ import { ArrowUpRight, CalendarDays, ChevronRight, Hourglass, MapPin, UserRound 
 import { api } from '@/api'
 import type { EventSummary } from '@/api/contract'
 import { CoBrand } from '@/components/common/Brand'
-import { Countdown, DemoNotice, EmptyState, StatusBadge, SundaText } from '@/components/common/bits'
+import { Countdown, EmptyState, StatusBadge, SundaText } from '@/components/common/bits'
 import { Illustration } from '@/components/common/Illustration'
 import { Poster } from '@/components/common/Poster'
 import { POSTER_THEMES } from '@/components/common/posterThemes'
@@ -17,7 +17,7 @@ import { LoadError } from '@/components/visitor/Common'
 import { continuePath, eventInRange, isPendingOrder, priceHint, seatRangeLabel, wibTodayRange, wibWeekRange } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import type { User } from '@/domain/types'
-import { ACCESS_METHOD_LABEL, ORDER_STATUS_LABEL, type Tone } from '@/domain/labels'
+import { ORDER_STATUS_LABEL, type Tone } from '@/domain/labels'
 import { useLive, useNow } from '@/hooks/useLive'
 import { onboardingDone } from '@/lib/intro'
 import { fmtDate, fmtShortDate } from '@/lib/format'
@@ -130,7 +130,7 @@ export default function Home() {
             {featured && <FeaturedCard e={featured} now={now} />}
             {rest.length > 0 && (
               <section aria-labelledby="event-list" className="space-y-3">
-                <h2 id="event-list" className="px-1 text-lg font-extrabold tracking-tight">
+                <h2 id="event-list" className="px-1 font-poster text-[1.9rem] leading-none uppercase">
                   {featured ? 'Event lainnya' : 'Event'}
                 </h2>
                 <ul className="space-y-3" aria-label="Daftar event">
@@ -145,7 +145,6 @@ export default function Home() {
           </>
         )}
 
-        <DemoNotice />
       </div>
     </div>
   )
@@ -205,7 +204,7 @@ function VenueChip({ active, onClick, children }: { active: boolean; onClick: ()
       onClick={onClick}
       className={cn(
         'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold whitespace-nowrap transition',
-        active ? 'border-brand bg-brand text-white' : 'bg-card text-foreground hover:border-foreground/30',
+        active ? 'border-ink bg-ink text-white' : 'bg-card text-foreground hover:border-foreground/30',
       )}
     >
       {children}
@@ -257,7 +256,7 @@ function FeaturedCard({ e, now }: { e: EventSummary; now: Date }) {
       </span>
       <DateTile iso={e.event.startAt} className="absolute top-4 right-4" />
       <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-        <h2 className="text-2xl leading-tight font-extrabold text-balance">{e.event.title}</h2>
+        <h2 className="font-poster text-[2.1rem] leading-[0.95] text-balance uppercase">{e.event.title}</h2>
         <p className="mt-1.5 flex items-center gap-1.5 text-sm text-white/85">
           <MapPin className="size-4 shrink-0" aria-hidden /> {e.venue.name}
         </p>
@@ -278,18 +277,16 @@ function FeaturedCard({ e, now }: { e: EventSummary; now: Date }) {
 
 function EventCard({ e, now }: { e: EventSummary; now: Date }) {
   const av = availabilityOf(e, now)
-  const methods = [...new Set(e.categories.map((c) => c.accessMethod))]
-  const hasDemo = e.sessions.some((s) => s.demoLive)
   return (
     <Link
       to={`/app/e/${e.event.slug}`}
-      className="group flex gap-3.5 rounded-[1.4rem] border bg-card p-3 shadow-xs transition hover:shadow-md active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="group flex gap-3.5 rounded-[1.4rem] bg-card p-3 shadow-xs transition hover:shadow-md active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <div className="relative w-24 shrink-0 self-stretch overflow-hidden rounded-2xl">
         <Poster theme={e.event.posterTheme} title={e.event.title} bare className="absolute inset-0 transition-transform duration-500 ease-(--ease-soft) group-hover:scale-105" />
       </div>
       <div className="min-w-0 flex-1 py-0.5">
-        <p className="text-[0.7rem] font-bold tracking-wide text-brand uppercase">{POSTER_THEMES[e.event.posterTheme].label}</p>
+        <p className="text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{POSTER_THEMES[e.event.posterTheme].label}</p>
         <h3 className="mt-0.5 leading-snug font-bold text-balance">{e.event.title}</h3>
         <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
           <CalendarDays className="size-3.5 shrink-0" aria-hidden /> {dateLabelOf(e)}
@@ -297,12 +294,8 @@ function EventCard({ e, now }: { e: EventSummary; now: Date }) {
         <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
           <MapPin className="size-3.5 shrink-0" aria-hidden /> {e.venue.name}
         </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {e.event.infoOnly ? 'Tanpa tiket' : methods.map((m) => ACCESS_METHOD_LABEL[m]).join(' · ')}
-          {hasDemo ? ' · Sesi demo juri' : ''}
-        </p>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm font-extrabold text-brand">{e.event.infoOnly ? 'Gratis' : priceHint(e.categories)}</span>
+          <span className="text-sm font-extrabold">{e.event.infoOnly ? 'Gratis' : priceHint(e.categories)}</span>
           {av && <StatusBadge tone={av.tone}>{av.label}</StatusBadge>}
         </div>
       </div>

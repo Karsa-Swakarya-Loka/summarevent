@@ -40,14 +40,14 @@ export function StatusLegend({ className, showPriority = true, availableColors }
           {i.visual === 'AVAILABLE' && availableColors && availableColors.length > 1 ? (
             <AvailableSample colors={availableColors} />
           ) : (
-            <SeatSample visual={i.visual} color={i.visual === 'AVAILABLE' && availableColors?.length ? availableColors[0] : '#2563eb'} />
+            <SeatSample visual={i.visual} color={i.visual === 'AVAILABLE' && availableColors?.length ? availableColors[0] : '#0e7c7b'} />
           )}
           {i.label}
         </li>
       ))}
       {showPriority && (
         <li className="flex items-center gap-1.5">
-          <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] bg-[#2563eb] text-[11px] text-white" aria-hidden>
+          <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] bg-[#0e7c7b] text-[11px] text-white" aria-hidden>
             ♿
           </span>
           {PRIORITY_SEAT_LABEL}
@@ -59,8 +59,10 @@ export function StatusLegend({ className, showPriority = true, availableColors }
 
 /** What a category costs, as the legend and the chips show it. */
 function priceLabel(c: TicketCategory) {
-  // a receipt category costs nothing; when its name already says "Tukar Struk", show that price instead of repeating the name
-  return c.accessMethod === 'RECEIPT' ? (accessMethodNote(c) ? 'Tukar struk' : 'Rp0') : rupiah(c.price)
+  // a receipt category costs no money but a minimum spend at the tenants, so that is its price
+  if (c.accessMethod !== 'RECEIPT') return rupiah(c.price)
+  const min = c.receiptRules?.minSpend
+  return min ? `Belanja Rp${min % 1000 === 0 ? `${min / 1000}rb` : new Intl.NumberFormat('id-ID').format(min)}` : 'Tukar struk'
 }
 
 /**
@@ -99,7 +101,7 @@ export function CategoryLegend({
               onClick={() => onPick(c.id)}
               className={cn(
                 'flex min-h-14 shrink-0 snap-start items-center gap-2.5 rounded-2xl border bg-card py-2 pr-4 pl-3 text-left transition active:scale-[0.97]',
-                active ? 'border-brand bg-brand-soft ring-2 ring-brand/25' : 'hover:border-foreground/30',
+                active ? 'border-ink ring-1 ring-ink' : 'hover:border-foreground/30',
                 soldOut && 'opacity-50',
               )}
             >
@@ -165,7 +167,7 @@ export function CategoryLegend({
             onClick={() => onPick(c.id)}
             className={cn(
               'flex min-h-14 gap-3 rounded-xl border bg-card p-3 text-left text-sm transition',
-              active ? 'border-brand ring-2 ring-brand/30' : 'hover:border-foreground/30',
+              active ? 'border-ink ring-1 ring-ink' : 'hover:border-foreground/30',
               soldOut && 'opacity-50',
             )}
           >

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { BellRing, ChevronRight, FlaskConical, Gift, Hourglass, LoaderCircle, TriangleAlert, Users, WandSparkles, Zap } from 'lucide-react'
+import { BellRing, ChevronRight, FlaskConical, Gift, Hourglass, LoaderCircle, TriangleAlert, WandSparkles, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { CategoryAvailability, SeatMapData } from '@/api/contract'
@@ -344,7 +344,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
   const totalText = !category ? '' : category.accessMethod === 'FREE' ? 'Gratis' : rupiahPlain(total)
   const holdMin = category?.accessMethod === 'RECEIPT' ? rules.receiptHoldMin : rules.paymentHoldMin
   const summary = soldOut && category
-    ? `${category.name} habis untuk sesi ini`
+    ? `${category.name} habis`
     : !category
     ? 'Pilih kategori dulu'
     : isGeneral
@@ -354,17 +354,19 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         : 'Belum ada kursi dipilih'
   const subline = soldOut && !closedReason
     ? myEntry
-      ? `Kamu di daftar tunggu, urutan ke-${myEntry.position} untuk ${myEntry.qty} orang. Kami kabari lewat WhatsApp (simulasi).`
-      : `${waitingCount ? `${waitingCount} orang sudah menunggu. ` : ''}Ikut daftar tunggu, kami kabari lewat WhatsApp kalau ada tempat lepas.`
+      ? `Urutan ke-${myEntry.position} di daftar tunggu · ${myEntry.qty} orang`
+      : waitingCount
+        ? `${waitingCount} orang menunggu · kabar lewat WA`
+        : 'Kabar lewat WA kalau ada yang lepas'
     : !category
-    ? 'Ketuk kategori di atas, atau langsung ketuk kursi di denah.'
+    ? 'Ketuk kategori, atau langsung ketuk kursi.'
     : closedReason
       ? closedReason
       : isGeneral
-        ? `Tanpa nomor kursi · ditahan ${holdMin} menit setelah kamu tekan Hayu ngiring`
+        ? `Tanpa nomor kursi · ditahan ${holdMin} menit`
         : count
-          ? `Kursi ditahan ${holdMin} menit setelah kamu tekan Hayu ngiring`
-          : 'Ketuk kursi di denah, atau pakai “Pilihkan kursi berdampingan”.'
+          ? `Ditahan ${holdMin} menit`
+          : 'Ketuk kursi di denah'
   const generalShort = isGeneral && catAvail && !soldOut ? catAvail.available < qty : false
   const canHold = !!category && !closedReason && !pending && (isGeneral ? !generalShort && qty >= 1 : selected.length > 0) && busy !== 'hold'
 
@@ -402,7 +404,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
           <div className="flex items-stretch gap-2">
             <QtyStepper value={qty} max={max} onChange={changeQty} label="Jumlah orang" />
             <Button variant="outline" className="h-auto min-h-12 flex-1 gap-2 px-3 text-left text-sm leading-tight whitespace-normal" onClick={() => void autoPick()} disabled={busy === 'suggest' || !!closedReason}>
-              {busy === 'suggest' ? <LoaderCircle className="size-5 animate-spin" /> : <WandSparkles className="size-5 text-brand" />}
+              {busy === 'suggest' ? <LoaderCircle className="size-5 animate-spin" /> : <WandSparkles className="size-5" />}
               <span>
                 Pilihkan {qty} kursi <span className="whitespace-nowrap">berdampingan</span>
               </span>
@@ -463,7 +465,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         <p className="mx-4 mt-4 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">Event ini tanpa nomor kursi. Pilih kategori di atas.</p>
       ) : null}
 
-      {!(hasLayout && !isGeneral) && <div className="flex-1" />}
+      {!hasLayout && !(category && isGeneral) && <div className="flex-1" />}
 
       <div className="sticky bottom-0 z-20 mt-3 border-t bg-card/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-10px_30px_-18px_rgb(0_0_0/0.35)] backdrop-blur">
         {conflict && (
@@ -495,7 +497,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
           </p>
         )}
         {category?.bonusDesc && !soldOut && bonusLeft > 0 && (
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-brand">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
             <Gift className="size-4 shrink-0" aria-hidden /> Bonus {category.bonusDesc} untuk tiket pertama · sisa {bonusLeft}
           </p>
         )}
@@ -507,7 +509,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
             </p>
             <p className={cn('text-xs', closedReason ? 'font-semibold text-[#a11b1b]' : 'text-muted-foreground')}>{subline}</p>
           </div>
-          {category && count > 0 && <p className="shrink-0 text-2xl font-extrabold tabular-nums">{totalText}</p>}
+          {category && count > 0 && !soldOut && category.accessMethod !== 'RECEIPT' && <p className="shrink-0 text-2xl font-extrabold tabular-nums">{totalText}</p>}
         </div>
         <div className="mt-3 flex items-stretch gap-2">
           {pending ? (
@@ -554,6 +556,13 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
   )
 }
 
+/** Spread `k` of `n` places the same way on every render, a little denser at the front, as people stand at an event. */
+function scatter(n: number, k: number): Set<number> {
+  const weight = (i: number) => ((Math.imul(i + 1, 2654435761) >>> 0) / 2 ** 32) * 0.65 + (i / n) * 0.35
+  return new Set([...Array(n).keys()].sort((a, b) => weight(a) - weight(b)).slice(0, k))
+}
+
+/** A category without seat numbers: its places as a field of dots in front of the stage, the visitor's own in colour. */
 function GeneralPanel({
   category,
   available,
@@ -571,31 +580,68 @@ function GeneralPanel({
   onQty: (n: number) => void
   disabled: boolean
 }) {
+  const cells = Math.max(1, Math.min(total, 96))
+  const per = total > 0 ? total / cells : 1
+  const takenCells = Math.min(cells, Math.round((total - available) / per))
+  const taken = useMemo(() => scatter(cells, takenCells), [cells, takenCells])
+  let mine = available > 0 ? Math.min(cells - takenCells, Math.ceil(qty / per)) : 0
+  const dots = Array.from({ length: cells }, (_, i) => (taken.has(i) ? 'taken' : mine-- > 0 ? 'mine' : 'free'))
   return (
-    <section className="mx-4 mt-3 rounded-2xl border bg-card p-4" aria-label={`Kuota ${category.name}`}>
-      <div className="flex items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: category.color }}>
-          <Users className="size-5" aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <p className="font-bold">{category.name}</p>
-          <p className="text-xs text-muted-foreground">{category.description ?? 'Tanpa nomor kursi'}</p>
+    <section className="mx-4 mt-3 flex flex-1 flex-col rounded-[1.4rem] bg-card p-4 shadow-xs" aria-label={`Kuota ${category.name}`}>
+      <p className="flex items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
+        <span className="size-2.5 shrink-0 rounded-full" style={{ background: category.color }} aria-hidden />
+        {category.name}
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">{category.description ?? 'Tanpa nomor kursi'}</p>
+
+      <div className="flex flex-1 flex-col justify-center py-5" aria-hidden>
+        <div className="mx-auto flex h-7 w-3/4 items-center justify-center rounded-b-[2rem] bg-ink text-[0.6rem] font-bold tracking-[0.3em] text-white/75 uppercase">Depan</div>
+        <div className="mx-auto mt-4 grid w-full max-w-[21rem] grid-cols-12 gap-1.5">
+          {dots.map((d, i) =>
+            d === 'mine' ? (
+              <svg key={i} viewBox="0 0 24 24" className="aspect-square w-full animate-pop rounded-full" style={{ background: category.color }}>
+                <path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <span key={i} className={cn('aspect-square rounded-full', d === 'taken' ? 'bg-ink/15' : 'border-2 border-ink/15')} />
+            ),
+          )}
         </div>
+        <p className="mt-4 flex justify-center gap-4 text-xs text-muted-foreground">
+          {dots.includes('taken') && (
+            <span className="flex items-center gap-1.5">
+              <span className="size-3 rounded-full bg-ink/15" /> Terisi
+            </span>
+          )}
+          {dots.includes('free') && (
+            <span className="flex items-center gap-1.5">
+              <span className="size-3 rounded-full border-2 border-ink/15" /> Kosong
+            </span>
+          )}
+          {dots.includes('mine') && (
+            <span className="flex items-center gap-1.5">
+              <span className="size-3 rounded-full" style={{ background: category.color }} /> Punyamu
+            </span>
+          )}
+        </p>
       </div>
-      <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+
+      <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs text-muted-foreground">Sisa kuota</p>
-          <p className="leading-none">
-            <span className={cn('text-4xl font-extrabold tabular-nums', available === 0 && 'text-status-invalid')}>{available === 0 ? 'Habis' : available}</span>
-            {available > 0 && <span className="text-sm font-semibold text-muted-foreground"> / {total} tempat</span>}
+          <p className="text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">Sisa</p>
+          <p className="font-poster text-[2.6rem] leading-none uppercase tabular-nums">
+            {available === 0 ? (
+              <span className="text-[#a11b1b]">Habis</span>
+            ) : (
+              <>
+                {available}
+                <span className="text-xl text-muted-foreground"> / {total}</span>
+              </>
+            )}
           </p>
         </div>
-        <div className="text-right">
-          <p className="mb-1 text-xs text-muted-foreground">Jumlah orang</p>
-          <QtyStepper value={qty} max={max} onChange={onQty} label="Jumlah orang" className={cn(disabled && 'pointer-events-none opacity-50')} />
-        </div>
+        <QtyStepper value={qty} max={max} onChange={onQty} label="Jumlah orang" className={cn(disabled && 'pointer-events-none opacity-50')} />
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">Tanpa nomor kursi: datang lebih awal untuk posisi terbaik. Setiap orang dapat 1 e-ticket QR.</p>
     </section>
   )
 }

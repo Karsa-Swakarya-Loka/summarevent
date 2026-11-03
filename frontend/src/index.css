@@ -5,6 +5,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource/anton/latin-400.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -19,6 +20,8 @@
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  /* condensed display type for titles, numbers and tickets (Anton, self-hosted) */
+  --font-poster: "Anton", Impact, "Arial Narrow", sans-serif;
 
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
@@ -108,8 +111,8 @@
   --chart-1: #006426;
   --chart-2: #f26f22;
   --chart-3: #f9a61b;
-  --chart-4: #2563eb;
-  --chart-5: #7c3aed;
+  --chart-4: #2d4c8f;
+  --chart-5: #8b2c6a;
   --radius: 0.75rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #231f20;
@@ -135,14 +138,6 @@
   html {
     @apply font-sans;
   }
-}
-
-/* Ticket notch motif (logo + Pass Saya cards) */
-.ticket-notch {
-  --notch: 14px;
-  mask:
-    radial-gradient(circle var(--notch) at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
-    radial-gradient(circle var(--notch) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
 }
 
 /* Top edge of the visitor's floating navigation, measured from the bottom of the screen. */
@@ -213,9 +208,22 @@ img { -webkit-touch-callout: none; }
 @media (display-mode: standalone) {
   html, body { overscroll-behavior-y: none; }
 }
-[data-shell='visitor'] [data-slot='button'].h-14,
-[data-shell='visitor'] [data-slot='button'].h-12 {
-  border-radius: 1rem;
+/*
+ * Visitor app, visual v2: every main action is an ink pill, so the brand colours, the category colours and the
+ * statuses never fight with a button; outlined buttons get an ink line, and card edges a step darker so they read as
+ * cut paper rather than soft shadows.
+ */
+[data-shell='visitor'] {
+  --primary: #231f20;
+  --primary-foreground: #fbfaf7;
+  --ring: #231f20;
+  --border: #ddd6ca;
+}
+[data-shell='visitor'] [data-slot='button'] {
+  border-radius: 999px;
+}
+[data-shell='visitor'] [data-slot='button'][data-variant='outline'] {
+  border-color: #231f20;
 }
 /* the Demo button moves into the app bar on screens that have one, so the floating pill never covers the page */
 body:has([data-demo-header]) [data-demo-float] {
@@ -246,17 +254,18 @@ body:has([data-demo-header]) [data-demo-float] {
 }
 
 /*
- * The Talón e-ticket (adapted from «Talón» by Moxen): card stock with a fine fibre, ink labels, and the shadow that
- * curls the stub while it tears.
+ * The Talón e-ticket (adapted from «Talón» by Moxen): black card stock with silver ink and a fine fibre, the labels and
+ * values of a printed ticket, the barcode, and the shadow that curls the stub while it tears.
  */
-.talon-paper {
-  background: linear-gradient(170deg, #fbf7ee, #f1eadb);
+.talon-card {
+  color: #ededed;
+  background: linear-gradient(170deg, #1d1c1c, #121212);
 }
 .talon-grain {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.45;
+  opacity: 0.35;
   mix-blend-mode: soft-light;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
 }
@@ -268,38 +277,53 @@ body:has([data-demo-header]) [data-demo-float] {
   background: linear-gradient(180deg, rgb(0 0 0 / 0.34), rgb(0 0 0 / 0.08) 30%, transparent 55%, rgb(255 255 255 / 0.16) 82%, transparent);
 }
 .talon-label {
-  font-size: 0.62rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #5b5f55;
+  color: rgb(237 237 237 / 0.6);
 }
 .talon-value {
-  margin-top: 0.2rem;
-  font-size: 0.875rem;
-  font-weight: 800;
+  margin-top: 0.3rem;
+  font-family: var(--font-poster);
+  font-size: 1.3rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
+.talon-chip {
+  flex: none;
+  padding: 0.3rem 0.6rem 0.25rem;
+  border: 1px solid rgb(237 237 237 / 0.22);
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(237 237 237 / 0.75);
+}
+.talon-barcode {
+  font-family: "Libre Barcode 128 Text", monospace;
+  font-size: 2.5rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+/* a small ticket in a list: two notches where its stub begins */
+.ticket-mini {
+  --notch-at: calc(100% - 5.5rem);
+  mask:
+    radial-gradient(circle 9px at var(--notch-at) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle 9px at var(--notch-at) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+}
+/* the order slip: two notches at its perforation, above the seats and the price */
+.ticket-slip {
+  --notch-at: calc(100% - 4.75rem);
+  mask:
+    radial-gradient(circle 10px at 0 var(--notch-at), #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 10px at 100% var(--notch-at), #0000 98%, #000) right / 51% 100% no-repeat;
+}
 
-/* Subtle shine on active passes; disabled for reduced motion */
-@keyframes pass-shine {
-  0% { transform: translateX(-120%) skewX(-18deg); }
-  60%, 100% { transform: translateX(220%) skewX(-18deg); }
-}
-.pass-shine {
-  position: relative;
-  overflow: hidden;
-}
-.pass-shine::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 40%;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
-  animation: pass-shine 4.5s ease-in-out infinite;
-  pointer-events: none;
-}
 @media (prefers-reduced-motion: reduce) {
-  .pass-shine::after { animation: none; display: none; }
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

@@ -124,12 +124,3 @@ export function EmptyState({ icon, title, children, action }: { icon?: ReactNode
 export function Swatch({ color, className }: { color: string; className?: string }) {
   return <span className={cn('inline-block size-3 shrink-0 rounded-[4px]', className)} style={{ background: color }} aria-hidden />
 }
-
-/** "Data contoh" ribbon so nobody mistakes the prototype for live data. */
-export function DemoNotice({ className }: { className?: string }) {
-  return (
-    <div className={cn('rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground', className)}>
-      Prototype dengan data contoh. Pembayaran, OTP, dan pesan WA/email disimulasikan.
-    </div>
-  )
-}

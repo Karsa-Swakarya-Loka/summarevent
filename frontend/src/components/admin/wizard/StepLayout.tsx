@@ -344,7 +344,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] bg-[#2563eb] text-[11px] text-white" aria-hidden>
+                <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] bg-[#0e7c7b] text-[11px] text-white" aria-hidden>
                   ♿
                 </span>
                 <span className="flex-1">{PRIORITY_SEAT_LABEL}</span>

@@ -2,6 +2,7 @@
 // Usage: dev server running (npm run dev), then node e2e/admin.mjs [desktop|mobile]
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import { chromium } from 'playwright-core'
+import { skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'admin')
@@ -11,6 +12,7 @@ const mobile = process.argv[2] === 'mobile'
 const P = mobile ? 'am' : 'ad'
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true })
 const ctx = await browser.newContext(mobile ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, acceptDownloads: true } : { viewport: { width: 1366, height: 900 }, acceptDownloads: true })
+await skipIntro(ctx)
 const page = await ctx.newPage()
 const errors = []
 page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}`) })

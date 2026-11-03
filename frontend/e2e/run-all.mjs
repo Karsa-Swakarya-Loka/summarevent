@@ -6,6 +6,7 @@
 import { spawnSync } from 'node:child_process'
 
 const suites = [
+  ['onboarding', ['e2e/onboarding.mjs']],
   ['visitor', ['e2e/visitor.mjs', 'all']],
   ['admin (desktop)', ['e2e/admin.mjs', 'desktop']],
   ['admin (mobile)', ['e2e/admin.mjs', 'mobile']],

@@ -16,6 +16,8 @@
   },
   "ignorePatterns": [
     "api/**",
-    "dist/**"
+    "dist/**",
+    "src/components/stickers/fun.ts",
+    "src/components/stickers/Sticker.tsx"
   ]
 }

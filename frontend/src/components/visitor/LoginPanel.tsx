@@ -45,6 +45,15 @@ export function LoginPanel({
   const nameRef = useRef<HTMLInputElement>(null)
   const codeRef = useRef<HTMLInputElement>(null)
 
+  // Focus the field of the step that just opened, in the commit that shows it. A focus from a timer could land later,
+  // while the visitor (or a test) is already typing in the next field, and take their typing with it.
+  useEffect(() => {
+    if (sentTo) codeRef.current?.focus()
+  }, [sentTo, simCode])
+  useEffect(() => {
+    if (needName) nameRef.current?.focus()
+  }, [needName])
+
   useEffect(() => {
     if (resendIn <= 0) return
     const t = window.setTimeout(() => setResendIn((s) => s - 1), 1000)
@@ -71,7 +80,6 @@ export function LoginPanel({
       setSimCode(res.simulatedCode)
       setCode('')
       setResendIn(RESEND_SEC)
-      window.setTimeout(() => codeRef.current?.focus(), 60)
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -103,7 +111,6 @@ export function LoginPanel({
     } catch (err) {
       if (err instanceof ApiError && err.code === 'NEED_NAME') {
         setNeedName(true)
-        window.setTimeout(() => nameRef.current?.focus(), 50)
       } else {
         setError(errorMessage(err))
       }

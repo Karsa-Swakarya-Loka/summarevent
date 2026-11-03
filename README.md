@@ -61,16 +61,16 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 
 ## Cara kerja
 
-```mermaid
-flowchart LR
-  subgraph PWA["PWA · React 19 + Vite"]
-    UI["Layar pengunjung,<br/>panitia, petugas"] --> API["api<br/>src/api/index.ts"]
-    API -->|tanpa konfigurasi| MOCK["Mock di browser<br/>adapter.ts + rules.ts"]
-    MOCK --> STORE[("localStorage<br/>+ Web Locks")]
-    API -->|VITE_API_URL| HTTP["Klien HTTP<br/>http.ts"]
-  end
-  HTTP -->|kontrak REST| BE["Backend bersama<br/>Convex, tim backend"]
-```
+<sub>KODE → DIAGRAM · Peta sistem yang menaut ke baris kodenya</sub>
+
+<a href="https://karsa-swakarya-loka.github.io/summarevent/arsitektur.html">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/gambar/arsitektur-gelap.webp" />
+  <img src="docs/gambar/arsitektur-terang.webp" alt="Arsitektur Summarevent: pengunjung, panitia, dan petugas memakai layarnya masing-masing di browser. Semua layar memanggil api. Di versi demo, api diteruskan ke mock di browser yang memakai aturan bisnis, token QR bertanda tangan, dan localStorage bertransaksi. Di versi live, api diteruskan lewat klien HTTP ke backend bersama di Convex." />
+</picture>
+</a>
+
+**[Buka diagram interaktif ↗](https://karsa-swakarya-loka.github.io/summarevent/arsitektur.html)** · [telusuri jalur pesan kursi ↗](https://karsa-swakarya-loka.github.io/summarevent/arsitektur.html#route=pengunjung~penyimpanan) · [sumber JSON](docs/arsitektur.archify.json)
 
 - **Satu kontrak, dua implementasi.** Layar hanya memanggil `api`. Tanpa konfigurasi, `api` adalah mock di browser. Dengan `VITE_API_URL`, `api` memanggil backend lewat HTTP dengan kontrak yang sama persis, yang ditulis di [`docs/API-CONTRACT.md`](docs/API-CONTRACT.md) dan `src/api/contract.ts`.
 - **Aturan bisnis murni.** Hold, kuota, aturan struk, check-in, dan transisi status ada di `src/domain/rules.ts` dengan unit test. Alur per endpoint ada di `src/api/mock/adapter.ts`, dan file itu jadi acuan port untuk backend.
@@ -81,7 +81,7 @@ flowchart LR
 
 ## Mulai lokal
 
-Butuh Node.js 22 atau lebih baru, dan Google Chrome untuk suite end-to-end.
+Butuh Node.js 22.12 atau lebih baru (CI memakai 24), dan Google Chrome untuk suite end-to-end.
 
 ```sh
 git clone https://github.com/Karsa-Swakarya-Loka/summarevent.git
@@ -98,6 +98,7 @@ npm run dev        # http://localhost:5173
 | `npm test` | Unit test logika inti (Vitest) |
 | `npm run e2e` | Suite end-to-end dan aksesibilitas di Chrome, dengan `npm run dev` jalan di terminal lain ([detail](frontend/e2e/README.md)) |
 | `npm run build` | Build produksi ke `dist/` |
+| `npx knip` | Mencari file, export, dan dependency yang tidak terpakai |
 
 Variabel saat build, semuanya opsional:
 
@@ -123,8 +124,8 @@ summarevent/
 │   │   └── test/           # unit test Vitest
 │   ├── e2e/                # suite end-to-end dan aksesibilitas (playwright-core + Chrome)
 │   ├── public/             # ikon PWA, manifest, service worker, gambar pratinjau link
-│   └── scripts/            # screenshot cepat dan generator gambar promo README
-├── docs/                   # kontrak API, brand kit, gambar README
+│   └── scripts/            # screenshot cepat, gambar promo README, gambar pratinjau link
+├── docs/                   # kontrak API, diagram arsitektur, brand kit, gambar README, lisensi pihak ketiga
 ├── scripts/                # cek atribusi AI beserta tesnya
 ├── .githooks/              # commit-msg dan pre-push
 └── AGENTS.md               # aturan kerja untuk manusia dan AI agent
@@ -154,6 +155,20 @@ Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. T
 | --- | --- | --- |
 | Frontend | Vercel, folder `frontend/` | `vercel deploy --prod` dari `frontend/`. Tanpa variabel build, hasilnya versi demo. Dipakai sampai ada domain sendiri. |
 | Backend | Convex, dikelola tim backend | Sedang dibangun mengikuti [kontrak API](docs/API-CONTRACT.md). Setelah siap, frontend cukup di-build dengan `VITE_API_URL`. |
+| Diagram arsitektur | GitHub Pages dari `main` `/docs` | [karsa-swakarya-loka.github.io/summarevent/arsitektur.html](https://karsa-swakarya-loka.github.io/summarevent/arsitektur.html) |
+
+## Dokumentasi
+
+| Dokumen | Isi |
+| --- | --- |
+| [Kontrak API](docs/API-CONTRACT.md) | Endpoint, bentuk data, aturan yang wajib sama dengan mock, kode error, dan uji terima backend |
+| [Diagram arsitektur](https://karsa-swakarya-loka.github.io/summarevent/arsitektur.html) | Peta sistem interaktif yang menaut ke baris kode. Sumbernya [`docs/arsitektur.archify.json`](docs/arsitektur.archify.json) |
+| [Uji end-to-end](frontend/e2e/README.md) | Isi tiap suite, cara menjalankan, dan mode uji terima backend |
+| [Frontend](frontend/README.md) | Skrip bantu: screenshot, gambar promo dan pratinjau link, knip |
+| [Brand](docs/brand/README.md) | Logo, warna, dan aturan pakai |
+| [Aturan kerja](AGENTS.md) | Pembagian kerja, tanpa atribusi AI, aturan frontend, cek sebelum commit |
+
+Diagram dibuat dengan [Archify](https://github.com/tt-a1i/archify) 3.2 (MIT, [lisensi](docs/lisensi/archify-MIT.txt)). Untuk memperbaruinya, ubah `docs/arsitektur.archify.json` dan pin `meta.repository.revision` ke commit yang dikutip. Lalu jalankan `finalize` Archify dengan `--repo-root .`, salin `.archify/arsitektur.html` ke `docs/`, dan ekspor gambar terang serta gelap lewat menu **Ekspor → PNG**, lalu ubah ke WebP selebar 2400 px.
 
 ## Tim
 

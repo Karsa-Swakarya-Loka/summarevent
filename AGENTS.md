@@ -1,6 +1,6 @@
 # Aturan Kerja Summarevent
 
-Repo ini dikerjakan Tim Summarevent untuk Bandung Build Challenge 2026: **Haikal** ([@HaikalFaruq](https://github.com/HaikalFaruq)) di frontend dan **Bintang** ([@bintangfabian](https://github.com/bintangfabian)) di backend, dibantu Shelvia (user testing & UX), Awwal (product & pitch), dan Said (system QA). Kami sering memakai AI agent. Aturan di bawah berlaku untuk semua orang dan untuk agent apa pun yang dipakai.
+Repo ini dikerjakan Tim Summarevent untuk Bandung Build Challenge 2026: **Haikal** ([@HaikalFaruq](https://github.com/HaikalFaruq)) di frontend dan **Bintang** ([@bintangfabian](https://github.com/bintangfabian)) di backend, dibantu **Shelvia** ([@shelviapramodita](https://github.com/shelviapramodita)) di user testing & UX, **Awwal** ([@awwalakhalqin](https://github.com/awwalakhalqin)) di product & pitch, dan **Said** ([@imsaidm](https://github.com/imsaidm)) di system QA. Kami sering memakai AI agent. Aturan di bawah berlaku untuk semua orang dan untuk agent apa pun yang dipakai.
 
 ## 1. Tanpa atribusi AI
 

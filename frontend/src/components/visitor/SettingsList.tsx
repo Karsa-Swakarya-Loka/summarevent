@@ -28,6 +28,7 @@ export function SettingsRow({
   onClick,
   label = false,
   danger = false,
+  chevron = false,
 }: {
   icon: ReactNode
   tint?: string
@@ -38,6 +39,8 @@ export function SettingsRow({
   onClick?: () => void
   label?: boolean
   danger?: boolean
+  /** a row that acts (`onClick`) but reads as opening something */
+  chevron?: boolean
 }) {
   const inner = (
     <>
@@ -49,7 +52,7 @@ export function SettingsRow({
         {sub && <span className="mt-0.5 block text-xs text-muted-foreground">{sub}</span>}
       </span>
       {right}
-      {to && <ChevronRight className="size-5 shrink-0 text-muted-foreground/70" aria-hidden />}
+      {(to || chevron) && <ChevronRight className="size-5 shrink-0 text-muted-foreground/70" aria-hidden />}
     </>
   )
   const cls = 'flex min-h-16 w-full items-center gap-3 px-3.5 py-3 text-left transition'

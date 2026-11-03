@@ -21,8 +21,10 @@ import {
   showDeviceNotification,
 } from '@/lib/pwa'
 import { useVisitor } from './hooks'
+import { SettingsRow } from './SettingsList'
 
-export function AppSetupCard() {
+/** The install and notification rows of the Akun settings list. */
+export function AppSetupRows() {
   const [, rerender] = useState(0)
   useEffect(() => onInstallChange(() => rerender((n) => n + 1)), [])
   const [notify, setNotify] = useState(() => notificationsEnabled())
@@ -47,37 +49,33 @@ export function AppSetupCard() {
   }
 
   return (
-    <section className="rounded-[1.4rem] bg-card p-4 shadow-xs" aria-label="Pasang di HP">
-      <h2 className="flex items-center gap-2 font-bold">
-        <Smartphone className="size-4" aria-hidden /> Pasang di HP
-      </h2>
-      {installed ? (
-        <p className="mt-1 flex items-center gap-1.5 text-sm text-[#0b6b35]">
-          <Check className="size-4" aria-hidden /> Summarevent sudah terpasang di layar utama.
-        </p>
-      ) : canPromptInstall() ? (
-        <>
-          <Button className="mt-3 h-11 w-full" onClick={() => void install()}>
-            Pasang di layar utama
-          </Button>
-        </>
-      ) : isIos() ? (
-        <p className="mt-1 text-sm text-muted-foreground">Safari: Bagikan, lalu Tambah ke Layar Utama.</p>
-      ) : (
-        <p className="mt-1 text-sm text-muted-foreground">Menu browser, lalu Pasang aplikasi.</p>
-      )}
+    <>
+      <SettingsRow
+        icon={<Smartphone />}
+        tint="bg-brand-soft text-[#0b6b35]"
+        title="Pasang di HP"
+        sub={installed ? 'Sudah terpasang di layar utama' : canPromptInstall() ? 'Buka langsung dari layar utama' : isIos() ? 'Safari: Bagikan, lalu Tambah ke Layar Utama' : 'Menu browser, lalu Pasang aplikasi'}
+        right={
+          installed ? (
+            <Check className="size-5 shrink-0 text-[#0b6b35]" aria-label="Terpasang" />
+          ) : canPromptInstall() ? (
+            <Button className="h-11 shrink-0 px-4" onClick={() => void install()}>
+              Pasang
+            </Button>
+          ) : null
+        }
+      />
       {notificationsSupported() && (
-        <label className="mt-4 flex items-start justify-between gap-3 border-t pt-3">
-          <span className="min-w-0">
-            <span className="flex items-center gap-1.5 text-sm font-semibold">
-              <BellRing className="size-4" aria-hidden /> Notifikasi di HP
-            </span>
-            <span className="block text-xs text-muted-foreground">Selama app terbuka (simulasi)</span>
-          </span>
-          <Switch checked={notify} onCheckedChange={(v) => void toggleNotify(v)} aria-label="Notifikasi di HP" />
-        </label>
+        <SettingsRow
+          label
+          icon={<BellRing />}
+          tint="bg-[#e8eefa] text-[#2d4c8f]"
+          title="Notifikasi di HP"
+          sub="Selama app terbuka (simulasi)"
+          right={<Switch checked={notify} onCheckedChange={(v) => void toggleNotify(v)} aria-label="Notifikasi di HP" />}
+        />
       )}
-    </section>
+    </>
   )
 }
 

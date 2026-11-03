@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* scripts/ and e2e/ are not app code (and are not uploaded to Vercel): keep their strings out of the CSS. */
+@source not "../scripts";
+@source not "../e2e";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/plus-jakarta-sans";

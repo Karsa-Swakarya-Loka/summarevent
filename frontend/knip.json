@@ -3,5 +3,6 @@
   "entry": ["e2e/*.mjs", "scripts/*.mjs", "public/sw.js"],
   "ignore": ["src/components/ui/**"],
   "ignoreDependencies": ["axe-core"],
+  "ignoreBinaries": ["cwebp"],
   "ignoreExportsUsedInFile": true
 }

@@ -33,12 +33,13 @@ export function DemoMenu({ className }: { className?: string }) {
 
   return (
     <>
-      <DropdownMenu>
+      {/* not modal: the page behind stays reachable, nothing is hidden from screen readers */}
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
             className={cn(
-              'fixed z-40 flex h-10 items-center gap-1.5 rounded-full bg-ink/90 px-3 text-xs font-semibold text-white shadow-lg ring-1 ring-white/10 backdrop-blur hover:bg-ink',
+              'fixed z-40 flex h-11 items-center gap-1.5 rounded-full bg-ink/90 px-3 text-xs font-semibold text-white shadow-lg ring-1 ring-white/10 backdrop-blur hover:bg-ink',
               className,
             )}
             aria-label="Menu demo"

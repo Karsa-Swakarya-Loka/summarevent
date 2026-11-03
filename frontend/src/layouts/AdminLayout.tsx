@@ -69,7 +69,7 @@ export function AdminLayout() {
           <div className="text-muted-foreground">Panitia · akses demo</div>
           <button
             type="button"
-            className="mt-2 inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+            className="mt-1 inline-flex min-h-9 items-center gap-1 text-muted-foreground hover:text-foreground pointer-coarse:min-h-11"
             onClick={() => {
               api.logout('ADMIN')
               navigate('/')

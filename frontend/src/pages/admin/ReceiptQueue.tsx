@@ -50,7 +50,7 @@ export default function ReceiptQueue() {
               setTab(key)
               setOpenId(null)
             }}
-            className={cn('min-h-9 rounded-md px-4 text-sm font-semibold transition', tab === key ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+            className={cn('min-h-9 rounded-md px-4 text-sm font-semibold transition pointer-coarse:min-h-11', tab === key ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground')}
           >
             {label}
           </button>

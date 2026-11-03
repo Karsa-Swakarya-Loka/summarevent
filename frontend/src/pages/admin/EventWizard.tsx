@@ -53,7 +53,8 @@ function Stepper({ step, onPick, skipped, issuesByStep }: { step: StepId; onPick
                 >
                   {done && !bad ? <Check className="size-4" aria-hidden /> : i + 1}
                 </span>
-                <span className={cn(!active && 'hidden sm:inline')}>{s.label}</span>
+                {/* on a phone only the current step shows its name; the others keep it for screen readers */}
+                <span className={cn(!active && 'sr-only sm:not-sr-only')}>{s.label}</span>
                 {disabled && <span className="hidden text-xs font-normal lg:inline">(tidak perlu)</span>}
               </button>
               {i < STEPS.length - 1 && <span className="h-px w-3 bg-border sm:w-6" aria-hidden />}
@@ -273,7 +274,7 @@ export default function EventWizard() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link to="/admin/events" className="mb-2 inline-flex min-h-9 items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
+      <Link to="/admin/events" className="mb-2 inline-flex min-h-9 items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground pointer-coarse:min-h-11">
         <ArrowLeft className="size-4" /> Daftar event
       </Link>
       <PageHeader

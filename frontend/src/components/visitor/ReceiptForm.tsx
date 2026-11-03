@@ -294,7 +294,7 @@ export function ReceiptForm({
         type="button"
         onClick={() => void samplePhotoOnly()}
         disabled={disabled}
-        className="-mt-2 flex min-h-9 w-full items-center justify-center gap-1.5 text-xs font-semibold text-brand underline-offset-2 hover:underline disabled:opacity-50"
+        className="-mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 text-xs font-semibold text-brand underline-offset-2 hover:underline disabled:opacity-50"
       >
         <ScanText className="size-4" aria-hidden /> Atau coba baca otomatis dari foto struk contoh
       </button>

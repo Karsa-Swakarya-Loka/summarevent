@@ -57,7 +57,7 @@ export function DoubleBookingButton({ className }: { className?: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={cn('inline-flex min-h-9 items-center gap-1.5 text-xs font-semibold text-brand underline-offset-2 hover:underline', className)}
+        className={cn('inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-brand underline-offset-2 hover:underline', className)}
       >
         <ShieldCheck className="size-4" aria-hidden /> Kenapa satu kursi tidak bisa terjual dua kali?
       </button>

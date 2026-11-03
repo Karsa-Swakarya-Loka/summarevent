@@ -27,7 +27,7 @@ function Segmented({ id, value, onChange }: { id: string; value: AccessMethod; o
           aria-checked={value === m}
           onClick={() => onChange(m)}
           className={cn(
-            'flex min-h-9 flex-col items-center justify-center rounded-md px-1 text-sm font-semibold transition focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
+            'flex min-h-9 flex-col items-center justify-center rounded-md px-1 text-sm font-semibold transition pointer-coarse:min-h-11 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
             value === m ? 'bg-card text-foreground shadow-sm ring-1 ring-border' : 'text-muted-foreground hover:text-foreground',
           )}
         >
@@ -176,7 +176,7 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
                         aria-label={`${col.name}${others.has(col.value) ? ' (sudah dipakai kategori lain)' : ''}`}
                         title={col.name}
                         onClick={() => setCat(c.key, { color: col.value })}
-                        className={cn('relative flex size-10 items-center justify-center rounded-lg ring-offset-2 transition focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none', active && 'ring-2 ring-foreground')}
+                        className={cn('relative flex size-10 items-center justify-center rounded-lg ring-offset-2 transition pointer-coarse:size-11 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none', active && 'ring-2 ring-foreground')}
                         style={{ background: col.value }}
                       >
                         {active && <Check className="size-5 text-white" aria-hidden />}
@@ -237,7 +237,7 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
                   value={c.saleStart}
                   aria-invalid={!!err(f('saleStart')) || undefined}
                   onChange={(e) => setCat(c.key, { saleStart: e.target.value })}
-                  className="h-10 w-full min-w-0 rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive"
+                  className="h-10 w-full min-w-0 rounded-lg border border-input bg-card px-2.5 text-sm outline-none pointer-coarse:min-h-11 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive"
                 />
               </Field>
               <Field id={id('close')} label="Penjualan ditutup" error={err(f('saleCloseMin'))} hint="Dihitung dari jam mulai tiap sesi.">

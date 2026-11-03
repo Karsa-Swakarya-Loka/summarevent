@@ -34,13 +34,13 @@ export function NumberInput({
   disabled?: boolean
 }) {
   return (
-    <div className={cn('flex h-10 min-w-0 items-stretch overflow-hidden rounded-lg border border-input bg-card focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50', invalid && 'border-destructive ring-3 ring-destructive/15', disabled && 'opacity-60', className)}>
+    <div className={cn('flex h-10 min-w-0 items-stretch overflow-hidden rounded-lg border border-input bg-card pointer-coarse:h-auto focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50', invalid && 'border-destructive ring-3 ring-destructive/15', disabled && 'opacity-60', className)}>
       {prefix && <span className="flex items-center border-r bg-muted px-2.5 text-sm text-muted-foreground">{prefix}</span>}
       <input
         id={id}
         type="number"
         inputMode="numeric"
-        className="w-full min-w-0 bg-transparent px-2.5 text-sm tabular-nums outline-none disabled:cursor-not-allowed"
+        className="w-full min-w-0 bg-transparent px-2.5 text-sm tabular-nums outline-none disabled:cursor-not-allowed pointer-coarse:min-h-11"
         value={Number.isFinite(value) ? String(value) : ''}
         min={min}
         max={max}

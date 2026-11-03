@@ -9,7 +9,7 @@ import type { EventItem, OrderItem, SeatStatus } from '@/domain/types'
 import { fmtShortDate, wibDate, wibTime } from '@/lib/format'
 
 /** Main demo event (PRD §6) – default selection on every admin screen. */
-export const MAIN_EVENT_ID = 'evt_sangkuriang'
+const MAIN_EVENT_ID = 'evt_sangkuriang'
 
 /** "10.21.33" – WIB wall clock with seconds, for "Diperbarui …" indicators. */
 export function fmtClock(iso: string | Date): string {

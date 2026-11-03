@@ -1,12 +1,8 @@
 /**
- * Storage for the core API (adapter.ts), behind a small driver interface.
- *
- * - Browser (default): localStorage with real transactions. Every write runs inside
- *   `transaction()`, which takes a cross-tab Web Lock (navigator.locks) and re-reads the latest
- *   state before mutating, so two tabs that try to hold the same seat at the same moment are
- *   serialised and exactly one wins.
- * - Server: backend/src/store.ts plugs in a PostgreSQL driver through `setDbDriver()`, so the
- *   very same business logic runs on the backend, with guarded SQL and unique indexes underneath.
+ * Storage for the core API (adapter.ts): localStorage with real transactions. Every write runs
+ * inside `transaction()`, which takes a cross-tab Web Lock (navigator.locks) and re-reads the
+ * latest state before mutating, so two tabs that try to hold the same seat at the same moment
+ * are serialised and exactly one wins.
  */
 import type {
   AppNotification,
@@ -61,13 +57,12 @@ export interface Db {
 }
 
 /** Everything the core API needs from its environment: storage, change events and "who is calling". */
-export interface DbDriver {
+interface DbDriver {
   hasDb(): boolean
   /** Latest committed state (read-only snapshot – do not mutate). */
   readDb(): Db | null
   replaceDb(db: Db): void | Promise<void>
   clearDb(): void | Promise<void>
-  notify(): void
   subscribe(listener: () => void): () => void
   /** Run `fn` on a mutable copy; commit only if it resolves, roll everything back if it throws. */
   transaction<T>(fn: (db: Db) => T | Promise<T>): Promise<T>
@@ -171,7 +166,7 @@ function withLock<T>(fn: () => Promise<T>): Promise<T> {
 const SESSION_KEY = (role: string) => `summarevent:session:${role}`
 const GUEST_KEY = 'summarevent:guest'
 
-export const browserDriver: DbDriver = {
+const browserDriver: DbDriver = {
   hasDb: () => readRaw() != null,
   readDb: browserReadDb,
   replaceDb(db) {
@@ -191,7 +186,6 @@ export const browserDriver: DbDriver = {
     cacheRaw = null
     cacheDb = null
   },
-  notify: browserNotify,
   subscribe(listener) {
     wireCrossTab()
     const h = () => listener()
@@ -258,18 +252,12 @@ export const browserDriver: DbDriver = {
 /* active driver                                                       */
 /* ================================================================== */
 
-let driver: DbDriver = browserDriver
-
-/** The backend calls this once at startup with its PostgreSQL driver. */
-export function setDbDriver(next: DbDriver) {
-  driver = next
-}
+const driver: DbDriver = browserDriver
 
 export const hasDb = () => driver.hasDb()
 export const readDb = () => driver.readDb()
 export const replaceDb = (db: Db) => driver.replaceDb(db)
 export const clearDb = () => driver.clearDb()
-export const notify = () => driver.notify()
 export const subscribe = (listener: () => void) => driver.subscribe(listener)
 export const transaction = <T>(fn: (db: Db) => T | Promise<T>): Promise<T> => driver.transaction(fn)
 export const getSessionUserId = (role: string) => driver.getSessionUserId(role)

@@ -4,6 +4,9 @@ Two seat blocks (rounded square, split in two colours) with an S-shaped aisle be
 Refinement vs. the concept: true semicircle bends, round aisle ends that stop inside the blocks
 (no sharp mouths), friendlier corner radius, baked outlines (no clip, no stroke).
 Canvas 256×256; the mark occupies 40…216.
+
+Regenerates the SVGs next to this file:
+  pip install fonttools && python3 generate_logo_kit.py path/to/PlusJakartaSans[wght].ttf
 """
 import math, os, sys
 from fontTools.ttLib import TTFont
@@ -11,7 +14,7 @@ from fontTools.varLib import instancer
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kit")
+OUT = os.path.dirname(os.path.abspath(__file__))
 FONT = sys.argv[1]
 GREEN, GREEN_DARK, GREEN_LIGHT = "#006426", "#004D1D", "#0B7A35"
 ORANGE, CREAM, WHITE, INK = "#F26F22", "#FFF6E6", "#FFFFFF", "#111111"

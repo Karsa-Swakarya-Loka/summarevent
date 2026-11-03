@@ -1,0 +1,53 @@
+name: No AI attribution
+
+# Commit dan PR tidak boleh memuat atribusi AI (AGENTS.md bagian 1).
+# Job no-ai-attribution wajib lolos sebelum apa pun masuk ke main (branch protection).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  no-ai-attribution:
+    name: no-ai-attribution
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Uji pola cek
+        run: scripts/test-check-no-ai.sh
+
+      - name: Cek author, committer, dan pesan commit
+        env:
+          BEFORE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ -n "$PR_BASE" ]; then
+            range="$PR_BASE..$PR_HEAD"
+          elif [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            range="$BEFORE..$GITHUB_SHA"
+          else
+            # Push pertama atau dijalankan manual: seluruh riwayat.
+            range="$GITHUB_SHA"
+          fi
+          echo "Rentang: $range"
+          scripts/check-no-ai.sh --revs "$range"
+
+      - name: Cek judul dan deskripsi PR
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n\n%s\n' "$PR_TITLE" "$PR_BODY" > "$RUNNER_TEMP/pr.txt"
+          scripts/check-no-ai.sh --text-file "$RUNNER_TEMP/pr.txt"

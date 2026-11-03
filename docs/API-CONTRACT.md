@@ -1,12 +1,10 @@
-# Summarevent — Kontrak API untuk Backend
+# Summarevent — Kontrak API
 
 Frontend jalan penuh dengan **mock di browser** (`frontend/src/api/mock`) dan juga dengan backend lewat
-`frontend/src/api/http.ts` tanpa mengubah satu layar pun. Dokumen ini kontraknya.
-
-**Implementasi acuan sudah ada di [`backend/`](../backend/README.md)** (Node + Hono + PostgreSQL): menjalankan
-logika inti yang sama di server, dengan hold/konfirmasi/tiket/pembayaran dijaga SQL. Lolos 13 tes backend, uji
-rebutan 100 request lintas 2 server, dan ketujuh suite end-to-end frontend dalam mode backend. Semua path di bawah
-berada di bawah prefix `/api` (contoh: `https://summarevent-live.vercel.app/api/events`).
+`frontend/src/api/http.ts`, tanpa mengubah satu layar pun. Dokumen ini kontrak di antara keduanya. Backend apa pun
+(saat ini sedang dibangun di Convex oleh tim backend) cukup menyediakan endpoint di bawah, lalu frontend di-build
+dengan `VITE_API_URL` yang menunjuk ke prefix-nya: `VITE_API_URL=https://api.contoh.id/api` berarti
+`GET https://api.contoh.id/api/events`.
 
 - Sumber kebenaran tipe: `frontend/src/domain/types.ts` (entitas) dan `frontend/src/api/contract.ts` (DTO).
 - Logika bisnis yang harus di-port ada di `frontend/src/domain/rules.ts` (fungsi murni) dan
@@ -15,7 +13,8 @@ berada di bawah prefix `/api` (contoh: `https://summarevent-live.vercel.app/api/
 - Semua waktu ISO 8601 UTC. Uang = integer rupiah. Zona waktu tampilan: Asia/Jakarta (WIB).
 - Error: HTTP 4xx dengan body `{ "code": "HOLD_EXPIRED", "message": "Waktu habis, kursi sudah dilepas…" }`.
   `message` ditampilkan apa adanya ke pengguna, jadi tulis dalam bahasa Indonesia dan jelaskan cara memperbaikinya.
-- Database wajib PostgreSQL (UPDATE bersyarat, transaksi, partial unique index).
+- CORS: izinkan origin app beserta header `Content-Type`, `Authorization`, dan `X-Guest-Id`.
+- Uji terimanya adalah suite end-to-end frontend dalam mode backend, lihat [bagian terakhir](#uji-terima).
 
 ## Auth (OTP disimulasikan)
 
@@ -105,37 +104,28 @@ login, bukan error), lalu klien mengirim ulang dengan `name`.
 
 ## Aturan yang wajib sama persis dengan mock
 
-**Pencegahan pemesanan ganda (PRD §8)**
-```sql
--- 1. Hold all-or-nothing, dalam transaksi
-UPDATE session_seats
-SET status = 'HELD', order_id = $1,
-    hold_expires_at = now() + make_interval(mins => $4)
-WHERE session_id = $2 AND seat_id = ANY($3)
-  AND (status = 'AVAILABLE'
-       OR (status = 'HELD' AND hold_expires_at < now()));
--- rowCount < jumlah kursi → ROLLBACK, balas CONFLICT + saran kursi terdekat
+**Pencegahan pemesanan ganda (PRD §8).** Lima invarian ini dijaga di dalam transaksi backend, bukan hanya di
+kode yang memanggilnya:
 
--- 3. Konfirmasi bersyarat
-UPDATE session_seats SET status = 'SOLD'
-WHERE order_id = $1 AND status = 'HELD' AND hold_expires_at > now();
--- rowCount < jumlah kursi pesanan → ROLLBACK, HOLD_EXPIRED
-
--- 4. Pengaman terakhir
-CREATE UNIQUE INDEX one_ticket_per_seat ON tickets (session_id, seat_id)
-  WHERE status <> 'CANCELLED' AND seat_id IS NOT NULL;
-```
+1. **Hold all-or-nothing.** Semua kursi pesanan ditahan dalam satu transaksi, dan hanya kalau masing-masing masih
+   `AVAILABLE` atau hold-nya sudah lewat waktu. Satu saja bentrok, tidak ada yang ditahan: balas `CONFLICT` beserta
+   `conflictSeatIds` dan saran kursi terdekat.
+2. **Batas waktu tahan.** Hold yang lewat waktu dianggap `AVAILABLE` saat dibaca, dan dirapikan berkala.
+3. **Konfirmasi bersyarat.** Pembayaran atau persetujuan struk hanya mengubah kursi jadi `SOLD` kalau hold masih milik
+   pesanan itu dan belum lewat waktu. Kalau tidak, `409 HOLD_EXPIRED`.
+4. **Satu tiket aktif per kursi per sesi.** Pengaman terakhir di lapisan data, kalau ada bug di atasnya.
+5. **Idempotency key.** Pembayaran dengan key yang sama selalu menghasilkan satu pembayaran.
 - Hold: 10 menit (bayar), 30 menit (tukar struk). Job tiap 1 menit mengubah pesanan lewat waktu jadi `EXPIRED` dan melepas kursi; query baca tetap memakai lazy expiry.
 - Kategori tanpa nomor kursi: `filled + qty <= quota` dihitung dari pesanan CONFIRMED + pesanan menunggu yang hold-nya masih aktif.
 - Satu akun maksimal satu pesanan **menunggu** per sesi. Maks kursi per pesanan dari `event.rules.maxSeatsPerOrder`.
 - Pembayaran memakai `idempotencyKey` unik; permintaan ulang dengan key yang sama mengembalikan hasil yang sama.
-- Satu tiket = satu kursi = satu QR. Token QR: `SEV1.<ticketId>.<qrVersion>.<HMAC-SHA256 base64url, 22 char>` — secret hanya di server.
-- Check-in memakai `SELECT … FOR UPDATE` pada tiket. Urutan cek: token valid → tiket ada & versi cocok → tidak dibatalkan → event sama → belum dipakai (kecuali boleh keluar-masuk) → sesi sama → di dalam jendela check-in.
+- Satu tiket = satu kursi = satu QR. Token QR: `SEV1.<ticketId>.<qrVersion>.<HMAC-SHA256 base64url, 22 char>`, dengan secret yang hanya ada di server.
+- Check-in mengunci tiketnya di dalam transaksi, jadi dua petugas yang memindai QR yang sama berbarengan hanya menghasilkan satu `VALID`. Urutan cek: token valid → tiket ada & versi cocok → tidak dibatalkan → event sama → belum dipakai (kecuali boleh keluar-masuk) → sesi sama → di dalam jendela check-in.
 - Aturan struk R1–R4, R6: lihat `checkReceiptRules` di `domain/rules.ts` (pesan error ikut dari sana).
-- Notifikasi (WA/email) cukup disimpan di tabel `notifications` — tidak dikirim sungguhan. Kolom opsional `order_id` dipakai untuk menghapus pengingat terjadwal saat pesanan dibatalkan.
+- Notifikasi (WA/email) cukup disimpan, tidak dikirim sungguhan. Field opsional `orderId` dipakai untuk menghapus pengingat terjadwal saat pesanan dibatalkan.
 - **Bonus N pembeli pertama (AD-12)**: kategori dengan `bonusFirstN` + `bonusDesc`; saat konfirmasi, tiket ke-1…N per sesi per kategori (tiket non-batal yang sudah punya bonus dihitung) diberi `bonus = bonusDesc`.
-- **Daftar tunggu (PV-14)**: tabel `waitlist (id, user_id, session_id, category_id, qty, status WAITING|NOTIFIED|LEFT, created_at, notified_at)`. Setiap kali tempat lepas (hold kedaluwarsa, pesanan batal, struk ditolak), kabari orang terdepan yang jumlahnya muat lewat WA (simulasi), tanpa menahan tempat.
-- **Akun petugas (AD-13)**: `users.active` (default true); check-in dari akun nonaktif ditolak.
+- **Daftar tunggu (PV-14)**: entri `{ id, userId, sessionId, categoryId, qty, status: WAITING|NOTIFIED|LEFT, createdAt, notifiedAt }`. Setiap kali tempat lepas (hold kedaluwarsa, pesanan batal, struk ditolak), kabari orang terdepan yang jumlahnya muat lewat WA (simulasi), tanpa menahan tempat.
+- **Akun petugas (AD-13)**: user punya `active` (default true); check-in dari akun nonaktif ditolak.
 - **OCR struk (PV-16)** berjalan di browser (tesseract.js); backend tidak perlu endpoint khusus.
 
 ## Kode error
@@ -145,7 +135,11 @@ CREATE UNIQUE INDEX one_ticket_per_seat ON tickets (session_id, seat_id)
 DUPLICATE_PAYMENT, ALREADY_USED · `429` RATE_LIMIT · `503` NOT_READY. Klien menampilkan `message` apa adanya; kalau
 server tidak terjangkau, klien membuat error `OFFLINE` sendiri.
 
-## Uji beban (untuk QA)
-`qa/k6-hold-race.js` menembak 100 hold bersamaan ke kursi yang sama. Hasil yang diharapkan: tepat 1 `ok: true`.
-Tanpa k6: `node qa/race-two-servers.mjs` menembak 100 hold yang dibagi ke dua instance API (hasil terakhir: 1 berhasil,
-99 bentrok, 184 ms, kedua server melihat status yang sama).
+## Uji terima
+
+- Suite end-to-end frontend dalam mode backend lolos semua:
+  `API_URL=https://alamat-backend/api BASE=https://alamat-app npm run e2e` (lihat
+  [`frontend/e2e/README.md`](../frontend/e2e/README.md)). Data di-reset lewat `POST /demo/reset` sebelum tiap suite.
+- 100 hold bersamaan untuk satu kursi: tepat 1 `ok: true`, 99 `CONFLICT`, dan semua pembaca melihat kursi itu `HELD`.
+- Dua pesanan yang tumpang tindih (C5–C6 dan C6–C7) dikirim berbarengan: satu berhasil utuh, yang lain gagal utuh.
+- QR yang sama dipindai dua petugas berbarengan: tepat satu `VALID`.

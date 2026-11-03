@@ -1,12 +1,12 @@
-// PT-07 scan offline (versi live saja). Butuh app mode live + API:
-//   API_URL=http://localhost:8787/api BASE=http://localhost:5174 node e2e/offline.mjs
+// PT-07 scan offline, khusus backend: app di-build dengan VITE_API_URL, lalu
+//   API_URL=https://alamat-backend/api BASE=https://alamat-app node e2e/offline.mjs
 // Alur: HP petugas menyimpan daftar tiket → sinyal putus → Valid / Sudah digunakan / Tidak valid tetap jalan →
 // sinyal kembali → antrean terkirim; tiket yang lebih dulu dipindai pintu lain muncul sebagai konflik.
 import { chromium } from 'playwright-core'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const BASE = process.env.BASE || 'http://localhost:5174'
+const BASE = process.env.BASE || 'http://localhost:5173'
 const API = process.env.API_URL
 if (!API) {
   console.log('SKIP offline: hanya untuk versi live (set API_URL)')

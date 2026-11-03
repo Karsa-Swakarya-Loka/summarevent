@@ -1,8 +1,8 @@
 // Runs every end-to-end suite against a running app (default http://localhost:5173).
 //   npm run dev            # in another terminal (or BASE=https://your-deploy npm run e2e)
 //   npm run e2e
-// Backend mode: API_URL=http://localhost:8787/api BASE=http://localhost:5174 npm run e2e
-//   (the app must be built/served with VITE_API_URL=API_URL; the data is reset before every suite)
+// Backend mode: API_URL=https://backend/api BASE=https://app npm run e2e
+//   (the app must be built with VITE_API_URL=API_URL; the data is reset before every suite)
 import { spawnSync } from 'node:child_process'
 
 const suites = [
@@ -13,6 +13,7 @@ const suites = [
   ['wizard (mobile)', ['e2e/wizard.mjs', 'mobile']],
   ['staff', ['e2e/staff.mjs']],
   ['staff & admin P1', ['e2e/staff-admin-p1.mjs']],
+  ['a11y (WCAG 2.1 AA)', ['e2e/a11y.mjs']],
   ...(process.env.API_URL ? [['offline scan (live)', ['e2e/offline.mjs']]] : []),
 ]
 const results = []

@@ -48,7 +48,7 @@ function writeJson(key: string, value: unknown) {
   }
 }
 
-export const loadManifest = (sessionId: string) => readJson<OfflineManifest>(MANIFEST_KEY(sessionId))
+const loadManifest = (sessionId: string) => readJson<OfflineManifest>(MANIFEST_KEY(sessionId))
 export const loadQueue = (): QueuedScan[] => readJson<QueuedScan[]>(QUEUE_KEY) ?? []
 function saveQueue(q: QueuedScan[]) {
   writeJson(QUEUE_KEY, q)

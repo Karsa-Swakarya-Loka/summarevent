@@ -5,10 +5,6 @@ import { cn } from '@/lib/utils'
  * Summarevent mark. Artwork lives in /public/brand so the logo can be swapped
  * (logo kit) without touching code.
  */
-export function BrandSymbol({ className, title = 'Summarevent' }: { className?: string; title?: string }) {
-  return <img src="/brand/summarevent-symbol.svg" alt={title} className={cn('size-8 select-none', className)} draggable={false} />
-}
-
 /** The app icon exactly as it appears on a phone home screen (green tile). */
 export function BrandAppIcon({ className }: { className?: string }) {
   return <img src="/brand/summarevent-app-icon.svg" alt="Ikon app Summarevent" className={cn('size-16 select-none', className)} draggable={false} />

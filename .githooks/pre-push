@@ -1,0 +1,24 @@
+#!/bin/sh
+# Cek author, committer, dan pesan setiap commit yang akan di-push (AGENTS.md bagian 1).
+# Aktif otomatis lewat `npm install` di frontend/, atau sekali per clone: git config core.hooksPath .githooks
+
+check="$(git rev-parse --show-toplevel)/scripts/check-no-ai.sh"
+status=0
+
+while read -r _ local_sha _ remote_sha; do
+  # Menghapus branch di remote: tidak ada commit yang dikirim.
+  case $local_sha in *[!0]*) ;; *) continue ;; esac
+
+  case $remote_sha in
+    *[!0]*)
+      if git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+        "$check" --revs "$remote_sha..$local_sha" || status=1
+        continue
+      fi
+      ;;
+  esac
+  # Branch baru, atau ujung remote belum ada di lokal.
+  "$check" --revs "$local_sha" --not --remotes || status=1
+done
+
+exit $status

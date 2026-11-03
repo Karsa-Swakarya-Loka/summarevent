@@ -83,7 +83,7 @@ export function key(prefix = 'k'): string {
   return `${prefix}${seq}_${Math.random().toString(36).slice(2, 7)}`
 }
 
-export const DEFAULT_RULES: EventRules = {
+const DEFAULT_RULES: EventRules = {
   maxSeatsPerOrder: 4,
   paymentHoldMin: 10,
   receiptHoldMin: 30,

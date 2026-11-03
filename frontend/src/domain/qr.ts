@@ -2,29 +2,22 @@
  * Signed QR tokens (PRD §11): the QR holds ticket id + qr_version + an HMAC, so it
  * cannot be guessed or forged. Format: `SEV1.<ticketId>.<qrVersion>.<signature>`.
  *
- * In the frontend-only prototype the key lives in the bundle (demo only). The real
- * backend signs and verifies server-side with a secret the browser never sees.
+ * The demo key lives in the bundle, which is fine for sample data only: a real backend signs
+ * and verifies server-side with a secret the browser never sees.
  */
 const DEMO_SECRET = 'summarevent-demo-secret-2026'
 const PREFIX = 'SEV1'
 
-let secret = DEMO_SECRET
 let keyPromise: Promise<CryptoKey> | null = null
 function key(): Promise<CryptoKey> {
   keyPromise ??= crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(secret),
+    new TextEncoder().encode(DEMO_SECRET),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify'],
   )
   return keyPromise
-}
-
-/** Backend only: sign QR tokens with a server-side secret (env QR_SECRET) instead of the demo key. */
-export function setQrSecret(next: string) {
-  secret = next
-  keyPromise = null
 }
 
 function b64url(buf: ArrayBuffer): string {

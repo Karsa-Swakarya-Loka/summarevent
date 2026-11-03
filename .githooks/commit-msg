@@ -1,0 +1,5 @@
+#!/bin/sh
+# Tolak pesan commit yang memuat atribusi AI (AGENTS.md bagian 1).
+# Aktif otomatis lewat `npm install` di frontend/, atau sekali per clone: git config core.hooksPath .githooks
+
+exec "$(git rev-parse --show-toplevel)/scripts/check-no-ai.sh" --message-file "$1"

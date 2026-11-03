@@ -6,7 +6,6 @@
 import { fmtDayMonth, rupiahPlain, wibDate } from '@/lib/format'
 import type { ReceiptInput, RuleCheck } from '@/api/contract'
 import type {
-  EventItem,
   EventRules,
   Order,
   Receipt,
@@ -291,10 +290,6 @@ export function receiptChecksPass(checks: RuleCheck[]): boolean {
 }
 
 /* ---------------- Misc ---------------- */
-
-export function categoryForSeat(event: EventItem, seatId: string): string | null {
-  return event.seatAssignments[seatId]?.categoryId ?? null
-}
 
 const ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
 export function randomCode(prefix: string, len = 6): string {

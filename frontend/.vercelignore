@@ -1,9 +1,9 @@
 node_modules
 dist
-e2e/out
-shots
-scripts/tmp
-.DS_Store
+e2e
+scripts
+knip.json
 *.log
 .env*
 .vercel
+.DS_Store

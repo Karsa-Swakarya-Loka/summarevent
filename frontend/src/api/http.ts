@@ -4,7 +4,7 @@
  * endpoints; the UI does not change.
  */
 import { ApiError, type Api } from './contract'
-import { browserDriver } from './mock/db'
+import { clearClientSessions, guestId } from './mock/db'
 import type { Role, User } from '@/domain/types'
 
 const TOKEN_KEY = (role: Role) => `summarevent:token:${role}`
@@ -46,7 +46,7 @@ export function createHttpApi(baseUrl: string): Api {
         headers: {
           'Content-Type': 'application/json',
           // anonymous visitor id: seats can be held before login, then claimed at OTP verify
-          'X-Guest-Id': browserDriver.guestId(),
+          'X-Guest-Id': guestId(),
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: body === undefined ? undefined : JSON.stringify(body),
@@ -165,7 +165,7 @@ export function createHttpApi(baseUrl: string): Api {
           store(TOKEN_KEY(role), null)
           store(USER_KEY(role), null)
         }
-        browserDriver.clearClientSessions()
+        clearClientSessions()
       },
       fakeBuyer: (sessionId, categoryId, seatIds) => req('POST', `/demo/sessions/${sessionId}/fake-buyer`, { category_id: categoryId, seat_ids: seatIds }),
       expireHold: (orderId) => req('POST', `/demo/orders/${orderId}/expire`),

@@ -53,7 +53,7 @@ export function fmtDayMonth(ymd: string): string {
   return new Intl.DateTimeFormat('id-ID', { timeZone: 'UTC', day: 'numeric', month: 'short' }).format(new Date(Date.UTC(y, m - 1, d)))
 }
 
-export function countdownParts(ms: number): { d: number; h: number; m: number; s: number } {
+function countdownParts(ms: number): { d: number; h: number; m: number; s: number } {
   const t = Math.max(0, Math.floor(ms / 1000))
   return { d: Math.floor(t / 86400), h: Math.floor((t % 86400) / 3600), m: Math.floor((t % 3600) / 60), s: t % 60 }
 }

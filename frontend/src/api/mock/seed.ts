@@ -27,11 +27,11 @@ import type {
 import type { Db } from './db'
 
 /** WIB wall-clock → ISO (UTC). */
-export function wib(date: string, time: string): string {
+function wib(date: string, time: string): string {
   return new Date(`${date}T${time}:00+07:00`).toISOString()
 }
 
-export const DEFAULT_RULES: EventRules = {
+const DEFAULT_RULES: EventRules = {
   maxSeatsPerOrder: 4,
   paymentHoldMin: 10,
   receiptHoldMin: 30,
@@ -41,7 +41,7 @@ export const DEFAULT_RULES: EventRules = {
   reentryAllowed: false,
 }
 
-export function defaultReceiptRules(excludedTenantIds: string[]): ReceiptRules {
+function defaultReceiptRules(excludedTenantIds: string[]): ReceiptRules {
   return {
     minSpend: 300_000,
     allowMultiple: false,

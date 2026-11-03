@@ -16,7 +16,7 @@ import { seatLabel } from '@/domain/rules'
 import type { Seat, SeatStatus, TicketCategory } from '@/domain/types'
 import { cn } from '@/lib/utils'
 
-export const SEAT_UNIT = 34
+const SEAT_UNIT = 34
 const SEAT = 28
 const PAD_X = 34
 const TOP = 78
@@ -273,8 +273,8 @@ export function SeatMap({
   )
 }
 
-/** One seat drawing. Exported for the legend so the legend matches the map exactly. */
-export function SeatShape({ visual, color }: { visual: SeatVisual; color: string }) {
+/** One seat drawing, shared by the map and the legend samples so both always match. */
+function SeatShape({ visual, color }: { visual: SeatVisual; color: string }) {
   const r = 7
   switch (visual) {
     case 'AVAILABLE':

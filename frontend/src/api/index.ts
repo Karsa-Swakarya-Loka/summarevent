@@ -2,14 +2,14 @@
  * The single API instance used by the UI.
  * - Demo version (default): in-browser mock – works offline, every browser has its own sample data.
  * - Live version: the backend over HTTP (same contract), shared by every phone and laptop. Used when
- *   VITE_API_URL is set at build time, or when the app is opened on one of the live host names
- *   (VITE_LIVE_HOSTS, default summarevent-live.vercel.app), where the API sits on the same origin at /api.
+ *   VITE_API_URL is set at build time, or when the app is opened on one of the hosts listed in
+ *   VITE_LIVE_HOSTS, where the API sits on the same origin at /api.
  */
 import type { Api } from './contract'
 import { createHttpApi } from './http'
 import { createMockApi, ensureMockDb, startMockMaintenance } from './mock/adapter'
 
-const LIVE_HOSTS = ((import.meta.env.VITE_LIVE_HOSTS as string | undefined) ?? 'summarevent-live.vercel.app')
+const LIVE_HOSTS = ((import.meta.env.VITE_LIVE_HOSTS as string | undefined) ?? '')
   .split(',')
   .map((h) => h.trim())
   .filter(Boolean)

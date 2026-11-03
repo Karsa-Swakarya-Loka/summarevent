@@ -3,7 +3,7 @@ import type { EventSummary, OrderDetail } from '@/api/contract'
 import type { Order, OrderStatus, Seat, Session, TicketCategory } from '@/domain/types'
 import { fmtRange, fmtShortDate, rupiahPlain, wibDate } from '@/lib/format'
 
-export const PENDING_STATUSES: OrderStatus[] = ['AWAITING_PAYMENT', 'AWAITING_VERIFICATION']
+const PENDING_STATUSES: OrderStatus[] = ['AWAITING_PAYMENT', 'AWAITING_VERIFICATION']
 export const isPendingOrder = (o: Pick<Order, 'status'>) => PENDING_STATUSES.includes(o.status)
 
 /** "C7–C10" for a contiguous run in one row, otherwise "C7, C9, D2". */

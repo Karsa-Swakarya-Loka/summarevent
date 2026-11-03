@@ -1,14 +1,13 @@
 # Uji end-to-end
 
-Skrip ini menjalankan alur nyata di Chrome (headless) lewat `playwright-core`, memakai Chrome yang sudah
-terpasang. Setiap skrip mulai dari profil browser baru, jadi data demo selalu segar.
+Alur nyata di Chrome headless lewat `playwright-core`, memakai Chrome yang sudah terpasang. Setiap suite mulai dari
+profil browser baru, jadi data demo selalu segar. Suite gagal kalau ada error di console browser.
 
-```bash
-npm run dev          # terminal 1
-npm run e2e          # terminal 2: semua suite, hasil PASS/FAIL per suite
-node e2e/visitor.mjs conflict   # satu alur saja
-BASE=https://alamat-deploy npm run e2e   # uji hasil deploy
-API_URL=http://localhost:8787/api BASE=http://localhost:5174 npm run e2e   # versi live (app dengan VITE_API_URL), data di-reset tiap suite
+```sh
+npm run dev                              # terminal 1
+npm run e2e                              # terminal 2: semua suite, hasil PASS/FAIL per suite
+node e2e/visitor.mjs conflict            # satu alur saja
+BASE=https://summarevent.vercel.app npm run e2e   # uji hasil deploy
 ```
 
 | Suite | Yang diuji |
@@ -17,8 +16,20 @@ API_URL=http://localhost:8787/api BASE=http://localhost:5174 npm run e2e   # ver
 | `admin.mjs` | Setujui struk, minta revisi, tandai lunas, unduh 2 CSV (cek BOM dan isi), peta kursi live, layar laptop dan HP |
 | `wizard.mjs` | Buat event bernomor kursi (2 kategori, preset tukar struk, denah 6×10, 1 kursi diblokir, 2 sesi), publish, buka di app pengunjung |
 | `staff.mjs` | Valid, Sudah digunakan, Tidak valid, Sesi lain, Di luar jam check-in, cari manual, check-in rombongan, fallback kamera |
-| `offline.mjs` | Versi live saja (`API_URL`): sinyal putus → Valid / Sudah digunakan / Tidak valid tetap jalan dari daftar tiket di HP, antrean terkirim saat online, tiket yang lebih dulu dipindai pintu lain muncul sebagai konflik |
 | `staff-admin-p1.mjs` | Panitia menambah dan menonaktifkan akun petugas, petugas menyetujui struk di desk, ganti akun petugas |
+| `a11y.mjs` | axe-core (WCAG 2.1 A + AA) di 18 layar ketiga peran, dan target sentuh kursi minimal 44 px setelah denah di-zoom |
+| `offline.mjs` | Khusus backend (`API_URL`): sinyal putus, scan tetap jalan dari daftar tiket di HP, antrean terkirim saat online, tiket yang lebih dulu dipindai pintu lain muncul sebagai konflik |
 
-Variabel: `BASE` (alamat app), `E2E_OUT` (folder screenshot, default `e2e/out/`, tidak masuk git),
-`CHROME_PATH` (lokasi Chrome kalau bukan bawaan macOS). Suite gagal kalau ada error di console browser.
+## Dengan backend
+
+Suite yang sama menjadi uji terima untuk backend yang mengikuti [kontrak API](../../docs/API-CONTRACT.md). Jalankan app
+yang di-build dengan `VITE_API_URL`, lalu:
+
+```sh
+API_URL=https://alamat-backend/api BASE=https://alamat-app npm run e2e
+```
+
+Data di backend di-reset (`POST /demo/reset`) sebelum tiap suite, dan suite `offline.mjs` ikut dijalankan.
+
+Variabel: `BASE` (alamat app, default `http://localhost:5173`), `API_URL` (backend), `E2E_OUT` (folder screenshot,
+default `e2e/out/`, tidak masuk git), `CHROME_PATH` (lokasi Chrome kalau bukan bawaan macOS).

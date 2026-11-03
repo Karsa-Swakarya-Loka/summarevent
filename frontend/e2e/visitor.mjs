@@ -9,6 +9,8 @@ const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'visitor')
 const BASE = process.env.BASE || 'http://localhost:5173'
 fs.mkdirSync(OUT, { recursive: true })
 const only = process.argv[2] ?? 'all'
+// a tiny orange PNG, picked as a profile photo
+const PHOTO = 'iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEklEQVR4nGP4/58BDTFgEyLMBADXPRHv3kfpTQAAAABJRU5ErkJggg=='
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true })
 const mobile = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
 const errors = []
@@ -281,7 +283,19 @@ if (only === 'all' || only === 'profile') {
   if (!email) errors.push('profil tidak menampilkan email yang baru disimpan (hana@contoh.id)')
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: 'Hana Pratiwi' }).waitFor()
-  console.log('profile: name and email saved, wrong and taken emails refused, kept after reload')
+  // a profile photo: picked, cut square on the phone, shown once saved, and removable
+  await page.getByRole('button', { name: 'Tambah foto profil' }).click()
+  await sheet.locator('input[type=file]').setInputFiles({ name: 'foto.png', mimeType: 'image/png', buffer: Buffer.from(PHOTO, 'base64') })
+  await sheet.getByRole('button', { name: 'Hapus foto' }).waitFor()
+  await sheet.getByRole('button', { name: 'Simpan' }).click()
+  await page.getByRole('button', { name: 'Ganti foto profil' }).waitFor()
+  if (!(await page.locator('main img[src^="data:image/jpeg"]').count())) errors.push('foto profil tidak tampil setelah disimpan')
+  await shot(page, 'p2-profile-photo')
+  await page.getByRole('button', { name: 'Ganti foto profil' }).click()
+  await sheet.getByRole('button', { name: 'Hapus foto' }).click()
+  await sheet.getByRole('button', { name: 'Simpan' }).click()
+  await page.getByRole('button', { name: 'Tambah foto profil' }).waitFor()
+  console.log('profile: name and email saved, wrong and taken emails refused, kept after reload, photo added and removed')
   await shot(page, 'p1-profile')
   await ctx.close()
 }

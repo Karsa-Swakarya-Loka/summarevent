@@ -71,10 +71,7 @@ export function KpiTile({
 export function LiveIndicator({ at, everySec, className }: { at?: string; everySec: number; className?: string }) {
   return (
     <span className={cn('inline-flex items-center gap-2 text-xs text-muted-foreground', className)} aria-live="off">
-      <span className="relative flex size-2.5" aria-hidden>
-        <span className="absolute inline-flex size-full animate-ping rounded-full bg-status-valid opacity-60 motion-reduce:hidden" />
-        <span className="relative inline-flex size-2.5 rounded-full bg-status-valid" />
-      </span>
+      <span className="inline-flex size-2.5 rounded-full bg-status-valid" aria-hidden />
       <span>
         {at ? <>Diperbarui {fmtClock(at)}</> : 'Memuat…'} · otomatis tiap {everySec} detik
       </span>

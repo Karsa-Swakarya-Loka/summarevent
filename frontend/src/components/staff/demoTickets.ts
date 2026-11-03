@@ -5,6 +5,25 @@
  */
 import { api, type TicketSearchRow } from '@/api'
 
+const OPEN_KEY = 'summarevent:staff:demo-open'
+
+/** Whether the demo tools start open on this phone. A per-device convenience, so it lives in localStorage. */
+export function loadDemoToolsOpen(): boolean {
+  try {
+    return localStorage.getItem(OPEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function saveDemoToolsOpen(open: boolean) {
+  try {
+    localStorage.setItem(OPEN_KEY, open ? '1' : '0')
+  } catch {
+    /* blocked storage: the panel just starts closed next time */
+  }
+}
+
 /** searchTickets returns at most this many rows. */
 const PAGE = 30
 const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'

@@ -7,7 +7,7 @@ import { CameraView } from '@/components/staff/CameraView'
 import { cameraPrecheck, type CameraProblem } from '@/components/staff/camera'
 import { ScanResult } from '@/components/staff/ScanResult'
 import { unlockAudio } from '@/components/staff/beep'
-import { fetchEventTickets, pickRandom, tamperToken } from '@/components/staff/demoTickets'
+import { fetchEventTickets, loadDemoToolsOpen, pickRandom, saveDemoToolsOpen, tamperToken } from '@/components/staff/demoTickets'
 import { loadQueue, offlineCapable, QUEUE_EVENT, refreshManifest, syncQueue, type SyncConflict } from '@/components/staff/offline'
 import { sessionName, sessionWindow, useStaffSession } from '@/components/staff/session'
 import { useCheckin } from '@/components/staff/useCheckin'
@@ -18,7 +18,6 @@ import { cn } from '@/lib/utils'
 /** Same QR is ignored while its result is on screen and for this long after. */
 const SAME_TOKEN_MS = 3000
 const VALID_AUTO_DISMISS_MS = 3500
-const DEMO_OPEN_KEY = 'summarevent:staff:demo-open'
 
 const PROBLEM_TEXT: Record<CameraProblem, { title: string; body: string }> = {
   'insecure-context': {
@@ -245,7 +244,7 @@ function OfflineBar({ sessionId }: { sessionId: string }) {
     <div className="shrink-0" data-testid="offline-bar">
       {(!online || queued > 0) && (
         <div className="flex items-start gap-2 bg-status-warn px-4 py-2 text-sm font-bold text-ink" role="status">
-          {online ? <RefreshCw className={cn('mt-0.5 size-4 shrink-0', syncing && 'animate-spin')} aria-hidden /> : <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden />}
+          {online ? <RefreshCw className="mt-0.5 size-4 shrink-0" aria-hidden /> : <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden />}
           <span>
             {!online
               ? `Offline. Scan tetap jalan dari daftar tiket di HP ini${queued ? `, ${queued} menunggu sinkron` : ''}.`
@@ -375,26 +374,14 @@ function BottomBar({
   pending: boolean
   showPaste: boolean
 }) {
-  const [open, setOpen] = useState(() => {
-    try {
-      return localStorage.getItem(DEMO_OPEN_KEY) === '1'
-    } catch {
-      return false
-    }
-  })
+  const [open, setOpen] = useState(loadDemoToolsOpen)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   const [lastDemo, setLastDemo] = useState<{ token: string; label: string } | null>(null)
 
   const toggle = () => {
-    setOpen((o) => {
-      try {
-        localStorage.setItem(DEMO_OPEN_KEY, o ? '0' : '1')
-      } catch {
-        /* per-viewer convenience only */
-      }
-      return !o
-    })
+    setOpen(!open)
+    saveDemoToolsOpen(!open)
   }
 
   const demo = async (kind: DemoKind) => {

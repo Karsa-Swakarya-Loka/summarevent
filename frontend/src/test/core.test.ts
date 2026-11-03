@@ -8,8 +8,8 @@ import { clearClientSessions, clearDb, readDb, replaceDb, setSessionUserId, tran
 import { buildSeed } from '@/api/mock/seed'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
 import { parseReceiptText } from '@/domain/ocr'
-import { buildSeats, checkReceiptRules, suggestSeats } from '@/domain/rules'
-import type { SeatLayout } from '@/domain/types'
+import { buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, resolveSession, saleState, suggestSeats } from '@/domain/rules'
+import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
 import { wibDate } from '@/lib/format'
 
 const api = createMockApi()
@@ -163,6 +163,52 @@ describe('check-in (PRD §8, QA-07…09)', () => {
     const token = await makeQrToken('tkt_x', 1)
     expect(await verifyQrToken(token)).toEqual({ ok: true, ticketId: 'tkt_x', qrVersion: 1 })
     expect((await verifyQrToken(token.replace('tkt_x', 'tkt_y'))).ok).toBe(false)
+  })
+})
+
+describe('sale period, check-in window, hold expiry (PRD §8, QA-11, DM-04)', () => {
+  const category = { saleStart: '2026-11-10T03:00:00.000Z', saleCloseMinBeforeSession: 60 } as TicketCategory
+  const session = { id: 's', eventId: 'e', startAt: '2026-11-21T09:00:00.000Z', endAt: '2026-11-21T10:00:00.000Z' } as Session
+
+  it('QA-11: not yet on sale, on sale, then closed before the session', () => {
+    expect(saleState(category, session, new Date('2026-11-10T02:59:00Z'))).toEqual({ open: false, reason: 'NOT_YET', at: new Date('2026-11-10T03:00:00Z') })
+    expect(saleState(category, session, new Date('2026-11-15T00:00:00Z'))).toEqual({ open: true })
+    expect(saleState(category, session, new Date('2026-11-21T08:00:00Z'))).toEqual({ open: false, reason: 'CLOSED', at: new Date('2026-11-21T08:00:00Z') })
+  })
+
+  it('QA-11: the demo session stays on sale once sales opened', () => {
+    expect(saleState(category, { ...session, demoLive: true }, new Date('2026-11-21T09:30:00Z'))).toEqual({ open: true })
+  })
+
+  it('QA-11: a hold outside the sale period is refused with a reason and holds nothing', async () => {
+    await transaction((db) => {
+      db.categories.find((c) => c.id === 'cat_reg')!.saleStart = new Date(Date.now() + 86_400_000).toISOString()
+    })
+    asVisitor('u_dodi')
+    const r = await api.createHold(SESSION, { categoryId: 'cat_reg', seatIds: [seatId('J8')] })
+    expect(r).toMatchObject({ ok: false, reason: 'RULE' })
+    expect(r.ok ? '' : r.message).toMatch(/^Penjualan Reguler dibuka /)
+    expect(readDb()!.sessionSeats.find((x) => x.sessionId === SESSION && x.seatId === seatId('J8'))!.status).toBe('AVAILABLE')
+  })
+
+  it('check-in opens N minutes before the start and closes N minutes before the end', () => {
+    const w = checkinWindow(session, { checkinOpenMin: 60, checkinCloseMin: 15 } as EventRules)
+    expect(w.open.toISOString()).toBe('2026-11-21T08:00:00.000Z')
+    expect(w.close.toISOString()).toBe('2026-11-21T09:45:00.000Z')
+  })
+
+  it('an expired hold reads as Tersedia, a running one as Sedang dipesan (PRD §8 layer 2)', () => {
+    const now = new Date('2026-11-21T08:00:00Z')
+    expect(effectiveSeatStatus({ status: 'HELD', holdExpiresAt: '2026-11-21T07:59:59Z' }, now)).toBe('AVAILABLE')
+    expect(effectiveSeatStatus({ status: 'HELD', holdExpiresAt: '2026-11-21T08:05:00Z' }, now)).toBe('HELD')
+    expect(effectiveSeatStatus({ status: 'SOLD', holdExpiresAt: null }, now)).toBe('SOLD')
+  })
+
+  it('DM-04: the demo session is always running; other sessions keep their times', () => {
+    const now = new Date('2026-11-03T06:07:00Z')
+    const demo = resolveSession({ ...session, demoLive: true }, now)
+    expect(new Date(demo.startAt) <= now && now < new Date(demo.endAt)).toBe(true)
+    expect(resolveSession(session, now)).toBe(session)
   })
 })
 

@@ -43,7 +43,9 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 - **Denah yang terbaca tanpa menebak.** Warna menandai kategori, bentuk menandai status: tersedia, pilihanmu, sedang dipesan, terjual, tidak dijual, prioritas difabel. Memilih kategori membesarkan denah sampai tiap kursi jadi target sentuh 44 px, dan **Pilihkan N kursi berdampingan** memilih kursi terbaik dalam sekali ketuk.
 - **Satu kursi, satu pemesan.** Semua kursi pesanan ditahan sekaligus atau tidak sama sekali, dengan hitung mundur 10 menit (30 menit untuk tukar struk). Yang kalah rebutan langsung mendapat saran kursi terdekat, bukan pesan error.
 - **Tiga cara masuk di satu denah.** Bayar lewat QRIS atau Virtual Account, daftar gratis, atau tukar struk belanja di tenant SUMMABA dengan cek aturan otomatis dan baca struk dari foto (OCR di browser).
-- **E-ticket QR.** Satu QR bertanda tangan untuk tiap kursi di Pass Saya, plus konfirmasi dan pengingat H-1 lewat WhatsApp dan email. Tiket bisa dibatalkan dengan refund sampai 24 jam sebelum sesi, dan nama peserta bisa diganti.
+- **E-ticket QR.** Tiap kursi dapat satu QR bertanda tangan di Pass Saya, plus konfirmasi dan pengingat H-1 lewat WhatsApp dan email. E-ticket berupa tiket kertas dengan talon (sobekan):
+  - Tiket baru menyusun QR aslinya seperti sedang dibaca scanner, lalu tervalidasi garis hijau.
+  - Setelah dipindai petugas, talonnya robek dan jatuh, seperti disobek di pintu masuk. Tiket bisa dibatalkan dengan refund sampai 24 jam sebelum sesi, dan nama peserta bisa diganti.
 - **Panitia.** Wizard event (info, kategori, denah dari template, sesi, publish), peta kursi live, pesanan dan peserta, verifikasi struk, dashboard penjualan dan kehadiran, unduh CSV, akun petugas, serta link dan poster QR untuk dibagikan.
 - **Petugas.** Hasil scan Valid, Sudah digunakan, atau Tidak valid yang terbaca dari 1 meter, dengan bunyi dan getar berbeda. Ada cari tiket manual, check-in rombongan, dan verifikasi struk kertas di desk.
 - **Daftar tunggu dan bonus.** Kategori yang habis menawarkan daftar tunggu dengan kabar otomatis, dan N pembeli pertama bisa mendapat bonus.
@@ -181,4 +183,4 @@ Diagram dibuat dengan [Archify](https://github.com/tt-a1i/archify) 3.2 (MIT, [li
 
 Dibuat di Bandung oleh Tim Summarevent: **Haikal** (frontend & lead teknis), **Bintang** (backend), **Shelvia** (user testing & UX), **Awwal** (product, business & pitch), dan **Said** (system QA). Logo dan aturan pakainya ada di [`docs/brand`](docs/brand/README.md).
 
-Ilustrasi bergerak memakai kit [fun-isometric](https://skills.klvn.dev/fun-isometric) karya Kelvin Adithya (MIT, [lisensi](docs/lisensi/fun-isometric-MIT.txt)), digambar dengan palet Summarecon.
+Ilustrasi bergerak memakai kit [fun-isometric](https://skills.klvn.dev/fun-isometric) karya Kelvin Adithya (MIT, [lisensi](docs/lisensi/fun-isometric-MIT.txt)), digambar dengan palet Summarecon. Tiket di Pass Saya diadaptasi dari «Talón» karya [Moxen](https://moxen.cl/recursos) ([lisensi](docs/lisensi/moxen-talon.txt)).

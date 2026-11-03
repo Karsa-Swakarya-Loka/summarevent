@@ -189,6 +189,18 @@ Diagram dibuat dengan [Archify](https://github.com/tt-a1i/archify) 3.2 (MIT, [li
 
 ## Tim
 
-Dibuat di Bandung oleh Tim Summarevent: **Haikal** (frontend & lead teknis), **Bintang** (backend), **Shelvia** (user testing & UX), **Awwal** (product, business & pitch), dan **Said** (system QA). Logo dan aturan pakainya ada di [`docs/brand`](docs/brand/README.md).
+Dibuat di Bandung oleh Tim Summarevent.
+
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/HaikalFaruq"><img src="https://github.com/HaikalFaruq.png?size=96" width="72" alt="Muhammad Haikal Faruq" /><br /><b>Muhammad Haikal Faruq</b></a><br /><sub>Frontend, lead teknis, desain</sub></td>
+    <td align="center"><a href="https://github.com/bintangfabian"><img src="https://github.com/bintangfabian.png?size=96" width="72" alt="Bintang Fabian Putra" /><br /><b>Bintang Fabian Putra</b></a><br /><sub>Backend</sub></td>
+    <td align="center"><a href="https://github.com/shelviapramodita"><img src="https://github.com/shelviapramodita.png?size=96" width="72" alt="Shelvia Pramodita" /><br /><b>Shelvia Pramodita</b></a><br /><sub>User testing, UX</sub></td>
+    <td align="center"><a href="https://github.com/awwalakhalqin"><img src="https://github.com/awwalakhalqin.png?size=96" width="72" alt="Awwal" /><br /><b>Awwal</b></a><br /><sub>Product, business, pitch</sub></td>
+    <td align="center"><a href="https://github.com/imsaidm"><img src="https://github.com/imsaidm.png?size=96" width="72" alt="Said Mustaqim" /><br /><b>Said Mustaqim</b></a><br /><sub>System QA</sub></td>
+  </tr>
+</table>
+
+Logo dan aturan pakainya ada di [`docs/brand`](docs/brand/README.md).
 
 Ilustrasi bergerak memakai kit [fun-isometric](https://skills.klvn.dev/fun-isometric) karya Kelvin Adithya (MIT, [lisensi](docs/lisensi/fun-isometric-MIT.txt)), digambar dengan palet Summarecon. Tiket di Pass Saya diadaptasi dari «Talón» karya [Moxen](https://moxen.cl/recursos) ([lisensi](docs/lisensi/moxen-talon.txt)). Judul memakai font [Anton](https://github.com/googlefonts/AntonFont) dan barcode tiket memakai [Libre Barcode 128 Text](https://github.com/graphicore/librebarcode), keduanya SIL Open Font License 1.1 ([Anton](docs/lisensi/anton-OFL.txt), [Libre Barcode](docs/lisensi/libre-barcode-128-OFL.txt)).

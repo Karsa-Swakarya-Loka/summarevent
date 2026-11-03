@@ -51,12 +51,17 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 - **Panitia.** Wizard event (info, kategori, denah dari template, sesi, publish), peta kursi live, pesanan dan peserta, verifikasi struk, dashboard penjualan dan kehadiran, unduh CSV, akun petugas, serta link dan poster QR untuk dibagikan.
 - **Petugas.** Hasil scan Valid, Sudah digunakan, atau Tidak valid yang terbaca dari 1 meter, dengan bunyi dan getar berbeda. Ada cari tiket manual, check-in rombongan, dan verifikasi struk kertas di desk.
 - **Daftar tunggu dan bonus.** Kategori yang habis menawarkan daftar tunggu dengan kabar otomatis, dan N pembeli pertama bisa mendapat bonus.
-- **Sambutan yang bergerak.** Splash menghidupkan logo Lorong: dua bloknya mengunci, lalu satu titik menyusuri lorong S. Splash muncul sekali per sesi dan bisa diketuk untuk dilewati. Pengunjung baru melihat pengenalan tiga langkah, lalu bisa **Masuk** atau **Daftar** dengan OTP simulasi yang bisa diisi otomatis. Ilustrasi isometrik bergerak mengisi layar kosong dan momen sukses. Semua gerak berhenti kalau HP diatur untuk mengurangi gerakan, dan splash tidak pernah muncul di layar panitia dan petugas.
+- **Sambutan yang bergerak, per role.** Splash menghidupkan logo Lorong: dua bloknya mengunci, lalu satu titik menyusuri lorong S. Splash muncul saat web dibuka, lalu sekali per sesi untuk tiap role yang dimasuki (Pengunjung, Panitia, Petugas) dengan nama rolenya, dan bisa diketuk untuk dilewati.
+  - Tiap role punya pengenalan tiga langkah, sekali per HP.
+  - Pengunjung **Masuk** atau **Daftar** dengan OTP simulasi yang bisa diisi otomatis.
+  - Panitia dan petugas masuk dengan email dan kata sandi (simulasi, akun demonya bisa diisi otomatis).
+  - Ilustrasi isometrik bergerak mengisi layar kosong dan momen sukses. Semua gerak berhenti kalau HP diatur untuk mengurangi gerakan.
 - **Terasa seperti aplikasi di HP.**
   - Layar yang dibuka bergeser masuk dari kanan, dan tombol kembali menggeser dari kiri.
   - App bar menempel di atas dengan judul besar yang mengecil saat di-scroll.
   - Dialog naik dari bawah sebagai sheet yang bisa ditarik turun.
   - Tab bar hanya ada di empat tab utama, dan tombol utama selalu dalam jangkauan jempol.
+  - Beranda dibuka dengan panggung SUMMABA bergambar, kartu status, pintasan, dan sorotan yang bisa digeser. Akun berbentuk profil dengan baris pengaturan.
   - Pesan tampil seperti aplikasi chat: daftar pesan, lalu tiap WhatsApp atau email terbuka di layarnya sendiri.
   - Di Android, mengetuk kursi memberi getaran halus.
 - **PWA.** Bisa dipasang di layar utama, dengan notifikasi perangkat selama app terbuka.
@@ -67,7 +72,7 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 2. Pilih **Reguler**, ketuk **Pilihkan 2 kursi berdampingan**, lalu **Hayu ngiring**. Kursinya ditahan 10 menit.
 3. Masuk dengan nomor HP apa saja (kode OTP tampil di layar), lalu tekan **Bayar Rp100.000** (simulasi). Ketuk **Lihat e-ticket**, lalu tarik talonnya ke bawah.
 4. Kembali ke denah dan tekan **Uji rebutan kursi**: pembeli simulasi menang sepersekian detik lebih dulu, dan kamu ditawari kursi terdekat.
-5. Lewat tombol **Demo**, pindah ke **Panitia** (verifikasi struk, peta kursi live, unduh CSV) dan **Petugas** (*Sesi Demo Juri* → **Mulai scan** → **Ambil tiket contoh**).
+5. Lewat tombol **Demo**, pindah langsung ke **Panitia** (verifikasi struk, peta kursi live, unduh CSV) dan **Petugas** (*Sesi Demo Juri* → **Mulai scan** → **Ambil tiket contoh**). Dari halaman awal, keduanya melewati splash, pengenalan, dan login email: tekan **Isi otomatis** untuk akun demonya.
 
 **Reset data demo** di halaman awal mengembalikan semua data contoh.
 
@@ -150,7 +155,7 @@ summarevent/
 | **Web** (CI) | Typecheck, lint, unit test, dan build produksi di setiap PR dan push ke `main`. |
 | **No AI attribution** (CI dan hook) | Menolak atribusi AI di commit dan PR. Juga dicek hook `commit-msg` dan `pre-push` ([aturannya](AGENTS.md#1-tanpa-atribusi-ai)). |
 | **End-to-end** (lokal) | Alur nyata di Chrome: splash dan pengenalan pengunjung baru, daftar akun, bayar, tukar struk, gratis, rebutan kursi, waktu habis, daftar tunggu, refund, OCR, periode jual, panitia di laptop dan HP, wizard, dan petugas sampai pengunjung melihat "Hatur nuhun!". Suite gagal kalau hasilnya salah, ada error di console, atau layar bisa digeser ke samping. |
-| **Aksesibilitas** (lokal) | axe-core memeriksa WCAG 2.1 AA di 42 layar ketiga peran, termasuk pengenalan, masuk, daftar, checkout, tiket, pesan, menu, dialog, dan form. Di HP 360 px setiap target sentuh minimal 44 px, kursi diukur setelah zoom. |
+| **Aksesibilitas** (lokal) | axe-core memeriksa WCAG 2.1 AA di 48 layar ketiga peran, termasuk pengenalan dan login tiap role, daftar, checkout, tiket, pesan, menu, dialog, dan form. Di HP 360 px setiap target sentuh minimal 44 px, kursi diukur setelah zoom. |
 
 Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. Tampilan dicek di HP 360 px sampai desktop.
 

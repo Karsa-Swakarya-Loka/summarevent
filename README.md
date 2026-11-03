@@ -43,9 +43,11 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 - **Denah yang terbaca tanpa menebak.** Warna menandai kategori, bentuk menandai status: tersedia, pilihanmu, sedang dipesan, terjual, tidak dijual, prioritas difabel. Memilih kategori membesarkan denah sampai tiap kursi jadi target sentuh 44 px, dan **Pilihkan N kursi berdampingan** memilih kursi terbaik dalam sekali ketuk.
 - **Satu kursi, satu pemesan.** Semua kursi pesanan ditahan sekaligus atau tidak sama sekali, dengan hitung mundur 10 menit (30 menit untuk tukar struk). Yang kalah rebutan langsung mendapat saran kursi terdekat, bukan pesan error.
 - **Tiga cara masuk di satu denah.** Bayar lewat QRIS atau Virtual Account, daftar gratis, atau tukar struk belanja di tenant SUMMABA dengan cek aturan otomatis dan baca struk dari foto (OCR di browser).
-- **E-ticket QR.** Tiap kursi dapat satu QR bertanda tangan di Pass Saya, plus konfirmasi dan pengingat H-1 lewat WhatsApp dan email. E-ticket berupa tiket kertas dengan talon (sobekan):
+- **Checkout dua langkah.** Masuk dengan nomor HP, lalu bayar, kirim struk, atau konfirmasi gratis. Slip pesanan di atas, hitung mundur di app bar, dan tombol utama menempel di bawah. Tukar struk menampilkan meteran menuju belanja minimal dan cek syarat langsung.
+- **E-ticket QR.** Tiap kursi dapat satu QR bertanda tangan, plus konfirmasi dan pengingat H-1 lewat WhatsApp dan email. Pass Saya berisi tiket hitam kecil, satu per kursi. Mengetuknya membuka tiket di layarnya sendiri, lengkap dengan talon (sobekan):
   - Tiket baru menyusun QR aslinya seperti sedang dibaca scanner, lalu tervalidasi garis hijau.
-  - Setelah dipindai petugas, talonnya robek dan jatuh, seperti disobek di pintu masuk. Tiket bisa dibatalkan dengan refund sampai 24 jam sebelum sesi, dan nama peserta bisa diganti.
+  - Talonnya bisa ditarik ke bawah sampai robek. Setelah dipindai petugas, talonnya robek dan jatuh sendiri, seperti disobek di pintu masuk.
+  - Tiket bisa dibatalkan dengan refund sampai 24 jam sebelum sesi, dan nama peserta bisa diganti.
 - **Panitia.** Wizard event (info, kategori, denah dari template, sesi, publish), peta kursi live, pesanan dan peserta, verifikasi struk, dashboard penjualan dan kehadiran, unduh CSV, akun petugas, serta link dan poster QR untuk dibagikan.
 - **Petugas.** Hasil scan Valid, Sudah digunakan, atau Tidak valid yang terbaca dari 1 meter, dengan bunyi dan getar berbeda. Ada cari tiket manual, check-in rombongan, dan verifikasi struk kertas di desk.
 - **Daftar tunggu dan bonus.** Kategori yang habis menawarkan daftar tunggu dengan kabar otomatis, dan N pembeli pertama bisa mendapat bonus.
@@ -55,6 +57,7 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
   - App bar menempel di atas dengan judul besar yang mengecil saat di-scroll.
   - Dialog naik dari bawah sebagai sheet yang bisa ditarik turun.
   - Tab bar hanya ada di empat tab utama, dan tombol utama selalu dalam jangkauan jempol.
+  - Pesan tampil seperti aplikasi chat: daftar pesan, lalu tiap WhatsApp atau email terbuka di layarnya sendiri.
   - Di Android, mengetuk kursi memberi getaran halus.
 - **PWA.** Bisa dipasang di layar utama, dengan notifikasi perangkat selama app terbuka.
 
@@ -62,7 +65,7 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 
 1. Buka [summarevent.vercel.app](https://summarevent.vercel.app), pilih **Pengunjung**, ikuti atau **Lewati** pengenalan tiga langkah, lalu pilih *Pentas Musikal Keluarga "Sangkuriang"* sesi 16.00.
 2. Pilih **Reguler**, ketuk **Pilihkan 2 kursi berdampingan**, lalu **Hayu ngiring**. Kursinya ditahan 10 menit.
-3. Masuk dengan nomor HP apa saja (kode OTP tampil di layar), lalu **Simulasikan bayar berhasil**. E-ticket muncul di **Pass Saya**.
+3. Masuk dengan nomor HP apa saja (kode OTP tampil di layar), lalu tekan **Bayar Rp100.000** (simulasi). Ketuk **Lihat e-ticket**, lalu tarik talonnya ke bawah.
 4. Kembali ke denah dan tekan **Uji rebutan kursi**: pembeli simulasi menang sepersekian detik lebih dulu, dan kamu ditawari kursi terdekat.
 5. Lewat tombol **Demo**, pindah ke **Panitia** (verifikasi struk, peta kursi live, unduh CSV) dan **Petugas** (*Sesi Demo Juri* → **Mulai scan** → **Ambil tiket contoh**).
 
@@ -147,7 +150,7 @@ summarevent/
 | **Web** (CI) | Typecheck, lint, unit test, dan build produksi di setiap PR dan push ke `main`. |
 | **No AI attribution** (CI dan hook) | Menolak atribusi AI di commit dan PR. Juga dicek hook `commit-msg` dan `pre-push` ([aturannya](AGENTS.md#1-tanpa-atribusi-ai)). |
 | **End-to-end** (lokal) | Alur nyata di Chrome: splash dan pengenalan pengunjung baru, daftar akun, bayar, tukar struk, gratis, rebutan kursi, waktu habis, daftar tunggu, refund, OCR, periode jual, panitia di laptop dan HP, wizard, dan petugas sampai pengunjung melihat "Hatur nuhun!". Suite gagal kalau hasilnya salah, ada error di console, atau layar bisa digeser ke samping. |
-| **Aksesibilitas** (lokal) | axe-core memeriksa WCAG 2.1 AA di 36 layar ketiga peran, termasuk pengenalan, masuk, daftar, menu, dialog, dan form. Di HP 360 px setiap target sentuh minimal 44 px, kursi diukur setelah zoom. |
+| **Aksesibilitas** (lokal) | axe-core memeriksa WCAG 2.1 AA di 42 layar ketiga peran, termasuk pengenalan, masuk, daftar, checkout, tiket, pesan, menu, dialog, dan form. Di HP 360 px setiap target sentuh minimal 44 px, kursi diukur setelah zoom. |
 
 Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. Tampilan dicek di HP 360 px sampai desktop.
 
@@ -183,4 +186,4 @@ Diagram dibuat dengan [Archify](https://github.com/tt-a1i/archify) 3.2 (MIT, [li
 
 Dibuat di Bandung oleh Tim Summarevent: **Haikal** (frontend & lead teknis), **Bintang** (backend), **Shelvia** (user testing & UX), **Awwal** (product, business & pitch), dan **Said** (system QA). Logo dan aturan pakainya ada di [`docs/brand`](docs/brand/README.md).
 
-Ilustrasi bergerak memakai kit [fun-isometric](https://skills.klvn.dev/fun-isometric) karya Kelvin Adithya (MIT, [lisensi](docs/lisensi/fun-isometric-MIT.txt)), digambar dengan palet Summarecon. Tiket di Pass Saya diadaptasi dari «Talón» karya [Moxen](https://moxen.cl/recursos) ([lisensi](docs/lisensi/moxen-talon.txt)).
+Ilustrasi bergerak memakai kit [fun-isometric](https://skills.klvn.dev/fun-isometric) karya Kelvin Adithya (MIT, [lisensi](docs/lisensi/fun-isometric-MIT.txt)), digambar dengan palet Summarecon. Tiket di Pass Saya diadaptasi dari «Talón» karya [Moxen](https://moxen.cl/recursos) ([lisensi](docs/lisensi/moxen-talon.txt)). Judul memakai font [Anton](https://github.com/googlefonts/AntonFont) dan barcode tiket memakai [Libre Barcode 128 Text](https://github.com/graphicore/librebarcode), keduanya SIL Open Font License 1.1 ([Anton](docs/lisensi/anton-OFL.txt), [Libre Barcode](docs/lisensi/libre-barcode-128-OFL.txt)).

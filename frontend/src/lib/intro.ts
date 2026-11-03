@@ -1,18 +1,24 @@
-/** The visitor's first-run onboarding: shown once per device, replayable from the demo menu. */
-const KEY = 'summarevent:onboarding'
+/** First-run onboarding, one per role: shown once per device, replayable from the demo menu. */
+export type IntroRole = 'visitor' | 'admin' | 'staff'
 
-export function onboardingDone(): boolean {
+const KEY: Record<IntroRole, string> = {
+  visitor: 'summarevent:onboarding',
+  admin: 'summarevent:onboarding:admin',
+  staff: 'summarevent:onboarding:staff',
+}
+
+export function onboardingDone(role: IntroRole = 'visitor'): boolean {
   try {
-    return localStorage.getItem(KEY) === 'done'
+    return localStorage.getItem(KEY[role]) === 'done'
   } catch {
-    return true // blocked storage: never trap the visitor in a loop
+    return true // blocked storage: never trap anyone in a loop
   }
 }
 
-export function setOnboardingDone(done: boolean) {
+export function setOnboardingDone(done: boolean, role: IntroRole = 'visitor') {
   try {
-    if (done) localStorage.setItem(KEY, 'done')
-    else localStorage.removeItem(KEY)
+    if (done) localStorage.setItem(KEY[role], 'done')
+    else localStorage.removeItem(KEY[role])
   } catch {
     /* blocked storage: the onboarding simply shows again next time */
   }

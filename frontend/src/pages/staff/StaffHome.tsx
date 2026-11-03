@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
-import { CalendarDays, MapPin, ReceiptText, ScanLine, Search, Ticket } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
+import { CalendarDays, LogOut, MapPin, ReceiptText, ScanLine, Search, Ticket } from 'lucide-react'
 import { api, type EventSummary, type SessionSummary } from '@/api'
 import { toast } from 'sonner'
 import type { User } from '@/domain/types'
@@ -18,10 +18,9 @@ const WINDOW_TONE: Record<WindowState, Tone> = { NOT_YET: 'info', OPEN: 'valid',
 
 /** PT-01: pick the event and the session that is running, then scan or search. */
 export default function StaffHome() {
+  // StaffLayout only renders its pages for a signed-in petugas
   const [user, setUser] = useState(() => api.currentUser('STAFF'))
-  useEffect(() => {
-    if (!user) void api.demoLogin('STAFF').then(setUser)
-  }, [user])
+  const navigate = useNavigate()
 
   const events = useLive(() => api.listEvents(), [])
   const now = useNow(30_000)
@@ -36,7 +35,19 @@ export default function StaffHome() {
   return (
     <div className="pb-24">
       <header className="bg-brand px-5 pt-5 pb-6 text-white">
-        <BrandLockup inverted className="h-7" />
+        <div className="flex items-center justify-between gap-3">
+          <BrandLockup inverted className="h-7" />
+          <button
+            type="button"
+            onClick={() => {
+              api.logout('STAFF')
+              navigate('/staff/masuk', { replace: true })
+            }}
+            className="-mr-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-white/85 hover:bg-white/10"
+          >
+            <LogOut className="size-4" aria-hidden /> Keluar
+          </button>
+        </div>
         <p className="mt-5 text-sm font-semibold text-white/80">Petugas check-in</p>
         <h1 className="text-2xl leading-tight font-extrabold">Halo, {firstName}</h1>
         <p className="mt-1 text-sm text-white/85">Pilih event dan sesi yang sedang berjalan, lalu mulai scan QR e-ticket.</p>

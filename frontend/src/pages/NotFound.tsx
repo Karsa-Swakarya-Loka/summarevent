@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-6 py-10 text-center" data-shell="visitor">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-6 py-10 text-center" data-shell="intro">
       <div className="relative grid size-56 place-items-center overflow-hidden rounded-[2.5rem] bg-brand-soft">
         <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
         <Illustration name="search" className="relative w-48 animate-pop" />

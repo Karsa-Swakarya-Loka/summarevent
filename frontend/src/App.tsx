@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { StaffLayout } from '@/layouts/StaffLayout'
 import { VisitorLayout } from '@/layouts/VisitorLayout'
+import { roleSplash } from '@/lib/splash'
 import NotFound from '@/pages/NotFound'
 import RolePicker from '@/pages/RolePicker'
 import EventDetail from '@/pages/visitor/EventDetail'
@@ -46,16 +47,20 @@ const Scanner = () => import('@/pages/staff/Scanner')
 const ManualSearch = () => import('@/pages/staff/ManualSearch')
 const DeskReceipts = () => import('@/pages/staff/DeskReceipts')
 // first-run and sign-in screens: seen once, so they load on demand too
-const Onboarding = () => import('@/pages/visitor/Onboarding')
+const VisitorOnboarding = () => import('@/pages/Onboarding').then((m) => ({ default: () => <m.default role="visitor" /> }))
+const AdminOnboarding = () => import('@/pages/Onboarding').then((m) => ({ default: () => <m.default role="admin" /> }))
+const StaffOnboarding = () => import('@/pages/Onboarding').then((m) => ({ default: () => <m.default role="staff" /> }))
 const SignIn = () => import('@/pages/visitor/Auth').then((m) => ({ default: () => <m.default mode="masuk" /> }))
 const SignUp = () => import('@/pages/visitor/Auth').then((m) => ({ default: () => <m.default mode="daftar" /> }))
+const AdminSignIn = () => import('@/pages/RoleSignIn').then((m) => ({ default: () => <m.default role="ADMIN" /> }))
+const StaffSignIn = () => import('@/pages/RoleSignIn').then((m) => ({ default: () => <m.default role="STAFF" /> }))
 
 /**
  * Routes
  *  /                          role picker (DM-01)
  *  /app/...                   visitor (mobile-first); /app/mulai onboarding, /app/masuk and /app/daftar sign-in
- *  /admin/...                 panitia (desktop-first, works on phone)
- *  /staff/...                 petugas (mobile, scanner)
+ *  /admin/...                 panitia (desktop-first, works on phone); /admin/mulai onboarding, /admin/masuk sign-in
+ *  /staff/...                 petugas (mobile, scanner); /staff/mulai onboarding, /staff/masuk sign-in
  */
 const router = createBrowserRouter([
   { path: '/', element: <RolePicker /> },
@@ -73,11 +78,15 @@ const router = createBrowserRouter([
       { path: 'inbox', lazy: screen('inbox') },
       { path: 'inbox/:noteId', lazy: screen('message') },
       { path: 'akun', lazy: screen('account') },
-      { path: 'mulai', element: page(Onboarding) },
+      { path: 'mulai', element: page(VisitorOnboarding) },
       { path: 'masuk', element: page(SignIn) },
       { path: 'daftar', element: page(SignUp) },
     ],
   },
+  { path: '/admin/mulai', element: page(AdminOnboarding) },
+  { path: '/admin/masuk', element: page(AdminSignIn) },
+  { path: '/staff/mulai', element: page(StaffOnboarding) },
+  { path: '/staff/masuk', element: page(StaffSignIn) },
   {
     path: '/admin',
     element: <AdminLayout />,
@@ -104,6 +113,9 @@ const router = createBrowserRouter([
   },
   { path: '*', element: <NotFound /> },
 ])
+
+// entering a role from inside the app (the role picker) plays its splash, once per session
+router.subscribe((state) => roleSplash(state.location.pathname))
 
 /** Phones dismiss a toast with a swipe; only a mouse gets the small close button. */
 const finePointer = typeof matchMedia === 'function' && matchMedia('(pointer: fine)').matches

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
+import { useState } from 'react'
+import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { CalendarDays, LayoutDashboard, LogOut, Menu, ReceiptText, Rows3, UserCog, Users, X } from 'lucide-react'
 import { api } from '@/api'
 import { BrandLockup, SummabaLogo } from '@/components/common/Brand'
 import { DemoMenu } from '@/components/common/DemoMenu'
 import { useLive } from '@/hooks/useLive'
+import { onboardingDone } from '@/lib/intro'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -16,17 +17,23 @@ const NAV = [
   { to: '/admin/staff', label: 'Petugas', icon: UserCog },
 ]
 
+/**
+ * Panitia shell. Signed out, it sends the visitor of an admin page to the panitia onboarding (first time on this
+ * device) or the sign-in, and brings them back to that page afterwards.
+ */
 export function AdminLayout() {
   const navigate = useNavigate()
+  const { pathname, search } = useLocation()
   const [open, setOpen] = useState(false)
-  const [user, setUser] = useState(() => api.currentUser('ADMIN'))
+  const [user] = useState(() => api.currentUser('ADMIN'))
 
-  useEffect(() => {
-    if (!user) void api.demoLogin('ADMIN').then(setUser)
-  }, [user])
-
-  // Pages load only after the demo login, so the backend never sees a request without a token.
+  // pages load only once signed in, so the backend never sees a request without a token
   const pending = useLive(() => api.admin.listReceipts('PENDING').then((r) => r.length), [], { enabled: !!user })
+
+  if (!user) {
+    const next = encodeURIComponent(pathname + search)
+    return <Navigate to={`/admin/${onboardingDone('admin') ? 'masuk' : 'mulai'}?next=${next}`} replace />
+  }
 
   const nav = (
     <nav className="flex flex-col gap-1" aria-label="Menu panitia">
@@ -65,8 +72,8 @@ export function AdminLayout() {
         </div>
         {nav}
         <div className="mt-auto rounded-lg border p-3 text-xs">
-          <div className="font-semibold">{user?.name ?? 'Panitia'}</div>
-          <div className="text-muted-foreground">Panitia · akses demo</div>
+          <div className="font-semibold">{user.name}</div>
+          <div className="text-muted-foreground">{user.email ?? 'Panitia'}</div>
           <button
             type="button"
             className="mt-1 inline-flex min-h-9 items-center gap-1 text-muted-foreground hover:text-foreground pointer-coarse:min-h-11"
@@ -90,7 +97,7 @@ export function AdminLayout() {
       {open && <div className="border-b bg-card p-3 lg:hidden">{nav}</div>}
 
       <main className="min-w-0 p-4 pb-24 lg:p-8">
-        {user ? <Outlet /> : <p className="py-16 text-center text-sm text-muted-foreground">Menyiapkan akses panitia…</p>}
+        <Outlet />
       </main>
       <DemoMenu className="bottom-4 left-4" />
     </div>

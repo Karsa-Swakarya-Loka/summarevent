@@ -211,18 +211,20 @@ img { -webkit-touch-callout: none; }
 /*
  * Visitor app, visual v2: every main action is an ink pill, so the brand colours, the category colours and the
  * statuses never fight with a button; outlined buttons get an ink line, and card edges a step darker so they read as
- * cut paper rather than soft shadows.
+ * cut paper rather than soft shadows. The first-run screens of every role (onboarding, sign-in) and the 404 share it
+ * as the `intro` shell.
  */
-[data-shell='visitor'] {
+[data-shell='visitor'],
+[data-shell='intro'] {
   --primary: #231f20;
   --primary-foreground: #fbfaf7;
   --ring: #231f20;
   --border: #ddd6ca;
 }
-[data-shell='visitor'] [data-slot='button'] {
+:is([data-shell='visitor'], [data-shell='intro']) [data-slot='button'] {
   border-radius: 999px;
 }
-[data-shell='visitor'] [data-slot='button'][data-variant='outline'] {
+:is([data-shell='visitor'], [data-shell='intro']) [data-slot='button'][data-variant='outline'] {
   border-color: #231f20;
 }
 /* the Demo button moves into the app bar on screens that have one, so the floating pill never covers the page */
@@ -324,6 +326,47 @@ body:has([data-demo-header]) [data-demo-float] {
     radial-gradient(circle 10px at 100% var(--notch-at), #0000 98%, #000) right / 51% 100% no-repeat;
 }
 
+/* Beranda's stage (StageScene): the spotlights sway, the bunting flutters, the notes float, your seat pops in */
+.scene-beam {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: scene-sway 8s ease-in-out infinite;
+}
+.scene-beam + .scene-beam {
+  animation-delay: -4s;
+}
+.scene-flag {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: scene-sway 2.8s ease-in-out infinite;
+}
+.scene-note {
+  animation: scene-float 3.6s ease-in-out infinite;
+}
+.scene-twinkle {
+  animation: scene-twinkle 2.4s ease-in-out infinite;
+}
+.scene-mine {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: scene-pop 0.6s 0.45s var(--ease-pop) both;
+}
+@keyframes scene-sway {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+@keyframes scene-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes scene-twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+@keyframes scene-pop {
+  from { transform: translateY(14px) scale(0.6); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

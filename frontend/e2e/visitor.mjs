@@ -21,7 +21,9 @@ const shot = async (page, name, full = true) => {
   await page.waitForTimeout(350)
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full })
   const sw = await page.evaluate(() => document.documentElement.scrollWidth)
-  console.log('shot', name, sw > 390 ? `!! scrollWidth ${sw}` : '')
+  const vw = await page.evaluate(() => window.innerWidth)
+  console.log('shot', name, sw > vw ? `!! scrollWidth ${sw}` : '')
+  if (sw > vw) errors.push(`${name}: scrollWidth ${sw} > ${vw} (geser horizontal)`)
 }
 async function login(page, phone, name) {
   await page.getByLabel('Nomor HP').fill(phone)
@@ -73,6 +75,7 @@ if (only === 'all' || only === 'paid') {
   await page.waitForTimeout(800)
   const cards = await page.locator('article[aria-label^="E-ticket"]').count()
   console.log('pass cards:', cards)
+  if (cards !== 2) errors.push(`Pass Saya menampilkan ${cards} e-ticket, seharusnya 2 (satu per kursi)`)
   await shot(page, 'v5-pass')
   await page.getByRole('button', { name: /Perbesar QR/ }).first().click()
   await page.waitForTimeout(400)
@@ -145,6 +148,7 @@ if (only === 'all' || only === 'conflict') {
   await page.waitForTimeout(500)
   const after = await page.locator('p.font-bold').filter({ hasText: 'kursi ·' }).first().innerText()
   console.log('after move:', after)
+  if (after === before) errors.push(`setelah "Pindah ke kursi saran" pilihan tetap ${after}`)
   await shot(page, 'c2-moved', false)
   await page.getByRole('button', { name: /Hayu ngiring/ }).click()
   await page.waitForURL(/\/checkout\//)

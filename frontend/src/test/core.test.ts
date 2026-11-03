@@ -8,7 +8,7 @@ import { clearClientSessions, clearDb, readDb, replaceDb, setSessionUserId, tran
 import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
 import { parseReceiptText } from '@/domain/ocr'
-import { buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
+import { AVATAR_MAX, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
 import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
 import { wibDate } from '@/lib/format'
 
@@ -413,6 +413,14 @@ describe('profile (PV-06)', () => {
     expect(profileChanges({ email: 'rina@contoh' })).toMatchObject({ ok: false, field: 'email' })
   })
 
+  it('takes a photo as an image data URL of at most 300 KB, and null removes it', () => {
+    const png = 'data:image/png;base64,iVBORw0KGgo='
+    expect(profileChanges({ avatar: png })).toEqual({ ok: true, avatar: png })
+    expect(profileChanges({ avatar: null })).toEqual({ ok: true, avatar: null })
+    expect(profileChanges({ avatar: 'data:text/html;base64,PGgxPg==' })).toMatchObject({ ok: false, field: 'avatar' })
+    expect(profileChanges({ avatar: `data:image/jpeg;base64,${'A'.repeat(AVATAR_MAX)}` })).toMatchObject({ ok: false, field: 'avatar' })
+  })
+
   it('saves for the signed-in visitor only, and never gives two accounts one email', async () => {
     await expect(api.updateProfile({ name: 'Tamu' })).rejects.toMatchObject({ code: 'NEED_LOGIN' })
     asVisitor(PERSONA_ID)
@@ -423,5 +431,8 @@ describe('profile (PV-06)', () => {
     await expect(api.updateProfile({ email: 'desk.atrium@summarevent.test' })).rejects.toMatchObject({ code: 'DUPLICATE' })
     await expect(api.updateProfile({ email: 'bukan-email' })).rejects.toMatchObject({ code: 'INVALID' })
     expect(api.currentUser('VISITOR')?.email).toBe('rina@contoh.id')
+    const photo = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ=='
+    expect(await api.updateProfile({ avatar: photo })).toMatchObject({ avatarUrl: photo, name: 'Rina K' })
+    expect((await api.updateProfile({ avatar: null })).avatarUrl).toBeNull()
   })
 })

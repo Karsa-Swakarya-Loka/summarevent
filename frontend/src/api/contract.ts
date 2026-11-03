@@ -157,10 +157,12 @@ export interface PassItem {
 }
 
 /** The visitor's own waiting-list entries, with their place in line. */
-/** What a visitor can change about their account. `email: null` (or empty) removes it. */
+/** What a visitor can change about their account. `null` (or empty) removes the email or the photo. */
 export interface ProfileUpdate {
   name?: string
   email?: string | null
+  /** a new profile photo as a data URL (square JPEG, PNG or WebP, at most 300 KB); stored and returned as `avatarUrl` */
+  avatar?: string | null
 }
 
 export interface WaitlistItem extends WaitlistEntry {
@@ -411,7 +413,7 @@ export interface Api {
   leaveWaitlist(entryId: string): Promise<void>
   /** GET /me/waitlist */
   myWaitlist(): Promise<WaitlistItem[]>
-  /** PATCH /me { name?, email? } – the signed-in visitor's own name and email (PV-06); the phone number is the login and stays */
+  /** PATCH /me { name?, email?, avatar? } – the signed-in visitor's own name, email and photo (PV-06); the phone number is the login and stays */
   updateProfile(changes: ProfileUpdate): Promise<User>
 
   admin: AdminApi

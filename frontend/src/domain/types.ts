@@ -16,6 +16,8 @@ export interface User {
   name: string
   phone: string
   email?: string | null
+  /** Profile photo (PV-06): a data URL in the demo, a storage URL from the backend. */
+  avatarUrl?: string | null
   createdAt: string
   /** AD-13: staff accounts can be switched off by the panitia (default active). */
   active?: boolean

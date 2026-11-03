@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { errorMessage } from '@/hooks/useLive'
+import { shrinkPhoto } from '@/lib/image'
 import { rupiahPlain, wibDate, wibTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { BottomBar, SectionLabel } from './Common'
@@ -48,33 +49,6 @@ function toInput(d: Draft): ReceiptInput {
     receiptTime: d.receiptTime,
     photoUrl: d.photoUrl,
     photoHash: d.photoHash,
-  }
-}
-
-/** Compress a photo to JPEG, longest side ≤ 1000 px (receipts stay readable, upload stays small). */
-async function compressImage(file: File): Promise<string> {
-  const url = URL.createObjectURL(file)
-  try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const i = new Image()
-      i.onload = () => resolve(i)
-      i.onerror = () => reject(new Error('Foto tidak bisa dibaca. Coba ambil ulang fotonya.'))
-      i.src = url
-    })
-    const scale = Math.min(1, 1000 / Math.max(img.naturalWidth || 1, img.naturalHeight || 1))
-    const w = Math.max(1, Math.round(img.naturalWidth * scale))
-    const h = Math.max(1, Math.round(img.naturalHeight * scale))
-    const canvas = document.createElement('canvas')
-    canvas.width = w
-    canvas.height = h
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Browser tidak bisa memproses foto.')
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, w, h)
-    ctx.drawImage(img, 0, 0, w, h)
-    return canvas.toDataURL('image/jpeg', 0.82)
-  } finally {
-    URL.revokeObjectURL(url)
   }
 }
 
@@ -175,7 +149,7 @@ export function ReceiptForm({
     }
     update(key, { processing: true })
     try {
-      const [photoUrl, photoHash] = await Promise.all([compressImage(file), file.arrayBuffer().then((b) => sha256Hex(b))])
+      const [photoUrl, photoHash] = await Promise.all([shrinkPhoto(file), file.arrayBuffer().then((b) => sha256Hex(b))])
       update(key, { photoUrl, photoHash, processing: false })
     } catch (e) {
       update(key, { processing: false })

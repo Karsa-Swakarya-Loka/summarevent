@@ -4,12 +4,13 @@
  */
 import { useState } from 'react'
 import { Navigate } from 'react-router'
-import { CalendarDays, Lock, Mail, Smartphone, UserRound } from 'lucide-react'
+import { CalendarDays, Camera, Lock, Mail, Smartphone, UserRound } from 'lucide-react'
 import { api } from '@/api'
 import { BackHeader } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { EditProfileSheet } from '@/components/visitor/EditProfileSheet'
 import { SettingsGroup, SettingsRow } from '@/components/visitor/SettingsList'
+import { UserAvatar } from '@/components/visitor/UserAvatar'
 import { useVisitor } from '@/components/visitor/hooks'
 import { useLive } from '@/hooks/useLive'
 import { fmtDate, maskPhone } from '@/lib/format'
@@ -22,11 +23,6 @@ export default function Profile() {
 
   if (!user) return <Navigate to="/app/masuk?next=/app/akun/profil" replace />
 
-  const initials = user.name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('')
   const active = (tickets.data ?? []).filter((t) => t.ticket.status === 'ACTIVE').length
   const placed = (orders.data ?? []).filter((d) => !d.order.simulated).length
   const value = (text: string, muted = false) => <span className={`max-w-[55%] truncate text-right text-sm ${muted ? 'text-muted-foreground' : ''}`}>{text}</span>
@@ -36,8 +32,17 @@ export default function Profile() {
       <BackHeader to="/app/akun" title="Profil" />
       <div className="space-y-7 px-4 pt-3 pb-10">
         <header className="flex animate-rise flex-col items-center text-center">
-          <span className="grid size-28 place-items-center rounded-full bg-brand-yellow font-poster text-5xl text-ink shadow-md ring-4 ring-white" aria-hidden>
-            {initials}
+          {/* the camera badge on the photo opens the edit sheet too */}
+          <span className="relative">
+            <UserAvatar user={user} className="size-28 text-5xl shadow-md ring-4 ring-white" />
+            <button
+              type="button"
+              onClick={() => setEdit(true)}
+              className="absolute -right-1 -bottom-1 grid size-11 place-items-center rounded-full bg-ink text-white ring-4 ring-background transition active:scale-90"
+              aria-label={user.avatarUrl ? 'Ganti foto profil' : 'Tambah foto profil'}
+            >
+              <Camera className="size-4" aria-hidden />
+            </button>
           </span>
           <h1 className="mt-4 text-[1.7rem] leading-tight font-extrabold tracking-tight">{user.name}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{user.email ?? maskPhone(user.phone)}</p>

@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AppSetupRows } from '@/components/visitor/AppSetup'
 import { LoadError } from '@/components/visitor/Common'
 import { EditProfileSheet } from '@/components/visitor/EditProfileSheet'
+import { UserAvatar } from '@/components/visitor/UserAvatar'
 import { SettingsGroup, SettingsRow } from '@/components/visitor/SettingsList'
 import { continuePath, seatRangeLabel, sessionWhen } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
@@ -109,20 +110,13 @@ function SignedIn({ user, onChange }: { user: User; onChange: () => void }) {
     }
   }
   const list = (orders.data ?? []).filter((d) => !d.order.simulated)
-  const initials = user.name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('')
 
   return (
     <div className="space-y-7 px-4 pt-[max(2.25rem,env(safe-area-inset-top))] pb-6">
       <header className="flex animate-rise flex-col items-center text-center">
         {/* the avatar and name open the profile, like a phone's settings */}
         <Link to="/app/akun/profil" className="flex flex-col items-center rounded-3xl px-4 pt-1 pb-2 transition active:scale-[0.98]">
-          <span className="grid size-24 place-items-center rounded-full bg-brand-yellow font-poster text-4xl text-ink shadow-md ring-4 ring-white" aria-hidden>
-            {initials}
-          </span>
+          <UserAvatar user={user} className="size-24 text-4xl shadow-md ring-4 ring-white" />
           <h1 className="mt-4 text-[1.7rem] leading-tight font-extrabold tracking-tight">{user.name}</h1>
           <span className="mt-0.5 text-sm text-muted-foreground tabular-nums">{user.email ?? maskPhone(user.phone)}</span>
           <span className="mt-1 inline-flex items-center gap-0.5 text-sm font-semibold">

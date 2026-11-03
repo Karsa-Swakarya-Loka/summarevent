@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import '@/lib/pwa'
 import { bootApi } from '@/api'
+import { endSplash } from '@/lib/splash'
 import App from './App'
 
 void bootApi().finally(() => {
@@ -11,6 +12,7 @@ void bootApi().finally(() => {
       <App />
     </StrictMode>,
   )
+  requestAnimationFrame(() => endSplash())
 })
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

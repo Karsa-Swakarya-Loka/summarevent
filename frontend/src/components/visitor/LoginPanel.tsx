@@ -216,7 +216,7 @@ export function LoginPanel({
           )}
           {error && <FormError>{error}</FormError>}
           <Button type="submit" className="h-14 w-full text-base" disabled={busy}>
-            {busy ? <Dots /> : needName ? 'Buat akun & masuk' : 'Masuk'}
+            {busy ? <Dots /> : needName || signUp ? 'Buat akun & masuk' : 'Masuk'}
           </Button>
           <div className="flex justify-between text-sm">
             <button

@@ -1,13 +1,13 @@
 /**
- * Pass Saya (PV-12): one ticket card per seat, QR always one tap away, status always visible.
+ * Pass Saya (PV-10): one ticket card per seat, QR always one tap away, status always visible.
  */
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { CalendarDays, ChevronRight, Gift, Hourglass, MapPin, Maximize2, Sun, Ticket as TicketIcon, UserRound } from 'lucide-react'
+import { CalendarDays, ChevronRight, CircleCheck, Gift, Hourglass, MapPin, Maximize2, Sun, Ticket as TicketIcon, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail, PassItem } from '@/api/contract'
-import { Countdown, EmptyState, StatusBadge, Swatch, TicketQr } from '@/components/common/bits'
+import { Countdown, EmptyState, StatusBadge, SundaText, Swatch, TicketQr } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -58,6 +58,7 @@ export default function MyPass() {
   const isCurrent = (it: PassItem) => it.ticket.status === 'ACTIVE' && !timing(it, now).ended
   const current = groupByOrder(all.filter(isCurrent))
   const history = all.filter((it) => !isCurrent(it))
+  const checkedIn = groupByOrder(all.filter((it) => isRecentCheckin(it, now)))
 
   const loginAsPersona = async () => {
     setDemoBusy(true)
@@ -139,6 +140,10 @@ export default function MyPass() {
           )
         ) : (
           <>
+            {checkedIn.map((g) => (
+              <ThanksCard key={g.orderId} items={g.items} />
+            ))}
+
             {current.length > 0 ? (
               current.map((g) => {
                 const first = g.items[0]
@@ -156,7 +161,7 @@ export default function MyPass() {
                   </section>
                 )
               })
-            ) : (
+            ) : checkedIn.length > 0 ? null : (
               <EmptyState
                 icon={<TicketIcon />}
                 title="Tidak ada tiket aktif"
@@ -208,6 +213,34 @@ export default function MyPass() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+/** How long the "Hatur nuhun!" card stays after the gate scanned a ticket. */
+const THANKS_MS = 3 * 3600_000
+
+function isRecentCheckin(it: PassItem, now: Date): boolean {
+  if (it.ticket.status !== 'USED' || !it.ticket.usedAt) return false
+  return now.getTime() - new Date(it.ticket.usedAt).getTime() < THANKS_MS
+}
+
+/** "Hatur nuhun!" after check-in (PRD §1), once per order, while the visit is fresh. */
+function ThanksCard({ items }: { items: PassItem[] }) {
+  const { event } = items[0]
+  const firstScan = items.map((it) => it.ticket.usedAt ?? '').sort()[0]
+  const seats = items.map((it) => it.ticket.seatLabel).filter((s): s is string => !!s)
+  return (
+    <section aria-label="Sudah check-in" className="flex items-start gap-3 rounded-3xl bg-brand-soft p-4">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand text-white">
+        <CircleCheck className="size-6" aria-hidden />
+      </span>
+      <div className="min-w-0">
+        <SundaText k="thanks" size="lg" />
+        <p className="mt-1.5 text-sm">
+          {seats.length ? `Kursi ${seatRangeLabel(seats)}` : `${items.length} tiket`} sudah check-in jam {fmtTime(firstScan)} WIB. Selamat menikmati {event.title}.
+        </p>
+      </div>
+    </section>
   )
 }
 

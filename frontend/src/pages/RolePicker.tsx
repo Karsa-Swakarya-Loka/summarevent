@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ArrowRight, RadioTower, RotateCcw, ScanLine, Smartphone, Store, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
-import { api, apiMode, DEMO_URL, LIVE_URL } from '@/api'
+import { api, apiMode, DEMO_URL, LIVE_URL, liveVersionReady } from '@/api'
 import { BrandAppIcon, CoBrand } from '@/components/common/Brand'
 import { SundaText } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
@@ -19,12 +19,9 @@ export default function RolePicker() {
   useEffect(() => {
     if (live || !LIVE_URL) return
     const ctl = new AbortController()
-    const timer = setTimeout(() => ctl.abort(), 5000)
-    fetch(`${LIVE_URL}/api/health`, { signal: ctl.signal })
-      .then((r) => (r.ok ? (r.json() as Promise<{ ok?: boolean }>) : null))
-      .then((j) => setLiveReady(!!j?.ok))
-      .catch(() => setLiveReady(false))
-      .finally(() => clearTimeout(timer))
+    void liveVersionReady(ctl.signal).then((ok) => {
+      if (!ctl.signal.aborted) setLiveReady(ok)
+    })
     return () => ctl.abort()
   }, [live])
 

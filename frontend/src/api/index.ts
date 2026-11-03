@@ -30,6 +30,23 @@ export const apiMode: 'live' | 'demo' = api.mode === 'http' ? 'live' : 'demo'
 export const LIVE_URL: string | null = (import.meta.env.VITE_LIVE_URL as string | undefined) || null
 export const DEMO_URL = (import.meta.env.VITE_DEMO_URL as string | undefined) ?? 'https://summarevent.vercel.app'
 
+/** True when the live version answers its health check within 5 s. Always false without LIVE_URL. */
+export async function liveVersionReady(signal?: AbortSignal): Promise<boolean> {
+  if (!LIVE_URL) return false
+  const ctl = new AbortController()
+  const timer = setTimeout(() => ctl.abort(), 5000)
+  signal?.addEventListener('abort', () => ctl.abort(), { once: true })
+  try {
+    const res = await fetch(`${LIVE_URL}/api/health`, { signal: ctl.signal })
+    if (!res.ok) return false
+    return ((await res.json()) as { ok?: boolean }).ok === true
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /** Call once at startup. */
 export async function bootApi(): Promise<void> {
   if (api.mode === 'mock') {

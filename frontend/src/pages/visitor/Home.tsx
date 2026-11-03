@@ -16,6 +16,7 @@ import type { ArtName } from '@/components/stickers/Art'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError } from '@/components/visitor/Common'
 import { StageScene } from '@/components/visitor/StageScene'
+import { UserAvatar } from '@/components/visitor/UserAvatar'
 import { continuePath, eventInRange, isPendingOrder, priceHint, wibTodayRange, wibWeekRange } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import type { Tone } from '@/domain/labels'
@@ -226,14 +227,9 @@ export default function Home() {
 }
 
 function Avatar({ user }: { user: User }) {
-  const initials = user.name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('')
   return (
-    <Link to="/app/akun" aria-label={`Akun ${user.name}`} className="grid size-11 shrink-0 place-items-center rounded-full bg-brand-yellow font-poster text-lg text-ink ring-2 ring-white/40 transition active:scale-90">
-      {initials}
+    <Link to="/app/akun" aria-label={`Akun ${user.name}`} className="shrink-0 rounded-full transition active:scale-90">
+      <UserAvatar user={user} className="size-11 text-lg ring-2 ring-white/40" />
     </Link>
   )
 }

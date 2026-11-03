@@ -338,15 +338,20 @@ export function attendeeEditPolicy(order: Pick<Order, 'status'>, session: Pick<S
 
 export const NAME_MAX = 60
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+/** A profile photo as sent: a data URL of a JPEG, PNG or WebP, at most about 300 KB. */
+const AVATAR = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/
+export const AVATAR_MAX = 400_000
 
-export type ProfileCheck = { ok: true; name?: string; email?: string | null } | { ok: false; field: 'name' | 'email'; reason: string }
+type ProfileFields = { name?: string; email?: string | null; avatar?: string | null }
+export type ProfileCheck = ({ ok: true } & ProfileFields) | { ok: false; field: 'name' | 'email' | 'avatar'; reason: string }
 
 /**
- * A visitor's name and email as typed, made ready to store: the name trimmed with its spaces collapsed, the email
- * trimmed and lowercased, and an empty email clearing it. The phone number is the login and is not part of it.
+ * A visitor's name, email and photo as given, made ready to store: the name trimmed with its spaces collapsed, the
+ * email trimmed and lowercased, and an empty email or photo clearing it. The phone number is the login and is not
+ * part of it.
  */
-export function profileChanges(input: { name?: string; email?: string | null }): ProfileCheck {
-  const out: { name?: string; email?: string | null } = {}
+export function profileChanges(input: ProfileFields): ProfileCheck {
+  const out: ProfileFields = {}
   if (input.name !== undefined) {
     const name = input.name.trim().replace(/\s+/g, ' ')
     if (name.length < 2) return { ok: false, field: 'name', reason: 'Nama minimal 2 huruf.' }
@@ -357,6 +362,11 @@ export function profileChanges(input: { name?: string; email?: string | null }):
     const email = (input.email ?? '').trim().toLowerCase()
     if (email && (email.length > 254 || !EMAIL.test(email))) return { ok: false, field: 'email', reason: 'Tulis email lengkap, misalnya nama@contoh.id.' }
     out.email = email || null
+  }
+  if (input.avatar !== undefined) {
+    const avatar = input.avatar || null
+    if (avatar && (avatar.length > AVATAR_MAX || !AVATAR.test(avatar))) return { ok: false, field: 'avatar', reason: 'Foto harus JPG, PNG, atau WebP, paling besar 300 KB.' }
+    out.avatar = avatar
   }
   return { ok: true, ...out }
 }

@@ -1127,6 +1127,8 @@ export function createMockApi(): Api {
         }
         if (checked.name !== undefined) user.name = checked.name
         if (checked.email !== undefined) user.email = checked.email
+        // the demo keeps the photo itself; a backend stores it and returns its address
+        if (checked.avatar !== undefined) user.avatarUrl = checked.avatar
         return { ...user }
       })
     },

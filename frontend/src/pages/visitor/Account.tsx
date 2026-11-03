@@ -42,8 +42,8 @@ export default function Account() {
           <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
           <Illustration name="tiket" className="relative w-44 animate-pop" />
         </div>
-        <h1 className="mt-6 text-[1.75rem] leading-tight font-extrabold tracking-tight">Akun Summarevent</h1>
-        <p className="mt-1.5 text-base text-muted-foreground">Masuk untuk melihat e-ticket, pesanan, dan daftar tunggumu. Cukup nomor HP, tanpa kata sandi.</p>
+        <h1 className="mt-6 font-poster text-[2.5rem] leading-[0.95] uppercase">Akun Summarevent</h1>
+        <p className="mt-1.5 text-base text-muted-foreground">Cukup nomor HP, tanpa kata sandi.</p>
         <div className="mt-6 grid gap-2">
           <Button asChild className="h-14 text-base">
             <Link to="/app/masuk?next=/app/akun">Masuk</Link>
@@ -53,8 +53,7 @@ export default function Account() {
           </Button>
         </div>
         <div className="mt-5 rounded-2xl border border-dashed border-ink/25 p-4 text-sm">
-          <p className="font-semibold">Mau lihat akun yang sudah punya tiket?</p>
-          <p className="mt-0.5 text-muted-foreground">Rina adalah pengunjung contoh dengan tiket dan pesanan.</p>
+          <p className="font-semibold">Lihat akun contoh yang sudah punya tiket</p>
           <Button variant="outline" className="mt-3 h-11 w-full" onClick={() => void loginAsPersona()} disabled={demoBusy}>
             Masuk sebagai Rina (data contoh)
           </Button>
@@ -88,8 +87,8 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
     <div>
       <TabHeader title="Akun" />
       <div className="space-y-6 px-4 pt-1 pb-6">
-        <section className="flex items-center gap-3.5 rounded-2xl border bg-card p-4">
-          <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand text-xl font-bold text-white" aria-hidden>
+        <section className="flex items-center gap-3.5 rounded-[1.4rem] bg-card p-4 shadow-xs">
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-yellow font-poster text-2xl text-ink" aria-hidden>
             {initials}
           </span>
           <div className="min-w-0 flex-1">
@@ -100,10 +99,10 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
 
         {!!waitlist.data?.length && (
           <section aria-labelledby="wl-title">
-            <h2 id="wl-title" className="mb-2 px-1 text-sm font-bold text-muted-foreground">
+            <h2 id="wl-title" className="mb-2.5 px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
               Daftar tunggu
             </h2>
-            <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+            <ul className="divide-y overflow-hidden rounded-[1.4rem] bg-card shadow-xs">
               {waitlist.data.map((w) => (
                 <li key={w.id} className="flex min-h-16 items-center gap-3 px-4 py-3">
                   <span className="min-w-0 flex-1">
@@ -113,7 +112,7 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
                     </span>
                     <span className="mt-1 block text-xs font-semibold">
                       {w.status === 'NOTIFIED' ? (
-                        <Link to={`/app/e/${w.event.slug}/s/${w.sessionId}?c=${w.categoryId}`} className="text-brand underline-offset-2 hover:underline">
+                        <Link to={`/app/e/${w.event.slug}/s/${w.sessionId}?c=${w.categoryId}`} className="underline underline-offset-2">
                           Ada tempat lepas, pesan sekarang
                         </Link>
                       ) : (
@@ -133,7 +132,7 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
         )}
 
         <section aria-labelledby="orders-title">
-          <h2 id="orders-title" className="mb-2 px-1 text-sm font-bold text-muted-foreground">
+          <h2 id="orders-title" className="mb-2.5 px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
             Pesanan
           </h2>
           {orders.loading && !orders.data ? (
@@ -155,7 +154,7 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
               }
             />
           ) : (
-            <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+            <ul className="divide-y overflow-hidden rounded-[1.4rem] bg-card shadow-xs">
               {list.map((d) => {
                 const seats = d.order.items.map((i) => i.seatLabel).filter((x): x is string => !!x)
                 return (
@@ -181,7 +180,7 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
         </section>
 
         <section aria-labelledby="app-title">
-          <h2 id="app-title" className="mb-2 px-1 text-sm font-bold text-muted-foreground">
+          <h2 id="app-title" className="mb-2.5 px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
             Aplikasi
           </h2>
           <AppSetupCard />
@@ -189,7 +188,7 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
 
         <button
           type="button"
-          className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border bg-card font-semibold text-destructive transition active:scale-[0.98] active:bg-muted"
+          className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[1.4rem] bg-card font-semibold text-destructive shadow-xs transition active:scale-[0.98] active:bg-muted"
           onClick={() => {
             api.logout('VISITOR')
             onLogout()

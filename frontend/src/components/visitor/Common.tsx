@@ -53,7 +53,7 @@ export function TabHeader({ title, subtitle, right }: { title: string; subtitle?
         {right && <div className="absolute right-2 bottom-0 flex h-14 items-center">{right}</div>}
       </div>
       <header className="px-4 pb-3">
-        <h1 ref={ref} className="text-[2rem] leading-tight font-extrabold tracking-tight">
+        <h1 ref={ref} className="font-poster text-[2.75rem] leading-[0.95] uppercase">
           {title}
         </h1>
         {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
@@ -160,6 +160,18 @@ export function SectionTitle({ children, className, right }: { children: ReactNo
   return (
     <div className={cn('mb-2 flex items-baseline justify-between gap-2', className)}>
       <h2 className="text-base font-bold">{children}</h2>
+      {right}
+    </div>
+  )
+}
+
+/** A section's name as a small tracked label, the way a printed ticket names its fields. */
+export function SectionLabel({ id, children, right }: { id?: string; children: ReactNode; right?: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 px-1">
+      <h2 id={id} className="text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
+        {children}
+      </h2>
       {right}
     </div>
   )

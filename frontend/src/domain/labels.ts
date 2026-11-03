@@ -124,12 +124,15 @@ export const SUNDA = {
   thanks: { su: 'Hatur nuhun!', id: 'Terima kasih' },
 } as const
 
-/** Category colours offered in the admin wizard – none of them is a status colour. */
+/**
+ * Category colours offered in the admin wizard: tuned to sit with the Summarecon green, orange and yellow, and none of
+ * them a status colour.
+ */
 export const CATEGORY_COLORS = [
-  { name: 'Ungu', value: '#7c3aed' },
+  { name: 'Plum', value: '#8b2c6a' },
   { name: 'Oranye Summarecon', value: '#f26f22' },
-  { name: 'Biru', value: '#2563eb' },
-  { name: 'Biru laut', value: '#0e7490' },
-  { name: 'Magenta', value: '#c026d3' },
+  { name: 'Teal', value: '#0e7c7b' },
+  { name: 'Biru tinta', value: '#2d4c8f' },
+  { name: 'Cokelat', value: '#8a5a2b' },
   { name: 'Abu', value: '#57534e' },
 ] as const

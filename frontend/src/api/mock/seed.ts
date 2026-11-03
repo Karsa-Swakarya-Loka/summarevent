@@ -370,7 +370,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   }
   const vip = cat('cat_vip', e1, {
     name: 'VIP',
-    color: '#7c3aed',
+    color: '#8b2c6a',
     accessMethod: 'PAID',
     price: 150_000,
     description: 'Baris A–B, paling dekat panggung',
@@ -385,7 +385,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
     description: 'Baris C–F. Gratis dengan belanja min Rp300.000 di tenant SUMMABA',
     receiptRules: defaultReceiptRules(excluded),
   })
-  const reg = cat('cat_reg', e1, { name: 'Reguler', color: '#2563eb', accessMethod: 'PAID', price: 50_000, description: 'Baris G–J' })
+  const reg = cat('cat_reg', e1, { name: 'Reguler', color: '#0e7c7b', accessMethod: 'PAID', price: 50_000, description: 'Baris G–J' })
   const fest = cat('cat_fest', e1, { name: 'Festival', color: '#57534e', accessMethod: 'FREE', price: 0, quota: 60, description: 'Area berdiri di belakang, tanpa nomor kursi' })
   e1.seatAssignments = assignRows(seats1, [
     { categoryId: vip.id, from: 'A', to: 'B' },
@@ -422,8 +422,8 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
     createdBy: DEMO_ADMIN_ID,
     createdAt: created,
   }
-  const gold = cat('cat_gold', e2, { name: 'Gold', color: '#c026d3', accessMethod: 'PAID', price: 200_000, description: 'Baris A–D' })
-  const silver = cat('cat_silver', e2, { name: 'Silver', color: '#0e7490', accessMethod: 'PAID', price: 100_000, description: 'Baris E–H' })
+  const gold = cat('cat_gold', e2, { name: 'Gold', color: '#8a5a2b', accessMethod: 'PAID', price: 200_000, description: 'Baris A–D' })
+  const silver = cat('cat_silver', e2, { name: 'Silver', color: '#2d4c8f', accessMethod: 'PAID', price: 100_000, description: 'Baris E–H' })
   e2.seatAssignments = assignRows(seats2, [
     { categoryId: gold.id, from: 'A', to: 'D' },
     { categoryId: silver.id, from: 'E', to: 'H' },

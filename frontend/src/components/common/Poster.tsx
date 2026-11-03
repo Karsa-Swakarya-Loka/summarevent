@@ -3,8 +3,8 @@ import { POSTER_THEMES } from './posterThemes'
 import { cn } from '@/lib/utils'
 
 /**
- * Generated event posters (no external images needed). Each theme is a flat, brand-coloured composition with the
- * ticket-notch motif. `bare` draws the artwork alone, for cards that set the title and label themselves.
+ * Generated event posters (no external images needed). Each theme is a flat, brand-coloured composition. `bare` draws
+ * the artwork alone, for cards that set the title and label themselves.
  */
 export function Poster({ theme, title, className, compact = false, bare = false }: { theme: PosterTheme; title: string; className?: string; compact?: boolean; bare?: boolean }) {
   const t = POSTER_THEMES[theme]

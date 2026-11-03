@@ -211,13 +211,13 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
                   {l.visual === 'AVAILABLE' && seatColors.length > 1 ? (
                     <AvailableSample colors={seatColors} />
                   ) : (
-                    <SeatSample visual={l.visual} color={l.visual === 'AVAILABLE' && seatColors[0] ? seatColors[0] : '#2563eb'} />
+                    <SeatSample visual={l.visual} color={l.visual === 'AVAILABLE' && seatColors[0] ? seatColors[0] : '#0e7c7b'} />
                   )}
                   {l.label}
                 </li>
               ))}
               <li className="flex items-center gap-1.5">
-                <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] bg-[#2563eb] text-[11px] text-white" aria-hidden>
+                <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] bg-[#0e7c7b] text-[11px] text-white" aria-hidden>
                   ♿
                 </span>
                 {PRIORITY_SEAT_LABEL}

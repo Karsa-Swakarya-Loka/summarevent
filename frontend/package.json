@@ -15,6 +15,8 @@
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@fontsource/anton": "5.3.0",
+    "@fontsource/libre-barcode-128-text": "5.3.0",
     "@yudiel/react-qr-scanner": "^2.6.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.2",

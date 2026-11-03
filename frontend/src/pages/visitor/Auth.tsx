@@ -25,7 +25,7 @@ const COPY = {
   daftar: {
     art: 'kursi',
     title: 'Daftar akun baru',
-    lead: 'Cukup nama dan nomor HP. E-ticket dan pesananmu tersimpan di nomor ini.',
+    lead: 'Cukup nama dan nomor HP, tanpa kata sandi.',
     switchText: 'Sudah punya akun?',
     switchLabel: 'Masuk',
     switchTo: '/app/masuk',
@@ -76,22 +76,21 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
           <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
           <Illustration name={c.art} className="relative w-28 animate-pop" />
         </div>
-        <h1 className="mt-6 animate-rise text-[1.75rem] leading-tight font-extrabold tracking-tight">{c.title}</h1>
+        <h1 className="mt-6 animate-rise font-poster text-[2.5rem] leading-[0.95] text-balance uppercase">{c.title}</h1>
         <p className="mt-1.5 animate-rise text-base text-muted-foreground [animation-delay:60ms]">{c.lead}</p>
 
         <LoginPanel key={mode} mode={mode} className="mt-7" onSuccess={done} />
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {c.switchText}{' '}
-          <Link to={c.switchTo + query} replace className="inline-flex min-h-11 items-center px-1 font-bold text-brand underline-offset-4 hover:underline">
+          <Link to={c.switchTo + query} replace className="inline-flex min-h-11 items-center px-1 font-bold underline underline-offset-4">
             {c.switchLabel}
           </Link>
         </p>
 
         {mode === 'masuk' && (
           <div className="mt-4 rounded-2xl border border-dashed border-ink/25 p-4 text-sm">
-            <p className="font-semibold">Mau lihat akun yang sudah punya tiket?</p>
-            <p className="mt-0.5 text-muted-foreground">Rina adalah pengunjung contoh dengan tiket dan pesanan.</p>
+            <p className="font-semibold">Lihat akun contoh yang sudah punya tiket</p>
             <Button variant="outline" className="mt-3 h-11 w-full" onClick={() => void loginAsPersona()} disabled={demoBusy}>
               Masuk sebagai Rina (data contoh)
             </Button>

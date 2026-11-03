@@ -47,9 +47,9 @@ export function AppSetupCard() {
   }
 
   return (
-    <section className="rounded-2xl border bg-card p-4" aria-label="Pasang di HP">
+    <section className="rounded-[1.4rem] bg-card p-4 shadow-xs" aria-label="Pasang di HP">
       <h2 className="flex items-center gap-2 font-bold">
-        <Smartphone className="size-4 text-brand" aria-hidden /> Pasang di HP
+        <Smartphone className="size-4" aria-hidden /> Pasang di HP
       </h2>
       {installed ? (
         <p className="mt-1 flex items-center gap-1.5 text-sm text-[#0b6b35]">
@@ -57,23 +57,22 @@ export function AppSetupCard() {
         </p>
       ) : canPromptInstall() ? (
         <>
-          <p className="mt-1 text-sm text-muted-foreground">Buka Summarevent langsung dari layar utama, tanpa ke toko aplikasi.</p>
           <Button className="mt-3 h-11 w-full" onClick={() => void install()}>
             Pasang di layar utama
           </Button>
         </>
       ) : isIos() ? (
-        <p className="mt-1 text-sm text-muted-foreground">Di Safari, ketuk tombol Bagikan lalu pilih Tambah ke Layar Utama.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Safari: Bagikan, lalu Tambah ke Layar Utama.</p>
       ) : (
-        <p className="mt-1 text-sm text-muted-foreground">Buka menu browser, lalu pilih Pasang aplikasi atau Tambahkan ke layar utama.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Menu browser, lalu Pasang aplikasi.</p>
       )}
       {notificationsSupported() && (
         <label className="mt-4 flex items-start justify-between gap-3 border-t pt-3">
           <span className="min-w-0">
             <span className="flex items-center gap-1.5 text-sm font-semibold">
-              <BellRing className="size-4 text-brand" aria-hidden /> Notifikasi di HP
+              <BellRing className="size-4" aria-hidden /> Notifikasi di HP
             </span>
-            <span className="block text-xs text-muted-foreground">Simulasi Web Push: muncul selama app terbuka di browser. Push sungguhan butuh server di backend.</span>
+            <span className="block text-xs text-muted-foreground">Selama app terbuka (simulasi)</span>
           </span>
           <Switch checked={notify} onCheckedChange={(v) => void toggleNotify(v)} aria-label="Notifikasi di HP" />
         </label>

@@ -1,7 +1,7 @@
 /** Pure helpers shared by the visitor screens. */
 import type { EventSummary, OrderDetail } from '@/api/contract'
-import type { Order, OrderStatus, Seat, Session, TicketCategory } from '@/domain/types'
-import { fmtRange, fmtShortDate, rupiahPlain, wibDate } from '@/lib/format'
+import type { AppNotification, Order, OrderStatus, Seat, Session, TicketCategory } from '@/domain/types'
+import { fmtDayMonth, fmtRange, fmtShortDate, fmtTime, rupiahPlain, wibDate } from '@/lib/format'
 
 const PENDING_STATUSES: OrderStatus[] = ['AWAITING_PAYMENT', 'AWAITING_VERIFICATION']
 export const isPendingOrder = (o: Pick<Order, 'status'>) => PENDING_STATUSES.includes(o.status)
@@ -38,12 +38,6 @@ export function priceHint(categories: TicketCategory[]): string {
   if (categories.some((c) => c.accessMethod === 'FREE')) return 'Gratis'
   if (categories.some((c) => c.accessMethod === 'RECEIPT')) return 'Tukar struk'
   return 'Gratis'
-}
-
-/** Total label as shown in summaries. */
-export function totalLabel(total: number, method: TicketCategory['accessMethod']): string {
-  if (method === 'FREE') return 'Gratis'
-  return rupiahPlain(total)
 }
 
 export function sessionWhen(s: Pick<Session, 'startAt' | 'endAt' | 'demoLive'>): string {
@@ -108,5 +102,26 @@ export function recallSession(slug: string): string | null {
     return sessionStorage.getItem(PICK_KEY(slug))
   } catch {
     return null
+  }
+}
+
+/* ---------- Pesan ---------- */
+
+/** "21.23" today, "21 Nov" before. */
+export function messageWhen(iso: string, now = new Date()): string {
+  const day = wibDate(new Date(iso))
+  return day === wibDate(now) ? fmtTime(iso) : fmtDayMonth(day)
+}
+
+/** The screen a message points to. Only reminders carry their order, so the rest lead to where their kind lives. */
+export function messageNext(n: AppNotification): { to: string; label: string } {
+  switch (n.kind) {
+    case 'ORDER_CONFIRMED':
+    case 'REMINDER':
+      return { to: '/app/pass', label: 'Buka Pass Saya' }
+    case 'HOLD_EXPIRED':
+      return { to: '/app', label: 'Cari event' }
+    default:
+      return n.orderId ? { to: `/app/orders/${n.orderId}`, label: 'Lihat pesanan' } : { to: '/app/akun', label: 'Lihat di Akun' }
   }
 }

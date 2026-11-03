@@ -136,8 +136,8 @@ summarevent/
 | --- | --- |
 | **Web** (CI) | Typecheck, lint, unit test, dan build produksi di setiap PR dan push ke `main`. |
 | **No AI attribution** (CI dan hook) | Menolak atribusi AI di commit dan PR. Juga dicek hook `commit-msg` dan `pre-push` ([aturannya](AGENTS.md#1-tanpa-atribusi-ai)). |
-| **End-to-end** (lokal) | Alur nyata di Chrome: bayar, tukar struk, gratis, rebutan kursi, waktu habis, daftar tunggu, refund, OCR, panitia di laptop dan HP, wizard, dan petugas. Suite gagal kalau ada error di console. |
-| **Aksesibilitas** (lokal) | axe-core memeriksa WCAG 2.1 AA di 18 layar ketiga peran, plus target sentuh kursi minimal 44 px setelah zoom. |
+| **End-to-end** (lokal) | Alur nyata di Chrome: bayar, tukar struk, gratis, rebutan kursi, waktu habis, daftar tunggu, refund, OCR, periode jual, panitia di laptop dan HP, wizard, dan petugas sampai pengunjung melihat "Hatur nuhun!". Suite gagal kalau hasilnya salah, ada error di console, atau layar bisa digeser ke samping. |
+| **Aksesibilitas** (lokal) | axe-core memeriksa WCAG 2.1 AA di 30 layar ketiga peran, termasuk menu, dialog, dan form. Di HP 360 px setiap target sentuh minimal 44 px, kursi diukur setelah zoom. |
 
 Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. Tampilan dicek di HP 360 px sampai desktop.
 

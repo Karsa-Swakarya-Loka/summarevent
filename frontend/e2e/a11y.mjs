@@ -100,6 +100,17 @@ const rinaMessage = async (page) => {
   await page.waitForURL(/\/app\/inbox\/[^/]+$/)
   await page.locator('main article').first().waitFor()
 }
+// Rina's profile, then its edit sheet
+const rinaProfile = async (page) => {
+  await rinaPass(page)
+  await page.goto(BASE + '/app/akun/profil', { waitUntil: 'networkidle' })
+  await page.getByRole('heading', { name: /Rina/ }).waitFor()
+}
+const rinaEditProfile = async (page) => {
+  await rinaProfile(page)
+  await page.getByRole('button', { name: 'Edit profil' }).click()
+  await page.getByRole('dialog', { name: 'Edit profil' }).waitFor()
+}
 // Paid checkout after the OTP login: names, the payment switch and the pay bar
 const payStep = async (page) => {
   await toCheckout(page)
@@ -194,6 +205,8 @@ const screens = [
   [phone, '/', rinaInbox],
   [phone, '/', rinaMessage],
   [phone, '/app/akun'],
+  [phone, '/', rinaProfile],
+  [phone, '/', rinaEditProfile],
   [phone, '/staff/mulai'],
   [phone, '/staff/masuk'],
   [phone, '/staff/masuk', signInError],

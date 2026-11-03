@@ -8,6 +8,7 @@ const load = {
   checkout: () => import('@/pages/visitor/Checkout'),
   order: () => import('@/pages/visitor/OrderStatus'),
   pass: () => import('@/pages/visitor/MyPass'),
+  ticket: () => import('@/pages/visitor/TicketPage'),
   inbox: () => import('@/pages/visitor/Inbox'),
   account: () => import('@/pages/visitor/Account'),
 }
@@ -20,6 +21,7 @@ const ROUTES: Array<[RegExp, ScreenName]> = [
   [/^\/app\/checkout\//, 'checkout'],
   [/^\/app\/orders\//, 'order'],
   [/^\/app\/pass\/?$/, 'pass'],
+  [/^\/app\/pass\/[^/]+\/?$/, 'ticket'],
   [/^\/app\/inbox\/?$/, 'inbox'],
   [/^\/app\/akun\/?$/, 'account'],
 ]

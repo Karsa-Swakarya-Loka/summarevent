@@ -1,25 +1,24 @@
 /**
- * Pass Saya (PV-10): one ticket card per seat, QR always one tap away, status always visible.
+ * Pass Saya (PV-10): every ticket as a small black ticket with its seat on the stub. Tapping one opens it on its own
+ * screen, with the QR and the stub to pull.
  */
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ChevronRight, CircleCheck, Hourglass, Sun } from 'lucide-react'
+import { ChevronRight, CircleCheck, Hourglass } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail, PassItem } from '@/api/contract'
-import { Countdown, EmptyState, StatusBadge, SundaText } from '@/components/common/bits'
-import { QrCode } from '@/components/common/QrCode'
+import { Countdown, EmptyState, SundaText } from '@/components/common/bits'
 import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError, TabHeader } from '@/components/visitor/Common'
-import { TalonTicket } from '@/components/visitor/TalonTicket'
-import { continuePath, isPendingOrder, seatRangeLabel, sessionWhen } from '@/components/visitor/helpers'
+import { continuePath, isPendingOrder, seatRangeLabel } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
-import { ORDER_STATUS_LABEL, TICKET_STATUS_LABEL, TICKET_TONE } from '@/domain/labels'
+import { ORDER_STATUS_LABEL, TICKET_STATUS_LABEL } from '@/domain/labels'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
-import { fmtTime } from '@/lib/format'
+import { fmtDate, fmtTime } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 interface Group {
   orderId: string
@@ -52,19 +51,15 @@ export default function MyPass() {
   const tickets = useLive(() => api.myTickets(), [user?.id])
   const orders = useLive(() => api.myOrders(), [user?.id])
   const now = useNow(30_000)
-  const [big, setBig] = useState<PassItem | null>(null)
   const [demoBusy, setDemoBusy] = useState(false)
 
   const pending: OrderDetail[] = (orders.data ?? []).filter((d) => isPendingOrder(d.order) && !d.order.simulated)
   const all = tickets.data ?? []
   const isCurrent = (it: PassItem) => it.ticket.status === 'ACTIVE' && !timing(it, now).ended
-  const current = groupByOrder(all.filter(isCurrent))
+  const current = all.filter(isCurrent).sort((a, b) => a.session.startAt.localeCompare(b.session.startAt))
   const checkedIn = groupByOrder(all.filter((it) => isRecentCheckin(it, now)))
   const recentIds = new Set(checkedIn.flatMap((g) => g.items.map((it) => it.ticket.id)))
   const history = all.filter((it) => !isCurrent(it) && !recentIds.has(it.ticket.id))
-
-  // each ticket's issuing and tearing plays once on this phone: what was already seen is read when the screen opens
-  const [seen] = useState(readSeen)
 
   const loginAsPersona = async () => {
     setDemoBusy(true)
@@ -81,32 +76,29 @@ export default function MyPass() {
 
   return (
     <div>
-      <TabHeader title="Pass Saya" subtitle={user ? `E-ticket atas nama ${user.name}` : 'E-ticket QR kamu ada di sini.'} />
+      <TabHeader title="Pass Saya" />
 
-      <div className="space-y-5 px-4 pt-1 pb-6">
+      <div className="space-y-6 px-4 pt-1 pb-6">
         {pending.map((d) => (
-          <Link key={d.order.id} to={continuePath(d)} className="flex items-center gap-3 rounded-2xl border border-status-warn/50 bg-status-warn/12 p-3 transition hover:bg-status-warn/20">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-status-warn/25 text-[#7a5600]">
+          <Link key={d.order.id} to={continuePath(d)} className="flex items-center gap-3 rounded-2xl border border-status-warn/60 bg-[#fff6dc] p-3 transition active:scale-[0.98]">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-status-warn/30 text-[#7a5600]">
               <Hourglass className="size-5" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block font-bold">Selesaikan pesananmu</span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {d.event.title} · {d.category.name}
-                {d.order.items.some((i) => i.seatLabel) ? ` · ${seatRangeLabel(d.order.items.map((i) => i.seatLabel ?? '').filter(Boolean))}` : ` · ${d.order.qty} orang`}
-              </span>
-              <span className="mt-0.5 flex items-center gap-2 text-xs">
+              <span className="flex items-center gap-2 text-xs">
                 <span className="font-semibold text-[#7a5600]">{ORDER_STATUS_LABEL[d.order.status]}</span>
-                <Countdown to={d.order.holdExpiresAt} className="text-sm" />
+                <Countdown to={d.order.holdExpiresAt} className="text-xs" />
               </span>
             </span>
-            <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+            <ChevronRight className="size-5 shrink-0 text-[#7a5600]" aria-hidden />
           </Link>
         ))}
 
         {tickets.loading && !tickets.data ? (
-          <div className="space-y-4" aria-busy="true" aria-label="Memuat tiket">
-            <Skeleton className="h-[30rem] w-full rounded-3xl" />
+          <div className="space-y-3" aria-busy="true" aria-label="Memuat tiket">
+            <Skeleton className="h-32 w-full rounded-[1.1rem]" />
+            <Skeleton className="h-32 w-full rounded-[1.1rem]" />
           </div>
         ) : tickets.error && !tickets.data ? (
           <LoadError error={tickets.error} onRetry={tickets.reload} />
@@ -120,9 +112,7 @@ export default function MyPass() {
                   <Link to="/app">Cari event</Link>
                 </Button>
               }
-            >
-              Pilih event dan kursimu. Begitu terkonfirmasi, e-ticket QR muncul di sini.
-            </EmptyState>
+            />
           ) : (
             <EmptyState
               icon={<Illustration name="padlock" className="w-28" />}
@@ -130,56 +120,38 @@ export default function MyPass() {
               action={
                 <div className="flex w-full flex-col gap-2">
                   <Button asChild className="h-11">
-                    <Link to="/app/akun">Masuk dengan nomor HP</Link>
+                    <Link to="/app/masuk?next=/app/pass">Masuk dengan nomor HP</Link>
                   </Button>
                   <Button variant="outline" className="h-11" onClick={() => void loginAsPersona()} disabled={demoBusy}>
                     Lihat contoh: masuk sebagai Rina
                   </Button>
                 </div>
               }
-            >
-              E-ticket tersimpan di akun nomor HP yang kamu pakai saat memesan.
-            </EmptyState>
+            />
           )
         ) : (
           <>
             {checkedIn.map((g) => (
-              <div key={g.orderId} className="space-y-4">
+              <div key={g.orderId} className="space-y-3">
                 <ThanksCard items={g.items} />
-                {g.items.map((it) => (
-                  <TalonTicket key={it.ticket.id} item={it} status="" live={false} torn tear={!seen.torn.has(it.ticket.id)} onTorn={() => markSeen([], [it.ticket.id])} />
-                ))}
+                <ul className="space-y-3">
+                  {g.items.map((it) => (
+                    <li key={it.ticket.id}>
+                      <MiniTicket item={it} now={now} />
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
 
             {current.length > 0 ? (
-              current.map((g) => {
-                const first = g.items[0]
-                return (
-                  <section key={g.orderId} aria-label={`Pesanan ${first.order.code}`} className="space-y-3">
-                    <div className="flex items-baseline justify-between gap-2 px-1">
-                      <h2 className="min-w-0 truncate text-sm font-bold">{first.event.title}</h2>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {g.items.length} tiket · {first.order.code}
-                      </span>
-                    </div>
-                    {g.items.map((it) => {
-                      const time = timing(it, now)
-                      return (
-                        <TalonTicket
-                          key={it.ticket.id}
-                          item={it}
-                          status={time.text}
-                          live={time.live}
-                          issue={!seen.issued.has(it.ticket.id)}
-                          onIssued={() => markSeen([it.ticket.id], [])}
-                          onZoom={() => setBig(it)}
-                        />
-                      )
-                    })}
-                  </section>
-                )
-              })
+              <ul className="space-y-3" aria-label="E-ticket aktif">
+                {current.map((it, i) => (
+                  <li key={it.ticket.id} className="animate-rise" style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}>
+                    <MiniTicket item={it} now={now} />
+                  </li>
+                ))}
+              </ul>
             ) : checkedIn.length > 0 ? null : (
               <EmptyState
                 icon={<Illustration name="tiket" className="w-28" />}
@@ -189,18 +161,18 @@ export default function MyPass() {
                     <Link to="/app">Cari event</Link>
                   </Button>
                 }
-              >
-                Tiket yang sudah dipakai atau selesai ada di Riwayat.
-              </EmptyState>
+              />
             )}
 
             {history.length > 0 && (
-              <section aria-label="Riwayat tiket" className="space-y-2">
-                <h2 className="px-1 text-sm font-bold text-muted-foreground">Riwayat</h2>
-                <ul className="space-y-2">
+              <section aria-labelledby="history-title" className="space-y-3">
+                <h2 id="history-title" className="px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                  Riwayat
+                </h2>
+                <ul className="space-y-3">
                   {history.map((it) => (
                     <li key={it.ticket.id}>
-                      <HistoryRow item={it} now={now} />
+                      <MiniTicket item={it} now={now} />
                     </li>
                   ))}
                 </ul>
@@ -209,53 +181,41 @@ export default function MyPass() {
           </>
         )}
       </div>
-
-      <Dialog open={!!big} onOpenChange={(o) => !o && setBig(null)}>
-        <DialogContent className="sm:max-w-sm">
-          {big && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{big.ticket.seatLabel ? `Kursi ${big.ticket.seatLabel}` : big.category.name}</DialogTitle>
-                <DialogDescription>
-                  {big.event.title} · {sessionWhen(big.session)}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-full max-w-[19rem] rounded-xl bg-white p-3 ring-1 ring-border">
-                  <QrCode value={big.ticket.qrToken} className="block h-auto w-full" />
-                </div>
-                <p className="font-mono text-lg font-bold tracking-wider">{big.ticket.code}</p>
-                <p className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-                  <Sun className="size-4 shrink-0" aria-hidden /> Naikkan kecerahan layar supaya QR mudah dipindai.
-                </p>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
 
-/** Tickets whose issuing (QR assembly) and tearing (check-in) this phone has already shown. */
-const SEEN_KEY = 'summarevent:talon'
-function readSeen(): { issued: Set<string>; torn: Set<string> } {
-  try {
-    const v = JSON.parse(localStorage.getItem(SEEN_KEY) ?? '{}') as { issued?: string[]; torn?: string[] }
-    return { issued: new Set(v.issued ?? []), torn: new Set(v.torn ?? []) }
-  } catch {
-    return { issued: new Set(), torn: new Set() }
-  }
-}
-function markSeen(issued: string[], torn: string[]) {
-  const now = readSeen()
-  issued.forEach((id) => now.issued.add(id))
-  torn.forEach((id) => now.torn.add(id))
-  try {
-    localStorage.setItem(SEEN_KEY, JSON.stringify({ issued: [...now.issued].slice(-200), torn: [...now.torn].slice(-200) }))
-  } catch {
-    /* blocked storage: the animations simply play again next time */
-  }
+/** A ticket in the list: the event in display type, its seat on the stub. */
+function MiniTicket({ item, now }: { item: PassItem; now: Date }) {
+  const { ticket, event, session, category } = item
+  const time = timing(item, now)
+  const active = ticket.status === 'ACTIVE' && !time.ended
+  const day = session.demoLive ? 'Hari ini' : fmtDate(session.startAt, { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '')
+  const note = ticket.status === 'USED' && ticket.usedAt ? `Masuk ${fmtTime(ticket.usedAt)}` : ticket.status === 'ACTIVE' ? time.text : TICKET_STATUS_LABEL[ticket.status]
+  return (
+    <article aria-label={`E-ticket ${ticket.seatLabel ? `kursi ${ticket.seatLabel}` : category.name}`}>
+      <Link
+        to={`/app/pass/${ticket.id}`}
+        className={cn('ticket-mini relative flex min-h-32 overflow-hidden rounded-[1.1rem] text-[#ededed] transition active:scale-[0.98]', active ? 'talon-card' : 'bg-[#4a4746]')}
+      >
+        <i className="talon-grain" aria-hidden />
+        <span className="relative flex min-w-0 flex-1 flex-col justify-between gap-2.5 py-3.5 pr-3 pl-4">
+          <span className="talon-label truncate">
+            {category.name} · {day} · {fmtTime(session.startAt)}
+          </span>
+          <span className="line-clamp-2 font-poster text-[1.6rem] leading-[0.92] uppercase">{event.title}</span>
+          <span className={cn('flex items-center gap-1.5 text-xs font-semibold', active && time.live ? 'text-[#2fb36d]' : 'text-white/65')}>
+            {active && time.live && <span className="size-1.5 rounded-full bg-[#2fb36d]" aria-hidden />}
+            {note}
+          </span>
+        </span>
+        <span className="relative flex w-[5.5rem] shrink-0 flex-col items-center justify-center border-l-2 border-dashed border-white/20">
+          <span className="talon-label">{ticket.seatLabel ? 'Kursi' : 'Untuk'}</span>
+          <span className="font-poster text-[2.2rem] leading-none">{ticket.seatLabel ?? '1'}</span>
+        </span>
+      </Link>
+    </article>
+  )
 }
 
 /** How long the "Hatur nuhun!" card stays after the gate scanned a ticket. */
@@ -268,40 +228,19 @@ function isRecentCheckin(it: PassItem, now: Date): boolean {
 
 /** "Hatur nuhun!" after check-in (PRD §1), once per order, while the visit is fresh. */
 function ThanksCard({ items }: { items: PassItem[] }) {
-  const { event } = items[0]
   const firstScan = items.map((it) => it.ticket.usedAt ?? '').sort()[0]
   const seats = items.map((it) => it.ticket.seatLabel).filter((s): s is string => !!s)
   return (
-    <section aria-label="Sudah check-in" className="flex items-start gap-3 rounded-3xl bg-brand-soft p-4">
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand text-white">
+    <section aria-label="Sudah check-in" className="flex items-center gap-3 rounded-[1.1rem] bg-brand p-4 text-white">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/15">
         <CircleCheck className="size-6" aria-hidden />
       </span>
       <div className="min-w-0">
         <SundaText k="thanks" size="lg" />
-        <p className="mt-1.5 text-sm">
-          {seats.length ? `Kursi ${seatRangeLabel(seats)}` : `${items.length} tiket`} sudah check-in jam {fmtTime(firstScan)} WIB. Selamat menikmati {event.title}.
+        <p className="mt-1 text-sm text-white/85">
+          {seats.length ? seatRangeLabel(seats) : `${items.length} tiket`} masuk jam {fmtTime(firstScan)}
         </p>
       </div>
     </section>
-  )
-}
-
-function HistoryRow({ item, now }: { item: PassItem; now: Date }) {
-  const { ticket, event, session, category } = item
-  const time = timing(item, now)
-  const note = ticket.status === 'USED' && ticket.usedAt ? `Dipakai ${fmtTime(ticket.usedAt)} WIB` : ticket.status === 'CANCELLED' ? 'Tiket dibatalkan' : time.text
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-card p-3">
-      <span className="flex h-12 min-w-14 items-center justify-center rounded-xl border-2 px-2 text-lg font-extrabold text-muted-foreground tabular-nums" style={{ borderColor: category.color }}>
-        {ticket.seatLabel ?? '–'}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold">{event.title}</span>
-        <span className="block truncate text-xs text-muted-foreground">
-          {sessionWhen(session)} · {note}
-        </span>
-      </span>
-      <StatusBadge tone={TICKET_TONE[ticket.status]}>{TICKET_STATUS_LABEL[ticket.status]}</StatusBadge>
-    </div>
   )
 }

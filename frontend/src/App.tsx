@@ -69,6 +69,7 @@ const router = createBrowserRouter([
       { path: 'checkout/:orderId', lazy: screen('checkout') },
       { path: 'orders/:orderId', lazy: screen('order') },
       { path: 'pass', lazy: screen('pass') },
+      { path: 'pass/:ticketId', lazy: screen('ticket') },
       { path: 'inbox', lazy: screen('inbox') },
       { path: 'akun', lazy: screen('account') },
       { path: 'mulai', element: page(Onboarding) },

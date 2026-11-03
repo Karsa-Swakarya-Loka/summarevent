@@ -24,7 +24,7 @@ for (let i = 0; i < args.length; i++) {
 fs.mkdirSync(out, { recursive: true })
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true })
 const ctx = await browser.newContext(
-  desktop ? { viewport: { width: 1366, height: 900 } } : { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+  desktop ? { viewport: { width: 1366, height: 900 } } : { viewport: { width: 360, height: 740 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
 )
 const page = await ctx.newPage()
 page.on('console', (m) => { if (m.type() === 'error') console.log(`[console.error] ${m.text()}`) })

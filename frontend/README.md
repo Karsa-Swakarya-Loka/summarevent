@@ -11,7 +11,7 @@ Skrip bantu, dengan `npm run dev` jalan:
 
 | Perintah | Fungsi |
 | --- | --- |
-| `node scripts/shot.mjs /app /app/pass` | Screenshot cepat di HP 390 px (`--desktop` untuk laptop, `--base` untuk alamat lain) |
+| `node scripts/shot.mjs /app /app/pass` | Screenshot cepat di HP 360 px (`--desktop` untuk laptop, `--base` untuk alamat lain) |
 | `node scripts/readme-promo.mjs` | Membuat ulang gambar promo README di `docs/gambar/` (butuh `cwebp`) |
 | `node scripts/og-image.mjs` | Membuat ulang `public/og.png`, gambar pratinjau link |
 | `npx knip` | Mencari file, export, dan dependency yang tidak terpakai |

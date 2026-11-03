@@ -47,11 +47,12 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 - **Panitia.** Wizard event (info, kategori, denah dari template, sesi, publish), peta kursi live, pesanan dan peserta, verifikasi struk, dashboard penjualan dan kehadiran, unduh CSV, akun petugas, serta link dan poster QR untuk dibagikan.
 - **Petugas.** Hasil scan Valid, Sudah digunakan, atau Tidak valid yang terbaca dari 1 meter, dengan bunyi dan getar berbeda. Ada cari tiket manual, check-in rombongan, dan verifikasi struk kertas di desk.
 - **Daftar tunggu dan bonus.** Kategori yang habis menawarkan daftar tunggu dengan kabar otomatis, dan N pembeli pertama bisa mendapat bonus.
+- **Sambutan yang bergerak.** Splash menghidupkan logo Lorong: dua bloknya mengunci, lalu satu titik menyusuri lorong S. Splash muncul sekali per sesi dan bisa diketuk untuk dilewati. Pengunjung baru melihat pengenalan tiga langkah, lalu bisa **Masuk** atau **Daftar** dengan OTP simulasi yang bisa diisi otomatis. Ilustrasi isometrik bergerak mengisi layar kosong dan momen sukses. Semua gerak berhenti kalau HP diatur untuk mengurangi gerakan, dan splash tidak pernah muncul di layar panitia dan petugas.
 - **PWA.** Bisa dipasang di layar utama, dengan notifikasi perangkat selama app terbuka.
 
 ## Coba dalam dua menit
 
-1. Buka [summarevent.vercel.app](https://summarevent.vercel.app), pilih **Pengunjung**, lalu *Pentas Musikal Keluarga "Sangkuriang"* sesi 16.00.
+1. Buka [summarevent.vercel.app](https://summarevent.vercel.app), pilih **Pengunjung**, ikuti atau **Lewati** pengenalan tiga langkah, lalu pilih *Pentas Musikal Keluarga "Sangkuriang"* sesi 16.00.
 2. Pilih **Reguler**, ketuk **Pilihkan 2 kursi berdampingan**, lalu **Hayu ngiring**. Kursinya ditahan 10 menit.
 3. Masuk dengan nomor HP apa saja (kode OTP tampil di layar), lalu **Simulasikan bayar berhasil**. E-ticket muncul di **Pass Saya**.
 4. Kembali ke denah dan tekan **Uji rebutan kursi**: pembeli simulasi menang sepersekian detik lebih dulu, dan kamu ditawari kursi terdekat.
@@ -137,8 +138,8 @@ summarevent/
 | --- | --- |
 | **Web** (CI) | Typecheck, lint, unit test, dan build produksi di setiap PR dan push ke `main`. |
 | **No AI attribution** (CI dan hook) | Menolak atribusi AI di commit dan PR. Juga dicek hook `commit-msg` dan `pre-push` ([aturannya](AGENTS.md#1-tanpa-atribusi-ai)). |
-| **End-to-end** (lokal) | Alur nyata di Chrome: bayar, tukar struk, gratis, rebutan kursi, waktu habis, daftar tunggu, refund, OCR, periode jual, panitia di laptop dan HP, wizard, dan petugas sampai pengunjung melihat "Hatur nuhun!". Suite gagal kalau hasilnya salah, ada error di console, atau layar bisa digeser ke samping. |
-| **Aksesibilitas** (lokal) | axe-core memeriksa WCAG 2.1 AA di 30 layar ketiga peran, termasuk menu, dialog, dan form. Di HP 360 px setiap target sentuh minimal 44 px, kursi diukur setelah zoom. |
+| **End-to-end** (lokal) | Alur nyata di Chrome: splash dan pengenalan pengunjung baru, daftar akun, bayar, tukar struk, gratis, rebutan kursi, waktu habis, daftar tunggu, refund, OCR, periode jual, panitia di laptop dan HP, wizard, dan petugas sampai pengunjung melihat "Hatur nuhun!". Suite gagal kalau hasilnya salah, ada error di console, atau layar bisa digeser ke samping. |
+| **Aksesibilitas** (lokal) | axe-core memeriksa WCAG 2.1 AA di 36 layar ketiga peran, termasuk pengenalan, masuk, daftar, menu, dialog, dan form. Di HP 360 px setiap target sentuh minimal 44 px, kursi diukur setelah zoom. |
 
 Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. Tampilan dicek di HP 360 px sampai desktop.
 
@@ -173,3 +174,5 @@ Diagram dibuat dengan [Archify](https://github.com/tt-a1i/archify) 3.2 (MIT, [li
 ## Tim
 
 Dibuat di Bandung oleh Tim Summarevent: **Haikal** (frontend & lead teknis), **Bintang** (backend), **Shelvia** (user testing & UX), **Awwal** (product, business & pitch), dan **Said** (system QA). Logo dan aturan pakainya ada di [`docs/brand`](docs/brand/README.md).
+
+Ilustrasi bergerak memakai kit [fun-isometric](https://skills.klvn.dev/fun-isometric) karya Kelvin Adithya (MIT, [lisensi](docs/lisensi/fun-isometric-MIT.txt)), digambar dengan palet Summarecon.

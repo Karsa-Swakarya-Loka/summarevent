@@ -26,11 +26,11 @@ export default function RolePicker() {
     return () => ctl.abort()
   }, [live])
 
+  // each role opens with its splash, its onboarding the first time, and its sign-in (Rina is the visitor shortcut)
   const enter = async (role: 'VISITOR' | 'VISITOR_RINA' | 'ADMIN' | 'STAFF') => {
     setBusy(role)
     try {
       if (role === 'VISITOR_RINA') await api.demoLogin('VISITOR')
-      if (role === 'ADMIN' || role === 'STAFF') await api.demoLogin(role)
       navigate(role === 'ADMIN' ? '/admin' : role === 'STAFF' ? '/staff' : role === 'VISITOR_RINA' ? '/app/pass' : '/app')
     } finally {
       setBusy(null)

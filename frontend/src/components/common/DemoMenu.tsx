@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { FlaskConical, Play, RotateCcw, ScanLine, Store, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiMode } from '@/api'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { setOnboardingDone } from '@/lib/intro'
+import { setOnboardingDone, type IntroRole } from '@/lib/intro'
+import { markSplashSeen } from '@/lib/splash'
 import { cn } from '@/lib/utils'
 
 /**
@@ -16,12 +17,19 @@ import { cn } from '@/lib/utils'
  */
 export function DemoMenu({ className, variant = 'float' }: { className?: string; variant?: 'float' | 'docked' | 'bar' }) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [confirm, setConfirm] = useState(false)
   const [busy, setBusy] = useState(false)
+  // the onboarding to replay is the one of the role on screen
+  const here: IntroRole = pathname.startsWith('/admin') ? 'admin' : pathname.startsWith('/staff') ? 'staff' : 'visitor'
 
+  // a shortcut for judges: straight into the role, past its splash, onboarding and sign-in (demo account)
   const go = async (role: 'VISITOR' | 'ADMIN' | 'STAFF') => {
+    const to = role === 'VISITOR' ? '/app' : role === 'ADMIN' ? '/admin' : '/staff'
     if (role !== 'VISITOR') await api.demoLogin(role)
-    navigate(role === 'VISITOR' ? '/app' : role === 'ADMIN' ? '/admin' : '/staff')
+    markSplashSeen(to)
+    setOnboardingDone(true, role === 'VISITOR' ? 'visitor' : role === 'ADMIN' ? 'admin' : 'staff')
+    navigate(to)
   }
 
   const reset = async () => {
@@ -75,8 +83,8 @@ export function DemoMenu({ className, variant = 'float' }: { className?: string;
           <DropdownMenuItem onClick={() => navigate('/')}>Halaman pilih role</DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
-              setOnboardingDone(false)
-              navigate('/app/mulai')
+              setOnboardingDone(false, here)
+              navigate(here === 'admin' ? '/admin/mulai' : here === 'staff' ? '/staff/mulai' : '/app/mulai')
             }}
           >
             <Play /> Lihat pengenalan lagi

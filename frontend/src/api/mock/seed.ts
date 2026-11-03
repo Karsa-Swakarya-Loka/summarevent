@@ -6,6 +6,7 @@
 import { dummyReceiptSvg, randomReceiptNo } from '@/domain/dummyReceipt'
 import { makeQrToken, sha256Hex } from '@/domain/qr'
 import { buildSeats, randomCode, resolveSession, rowIndex, seatLabel, uid } from '@/domain/rules'
+import { DEMO_SIGN_IN } from '@/lib/demoAccounts'
 import { wibDate, wibTime } from '@/lib/format'
 import type {
   AppNotification,
@@ -305,8 +306,10 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   const created = minutesAgo(now, 60 * 24 * 3).toISOString()
   const saleStart = minutesAgo(now, 60 * 24 * 2).toISOString()
 
+  // panitia and petugas sign in with email + kata sandi (simulated, see lib/demoAccounts.ts)
+  const emailOf = (id: string) => [...DEMO_SIGN_IN.ADMIN, ...DEMO_SIGN_IN.STAFF].find((a) => a.userId === id)?.email ?? null
   const person = (id: string, name: string, phone: string, role: User['role'] = 'VISITOR'): User => {
-    const u: User = { id, role, name, phone, email: null, createdAt: created }
+    const u: User = { id, role, name, phone, email: emailOf(id), createdAt: created }
     db.users.push(u)
     return u
   }

@@ -22,8 +22,12 @@ export const api: Api = baseUrl ? createHttpApi(baseUrl) : createMockApi()
 /** "live" = shared backend, "demo" = data per browser. */
 export const apiMode: 'live' | 'demo' = api.mode === 'http' ? 'live' : 'demo'
 
-/** Where the other version lives, for the cross-link on the role picker. */
-export const LIVE_URL = (import.meta.env.VITE_LIVE_URL as string | undefined) ?? `https://${LIVE_HOSTS[0]}`
+/**
+ * Where the other version lives, for the cross-links. The demo only checks and links the live
+ * version when VITE_LIVE_URL is set at build time (it serves /api/health), so a live backend that
+ * does not exist yet costs the demo no request and no console error.
+ */
+export const LIVE_URL: string | null = (import.meta.env.VITE_LIVE_URL as string | undefined) || null
 export const DEMO_URL = (import.meta.env.VITE_DEMO_URL as string | undefined) ?? 'https://summarevent.vercel.app'
 
 /** Call once at startup. */

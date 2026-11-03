@@ -14,9 +14,10 @@ export default function RolePicker() {
   const live = apiMode === 'live'
   const [liveReady, setLiveReady] = useState(false)
 
-  // Demo version: offer the live version (shared backend, real two-phone test) only when it is up.
+  // Demo version: offer the live version (shared backend, real two-phone test) only when one is
+  // configured (VITE_LIVE_URL) and it answers its health check.
   useEffect(() => {
-    if (live) return
+    if (live || !LIVE_URL) return
     const ctl = new AbortController()
     const timer = setTimeout(() => ctl.abort(), 5000)
     fetch(`${LIVE_URL}/api/health`, { signal: ctl.signal })
@@ -126,7 +127,8 @@ export default function RolePicker() {
             </a>
           </section>
         ) : (
-          liveReady && (
+          liveReady &&
+          LIVE_URL && (
             <section className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-white/10 p-4 text-sm ring-1 ring-white/20">
               <Smartphone className="size-5 shrink-0 text-brand-yellow" aria-hidden />
               <p className="min-w-0 flex-1">
@@ -139,7 +141,7 @@ export default function RolePicker() {
           )
         )}
 
-        <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-10 text-xs text-white/70">
+        <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-10 text-xs text-white/80">
           <span>Data contoh · pembayaran, OTP, dan WA/email disimulasikan · bukan transaksi sungguhan</span>
           <button
             type="button"

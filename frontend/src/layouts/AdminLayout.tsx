@@ -55,7 +55,8 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-dvh bg-background lg:grid lg:grid-cols-[248px_1fr]">
-      <aside className="hidden border-r bg-sidebar lg:flex lg:flex-col lg:gap-6 lg:p-4">
+      {/* sticky so the menu stays in reach on long pages; bottom padding keeps the Demo button off "Keluar" */}
+      <aside className="hidden border-r bg-sidebar lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:gap-6 lg:overflow-y-auto lg:p-4 lg:pb-16">
         <div className="flex flex-col gap-2 px-2 pt-1">
           <BrandLockup className="h-auto w-full max-w-[12.5rem] self-start" />
           <div className="flex items-center gap-2 text-xs text-muted-foreground">

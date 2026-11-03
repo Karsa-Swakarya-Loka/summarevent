@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { CircleAlert, Minus, Plus, RefreshCw } from 'lucide-react'
+import { apiMode, DEMO_URL } from '@/api'
 import { EmptyState } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -54,6 +55,9 @@ export function PageSkeleton({ hero = false }: { hero?: boolean }) {
 }
 
 export function LoadError({ error, onRetry, backTo = '/app', backLabel = 'Kembali ke Beranda' }: { error: unknown; onRetry?: () => void; backTo?: string; backLabel?: string }) {
+  const { pathname } = useLocation()
+  // no "back to Beranda" on Beranda itself
+  const showBack = pathname.replace(/\/+$/, '') !== backTo.replace(/\/+$/, '')
   return (
     <div className="p-4">
       <EmptyState
@@ -66,9 +70,17 @@ export function LoadError({ error, onRetry, backTo = '/app', backLabel = 'Kembal
                 <RefreshCw /> Coba lagi
               </Button>
             )}
-            <Button asChild className="h-11">
-              <Link to={backTo}>{backLabel}</Link>
-            </Button>
+            {showBack && (
+              <Button asChild className="h-11">
+                <Link to={backTo}>{backLabel}</Link>
+              </Button>
+            )}
+            {/* live version without its server: the demo still works on its own */}
+            {apiMode === 'live' && (
+              <Button asChild variant={showBack ? 'outline' : 'default'} className="h-11">
+                <a href={DEMO_URL}>Buka versi demo</a>
+              </Button>
+            )}
           </div>
         }
       >

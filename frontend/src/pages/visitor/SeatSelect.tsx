@@ -412,7 +412,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
 
       {hasLayout && !isGeneral ? (
         <>
-          <div className="relative mx-4 mt-3 min-h-[17rem] flex-1">
+          <div className="relative mx-4 mt-3 min-h-[18rem] flex-1">
             <SeatMap
               data={data}
               selected={selectedSet}
@@ -422,31 +422,38 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
               activeCategoryId={category?.id ?? null}
               onSeatClick={onSeatClick}
               zoomKey={`${category?.id ?? 'all'}-${zoomNonce}`}
+              focusSeatIds={selected}
               className="absolute inset-0"
+              toolbar={
+                selected.length > 0 && !pending && !closedReason ? (
+                  <button
+                    type="button"
+                    onClick={() => void raceDemo()}
+                    disabled={!!busy}
+                    className="inline-flex h-11 min-w-0 items-center gap-1.5 rounded-full border border-dashed border-ink/30 bg-card px-3 text-xs font-semibold shadow-xs hover:bg-muted disabled:opacity-60"
+                  >
+                    {busy === 'fake' ? <LoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden /> : <Zap className="size-4 shrink-0" aria-hidden />}
+                    Uji rebutan kursi
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void fakeBuyer()}
+                    disabled={!!busy}
+                    className="inline-flex h-11 min-w-0 items-center gap-1.5 rounded-full border border-dashed border-ink/30 bg-card px-3 text-xs font-semibold shadow-xs hover:bg-muted disabled:opacity-60"
+                  >
+                    {busy === 'fake' ? <LoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden /> : <FlaskConical className="size-4 shrink-0" aria-hidden />}
+                    Simulasikan pembeli lain
+                  </button>
+                )
+              }
             />
-            {selected.length > 0 && !pending && !closedReason ? (
-              <button
-                type="button"
-                onClick={() => void raceDemo()}
-                disabled={!!busy}
-                className="absolute bottom-2 left-2 z-10 inline-flex h-11 items-center gap-1.5 rounded-full border border-dashed border-ink/30 bg-card/95 px-3 text-xs font-semibold shadow-sm backdrop-blur hover:bg-muted disabled:opacity-60"
-              >
-                {busy === 'fake' ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <Zap className="size-4" aria-hidden />}
-                Uji rebutan kursi
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void fakeBuyer()}
-                disabled={!!busy}
-                className="absolute bottom-2 left-2 z-10 inline-flex h-11 items-center gap-1.5 rounded-full border border-dashed border-ink/30 bg-card/95 px-3 text-xs font-semibold shadow-sm backdrop-blur hover:bg-muted disabled:opacity-60"
-              >
-                {busy === 'fake' ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <FlaskConical className="size-4" aria-hidden />}
-                Simulasikan pembeli lain
-              </button>
-            )}
           </div>
-          <StatusLegend className="gap-x-3 gap-y-1.5 px-4 pt-2.5 text-[0.72rem]" showPriority />
+          <StatusLegend
+            className="gap-x-3 gap-y-1.5 px-4 pt-2.5 text-[0.72rem]"
+            showPriority
+            availableColors={categories.filter((c) => c.quota == null).map((c) => c.color)}
+          />
           <DoubleBookingButton className="mx-4 self-start" />
         </>
       ) : category && isGeneral ? (

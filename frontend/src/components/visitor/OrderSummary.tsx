@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { CalendarDays, MapPin, Users } from 'lucide-react'
 import type { OrderDetail } from '@/api/contract'
 import { StatusBadge, Swatch } from '@/components/common/bits'
-import { ACCESS_METHOD_LABEL, ORDER_TONE, orderStatusLabel } from '@/domain/labels'
+import { accessMethodNote, ORDER_TONE, orderStatusLabel } from '@/domain/labels'
 import { cn } from '@/lib/utils'
 import { seatRangeLabel, sessionName, sessionWhen, totalLabel } from './helpers'
 
@@ -32,7 +32,8 @@ export function OrderSummary({ detail, children, className, compact = false }: {
         <li className="flex items-center gap-2">
           <Swatch color={category.color} className="mx-0.5 size-3" />
           <span>
-            <span className="font-semibold">{category.name}</span> · {ACCESS_METHOD_LABEL[category.accessMethod]}
+            <span className="font-semibold">{category.name}</span>
+            {accessMethodNote(category) && <> · {accessMethodNote(category)}</>}
           </span>
         </li>
       </ul>

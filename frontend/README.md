@@ -1,32 +1,41 @@
-# React + TypeScript + Vite
+# Summarevent · Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+PWA React + Vite + TypeScript (Tailwind, shadcn/ui). Gambaran produk, skrip demo, dan pemetaan brief ada di
+[README utama](../README.md); kontrak API di [`docs/API-CONTRACT.md`](../docs/API-CONTRACT.md).
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev        # http://localhost:5173, versi demo (data contoh di browser, tanpa server)
+npm test           # unit test logika inti
+npm run typecheck && npm run lint
+npm run e2e        # suite end-to-end di Chrome (dev server harus jalan), lihat e2e/README.md
+npm run build      # build produksi ke dist/
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Demo atau live
+
+Tanpa konfigurasi, app memakai **mock di browser** (`src/api/mock`): data contoh di localStorage, transaksi
+atomik antar-tab lewat Web Locks. Mode live memakai backend lewat HTTP dengan kontrak yang sama
+(`src/api/http.ts`). Backend dikerjakan tim backend; frontend cukup diberi alamatnya saat build.
+
+| Variabel (build) | Fungsi |
+| --- | --- |
+| `VITE_API_URL` | Alamat API backend. Kalau diisi, app selalu memakai mode live. |
+| `VITE_LIVE_HOSTS` | Host yang otomatis memakai mode live dengan API di `/api` host itu sendiri (default `summarevent-live.vercel.app`). |
+| `VITE_LIVE_URL` | Alamat versi live. Kalau diisi, halaman awal versi demo mengecek `/api/health`-nya dan menampilkan tautan "Buka versi live" saat sehat. Kosong: tidak ada pengecekan. |
+| `VITE_DEMO_URL` | Alamat versi demo untuk tautan balik dari versi live (default `https://summarevent.vercel.app`). |
+
+## Struktur
+
+```
+src/api/        contract.ts (kontrak), http.ts (klien backend), mock/ (driver data, seed, logika inti)
+src/domain/     tipe, label status (satu kosakata), aturan bisnis murni, token QR
+src/components/ seatmap/ (denah), common/, visitor/, admin/, staff/, ui/ (shadcn)
+src/pages/      visitor/, admin/, staff/, RolePicker
+public/         ikon PWA, manifest, service worker, og.png (pratinjau link), brand/
+e2e/            uji end-to-end (playwright-core + Chrome terpasang)
+```
+
+Denah kursi (`src/components/seatmap/SeatMap.tsx`): memilih kategori memperbesar denah ke baris kategori itu
+sampai jarak antar-kursi 44 px di layar (target sentuh, PRD §13–14); kursi hasil "Pilihkan N kursi" atau kursi
+saran dibawa ke tengah; tombol zoom ada di bawah denah supaya tidak menutupi kursi.

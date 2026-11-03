@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 const THEMES: Record<PosterTheme, { bg: string; fg: string; accent: string; label: string }> = {
   stage: { bg: '#006426', fg: '#ffffff', accent: '#f9a61b', label: 'Pertunjukan' },
   acoustic: { bg: '#231f20', fg: '#ffffff', accent: '#f26f22', label: 'Konser' },
-  craft: { bg: '#f26f22', fg: '#ffffff', accent: '#fedc01', label: 'Kelas' },
+  craft: { bg: '#f26f22', fg: '#231f20', accent: '#fedc01', label: 'Kelas' },
   expo: { bg: '#e6f2ea', fg: '#004a1c', accent: '#f26f22', label: 'Pameran' },
 }
 
@@ -52,7 +52,7 @@ export function Poster({ theme, title, className, compact = false }: { theme: Po
         )}
       </svg>
       <div className={cn('flex h-full flex-col justify-end', compact ? 'p-3' : 'p-5')}>
-        <span className="mb-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[0.65rem] font-bold tracking-wide uppercase" style={{ background: t.accent, color: theme === 'expo' ? '#ffffff' : '#231f20' }}>
+        <span className="mb-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[0.65rem] font-bold tracking-wide uppercase" style={{ background: t.accent, color: '#231f20' }}>
           {t.label}
         </span>
         <span className={cn('font-extrabold leading-tight text-balance', compact ? 'text-sm' : 'text-xl')}>{title}</span>

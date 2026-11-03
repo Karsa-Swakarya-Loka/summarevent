@@ -8,7 +8,7 @@ denah, harga, kuota, dan periode jual, memantau kursi dan transaksi secara live,
 | Versi | Alamat | Data |
 | --- | --- | --- |
 | Demo (link untuk juri) | https://summarevent.vercel.app | Per browser, jalan tanpa server. Tiap juri punya data contoh sendiri. |
-| Live | https://summarevent-live.vercel.app | Server + PostgreSQL bersama. Untuk uji dua HP sungguhan, pameran, dan Demo Day. |
+| Live | https://summarevent-live.vercel.app | Server + database bersama, untuk uji dua HP sungguhan, pameran, dan Demo Day. Backend-nya sedang dipindah ke Convex oleh tim backend; sampai siap, halaman ini menawarkan tautan ke versi demo. |
 
 - PRD: `docs/PRD-v1.2.txt` · Technical brief: `docs/TECHNICAL-BRIEF.txt` · Kontrak API: `docs/API-CONTRACT.md`
 - Backend: [`backend/README.md`](backend/README.md) · Logo & brand: `docs/brand/final/`, aset app di `frontend/public/brand/`
@@ -75,7 +75,8 @@ struk contoh sudah kosong: pesanan contoh ikut kedaluwarsa setelah 30 menit, sam
 
 **Versi demo vs live:** di versi demo, data tersimpan per browser. Dua tab di browser yang sama berbagi data (status
 kursi sinkron), tapi dua HP berbeda punya data masing-masing. Untuk rebutan kursi antar-HP sungguhan, pakai versi live
-(halaman awal versi demo menampilkan tautannya begitu server live siap). Di versi live, reset data berlaku untuk semua
+(halaman awal versi demo menampilkan tautannya kalau build diberi `VITE_LIVE_URL` dan server live-nya sehat, lihat
+[`frontend/README.md`](frontend/README.md)). Di versi live, reset data berlaku untuk semua
 pengguna. Uji bebannya: `node qa/race-two-servers.mjs` atau `qa/k6-hold-race.js`.
 
 ## Pemetaan technical brief → fitur
@@ -120,13 +121,9 @@ qa/             k6-hold-race.js, race-two-servers.mjs (uji rebutan kursi untuk b
 
 Project Vercel `summarevent` (folder `frontend`): `vercel deploy --prod`. Satu deployment melayani dua alamat:
 `summarevent.vercel.app` (demo) dan `summarevent-live.vercel.app` (live, API di `/api` region Singapura). Env
-`QR_SECRET` dan `SESSION_SECRET` sudah terpasang. Database live (Neon, gratis) dipasang sekali oleh pemilik akun:
-
-```bash
-cd frontend
-vercel integration add neon --plan free_v3 -m region=sin1 -m auth=false --name summarevent-db
-vercel deploy --prod
-```
+`QR_SECRET` dan `SESSION_SECRET` sudah terpasang. Vercel ini dipakai untuk publish frontend (cadangan sampai ada
+domain). Keputusan 3 Nov 2026: backend live pindah ke Convex dan dikelola tim backend, jadi langkah database Neon yang
+dulu tertulis di sini tidak dipakai.
 
 Setelah mengubah `backend/src`, jalankan `npm run build` di `backend/` supaya `frontend/api/index.js` ikut terbarui.
 HTTPS wajib supaya kamera scanner jalan di HP. Setelah deploy, cek kedua link dari mode incognito.

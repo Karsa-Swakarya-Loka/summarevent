@@ -307,9 +307,17 @@ export default function EventWizard() {
           <ArrowLeft /> Kembali
         </Button>
         {step !== 'publish' ? (
-          <Button size="lg" className="h-11 px-5 text-base" onClick={next}>
-            Lanjut: {STEPS.find((s) => s.id === order[idx + 1])?.label} <ArrowRight />
-          </Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            {/* editing: a quick fix (a typo, a price) is saved from any step, no need to walk to the end */}
+            {editing && (
+              <Button variant="outline" size="lg" className="h-11" disabled={!!saving} onClick={() => void save(false)}>
+                <Save /> {saving ? 'Menyimpan…' : isPublished ? 'Simpan perubahan' : 'Simpan draft'}
+              </Button>
+            )}
+            <Button size="lg" className="h-11 px-5 text-base" onClick={next}>
+              Lanjut: {STEPS.find((s) => s.id === order[idx + 1])?.label} <ArrowRight />
+            </Button>
+          </div>
         ) : isPublished ? (
           <Button size="lg" className="h-11 px-5 text-base" disabled={!!saving} onClick={() => void save(false)}>
             <Save /> {saving ? 'Menyimpan…' : 'Simpan perubahan'}

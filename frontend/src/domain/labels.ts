@@ -61,6 +61,15 @@ export const ACCESS_METHOD_LABEL: Record<AccessMethod, string> = {
   RECEIPT: 'Tukar Struk',
 }
 
+/**
+ * How a category is obtained, shown next to its name ("Reguler · Bayar"), or null when the
+ * name already says it, so a category called "Tukar Struk" never reads "Tukar Struk · Tukar Struk".
+ */
+export function accessMethodNote(category: { name: string; accessMethod: AccessMethod }): string | null {
+  const label = ACCESS_METHOD_LABEL[category.accessMethod]
+  return category.name.trim().toLowerCase() === label.toLowerCase() ? null : label
+}
+
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   SIM_QRIS: 'QRIS (simulasi)',
   SIM_VA: 'Virtual Account (simulasi)',

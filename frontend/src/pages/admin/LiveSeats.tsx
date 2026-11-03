@@ -13,6 +13,7 @@ import { EventSelect, LiveIndicator, LoadError, PageHeader, SectionCard } from '
 import { SEAT_TONE, pickEventId, seatSummary, sessionLabel, ticketedEvents } from '@/components/admin/lib'
 import { Countdown, StatusBadge, Swatch } from '@/components/common/bits'
 import { DoubleBookingPoints } from '@/components/common/DoubleBookingInfo'
+import { AvailableSample } from '@/components/seatmap/SeatLegend'
 import { SeatMap, SeatSample, type SeatVisual } from '@/components/seatmap/SeatMap'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -138,6 +139,7 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
   const [picked, setPicked] = useState<string | null>(null)
   const hasMap = !!data.layout && data.seats.length > 0
   const seatCats = useMemo(() => data.categories.filter((c) => c.quota == null), [data.categories])
+  const seatColors = seatCats.map((c) => c.color)
   const quotaCats = data.categories.filter((c) => c.quota != null)
 
   const counts = useMemo(() => {
@@ -206,7 +208,11 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
             <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground" aria-label="Keterangan status kursi">
               {LEGEND.map((l) => (
                 <li key={l.label} className="flex items-center gap-1.5">
-                  <SeatSample visual={l.visual} color="#2563eb" />
+                  {l.visual === 'AVAILABLE' && seatColors.length > 1 ? (
+                    <AvailableSample colors={seatColors} />
+                  ) : (
+                    <SeatSample visual={l.visual} color={l.visual === 'AVAILABLE' && seatColors[0] ? seatColors[0] : '#2563eb'} />
+                  )}
                   {l.label}
                 </li>
               ))}

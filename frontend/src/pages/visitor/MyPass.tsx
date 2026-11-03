@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError } from '@/components/visitor/Common'
 import { continuePath, isPendingOrder, seatRangeLabel, sessionName, sessionWhen } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
-import { ACCESS_METHOD_LABEL, ORDER_STATUS_LABEL, TICKET_STATUS_LABEL, TICKET_TONE } from '@/domain/labels'
+import { accessMethodNote, ORDER_STATUS_LABEL, TICKET_STATUS_LABEL, TICKET_TONE } from '@/domain/labels'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
 import { fmtTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -251,7 +251,7 @@ function PassCard({ item, now, onZoom }: { item: PassItem; now: Date; onZoom: ()
               <Swatch color={category.color} className="size-3" />
               {category.name}
             </p>
-            <p className="text-xs text-muted-foreground">{ACCESS_METHOD_LABEL[category.accessMethod]}</p>
+            {accessMethodNote(category) && <p className="text-xs text-muted-foreground">{accessMethodNote(category)}</p>}
           </div>
         </div>
         {ticket.bonus && (

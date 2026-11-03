@@ -111,7 +111,7 @@ function StaffSwitcher({ userId, onSwitch }: { userId: string | null; onSwitch: 
   const options = staff.data ?? []
   if (options.length < 2) return null
   return (
-    <label className="mt-3 flex items-center gap-2 text-xs font-semibold text-white/85">
+    <label className="mt-3 flex flex-col gap-1.5 text-xs font-semibold text-white/85 sm:flex-row sm:items-center sm:gap-2">
       Akun petugas (demo)
       <select
         value={userId ?? ''}
@@ -124,7 +124,7 @@ function StaffSwitcher({ userId, onSwitch }: { userId: string | null; onSwitch: 
             })
             .catch((err: unknown) => toast.error(errorMessage(err)))
         }
-        className="h-9 min-w-0 flex-1 rounded-lg border border-white/30 bg-white/10 px-2 text-sm text-white"
+        className="h-11 w-full min-w-0 rounded-lg border border-white/30 bg-white/10 px-2 text-sm text-white sm:w-auto sm:flex-1"
       >
         {options.map((s) => (
           <option key={s.id} value={s.id} className="text-ink">

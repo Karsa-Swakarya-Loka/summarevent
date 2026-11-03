@@ -79,7 +79,8 @@ export default function Events() {
     const ev = e.event
     const canLive = !ev.infoOnly && e.sessions.length > 0
     return (
-      <div className="flex flex-wrap items-center gap-2">
+      // table rows keep their icon buttons on one line; the phone cards may wrap
+      <div className={compact ? 'flex flex-wrap items-center gap-2' : 'flex items-center justify-end gap-2'}>
         {ev.status === 'DRAFT' && (
           <Button size="lg" onClick={() => void publish(ev)} disabled={publishing === ev.id}>
             <Rocket /> Publish

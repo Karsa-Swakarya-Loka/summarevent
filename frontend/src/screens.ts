@@ -10,6 +10,7 @@ const load = {
   pass: () => import('@/pages/visitor/MyPass'),
   ticket: () => import('@/pages/visitor/TicketPage'),
   inbox: () => import('@/pages/visitor/Inbox'),
+  message: () => import('@/pages/visitor/Message'),
   account: () => import('@/pages/visitor/Account'),
 }
 type ScreenName = keyof typeof load
@@ -23,6 +24,7 @@ const ROUTES: Array<[RegExp, ScreenName]> = [
   [/^\/app\/pass\/?$/, 'pass'],
   [/^\/app\/pass\/[^/]+\/?$/, 'ticket'],
   [/^\/app\/inbox\/?$/, 'inbox'],
+  [/^\/app\/inbox\/[^/]+\/?$/, 'message'],
   [/^\/app\/akun\/?$/, 'account'],
 ]
 

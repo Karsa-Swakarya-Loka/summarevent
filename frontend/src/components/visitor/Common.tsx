@@ -11,18 +11,20 @@ import { useAvoidDemoPill, useElementHeight } from './hooks'
 
 /**
  * Fixed action bar at the bottom of the phone shell, plus an in-flow spacer of the
- * same height so the page content never hides behind it.
+ * same height so the page content never hides behind it. With `aboveNav` the floating
+ * navigation sits on the bar's lower edge.
  */
 export function BottomBar({ children, aboveNav = false, className }: { children: ReactNode; aboveNav?: boolean; className?: string }) {
   const [ref, height] = useElementHeight()
   return (
     <>
-      <div aria-hidden style={{ height: height + 8 }} />
+      {/* above the navigation the bar reaches under it, and the layout already keeps room for the navigation */}
+      <div aria-hidden style={{ height: aboveNav ? `max(0px, calc(${height}px - var(--spacing-nav)))` : height + 8 }} />
       <div
         ref={ref}
         className={cn(
-          'fixed inset-x-0 z-30 mx-auto w-full max-w-md border-t bg-card/95 px-4 pt-3 shadow-[0_-10px_30px_-18px_rgb(0_0_0/0.35)] backdrop-blur',
-          aboveNav ? 'bottom-[calc(3.5rem+1px+env(safe-area-inset-bottom))] pb-3' : 'bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
+          'fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md border-t bg-card/95 px-4 pt-3 shadow-[0_-10px_30px_-18px_rgb(0_0_0/0.35)] backdrop-blur',
+          aboveNav ? 'pb-[calc(var(--spacing-nav)+1.25rem)]' : 'pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
           className,
         )}
       >
@@ -143,11 +145,6 @@ export function SectionTitle({ children, className, right }: { children: ReactNo
       {right}
     </div>
   )
-}
-
-/** Tag/chip used for access methods and small facts. */
-export function Chip({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cn('inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[0.7rem] font-semibold text-muted-foreground', className)}>{children}</span>
 }
 
 /** Simulation tag – every fake channel/payment is labelled as such. */

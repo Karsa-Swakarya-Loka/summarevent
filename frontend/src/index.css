@@ -145,6 +145,11 @@
     radial-gradient(circle var(--notch) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
 }
 
+/* Top edge of the visitor's floating navigation, measured from the bottom of the screen. */
+@theme {
+  --spacing-nav: calc(max(0.75rem, env(safe-area-inset-bottom)) + 4.25rem);
+}
+
 /*
  * Motion tokens. One soft ease-out for things arriving and one springy ease for things that pop. Animations move only
  * transform and opacity, plus the stroke of a seat's check. Every animation and transition collapses under

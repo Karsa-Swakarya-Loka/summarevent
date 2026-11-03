@@ -9,8 +9,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { setOnboardingDone } from '@/lib/intro'
 import { cn } from '@/lib/utils'
 
-/** Floating demo switcher (DM-01/DM-02): jump between roles, replay the onboarding, reset the sample data. */
-export function DemoMenu({ className }: { className?: string }) {
+/**
+ * Demo switcher (DM-01/DM-02): jump between roles, replay the onboarding, reset the sample data. Floats in a corner,
+ * or docks beside the visitor's navigation so it never covers the page.
+ */
+export function DemoMenu({ className, docked = false }: { className?: string; docked?: boolean }) {
   const navigate = useNavigate()
   const [confirm, setConfirm] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -40,12 +43,14 @@ export function DemoMenu({ className }: { className?: string }) {
           <button
             type="button"
             className={cn(
-              'fixed z-40 flex h-11 items-center gap-1.5 rounded-full bg-ink/90 px-3 text-xs font-semibold text-white shadow-lg ring-1 ring-white/10 backdrop-blur hover:bg-ink',
+              docked
+                ? 'flex w-16 shrink-0 flex-col items-center justify-center gap-0.5 rounded-[1.75rem] bg-card text-[0.7rem] font-semibold text-ink shadow-xl shadow-ink/15 ring-1 ring-ink/10 hover:bg-muted'
+                : 'fixed z-40 flex h-11 items-center gap-1.5 rounded-full bg-ink/90 px-3 text-xs font-semibold text-white shadow-lg ring-1 ring-white/10 backdrop-blur hover:bg-ink',
               className,
             )}
             aria-label="Menu demo"
           >
-            <FlaskConical className="size-4" /> Demo
+            <FlaskConical className={docked ? 'size-5 text-brand-orange' : 'size-4'} aria-hidden /> Demo
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-60">

@@ -245,6 +245,42 @@ body:has([data-demo-header]) [data-demo-float] {
   from { stroke-dashoffset: 1; }
 }
 
+/*
+ * The Talón e-ticket (adapted from «Talón» by Moxen): card stock with a fine fibre, ink labels, and the shadow that
+ * curls the stub while it tears.
+ */
+.talon-paper {
+  background: linear-gradient(170deg, #fbf7ee, #f1eadb);
+}
+.talon-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+.talon-curl {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.34), rgb(0 0 0 / 0.08) 30%, transparent 55%, rgb(255 255 255 / 0.16) 82%, transparent);
+}
+.talon-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #5b5f55;
+}
+.talon-value {
+  margin-top: 0.2rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 /* Subtle shine on active passes; disabled for reduced motion */
 @keyframes pass-shine {
   0% { transform: translateX(-120%) skewX(-18deg); }

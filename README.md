@@ -28,10 +28,10 @@ Semuanya berakhir di satu e-ticket QR, dibuka dari satu link, tanpa memasang apl
 > Versi demo jalan penuh di browser dengan data contoh, jadi tiap juri punya datanya sendiri. Pembayaran, OTP, WhatsApp, dan email disimulasikan. Backend bersama sedang dibangun di Convex.
 
 <p align="center">
-  <img src="docs/gambar/promo-1-denah.webp" width="24%" alt="Pilih kursi langsung dari denah: denah Sangkuriang diperbesar ke kategori Reguler dengan dua kursi terpilih" />
-  <img src="docs/gambar/promo-2-rebutan.webp" width="24%" alt="Rebutan kursi: pesan bentrok A4 baru saja dipilih orang lain dengan tombol pindah ke kursi saran" />
-  <img src="docs/gambar/promo-3-pass.webp" width="24%" alt="Satu QR untuk tiap kursi: e-ticket kursi G5 di Pass Saya lengkap dengan QR" />
-  <img src="docs/gambar/promo-4-scan.webp" width="24%" alt="Scan di pintu: layar petugas hijau Valid, Mangga lebet, kursi G6" />
+  <img src="docs/gambar/promo-1-denah.webp" width="24%" alt="Pilih kursimu sendiri: denah Sangkuriang diperbesar ke kategori Reguler dengan dua kursi terpilih, di dalam HP" />
+  <img src="docs/gambar/promo-2-rebutan.webp" width="24%" alt="Satu kursi, satu pemesan: pesan bentrok kursi baru saja dipilih orang lain, dengan tombol pindah ke kursi saran" />
+  <img src="docs/gambar/promo-3-pass.webp" width="24%" alt="Satu QR untuk tiap kursi: e-ticket hitam kursi G5 dengan QR dan talon, di dalam HP" />
+  <img src="docs/gambar/promo-4-scan.webp" width="24%" alt="Scan di pintu: layar petugas hijau Valid dengan nomor kursi besar, di dalam HP" />
 </p>
 
 ## Kenapa Summarevent

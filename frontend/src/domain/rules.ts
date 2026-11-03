@@ -333,3 +333,30 @@ export function attendeeEditPolicy(order: Pick<Order, 'status'>, session: Pick<S
   if (new Date(session.endAt) <= now) return { allowed: false, reason: 'Sesi sudah selesai, nama peserta tidak bisa diubah lagi.' }
   return { allowed: true }
 }
+
+/* ------------------------------------------------------------------ profile (PV-06) */
+
+export const NAME_MAX = 60
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
+export type ProfileCheck = { ok: true; name?: string; email?: string | null } | { ok: false; field: 'name' | 'email'; reason: string }
+
+/**
+ * A visitor's name and email as typed, made ready to store: the name trimmed with its spaces collapsed, the email
+ * trimmed and lowercased, and an empty email clearing it. The phone number is the login and is not part of it.
+ */
+export function profileChanges(input: { name?: string; email?: string | null }): ProfileCheck {
+  const out: { name?: string; email?: string | null } = {}
+  if (input.name !== undefined) {
+    const name = input.name.trim().replace(/\s+/g, ' ')
+    if (name.length < 2) return { ok: false, field: 'name', reason: 'Nama minimal 2 huruf.' }
+    if (name.length > NAME_MAX) return { ok: false, field: 'name', reason: `Nama maksimal ${NAME_MAX} karakter.` }
+    out.name = name
+  }
+  if (input.email !== undefined) {
+    const email = (input.email ?? '').trim().toLowerCase()
+    if (email && (email.length > 254 || !EMAIL.test(email))) return { ok: false, field: 'email', reason: 'Tulis email lengkap, misalnya nama@contoh.id.' }
+    out.email = email || null
+  }
+  return { ok: true, ...out }
+}

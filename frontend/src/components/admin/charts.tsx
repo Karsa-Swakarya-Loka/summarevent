@@ -4,7 +4,7 @@
  */
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { EventStats } from '@/api/contract'
-import { ORDER_STATUS_LABEL, ORDER_TONE, type Tone } from '@/domain/labels'
+import { ORDER_STATUS_LABEL, ORDER_TONE, SEAT_STATUS_LABEL, type Tone } from '@/domain/labels'
 import type { OrderStatus } from '@/domain/types'
 import { rupiahPlain } from '@/lib/format'
 
@@ -60,17 +60,17 @@ export function CategoryChart({ data }: { data: EventStats['byCategory'] }) {
                 return r ? `${l} · ${r.sold}/${r.total} terjual · ${rupiahPlain(r.revenue)}` : String(l)
               }}
             />
-            <Bar dataKey="sold" name="Terjual" stackId="a" stroke="#fff" strokeWidth={1}>
+            <Bar dataKey="sold" name={SEAT_STATUS_LABEL.SOLD} stackId="a" stroke="#fff" strokeWidth={1}>
               {rows.map((r) => (
                 <Cell key={r.name} fill={r.color} />
               ))}
             </Bar>
-            <Bar dataKey="held" name="Sedang dipesan" stackId="a" stroke="#fff" strokeWidth={1}>
+            <Bar dataKey="held" name={SEAT_STATUS_LABEL.HELD} stackId="a" stroke="#fff" strokeWidth={1}>
               {rows.map((r) => (
                 <Cell key={r.name} fill={r.color} fillOpacity={0.35} />
               ))}
             </Bar>
-            <Bar dataKey="available" name="Tersedia" stackId="a" fill="#e7e3dc" radius={[0, 4, 4, 0]} stroke="#fff" strokeWidth={1}>
+            <Bar dataKey="available" name={SEAT_STATUS_LABEL.AVAILABLE} stackId="a" fill="#e7e3dc" radius={[0, 4, 4, 0]} stroke="#fff" strokeWidth={1}>
               <LabelList dataKey="label" position="right" style={{ fontSize: 12, fontWeight: 700, fill: '#231f20' }} />
             </Bar>
           </BarChart>

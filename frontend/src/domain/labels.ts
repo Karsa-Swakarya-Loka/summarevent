@@ -19,6 +19,10 @@ export const SEAT_STATUS_LABEL: Record<SeatStatus, string> = {
   BLOCKED: 'Tidak dijual',
 }
 
+/** What the seat map shows on top of a seat's status (PRD §13): the visitor's own pick and the accessible seat. */
+export const SELECTED_SEAT_LABEL = 'Pilihanmu'
+export const PRIORITY_SEAT_LABEL = 'Prioritas difabel'
+
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   AWAITING_PAYMENT: 'Menunggu pembayaran',
   AWAITING_VERIFICATION: 'Menunggu verifikasi struk',

@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { TransformComponent, TransformWrapper, useControls } from 'react-zoom-pan-pinch'
 import { Maximize2, Minus, Plus } from 'lucide-react'
 import type { SeatMapData } from '@/api/contract'
-import { SEAT_STATUS_LABEL } from '@/domain/labels'
+import { PRIORITY_SEAT_LABEL, SEAT_STATUS_LABEL, SELECTED_SEAT_LABEL } from '@/domain/labels'
 import { seatLabel } from '@/domain/rules'
 import type { Seat, SeatStatus, TicketCategory } from '@/domain/types'
 import { cn } from '@/lib/utils'
@@ -226,8 +226,8 @@ export function SeatMap({
                   !!onSeatClick &&
                   (interactive ? (status === 'AVAILABLE' || visual === 'SELECTED') && !dim : true)
                 const label = `Baris ${seat.row} nomor ${seat.number}, ${category?.name ?? 'tanpa kategori'}, ${
-                  visual === 'SELECTED' || visual === 'MINE' ? 'pilihanmu' : SEAT_STATUS_LABEL[status].toLowerCase()
-                }${seat.isPriority ? ', kursi prioritas difabel' : ''}`
+                  visual === 'SELECTED' || visual === 'MINE' ? SELECTED_SEAT_LABEL.toLowerCase() : SEAT_STATUS_LABEL[status].toLowerCase()
+                }${seat.isPriority ? `, kursi ${PRIORITY_SEAT_LABEL.toLowerCase()}` : ''}`
                 const x = PAD_X + seat.x * SEAT_UNIT
                 const y = TOP + seat.y * SEAT_UNIT
                 const onActivate = () => onSeatClick?.(seat, status, category)
@@ -253,7 +253,7 @@ export function SeatMap({
                         : undefined
                     }
                   >
-                    <title>{`${seatLabel(seat)} · ${category?.name ?? '-'} · ${visual === 'SELECTED' || visual === 'MINE' ? 'Pilihanmu' : SEAT_STATUS_LABEL[status]}`}</title>
+                    <title>{`${seatLabel(seat)} · ${category?.name ?? '-'} · ${visual === 'SELECTED' || visual === 'MINE' ? SELECTED_SEAT_LABEL : SEAT_STATUS_LABEL[status]}`}</title>
                     <SeatShape visual={visual} color={color} />
                     {seat.isPriority && (visual === 'AVAILABLE' || visual === 'SUGGESTED') && <Wheelchair color="#ffffff" />}
                     {/* the touch target covers the whole pitch, gap included */}

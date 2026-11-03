@@ -4,6 +4,7 @@ import type { SeatMapData } from '@/api/contract'
 import { Field, SectionCard } from '@/components/admin/AdminUi'
 import { SeatMap, SeatSample } from '@/components/seatmap/SeatMap'
 import { Button } from '@/components/ui/button'
+import { PRIORITY_SEAT_LABEL, SEAT_STATUS_LABEL } from '@/domain/labels'
 import { rowIndex, rowLetter, seatLabel } from '@/domain/rules'
 import type { EventItem, SessionSeat, TicketCategory } from '@/domain/types'
 import { cn } from '@/lib/utils'
@@ -282,7 +283,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
               {(
                 [
                   { v: 'block', label: 'Tandai tidak dijual', icon: <Ban /> },
-                  { v: 'priority', label: 'Prioritas difabel', icon: <Accessibility /> },
+                  { v: 'priority', label: PRIORITY_SEAT_LABEL, icon: <Accessibility /> },
                 ] as const
               ).map((o) => (
                 <button
@@ -334,7 +335,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
             <div className="flex flex-col gap-2 text-sm">
               <div className="flex items-center gap-2">
                 <SeatSample visual="BLOCKED" />
-                <span className="flex-1">Tidak dijual</span>
+                <span className="flex-1">{SEAT_STATUS_LABEL.BLOCKED}</span>
                 <span className="font-semibold tabular-nums">{L.blocked.length}</span>
                 {L.blocked.length > 0 && !locked && (
                   <button type="button" className="text-xs font-semibold text-brand hover:underline" onClick={() => setLayout((l) => ({ ...l, blocked: [] }))}>
@@ -346,7 +347,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                 <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] bg-[#2563eb] text-[11px] text-white" aria-hidden>
                   ♿
                 </span>
-                <span className="flex-1">Prioritas difabel</span>
+                <span className="flex-1">{PRIORITY_SEAT_LABEL}</span>
                 <span className="font-semibold tabular-nums">{L.priority.length}</span>
                 {L.priority.length > 0 && !locked && (
                   <button type="button" className="text-xs font-semibold text-brand hover:underline" onClick={() => setLayout((l) => ({ ...l, priority: [] }))}>

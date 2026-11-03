@@ -1,5 +1,5 @@
 import type { CategoryAvailability } from '@/api/contract'
-import { ACCESS_METHOD_LABEL, accessMethodNote } from '@/domain/labels'
+import { accessMethodNote, PRIORITY_SEAT_LABEL, SEAT_STATUS_LABEL, SELECTED_SEAT_LABEL } from '@/domain/labels'
 import type { TicketCategory } from '@/domain/types'
 import { rupiah } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -27,11 +27,11 @@ export function AvailableSample({ colors, size = 18 }: { colors: string[]; size?
 /** Status legend – always visible next to the map (PRD §13). */
 export function StatusLegend({ className, showPriority = true, availableColors }: { className?: string; showPriority?: boolean; availableColors?: string[] }) {
   const items: Array<{ visual: Parameters<typeof SeatSample>[0]['visual']; label: string }> = [
-    { visual: 'AVAILABLE', label: 'Tersedia' },
-    { visual: 'SELECTED', label: 'Pilihanmu' },
-    { visual: 'HELD', label: 'Sedang dipesan' },
-    { visual: 'SOLD', label: 'Terjual' },
-    { visual: 'BLOCKED', label: 'Tidak dijual' },
+    { visual: 'AVAILABLE', label: SEAT_STATUS_LABEL.AVAILABLE },
+    { visual: 'SELECTED', label: SELECTED_SEAT_LABEL },
+    { visual: 'HELD', label: SEAT_STATUS_LABEL.HELD },
+    { visual: 'SOLD', label: SEAT_STATUS_LABEL.SOLD },
+    { visual: 'BLOCKED', label: SEAT_STATUS_LABEL.BLOCKED },
   ]
   return (
     <ul className={cn('flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground', className)} aria-label="Keterangan status kursi">
@@ -50,7 +50,7 @@ export function StatusLegend({ className, showPriority = true, availableColors }
           <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] bg-[#2563eb] text-[11px] text-white" aria-hidden>
             ♿
           </span>
-          Prioritas difabel
+          {PRIORITY_SEAT_LABEL}
         </li>
       )}
     </ul>
@@ -88,7 +88,7 @@ export function CategoryLegend({
                 <span className="ml-auto font-semibold whitespace-nowrap">{c.accessMethod === 'RECEIPT' ? (accessMethodNote(c) ? 'Tukar struk' : 'Rp0') : rupiah(c.price)}</span>
               </span>
               <span className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
-                <span className="truncate">{c.description ?? ACCESS_METHOD_LABEL[c.accessMethod]}</span>
+                <span className="truncate">{c.description || accessMethodNote(c)}</span>
                 {av && (
                   <span className={cn('whitespace-nowrap font-semibold', soldOut ? 'text-status-invalid' : 'text-foreground')}>
                     {soldOut ? 'Habis' : `Sisa ${av.available}`}

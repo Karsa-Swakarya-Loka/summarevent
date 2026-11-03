@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ORDER_STATUS_LABEL, ORDER_TONE, SEAT_STATUS_LABEL } from '@/domain/labels'
+import { ORDER_STATUS_LABEL, ORDER_TONE, PRIORITY_SEAT_LABEL, SEAT_STATUS_LABEL } from '@/domain/labels'
 import { seatLabel } from '@/domain/rules'
 import type { SeatStatus } from '@/domain/types'
 import { errorMessage, useLive } from '@/hooks/useLive'
@@ -220,7 +220,7 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
                 <span className="inline-flex size-[18px] items-center justify-center rounded-[5px] bg-[#2563eb] text-[11px] text-white" aria-hidden>
                   ♿
                 </span>
-                Prioritas difabel
+                {PRIORITY_SEAT_LABEL}
               </li>
             </ul>
           </>
@@ -312,9 +312,9 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
                     <span className="h-full bg-status-valid/70" style={{ width: `${pct(n.available)}%` }} />
                   </div>
                   <dl className="grid grid-cols-3 gap-1 text-xs">
-                    <Stat label="Tersedia" value={n.available} />
-                    <Stat label="Sedang dipesan" value={n.held} />
-                    <Stat label="Terjual" value={n.sold} />
+                    <Stat label={SEAT_STATUS_LABEL.AVAILABLE} value={n.available} />
+                    <Stat label={SEAT_STATUS_LABEL.HELD} value={n.held} />
+                    <Stat label={SEAT_STATUS_LABEL.SOLD} value={n.sold} />
                   </dl>
                   <WaitingNote count={data.waitlist.find((w) => w.categoryId === c.id)?.waiting ?? 0} />
                 </li>

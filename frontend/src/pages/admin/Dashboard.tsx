@@ -14,7 +14,7 @@ import { downloadEventCsv, pickEventId, ticketedEvents } from '@/components/admi
 import { StatusBadge } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { Tone } from '@/domain/labels'
+import { SEAT_STATUS_LABEL, type Tone } from '@/domain/labels'
 import { errorMessage, useLive } from '@/hooks/useLive'
 import { fmtRange, fmtShortDate, rupiahPlain } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -30,8 +30,8 @@ function SessionCard({ s, eventId }: { s: SessionStats; eventId: string }) {
   const soldPct = s.capacity ? Math.round((s.sold / s.capacity) * 100) : 0
   const stats = [
     { label: 'Kapasitas', value: s.capacity },
-    { label: 'Terjual', value: s.sold },
-    { label: 'Sedang dipesan', value: s.held },
+    { label: SEAT_STATUS_LABEL.SOLD, value: s.sold },
+    { label: SEAT_STATUS_LABEL.HELD, value: s.held },
     { label: 'Hadir', value: s.checkedIn },
   ]
   return (

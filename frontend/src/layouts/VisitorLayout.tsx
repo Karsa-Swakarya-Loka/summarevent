@@ -15,7 +15,9 @@ const NAV = [
 /** Phone-sized shell with a bottom navigation (hidden during checkout to keep one main action per screen). */
 export function VisitorLayout() {
   const { pathname } = useLocation()
-  const hideNav = pathname.includes('/checkout/') || /\/e\/[^/]+\/s\//.test(pathname)
+  // full-screen steps (onboarding, sign-in) and the checkout keep one main action on screen
+  const fullScreen = /^\/app\/(mulai|masuk|daftar)\/?$/.test(pathname)
+  const hideNav = fullScreen || pathname.includes('/checkout/') || /\/e\/[^/]+\/s\//.test(pathname)
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [pathname])
@@ -46,7 +48,7 @@ export function VisitorLayout() {
             </ul>
           </nav>
         )}
-        <DemoMenu className={hideNav ? 'bottom-4 left-4' : 'bottom-20 left-3'} />
+        {!fullScreen && <DemoMenu className={hideNav ? 'bottom-4 left-4' : 'bottom-20 left-3'} />}
         <NotificationWatcher />
       </div>
     </div>

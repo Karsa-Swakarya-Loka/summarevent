@@ -69,11 +69,13 @@ check(!/\/app\/mulai/.test(page.url()), 'onboarding muncul lagi setelah selesai'
 console.log('daftar: Sinta Maharani signed up and is on Beranda')
 await ctx.close()
 
-// 4. Never on the panitia side
+// 4. Never on the panitia side: hidden from the first parsed byte (no flash on a slow network), gone once parsed
 const adminCtx = await browser.newContext({ viewport: { width: 1366, height: 900 } })
 const admin = await adminCtx.newPage()
 watch(admin, 'admin')
 await admin.goto(BASE + '/admin', { waitUntil: 'commit' })
+check(!(await admin.locator('#splash').isVisible()), 'splash terlihat sekilas di halaman panitia')
+await admin.waitForLoadState('domcontentloaded')
 check((await admin.locator('#splash').count()) === 0, 'splash muncul di halaman panitia')
 await adminCtx.close()
 

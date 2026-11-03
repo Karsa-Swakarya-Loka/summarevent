@@ -57,6 +57,7 @@
       #splash .sp-tag small { display: block; font-size: 12px; font-weight: 500; opacity: 0.75; }
       #splash .sp-co { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom)); left: 50%; translate: -50% 0; padding: 7px 12px; border-radius: 12px; background: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); animation: sp-fade 0.5s 1.38s ease-out both; }
       #splash .sp-co img { display: block; height: 22px; width: auto; }
+      .no-splash #splash { display: none; }
       #splash.sp-done { opacity: 0; visibility: hidden; }
       #splash.sp-done .sp-stage { transform: scale(1.06); }
       @keyframes sp-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -74,6 +75,17 @@
         #splash .sp-aisle, #splash .sp-dot { display: none; }
       }
     </style>
+    <script>
+      // Decided before the body is parsed, so a skipped splash never paints: once per session, never for panitia or petugas.
+      ;(function () {
+        var skip = /^\/(admin|staff)(\/|$)/.test(location.pathname)
+        try {
+          if (sessionStorage.getItem('summarevent:splash')) skip = true
+          else sessionStorage.setItem('summarevent:splash', '1')
+        } catch (e) {}
+        if (skip) document.documentElement.classList.add('no-splash')
+      })()
+    </script>
   </head>
   <body>
     <div id="splash" aria-hidden="true">
@@ -92,15 +104,10 @@
       <div class="sp-co"><img src="/brand/summaba-logo.png" alt="" width="97" height="22" /></div>
     </div>
     <script>
-      // Show the splash once per session, never on the panitia or petugas side.
+      // The app ends the splash once it has rendered (src/lib/splash.ts); a tap skips the rest of the motion.
       ;(function () {
         var el = document.getElementById('splash')
-        var skip = /^\/(admin|staff)(\/|$)/.test(location.pathname)
-        try {
-          if (sessionStorage.getItem('summarevent:splash')) skip = true
-          else sessionStorage.setItem('summarevent:splash', '1')
-        } catch (e) {}
-        if (skip) return el.remove()
+        if (document.documentElement.classList.contains('no-splash')) return el.remove()
         window.__splashAt = performance.now()
         el.addEventListener('click', function () {
           if (window.__splashSkip) window.__splashSkip()

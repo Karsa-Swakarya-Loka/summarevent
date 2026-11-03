@@ -48,6 +48,12 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 - **Petugas.** Hasil scan Valid, Sudah digunakan, atau Tidak valid yang terbaca dari 1 meter, dengan bunyi dan getar berbeda. Ada cari tiket manual, check-in rombongan, dan verifikasi struk kertas di desk.
 - **Daftar tunggu dan bonus.** Kategori yang habis menawarkan daftar tunggu dengan kabar otomatis, dan N pembeli pertama bisa mendapat bonus.
 - **Sambutan yang bergerak.** Splash menghidupkan logo Lorong: dua bloknya mengunci, lalu satu titik menyusuri lorong S. Splash muncul sekali per sesi dan bisa diketuk untuk dilewati. Pengunjung baru melihat pengenalan tiga langkah, lalu bisa **Masuk** atau **Daftar** dengan OTP simulasi yang bisa diisi otomatis. Ilustrasi isometrik bergerak mengisi layar kosong dan momen sukses. Semua gerak berhenti kalau HP diatur untuk mengurangi gerakan, dan splash tidak pernah muncul di layar panitia dan petugas.
+- **Terasa seperti aplikasi di HP.**
+  - Layar yang dibuka bergeser masuk dari kanan, dan tombol kembali menggeser dari kiri.
+  - App bar menempel di atas dengan judul besar yang mengecil saat di-scroll.
+  - Dialog naik dari bawah sebagai sheet yang bisa ditarik turun.
+  - Tab bar hanya ada di empat tab utama, dan tombol utama selalu dalam jangkauan jempol.
+  - Di Android, mengetuk kursi memberi getaran halus.
 - **PWA.** Bisa dipasang di layar utama, dengan notifikasi perangkat selama app terbuka.
 
 ## Coba dalam dua menit

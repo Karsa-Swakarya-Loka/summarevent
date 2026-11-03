@@ -254,7 +254,7 @@ export function SeatMap({
                     }
                   >
                     <title>{`${seatLabel(seat)} · ${category?.name ?? '-'} · ${visual === 'SELECTED' || visual === 'MINE' ? SELECTED_SEAT_LABEL : SEAT_STATUS_LABEL[status]}`}</title>
-                    <SeatShape visual={visual} color={color} />
+                    <SeatShape visual={visual} color={color} pop={visual === 'SELECTED'} />
                     {seat.isPriority && (visual === 'AVAILABLE' || visual === 'SUGGESTED') && <Wheelchair color="#ffffff" />}
                     {/* the touch target covers the whole pitch, gap included */}
                     {clickable && <rect x={(SEAT - SEAT_UNIT) / 2} y={(SEAT - SEAT_UNIT) / 2} width={SEAT_UNIT} height={SEAT_UNIT} fill="transparent" />}
@@ -273,8 +273,8 @@ export function SeatMap({
   )
 }
 
-/** One seat drawing, shared by the map and the legend samples so both always match. */
-function SeatShape({ visual, color }: { visual: SeatVisual; color: string }) {
+/** One seat drawing, shared by the map and the legend samples so both always match. `pop` animates a seat just tapped. */
+function SeatShape({ visual, color, pop = false }: { visual: SeatVisual; color: string; pop?: boolean }) {
   const r = 7
   switch (visual) {
     case 'AVAILABLE':
@@ -289,8 +289,8 @@ function SeatShape({ visual, color }: { visual: SeatVisual; color: string }) {
     case 'MINE':
       return (
         <>
-          <rect width={SEAT} height={SEAT} rx={r} fill="#006426" stroke="#fedc01" strokeWidth={2.5} />
-          <path d="M8 14.5l4 4 8-9" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+          <rect width={SEAT} height={SEAT} rx={r} fill="#006426" stroke="#fedc01" strokeWidth={2.5} className={pop ? 'seat-pop' : undefined} />
+          <path d="M8 14.5l4 4 8-9" pathLength={1} fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className={pop ? 'seat-check' : undefined} />
         </>
       )
     case 'HELD':

@@ -4,11 +4,12 @@
  */
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
-import { Ban, Check, FlaskConical, Gift, Hourglass, PencilLine, ReceiptText, RotateCcw, TimerOff, TriangleAlert } from 'lucide-react'
+import { Ban, FlaskConical, Gift, Hourglass, PencilLine, ReceiptText, RotateCcw, TimerOff, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail } from '@/api/contract'
 import { BackHeader, Countdown, StatusBadge, SundaText } from '@/components/common/bits'
+import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -69,14 +70,10 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
   if (order.status === 'CONFIRMED') {
     hero = (
       <section className="relative overflow-hidden rounded-3xl bg-brand px-5 pt-7 pb-6 text-center text-white" aria-live="polite">
-        <svg className="pointer-events-none absolute -top-14 -left-10 size-48 opacity-20" viewBox="0 0 100 100" aria-hidden>
-          <circle cx="50" cy="50" r="46" fill="none" stroke="#fedc01" strokeWidth="5" strokeDasharray="9 7" />
-        </svg>
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-white text-brand shadow-lg motion-safe:animate-in motion-safe:duration-500 motion-safe:zoom-in-50 motion-safe:fade-in">
-          <Check className="size-9" strokeWidth={3} aria-hidden />
-        </div>
-        <SundaText k="ready" size="xl" className="mt-3 items-center" />
-        <p className="mx-auto mt-3 max-w-xs text-sm text-pretty text-white/90">
+        <div className="seat-dots pointer-events-none absolute inset-0 text-white/[0.08]" aria-hidden />
+        <Illustration name="tiket" loop={false} className="relative mx-auto -my-3 w-40 animate-pop" />
+        <SundaText k="ready" size="xl" className="relative mt-1 items-center" />
+        <p className="relative mx-auto mt-3 max-w-xs text-sm text-pretty text-white/90">
           {tickets.length} e-ticket QR aktif. Tunjukkan QR di Pass Saya ke petugas saat masuk.
         </p>
       </section>

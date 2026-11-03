@@ -3,10 +3,11 @@
  * because both channels are simulated. Scheduled reminders show when they will go out.
  */
 import { Link } from 'react-router'
-import { CalendarClock, CheckCheck, Inbox as InboxIcon, Mail, MessageCircle } from 'lucide-react'
+import { CalendarClock, CheckCheck, Mail, MessageCircle } from 'lucide-react'
 import { api } from '@/api'
 import type { AppNotification } from '@/domain/types'
 import { EmptyState } from '@/components/common/bits'
+import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError, SimTag } from '@/components/visitor/Common'
@@ -44,7 +45,7 @@ export default function Inbox() {
           <LoadError error={notes.error} onRetry={notes.reload} />
         ) : !list.length ? (
           <EmptyState
-            icon={<InboxIcon />}
+            icon={<Illustration name="mailbox" className="w-32" />}
             title="Belum ada pesan"
             action={
               <Button asChild className="h-11">

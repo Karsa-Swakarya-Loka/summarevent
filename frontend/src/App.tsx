@@ -100,11 +100,14 @@ const router = createBrowserRouter([
   { path: '*', element: <NotFound /> },
 ])
 
+/** Phones dismiss a toast with a swipe; only a mouse gets the small close button. */
+const finePointer = typeof matchMedia === 'function' && matchMedia('(pointer: fine)').matches
+
 export default function App() {
   return (
     <TooltipProvider>
       <RouterProvider router={router} />
-      <Toaster position="top-center" richColors closeButton />
+      <Toaster position="top-center" richColors closeButton={finePointer} />
     </TooltipProvider>
   )
 }

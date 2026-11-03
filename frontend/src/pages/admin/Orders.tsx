@@ -238,7 +238,7 @@ function FilterChip({ active, onClick, count, children }: { active: boolean; onC
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition',
+        'inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 pointer-coarse:min-h-11 text-sm font-medium whitespace-nowrap transition',
         active ? 'border-brand bg-brand text-white' : 'bg-card hover:border-foreground/30',
       )}
     >

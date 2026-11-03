@@ -65,7 +65,7 @@ export function QueueRow({ item, active, onOpen }: { item: ReceiptQueueItem; act
 
 function PhotoControls() {
   const { zoomIn, zoomOut, resetTransform } = useControls()
-  const btn = 'flex size-10 items-center justify-center rounded-full bg-card/95 shadow ring-1 ring-border hover:bg-muted'
+  const btn = 'flex size-10 items-center justify-center rounded-full bg-card/95 shadow ring-1 ring-border hover:bg-muted pointer-coarse:size-11'
   return (
     <div className="absolute top-2 right-2 z-10 flex flex-col gap-1.5">
       <button type="button" className={btn} onClick={() => zoomIn()} aria-label="Perbesar foto">

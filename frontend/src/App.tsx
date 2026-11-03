@@ -49,11 +49,15 @@ const StaffHome = () => import('@/pages/staff/StaffHome')
 const Scanner = () => import('@/pages/staff/Scanner')
 const ManualSearch = () => import('@/pages/staff/ManualSearch')
 const DeskReceipts = () => import('@/pages/staff/DeskReceipts')
+// first-run and sign-in screens: seen once, so they load on demand too
+const Onboarding = () => import('@/pages/visitor/Onboarding')
+const SignIn = () => import('@/pages/visitor/Auth').then((m) => ({ default: () => <m.default mode="masuk" /> }))
+const SignUp = () => import('@/pages/visitor/Auth').then((m) => ({ default: () => <m.default mode="daftar" /> }))
 
 /**
  * Routes
  *  /                          role picker (DM-01)
- *  /app/...                   visitor (mobile-first)
+ *  /app/...                   visitor (mobile-first); /app/mulai onboarding, /app/masuk and /app/daftar sign-in
  *  /admin/...                 panitia (desktop-first, works on phone)
  *  /staff/...                 petugas (mobile, scanner)
  */
@@ -71,6 +75,9 @@ const router = createBrowserRouter([
       { path: 'pass', element: <MyPass /> },
       { path: 'inbox', element: <Inbox /> },
       { path: 'akun', element: <Account /> },
+      { path: 'mulai', element: page(Onboarding) },
+      { path: 'masuk', element: page(SignIn) },
+      { path: 'daftar', element: page(SignUp) },
     ],
   },
   {

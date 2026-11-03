@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { FlaskConical, RotateCcw, ScanLine, Store, UserRound } from 'lucide-react'
+import { FlaskConical, Play, RotateCcw, ScanLine, Store, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiMode } from '@/api'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { setOnboardingDone } from '@/lib/intro'
 import { cn } from '@/lib/utils'
 
-/** Floating demo switcher (DM-01/DM-02): jump between roles, reset the sample data. */
+/** Floating demo switcher (DM-01/DM-02): jump between roles, replay the onboarding, reset the sample data. */
 export function DemoMenu({ className }: { className?: string }) {
   const navigate = useNavigate()
   const [confirm, setConfirm] = useState(false)
@@ -60,6 +61,14 @@ export function DemoMenu({ className }: { className?: string }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => navigate('/')}>Halaman pilih role</DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setOnboardingDone(false)
+              navigate('/app/mulai')
+            }}
+          >
+            <Play /> Lihat pengenalan lagi
+          </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onClick={() => setConfirm(true)}>
             <RotateCcw /> Reset data demo
           </DropdownMenuItem>

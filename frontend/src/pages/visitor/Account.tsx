@@ -1,17 +1,17 @@
 /**
- * Akun (PV-06): login with phone + OTP, or the visitor's profile and order history.
+ * Akun (PV-06): the way in (Masuk, Daftar, or the sample visitor), or the visitor's profile and order history.
  */
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { ChevronRight, LogOut, Receipt } from 'lucide-react'
+import { ChevronRight, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import { EmptyState, StatusBadge } from '@/components/common/bits'
+import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError } from '@/components/visitor/Common'
 import { AppSetupCard } from '@/components/visitor/AppSetup'
-import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { continuePath, seatRangeLabel, sessionWhen } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { ORDER_TONE, orderStatusLabel } from '@/domain/labels'
@@ -37,22 +37,27 @@ export default function Account() {
 
   if (!user) {
     return (
-      <div>
-        <header className="px-4 pt-6 pb-2">
-          <h1 className="text-2xl font-extrabold tracking-tight">Masuk</h1>
-          <p className="text-sm text-muted-foreground">Cukup nomor HP. Tanpa password, tanpa install aplikasi.</p>
-        </header>
-        <div className="space-y-4 px-4 pt-2 pb-16">
-          <section className="rounded-2xl border bg-card p-4">
-            <LoginPanel onSuccess={() => refresh()} />
-          </section>
-          <div className="rounded-2xl border border-dashed border-ink/25 p-4 text-sm">
-            <p className="font-semibold">Mau lihat akun yang sudah punya tiket?</p>
-            <p className="mt-0.5 text-muted-foreground">Masuk sebagai Rina, pengunjung contoh dengan tiket dan pesanan.</p>
-            <Button variant="outline" className="mt-3 h-11 w-full" onClick={() => void loginAsPersona()} disabled={demoBusy}>
-              Masuk sebagai Rina (data contoh)
-            </Button>
-          </div>
+      <div className="px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-10">
+        <div className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-[2rem] bg-brand-soft">
+          <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
+          <Illustration name="tiket" className="relative w-44 animate-pop" />
+        </div>
+        <h1 className="mt-6 text-[1.75rem] leading-tight font-extrabold tracking-tight">Akun Summarevent</h1>
+        <p className="mt-1.5 text-base text-muted-foreground">Masuk untuk melihat e-ticket, pesanan, dan daftar tunggumu. Cukup nomor HP, tanpa kata sandi.</p>
+        <div className="mt-6 grid gap-2">
+          <Button asChild className="h-14 text-base">
+            <Link to="/app/masuk?next=/app/akun">Masuk</Link>
+          </Button>
+          <Button asChild variant="outline" className="h-12 text-base">
+            <Link to="/app/daftar?next=/app/akun">Daftar akun baru</Link>
+          </Button>
+        </div>
+        <div className="mt-5 rounded-2xl border border-dashed border-ink/25 p-4 text-sm">
+          <p className="font-semibold">Mau lihat akun yang sudah punya tiket?</p>
+          <p className="mt-0.5 text-muted-foreground">Rina adalah pengunjung contoh dengan tiket dan pesanan.</p>
+          <Button variant="outline" className="mt-3 h-11 w-full" onClick={() => void loginAsPersona()} disabled={demoBusy}>
+            Masuk sebagai Rina (data contoh)
+          </Button>
         </div>
       </div>
     )
@@ -152,7 +157,7 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
             <LoadError error={orders.error} onRetry={orders.reload} />
           ) : !list.length ? (
             <EmptyState
-              icon={<Receipt />}
+              icon={<Illustration name="kursi" className="w-28" />}
               title="Belum ada pesanan"
               action={
                 <Button asChild className="h-11">

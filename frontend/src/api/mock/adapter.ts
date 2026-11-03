@@ -35,6 +35,7 @@ import {
   checkinWindow,
   effectiveSeatStatus,
   isHoldActive,
+  profileChanges,
   randomCode,
   receiptChecksPass,
   resolveSession,
@@ -1112,6 +1113,22 @@ export function createMockApi(): Api {
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
           .map((w) => waitlistItem(db, w, now)),
       )
+    },
+
+    updateProfile(changes) {
+      const me = getSessionUserId('VISITOR')
+      if (!me) return Promise.reject(new ApiError('NEED_LOGIN', 'Masuk dulu untuk mengubah profil.'))
+      const checked = profileChanges(changes)
+      if (!checked.ok) return Promise.reject(new ApiError('INVALID', checked.reason, { field: checked.field }))
+      return write((db) => {
+        const user = must(getUser(db, me), 'Pengguna')
+        if (checked.email && db.users.some((u) => u.id !== me && u.email === checked.email)) {
+          throw new ApiError('DUPLICATE', 'Email ini sudah dipakai akun lain.', { field: 'email' })
+        }
+        if (checked.name !== undefined) user.name = checked.name
+        if (checked.email !== undefined) user.email = checked.email
+        return { ...user }
+      })
     },
 
     /* ---------- admin ---------- */

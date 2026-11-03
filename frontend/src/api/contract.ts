@@ -157,6 +157,12 @@ export interface PassItem {
 }
 
 /** The visitor's own waiting-list entries, with their place in line. */
+/** What a visitor can change about their account. `email: null` (or empty) removes it. */
+export interface ProfileUpdate {
+  name?: string
+  email?: string | null
+}
+
 export interface WaitlistItem extends WaitlistEntry {
   /** 1-based place among people still waiting; null once notified or left. */
   position: number | null
@@ -405,6 +411,8 @@ export interface Api {
   leaveWaitlist(entryId: string): Promise<void>
   /** GET /me/waitlist */
   myWaitlist(): Promise<WaitlistItem[]>
+  /** PATCH /me { name?, email? } – the signed-in visitor's own name and email (PV-06); the phone number is the login and stays */
+  updateProfile(changes: ProfileUpdate): Promise<User>
 
   admin: AdminApi
   staff: StaffApi

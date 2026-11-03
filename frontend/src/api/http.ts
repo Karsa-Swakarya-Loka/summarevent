@@ -126,6 +126,13 @@ export function createHttpApi(baseUrl: string): Api {
     joinWaitlist: (sessionId, categoryId, qty) => req('POST', `/sessions/${sessionId}/waitlist`, { category_id: categoryId, qty }),
     leaveWaitlist: (id) => req('DELETE', `/waitlist/${id}`),
     myWaitlist: () => req('GET', '/me/waitlist'),
+    async updateProfile(changes) {
+      const user = await req<User>('PATCH', '/me', changes)
+      // the signed-in visitor is kept on the device; keep it in step, and let open screens redraw
+      store(USER_KEY('VISITOR'), JSON.stringify(user))
+      listeners.forEach((l) => l())
+      return user
+    },
 
     admin: {
       listEvents: () => req('GET', '/admin/events'),

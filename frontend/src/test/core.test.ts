@@ -5,10 +5,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createMockApi } from '@/api/mock/adapter'
 import { clearClientSessions, clearDb, readDb, replaceDb, setSessionUserId, transaction } from '@/api/mock/db'
-import { buildSeed } from '@/api/mock/seed'
+import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
 import { parseReceiptText } from '@/domain/ocr'
-import { buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, resolveSession, saleState, suggestSeats } from '@/domain/rules'
+import { buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
 import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
 import { wibDate } from '@/lib/format'
 
@@ -397,5 +397,31 @@ describe('bonus, staff accounts, desk review, OCR (AD-12, AD-13, PT-06, PV-16)',
     expect(parseReceiptText(text, db.tenants)).toEqual({ tenantId: 't_mainan', receiptNo: 'INV713128', amount: 200_000, receiptDate: '2026-11-02', receiptTime: '21:40' })
     expect(parseReceiptText('SUBTOTAL 50.000\nGrand total: 75.000', db.tenants).amount).toBe(75_000)
     expect(parseReceiptText('foto buram', db.tenants)).toEqual({})
+  })
+})
+
+describe('profile (PV-06)', () => {
+  it('tidies the name and the email, and an empty email clears it', () => {
+    expect(profileChanges({ name: '  Rina   Kartika ', email: ' Rina@Contoh.ID ' })).toEqual({ ok: true, name: 'Rina Kartika', email: 'rina@contoh.id' })
+    expect(profileChanges({ email: '' })).toEqual({ ok: true, email: null })
+    expect(profileChanges({})).toEqual({ ok: true })
+  })
+
+  it('refuses a name that is too short or too long, and an email without a domain', () => {
+    expect(profileChanges({ name: ' R ' })).toMatchObject({ ok: false, field: 'name' })
+    expect(profileChanges({ name: 'x'.repeat(61) })).toMatchObject({ ok: false, field: 'name' })
+    expect(profileChanges({ email: 'rina@contoh' })).toMatchObject({ ok: false, field: 'email' })
+  })
+
+  it('saves for the signed-in visitor only, and never gives two accounts one email', async () => {
+    await expect(api.updateProfile({ name: 'Tamu' })).rejects.toMatchObject({ code: 'NEED_LOGIN' })
+    asVisitor(PERSONA_ID)
+    const user = await api.updateProfile({ name: 'Rina K', email: 'Rina@Contoh.id' })
+    expect(user).toMatchObject({ name: 'Rina K', email: 'rina@contoh.id', phone: '081234567890' })
+    expect(api.currentUser('VISITOR')).toMatchObject({ name: 'Rina K', email: 'rina@contoh.id' })
+    // the demo petugas account already uses this email
+    await expect(api.updateProfile({ email: 'desk.atrium@summarevent.test' })).rejects.toMatchObject({ code: 'DUPLICATE' })
+    await expect(api.updateProfile({ email: 'bukan-email' })).rejects.toMatchObject({ code: 'INVALID' })
+    expect(api.currentUser('VISITOR')?.email).toBe('rina@contoh.id')
   })
 })

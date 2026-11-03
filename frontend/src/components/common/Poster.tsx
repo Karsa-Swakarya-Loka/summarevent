@@ -1,21 +1,19 @@
 import type { PosterTheme } from '@/domain/types'
+import { POSTER_THEMES } from './posterThemes'
 import { cn } from '@/lib/utils'
 
 /**
- * Generated event posters (no external images needed). Each theme is a flat,
- * brand-coloured composition with the ticket-notch motif.
+ * Generated event posters (no external images needed). Each theme is a flat, brand-coloured composition with the
+ * ticket-notch motif. `bare` draws the artwork alone, for cards that set the title and label themselves.
  */
-const THEMES: Record<PosterTheme, { bg: string; fg: string; accent: string; label: string }> = {
-  stage: { bg: '#006426', fg: '#ffffff', accent: '#f9a61b', label: 'Pertunjukan' },
-  acoustic: { bg: '#231f20', fg: '#ffffff', accent: '#f26f22', label: 'Konser' },
-  craft: { bg: '#f26f22', fg: '#231f20', accent: '#fedc01', label: 'Kelas' },
-  expo: { bg: '#e6f2ea', fg: '#004a1c', accent: '#f26f22', label: 'Pameran' },
-}
-
-export function Poster({ theme, title, className, compact = false }: { theme: PosterTheme; title: string; className?: string; compact?: boolean }) {
-  const t = THEMES[theme]
+export function Poster({ theme, title, className, compact = false, bare = false }: { theme: PosterTheme; title: string; className?: string; compact?: boolean; bare?: boolean }) {
+  const t = POSTER_THEMES[theme]
   return (
-    <div className={cn('relative isolate overflow-hidden', className)} style={{ background: t.bg, color: t.fg }} role="img" aria-label={`Poster ${title}`}>
+    <div
+      className={cn('relative isolate overflow-hidden', className)}
+      style={{ background: t.bg, color: t.fg }}
+      {...(bare ? { 'aria-hidden': true } : { role: 'img', 'aria-label': `Poster ${title}` })}
+    >
       <svg className="absolute inset-0 -z-10 size-full" viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice" aria-hidden>
         {theme === 'stage' && (
           <>
@@ -51,12 +49,14 @@ export function Poster({ theme, title, className, compact = false }: { theme: Po
           </>
         )}
       </svg>
-      <div className={cn('flex h-full flex-col justify-end', compact ? 'p-3' : 'p-5')}>
-        <span className="mb-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[0.65rem] font-bold tracking-wide uppercase" style={{ background: t.accent, color: '#231f20' }}>
-          {t.label}
-        </span>
-        <span className={cn('font-extrabold leading-tight text-balance', compact ? 'text-sm' : 'text-xl')}>{title}</span>
-      </div>
+      {!bare && (
+        <div className={cn('flex h-full flex-col justify-end', compact ? 'p-3' : 'p-5')}>
+          <span className="mb-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[0.65rem] font-bold tracking-wide uppercase" style={{ background: t.accent, color: '#231f20' }}>
+            {t.label}
+          </span>
+          <span className={cn('font-extrabold leading-tight text-balance', compact ? 'text-sm' : 'text-xl')}>{title}</span>
+        </div>
+      )}
     </div>
   )
 }

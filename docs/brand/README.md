@@ -14,7 +14,7 @@ Kit lengkap ada di [`final/`](final/), dibuat oleh [`final/generate_logo_kit.py`
 | `brand/summarevent-lockup.svg` | Simbol + wordmark, latar terang |
 | `brand/summarevent-lockup-white.svg` | Simbol + wordmark, latar hijau atau gelap |
 | `brand/summarevent-app-icon.svg` | Ikon app (ubin hijau bergradasi halus, blok krem + oranye) |
-| `brand/summaba-logo.png` | Logo resmi Summarecon Mall Bandung dari tim (431×98, latar transparan) |
+| `brand/summaba-logo.webp` | Logo resmi Summarecon Mall Bandung dari tim, WebP 290×66 (6 kB). Berkas aslinya, PNG 431×98 latar transparan, ada di [`summaba-logo.png`](summaba-logo.png) |
 | `favicon.svg`, `favicon.ico` | Tab browser: ubin dengan potongan kecil yang lorongnya lebih lebar |
 | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `maskable-512.png` | Ikon PWA; versi maskable menaruh simbol di zona aman 80% |
 | `og.png` | Gambar pratinjau link (1200×630) |

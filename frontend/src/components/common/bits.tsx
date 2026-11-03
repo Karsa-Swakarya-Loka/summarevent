@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { ChevronLeft, Clock } from 'lucide-react'
-import { QRCodeSVG } from 'qrcode.react'
 import { SUNDA, type Tone } from '@/domain/labels'
 import { fmtCountdown } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -117,15 +116,6 @@ export function EmptyState({ icon, title, children, action }: { icon?: ReactNode
       <div className="font-semibold">{title}</div>
       {children && <div className="max-w-xs text-sm text-muted-foreground">{children}</div>}
       {action}
-    </div>
-  )
-}
-
-/* ---------- QR ---------- */
-export function TicketQr({ value, size = 200, className }: { value: string; size?: number; className?: string }) {
-  return (
-    <div className={cn('rounded-xl bg-white p-3', className)}>
-      <QRCodeSVG value={value} size={size} level="M" marginSize={0} fgColor="#231f20" bgColor="#ffffff" title="QR e-ticket" />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { Home, Inbox, Ticket, UserRound } from 'lucide-react'
 import { DemoMenu } from '@/components/common/DemoMenu'
 import { NotificationWatcher } from '@/components/visitor/AppSetup'
 import { useNavStack } from '@/lib/navStack'
+import { prefetchScreens } from '@/screens'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -38,6 +39,8 @@ export function VisitorLayout() {
       motion: back ? 'animate-screen-pop' : TAB_ROOT.test(screen.path) && tabRoot ? 'animate-screen-fade' : 'animate-screen-push',
     })
   }
+
+  useEffect(() => prefetchScreens(), [])
 
   // installed on a phone, the status bar takes the colour of the top of the screen: green Beranda, cream elsewhere
   useEffect(() => {

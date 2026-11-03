@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
  */
 /** The app icon exactly as it appears on a phone home screen (green tile). */
 export function BrandAppIcon({ className }: { className?: string }) {
-  return <img src="/brand/summarevent-app-icon.svg" alt="Ikon app Summarevent" className={cn('size-16 select-none', className)} draggable={false} />
+  return <img src="/brand/summarevent-app-icon.svg" alt="Ikon app Summarevent" width={256} height={256} className={cn('size-16 select-none', className)} draggable={false} />
 }
 
 export function BrandLockup({ className, inverted = false }: { className?: string; inverted?: boolean }) {
@@ -15,6 +15,8 @@ export function BrandLockup({ className, inverted = false }: { className?: strin
     <img
       src={inverted ? '/brand/summarevent-lockup-white.svg' : '/brand/summarevent-lockup.svg'}
       alt="Summarevent"
+      width={1540}
+      height={176}
       className={cn('h-8 w-auto select-none', className)}
       draggable={false}
     />
@@ -22,7 +24,8 @@ export function BrandLockup({ className, inverted = false }: { className?: strin
 }
 
 /**
- * Official SUMMABA logo (/public/brand/summaba-logo.png, file supplied by the team).
+ * Official SUMMABA logo, served as a small WebP (/public/brand/summaba-logo.webp). The team's original PNG is kept in
+ * docs/brand.
  * The artwork is never recoloured: on dark or green backgrounds (tone "light") it sits
  * on a white plate. If the file is missing, a plain text fallback is shown instead.
  */
@@ -45,11 +48,11 @@ export function SummabaLogo({ className, tone = 'dark' }: { className?: string; 
   }
   const img = (
     <img
-      src="/brand/summaba-logo.png"
+      src="/brand/summaba-logo.webp"
       alt="Summarecon Mall Bandung"
       className={cn('h-8 w-auto select-none', tone === 'light' ? 'h-full' : className)}
-      width={431}
-      height={98}
+      width={290}
+      height={66}
       onError={() => setFailed(true)}
       draggable={false}
     />

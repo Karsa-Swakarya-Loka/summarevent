@@ -4,8 +4,11 @@ import './index.css'
 import '@/lib/pwa'
 import { bootApi } from '@/api'
 import { endSplash } from '@/lib/splash'
+import { preloadScreen } from '@/screens'
 import App from './App'
 
+// the first screen's chunk loads while the sample data boots
+preloadScreen(location.pathname)
 void bootApi().finally(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

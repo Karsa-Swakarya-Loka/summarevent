@@ -1,3 +1,6 @@
 .DS_Store
 node_modules/
 *.log
+
+# Folder kerja Archify: docs/arsitektur.archify.json dirender ke sini, lalu disalin ke docs/
+.archify/

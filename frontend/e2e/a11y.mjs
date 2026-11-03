@@ -41,19 +41,23 @@ const openDemoMenu = async (page) => {
   await page.getByRole('menu').waitFor()
 }
 
+const otpLogin = async (page, phoneNo, name) => {
+  await page.getByLabel('Nomor HP').fill(phoneNo)
+  await page.getByRole('button', { name: 'Kirim kode OTP' }).click()
+  await page.getByTestId('sim-otp').waitFor()
+  await page.getByLabel('Kode OTP').fill(await page.getByTestId('sim-otp').innerText())
+  await page.getByRole('button', { name: /^Masuk$/ }).click()
+  await page.getByPlaceholder('Nama lengkap').fill(name)
+  await page.getByRole('button', { name: 'Buat akun & masuk' }).click()
+}
+
 // Tukar Struk checkout after the OTP login: the receipt form with its live checklist.
 const receiptForm = async (page) => {
   await page.getByRole('radiogroup', { name: 'Kategori tiket' }).getByRole('radio', { name: /Tukar Struk/ }).click()
   await page.getByRole('button', { name: /Pilihkan 2 kursi/ }).click()
   await page.getByRole('button', { name: /Hayu ngiring/ }).click()
   await page.waitForURL(/\/checkout\//)
-  await page.getByLabel('Nomor HP').fill('081299990077')
-  await page.getByRole('button', { name: 'Kirim kode OTP' }).click()
-  await page.getByTestId('sim-otp').waitFor()
-  await page.getByLabel('Kode OTP').fill(await page.getByTestId('sim-otp').innerText())
-  await page.getByRole('button', { name: /^Masuk$/ }).click()
-  await page.getByPlaceholder('Nama lengkap').fill('Sari Lestari')
-  await page.getByRole('button', { name: 'Buat akun & masuk' }).click()
+  await otpLogin(page, '081299990077', 'Sari Lestari')
   await page.getByRole('button', { name: 'Pakai struk contoh' }).click()
   await page.waitForTimeout(800)
 }
@@ -72,6 +76,40 @@ const rinaAfterCheckin = async (page) => {
   await page.goto(BASE + '/', { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: /masuk cepat sebagai Rina/ }).click()
   await page.getByRole('region', { name: 'Sudah check-in' }).waitFor()
+}
+
+// Rina's Pass Saya, then her first e-ticket on its own screen (the black ticket)
+const rinaPass = async (page) => {
+  await page.getByRole('button', { name: /masuk cepat sebagai Rina/ }).click()
+  await page.locator('article[aria-label^="E-ticket"]').first().waitFor()
+}
+const rinaTicket = async (page) => {
+  await rinaPass(page)
+  await page.locator('article[aria-label^="E-ticket"] a').first().click()
+  await page.getByRole('button', { name: /Perbesar QR/ }).waitFor()
+}
+// Rina's messages as a list, then the first one on its own screen
+const rinaInbox = async (page) => {
+  await rinaPass(page)
+  await page.goto(BASE + '/app/inbox', { waitUntil: 'networkidle' })
+  await page.locator('a[href^="/app/inbox/"]').first().waitFor()
+}
+const rinaMessage = async (page) => {
+  await rinaInbox(page)
+  await page.locator('a[href^="/app/inbox/"]').first().click()
+  await page.waitForURL(/\/app\/inbox\/[^/]+$/)
+  await page.locator('main article').first().waitFor()
+}
+// Paid checkout after the OTP login: names, the payment switch and the pay bar
+const payStep = async (page) => {
+  await toCheckout(page)
+  await otpLogin(page, '081299990078', 'Tari Bayar')
+  await page.getByRole('heading', { name: 'Bayar pakai' }).waitFor()
+}
+// Festival: places without seat numbers, as a field of dots
+const festival = async (page) => {
+  await page.getByRole('radiogroup', { name: 'Kategori tiket' }).getByRole('radio', { name: /Festival/ }).click()
+  await page.getByRole('button', { name: 'Tambah jumlah orang' }).click()
 }
 
 const wizardCategories = async (page) => {
@@ -139,10 +177,16 @@ const screens = [
   [phone, '/app/e/pentas-musikal-sangkuriang'],
   [phone, '/app/e/kids-holiday-craft-class'],
   [phone, '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', seatTarget],
+  [phone, '/app/e/pentas-musikal-sangkuriang/s/ses_sk_13', festival],
   [phone, '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', toCheckout],
+  [phone, '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', payStep],
   [phone, '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', receiptForm],
   [phone, '/app/pass'],
+  [phone, '/', rinaPass],
+  [phone, '/', rinaTicket],
   [phone, '/app/inbox'],
+  [phone, '/', rinaInbox],
+  [phone, '/', rinaMessage],
   [phone, '/app/akun'],
   [phone, '/staff'],
   [phone, '/staff/scan/ses_sk_demo'],

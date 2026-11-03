@@ -1,5 +1,5 @@
-import { useEffect, useId, useMemo, useState } from 'react'
-import { Camera, CircleCheck, CircleDashed, CircleX, ImagePlus, LoaderCircle, Plus, ReceiptText, ScanText, Sparkles, Trash2, TriangleAlert } from 'lucide-react'
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import { Camera, CircleCheck, CircleDashed, CircleX, ImagePlus, LoaderCircle, Plus, ScanText, Sparkles, Trash2, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail, ReceiptInput, RuleCheck } from '@/api/contract'
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { errorMessage } from '@/hooks/useLive'
 import { rupiahPlain, wibDate, wibTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { BottomBar, SectionLabel } from './Common'
 import { useDebounced } from './hooks'
 
 interface Draft {
@@ -91,19 +92,23 @@ function sampleTime(rules: ReceiptRules): string {
 const randInt = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n
 
 /**
- * Tukar Struk form (PV-09): photo + tenant + receipt number + amount + date/time per receipt,
- * a live rule checklist (R1–R4, R6) and a "Pakai struk contoh" helper for judges.
+ * Tukar Struk form (PV-09): photo + tenant + receipt number + amount + date/time per receipt, a meter toward the minimum
+ * spend (R3), a live checklist of the other rules (R1, R2, R4, R6) and a "Pakai struk contoh" helper for judges. It
+ * ends the screen: its send button sits in the bottom bar, so render it as the last block of a page.
  */
 export function ReceiptForm({
   detail,
   onSubmitted,
   beforeSubmit,
   disabled = false,
+  children,
 }: {
   detail: OrderDetail
   onSubmitted: () => void
   beforeSubmit?: () => Promise<void>
   disabled?: boolean
+  /** shown after the checklist, above the send button */
+  children?: ReactNode
 }) {
   const uid = useId()
   const { order, category, tenants } = detail
@@ -155,7 +160,7 @@ export function ReceiptForm({
   const checks = result?.checks ?? []
   const total = result?.total ?? 0
 
-  if (!rules) return <p className="text-sm text-muted-foreground">Kategori ini tidak memakai struk.</p>
+  if (!rules) return <p className="px-4 text-sm text-muted-foreground">Kategori ini tidak memakai struk.</p>
 
   const update = (key: string, patch: Partial<Draft>) => {
     setTouched(true)
@@ -263,7 +268,7 @@ export function ReceiptForm({
         onSubmitted()
       } else {
         setResult({ key: debouncedKey, checks: res.checks, total: res.total })
-        toast.error('Masih ada syarat struk yang belum terpenuhi. Cek daftar di bawah.')
+        toast.error('Masih ada syarat struk yang belum terpenuhi.')
       }
     } catch (e) {
       toast.error(errorMessage(e))
@@ -272,218 +277,243 @@ export function ReceiptForm({
     }
   }
 
+  const listed = allChecks.filter((c) => c.rule !== 'R3')
+  const passed = allChecks.filter((c) => c.ok).length
+  const short = Math.max(0, rules.minSpend - total)
+  const chips = ['Tenant SUMMABA', rules.sameDayRequired ? 'Struk hari ini' : null, `Sebelum ${rules.cutoffTime.replace(':', '.')}`, `Maks ${rules.maxReceiptsCombined} struk`].filter(
+    (c): c is string => !!c,
+  )
+
   return (
-    <div className="space-y-4">
-      {revision.length > 0 && (
-        <div role="alert" className="rounded-xl border border-status-warn/50 bg-status-warn/12 p-3 text-sm">
-          <p className="font-bold text-[#7a5600]">Panitia minta revisi struk</p>
-          <p className="mt-0.5">{revision[0].reason ?? 'Periksa lagi data struk kamu.'}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Perbaiki data di bawah, lalu kirim ulang.</p>
+    <>
+      <div className="flex-1 space-y-5 px-4 pb-8">
+        {revision.length > 0 && (
+          <div role="alert" className="animate-rise rounded-[1.4rem] bg-[#ffe7a3] p-4 text-sm">
+            <p className="font-bold">Panitia minta struk diperbaiki</p>
+            <p className="mt-0.5">{revision[0].reason ?? 'Periksa lagi data struk kamu.'}</p>
+          </div>
+        )}
+
+        {/* how far the receipts are from the minimum spend, the rule that matters most, as one big number */}
+        <section aria-labelledby={`${uid}-meter`} className="relative animate-rise overflow-hidden rounded-[1.4rem] bg-[#ffe7a3] p-4">
+          <div className="seat-dots pointer-events-none absolute inset-0 text-ink/[0.07]" aria-hidden />
+          <div className="relative">
+            <div className="flex items-baseline justify-between gap-2 text-[0.66rem] font-bold tracking-[0.18em] text-ink/70 uppercase">
+              <h2 id={`${uid}-meter`}>Total struk</h2>
+              <span>Min {rupiahPlain(rules.minSpend)}</span>
+            </div>
+            <p className="mt-1 font-poster text-[2.5rem] leading-none tabular-nums">{rupiahPlain(total)}</p>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-ink/12" aria-hidden>
+              <div className={cn('h-full rounded-full transition-[width] duration-500 ease-(--ease-soft)', pct >= 100 ? 'bg-brand' : 'bg-ink')} style={{ width: `${pct}%` }} />
+            </div>
+            <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold">
+              {short > 0 ? (
+                `Kurang ${rupiahPlain(short)}`
+              ) : (
+                <>
+                  <CircleCheck className="size-4 text-brand" aria-hidden /> Cukup untuk ditukar
+                </>
+              )}
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Syarat struk">
+              {chips.map((c) => (
+                <li key={c} className="rounded-full bg-white/60 px-2.5 py-1 text-xs font-semibold">
+                  {c}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button type="button" variant="outline" className="h-12 bg-card px-2" onClick={() => void fillSample()} disabled={disabled}>
+            <Sparkles className="size-4" /> Pakai struk contoh
+          </Button>
+          <Button type="button" variant="outline" className="h-12 bg-card px-2" onClick={() => void samplePhotoOnly()} disabled={disabled}>
+            <ScanText className="size-4" /> Coba baca otomatis
+          </Button>
         </div>
-      )}
 
-      <p className="text-sm text-muted-foreground">
-        Belanja minimal <strong className="text-foreground">{rupiahPlain(rules.minSpend)}</strong> di tenant SUMMABA, struk {rules.sameDayRequired ? 'hari ini ' : ''}sebelum jam{' '}
-        {rules.cutoffTime.replace(':', '.')}. Boleh gabung maksimal {rules.maxReceiptsCombined} struk.
-      </p>
+        <ol className="space-y-3">
+          {drafts.map((d, i) => {
+            const f = `${uid}-${d.key}`
+            return (
+              <li key={d.key} className="animate-rise rounded-[1.4rem] bg-card p-3 shadow-xs">
+                <div className="mb-2 flex min-h-11 items-center justify-between pl-1">
+                  <p className="text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">Struk {i + 1}</p>
+                  {drafts.length > 1 && (
+                    <Button type="button" variant="ghost" className="h-11 text-muted-foreground" onClick={() => setDrafts((ds) => ds.filter((x) => x.key !== d.key))} aria-label={`Hapus struk ${i + 1}`}>
+                      <Trash2 /> Hapus
+                    </Button>
+                  )}
+                </div>
 
-      <Button type="button" variant="outline" className="h-12 w-full border-dashed border-brand/50 bg-brand-soft text-brand hover:bg-brand-soft/70" onClick={() => void fillSample()} disabled={disabled}>
-        <Sparkles className="size-4" /> Pakai struk contoh
-      </Button>
-      <button
-        type="button"
-        onClick={() => void samplePhotoOnly()}
-        disabled={disabled}
-        className="-mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 text-xs font-semibold text-brand underline-offset-2 hover:underline disabled:opacity-50"
-      >
-        <ScanText className="size-4" aria-hidden /> Atau coba baca otomatis dari foto struk contoh
-      </button>
+                <div className="flex gap-3">
+                  <label
+                    className={cn(
+                      'relative flex h-28 w-22 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border-2 border-dashed text-center text-[0.7rem] font-semibold text-muted-foreground hover:border-ink/50 focus-within:ring-3 focus-within:ring-ring/50',
+                      d.photoUrl && 'border-solid border-border',
+                    )}
+                  >
+                    {d.processing ? (
+                      <LoaderCircle className="size-6 animate-spin" aria-hidden />
+                    ) : d.photoUrl ? (
+                      <>
+                        <img src={d.photoUrl} alt={`Foto struk ${i + 1}`} className="absolute inset-0 size-full animate-pop object-cover object-top" />
+                        <span className="absolute inset-x-0 bottom-0 bg-ink/70 py-0.5 text-white">Ganti foto</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="size-6" aria-hidden />
+                        Foto struk
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="sr-only"
+                      aria-label={`Foto struk ${i + 1}`}
+                      disabled={disabled}
+                      onChange={(e) => {
+                        void onPhoto(d.key, e.target.files?.[0])
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
 
-      <ol className="space-y-3">
-        {drafts.map((d, i) => {
-          const f = `${uid}-${d.key}`
-          return (
-            <li key={d.key} className="rounded-xl border bg-background p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="flex items-center gap-1.5 text-sm font-bold">
-                  <ReceiptText className="size-4 text-muted-foreground" aria-hidden /> Struk {i + 1}
-                </p>
-                {drafts.length > 1 && (
-                  <Button type="button" variant="ghost" className="h-11 text-muted-foreground" onClick={() => setDrafts((ds) => ds.filter((x) => x.key !== d.key))} aria-label={`Hapus struk ${i + 1}`}>
-                    <Trash2 /> Hapus
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="space-y-1">
+                      <Label htmlFor={`${f}-tenant`} className="text-xs">
+                        Tenant
+                      </Label>
+                      <select
+                        id={`${f}-tenant`}
+                        value={d.tenantId}
+                        onChange={(e) => update(d.key, { tenantId: e.target.value })}
+                        disabled={disabled}
+                        className="h-11 w-full rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      >
+                        <option value="">Pilih tenant…</option>
+                        {tenants.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                            {rules.excludedTenantIds.includes(t.id) ? ' (tidak berlaku)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`${f}-no`} className="text-xs">
+                        Nomor struk
+                      </Label>
+                      <Input
+                        id={`${f}-no`}
+                        value={d.receiptNo}
+                        onChange={(e) => update(d.key, { receiptNo: e.target.value })}
+                        placeholder="mis. INV123456"
+                        className="h-11 uppercase placeholder:normal-case"
+                        autoCapitalize="characters"
+                        disabled={disabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {d.photoUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-2 h-11 w-full border-dashed text-sm"
+                    onClick={() => void readPhoto(d.key)}
+                    disabled={disabled || d.reading != null}
+                  >
+                    {d.reading != null ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <ScanText className="size-4" aria-hidden />}
+                    {d.reading != null ? `Membaca foto… ${Math.round((d.reading ?? 0) * 100)}%` : 'Baca otomatis dari foto'}
                   </Button>
                 )}
-              </div>
-
-              <div className="flex gap-3">
-                <label
-                  className={cn(
-                    'relative flex h-28 w-22 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border-2 border-dashed text-center text-[0.7rem] font-semibold text-muted-foreground hover:border-brand/60 focus-within:ring-3 focus-within:ring-ring/50',
-                    d.photoUrl && 'border-solid border-border',
-                  )}
-                >
-                  {d.processing ? (
-                    <LoaderCircle className="size-6 animate-spin" aria-hidden />
-                  ) : d.photoUrl ? (
-                    <>
-                      <img src={d.photoUrl} alt={`Foto struk ${i + 1}`} className="absolute inset-0 size-full object-cover object-top" />
-                      <span className="absolute inset-x-0 bottom-0 bg-ink/70 py-0.5 text-white">Ganti foto</span>
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="size-6" aria-hidden />
-                      Foto struk
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="sr-only"
-                    aria-label={`Foto struk ${i + 1}`}
-                    disabled={disabled}
-                    onChange={(e) => {
-                      void onPhoto(d.key, e.target.files?.[0])
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
-
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div className="space-y-1">
-                    <Label htmlFor={`${f}-tenant`} className="text-xs">
-                      Tenant
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div className="col-span-2 space-y-1">
+                    <Label htmlFor={`${f}-amt`} className="text-xs">
+                      Nominal
                     </Label>
-                    <select
-                      id={`${f}-tenant`}
-                      value={d.tenantId}
-                      onChange={(e) => update(d.key, { tenantId: e.target.value })}
-                      disabled={disabled}
-                      className="h-11 w-full rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                    >
-                      <option value="">Pilih tenant…</option>
-                      {tenants.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                          {rules.excludedTenantIds.includes(t.id) ? ' (tidak berlaku)' : ''}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                      <Input
+                        id={`${f}-amt`}
+                        inputMode="numeric"
+                        value={d.amount ? new Intl.NumberFormat('id-ID').format(Number(d.amount)) : ''}
+                        onChange={(e) => update(d.key, { amount: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                        placeholder="0"
+                        className="h-11 pl-9 text-base font-semibold tabular-nums"
+                        disabled={disabled}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor={`${f}-no`} className="text-xs">
-                      Nomor struk
+                    <Label htmlFor={`${f}-date`} className="text-xs">
+                      Tanggal
                     </Label>
-                    <Input
-                      id={`${f}-no`}
-                      value={d.receiptNo}
-                      onChange={(e) => update(d.key, { receiptNo: e.target.value })}
-                      placeholder="mis. INV123456"
-                      className="h-11 uppercase placeholder:normal-case"
-                      autoCapitalize="characters"
-                      disabled={disabled}
-                    />
+                    <Input id={`${f}-date`} type="date" value={d.receiptDate} onChange={(e) => update(d.key, { receiptDate: e.target.value })} className="h-11 px-2 text-sm" disabled={disabled} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor={`${f}-time`} className="text-xs">
+                      Jam
+                    </Label>
+                    <Input id={`${f}-time`} type="time" value={d.receiptTime} onChange={(e) => update(d.key, { receiptTime: e.target.value })} className="h-11 px-2 text-sm" disabled={disabled} />
                   </div>
                 </div>
-              </div>
-
-              {d.photoUrl && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="mt-2 h-10 w-full border-dashed text-sm"
-                  onClick={() => void readPhoto(d.key)}
-                  disabled={disabled || d.reading != null}
-                >
-                  {d.reading != null ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <ScanText className="size-4" aria-hidden />}
-                  {d.reading != null ? `Membaca foto… ${Math.round((d.reading ?? 0) * 100)}%` : 'Baca otomatis dari foto (beta)'}
-                </Button>
-              )}
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <div className="col-span-2 space-y-1">
-                  <Label htmlFor={`${f}-amt`} className="text-xs">
-                    Nominal
-                  </Label>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
-                    <Input
-                      id={`${f}-amt`}
-                      inputMode="numeric"
-                      value={d.amount ? new Intl.NumberFormat('id-ID').format(Number(d.amount)) : ''}
-                      onChange={(e) => update(d.key, { amount: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                      placeholder="0"
-                      className="h-11 pl-9 text-base font-semibold tabular-nums"
-                      disabled={disabled}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor={`${f}-date`} className="text-xs">
-                    Tanggal
-                  </Label>
-                  <Input id={`${f}-date`} type="date" value={d.receiptDate} onChange={(e) => update(d.key, { receiptDate: e.target.value })} className="h-11 px-2 text-sm" disabled={disabled} />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor={`${f}-time`} className="text-xs">
-                    Jam
-                  </Label>
-                  <Input id={`${f}-time`} type="time" value={d.receiptTime} onChange={(e) => update(d.key, { receiptTime: e.target.value })} className="h-11 px-2 text-sm" disabled={disabled} />
-                </div>
-              </div>
-            </li>
-          )
-        })}
-      </ol>
-
-      {drafts.length < rules.maxReceiptsCombined && (
-        <Button type="button" variant="outline" className="h-11 w-full" onClick={() => setDrafts((ds) => [...ds, emptyDraft()])} disabled={disabled}>
-          <Plus /> Tambah struk ({drafts.length}/{rules.maxReceiptsCombined})
-        </Button>
-      )}
-
-      <section className="rounded-xl border bg-card p-3" aria-label="Cek syarat struk" aria-live="polite">
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="text-sm font-bold">Cek syarat otomatis</p>
-          {checking && <LoaderCircle className="size-4 animate-spin text-muted-foreground" aria-label="Mengecek" />}
-        </div>
-        <div className="mt-2">
-          <div className="flex items-baseline justify-between text-sm">
-            <span className="text-muted-foreground">Total struk</span>
-            <span>
-              <strong className="text-xl tabular-nums">{rupiahPlain(total)}</strong>
-              <span className="text-xs text-muted-foreground"> / min {rupiahPlain(rules.minSpend)}</span>
-            </span>
-          </div>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-            <div className={cn('h-full rounded-full transition-all', pct >= 100 ? 'bg-status-valid' : 'bg-status-warn')} style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-        <ul className="mt-3 space-y-1.5">
-          {allChecks.map((c, idx) => {
-            const pending = !c.ok && !touched
-            return (
-              <li key={`${c.rule}-${idx}`} className="flex items-start gap-2 text-sm">
-                {c.ok && c.warning ? (
-                  <TriangleAlert className="mt-0.5 size-4 shrink-0 text-[#b07d00]" aria-label="Perhatian" />
-                ) : c.ok ? (
-                  <CircleCheck className="mt-0.5 size-4 shrink-0 text-status-valid" aria-label="Terpenuhi" />
-                ) : pending ? (
-                  <CircleDashed className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-label="Belum diisi" />
-                ) : (
-                  <CircleX className="mt-0.5 size-4 shrink-0 text-status-invalid" aria-label="Belum terpenuhi" />
-                )}
-                <span className={cn(!c.ok && !pending && 'text-[#a11b1b]', pending && 'text-muted-foreground')}>{c.message}</span>
               </li>
             )
           })}
-        </ul>
-      </section>
+        </ol>
 
-      <Button type="button" className="h-14 w-full text-base" disabled={!allOk || busy || disabled} onClick={() => void submit()}>
-        {busy ? <LoaderCircle className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
-        Kirim struk untuk diverifikasi
-      </Button>
-      {!allOk && touched && fresh && <p className="-mt-2 text-center text-xs text-muted-foreground">Tombol aktif setelah semua syarat di atas tercentang.</p>}
-    </div>
+        {drafts.length < rules.maxReceiptsCombined && (
+          <Button type="button" variant="outline" className="h-11 w-full bg-card" onClick={() => setDrafts((ds) => [...ds, emptyDraft()])} disabled={disabled}>
+            <Plus /> Tambah struk ({drafts.length}/{rules.maxReceiptsCombined})
+          </Button>
+        )}
+
+        <section aria-labelledby={`${uid}-checks`} aria-live="polite" className="space-y-2.5">
+          <SectionLabel id={`${uid}-checks`} right={checking ? <LoaderCircle className="size-4 animate-spin text-muted-foreground" aria-label="Mengecek" /> : undefined}>
+            Cek syarat
+          </SectionLabel>
+          <ul className="space-y-2 rounded-[1.4rem] bg-card p-3.5 shadow-xs">
+            {listed.map((c, idx) => {
+              const pending = !c.ok && !touched
+              return (
+                <li key={`${c.rule}-${idx}`} className="flex items-start gap-2 text-sm">
+                  {c.ok && c.warning ? (
+                    <TriangleAlert className="mt-0.5 size-4 shrink-0 text-[#b07d00]" aria-label="Perhatian" />
+                  ) : c.ok ? (
+                    <CircleCheck className="mt-0.5 size-4 shrink-0 animate-pop text-status-valid" aria-label="Terpenuhi" />
+                  ) : pending ? (
+                    <CircleDashed className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-label="Belum diisi" />
+                  ) : (
+                    <CircleX className="mt-0.5 size-4 shrink-0 text-status-invalid" aria-label="Belum terpenuhi" />
+                  )}
+                  <span className={cn(!c.ok && !pending && 'text-[#a11b1b]', pending && 'text-muted-foreground')}>{c.message}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+
+        {children}
+      </div>
+
+      <BottomBar>
+        <div className="flex items-center gap-3">
+          <p className="min-w-0 flex-1 leading-tight">
+            <span className="block text-[0.66rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">Syarat</span>
+            <span className="font-bold tabular-nums">{checks.length ? `${passed}/${allChecks.length} terpenuhi` : '…'}</span>
+          </p>
+          <Button type="button" className="h-14 shrink-0 px-6 text-base" disabled={!allOk || busy || disabled} onClick={() => void submit()}>
+            {busy ? <LoaderCircle className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
+            Kirim struk
+          </Button>
+        </div>
+      </BottomBar>
+    </>
   )
 }

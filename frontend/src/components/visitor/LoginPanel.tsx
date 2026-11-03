@@ -22,12 +22,10 @@ const NAME_ERROR = 'Isi nama kamu dulu, supaya tiket atas namamu.'
  */
 export function LoginPanel({
   onSuccess,
-  intro,
   mode = 'masuk',
   className,
 }: {
   onSuccess: (user: User, isNew: boolean) => void
-  intro?: string
   mode?: 'masuk' | 'daftar'
   className?: string
 }) {
@@ -129,8 +127,6 @@ export function LoginPanel({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {intro && <p className="text-sm text-muted-foreground">{intro}</p>}
-
       {!sentTo ? (
         <form onSubmit={request} className="space-y-4" noValidate>
           {signUp && (
@@ -169,7 +165,7 @@ export function LoginPanel({
               />
             </div>
             <p id={`${id}-phone-hint`} className="text-xs text-muted-foreground">
-              Kami kirim kode OTP lewat SMS (disimulasikan, kodenya tampil di layar).
+              Kode OTP tampil di layar (simulasi).
             </p>
           </div>
           {error && <FormError>{error}</FormError>}

@@ -3,7 +3,7 @@
 // Alur: HP petugas menyimpan daftar tiket → sinyal putus → Valid / Sudah digunakan / Tidak valid tetap jalan →
 // sinyal kembali → antrean terkirim; tiket yang lebih dulu dipindai pintu lain muncul sebagai konflik.
 import { chromium } from 'playwright-core'
-import { skipIntro } from './skip-intro.mjs'
+import { signIn, skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -60,6 +60,7 @@ const paste = async (token) => {
   await page.getByRole('button', { name: 'Periksa' }).click()
 }
 
+await signIn(page, 'STAFF', BASE)
 await page.goto(BASE + '/staff', { waitUntil: 'networkidle' })
 await page.locator('[data-session="ses_sk_demo"]').getByRole('link', { name: 'Mulai scan' }).click()
 await page.waitForURL('**/staff/scan/ses_sk_demo')

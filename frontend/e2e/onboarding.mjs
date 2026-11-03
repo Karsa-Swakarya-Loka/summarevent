@@ -1,4 +1,5 @@
-// A new visitor's first minute: the splash, the three-step onboarding, then Daftar with the simulated OTP.
+// The first minute of each role: the splash (once for the web, once per role, named), the visitor's three-step
+// onboarding and Daftar with the simulated OTP, then the panitia's and the petugas' onboarding and email sign-in.
 // Usage: dev server running (npm run dev), then node e2e/onboarding.mjs
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import fs from 'node:fs'
@@ -36,8 +37,13 @@ await page.reload({ waitUntil: 'domcontentloaded' })
 check((await splash.count()) === 0, 'splash muncul lagi di sesi yang sama')
 console.log('splash: shown once, then gone')
 
-// 2. Onboarding: the first visit to the visitor app goes through three steps
-await page.goto(BASE + '/app', { waitUntil: 'networkidle' })
+// 2. Entering a role from the role picker plays that role's splash, named; a new visitor then gets three steps
+await page.getByRole('button', { name: /Masuk sebagai pengunjung/ }).click()
+await splash.waitFor({ timeout: 3000 })
+check((await page.locator('#splash .sp-role').textContent()) === 'Pengunjung', 'splash pengunjung tidak menyebut perannya')
+await page.waitForTimeout(900)
+await shot(page, '02-splash-pengunjung')
+await splash.waitFor({ state: 'detached', timeout: 5000 })
 await page.waitForURL(/\/app\/mulai/)
 const titles = []
 for (let i = 0; i < 3; i++) {
@@ -67,20 +73,65 @@ check(await chip.waitFor({ timeout: 5000 }).then(() => true, () => false), 'sete
 await shot(page, '04-home-after-signup')
 await page.goto(BASE + '/app', { waitUntil: 'networkidle' })
 check(!/\/app\/mulai/.test(page.url()), 'onboarding muncul lagi setelah selesai')
+check((await splash.count()) === 0, 'splash pengunjung muncul lagi di sesi yang sama')
 console.log('daftar: Sinta Maharani signed up and is on Beranda')
 await ctx.close()
 
-// 4. Never on the panitia side: hidden from the first parsed byte (no flash on a slow network), gone once parsed
+// 4. Panitia, straight to /admin: the splash named Panitia, their three steps, then the email sign-in
 const adminCtx = await browser.newContext({ viewport: { width: 1366, height: 900 } })
 const admin = await adminCtx.newPage()
 watch(admin, 'admin')
 await admin.goto(BASE + '/admin', { waitUntil: 'commit' })
-check(!(await admin.locator('#splash').isVisible()), 'splash terlihat sekilas di halaman panitia')
-await admin.waitForLoadState('domcontentloaded')
-check((await admin.locator('#splash').count()) === 0, 'splash muncul di halaman panitia')
+await admin.locator('#splash').waitFor({ timeout: 3000 })
+check((await admin.locator('#splash .sp-role').textContent()) === 'Panitia', 'splash panitia tidak menyebut perannya')
+await admin.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
+await admin.waitForURL(/\/admin\/mulai/)
+const adminTitles = []
+for (let i = 0; i < 3; i++) {
+  adminTitles.push(((await admin.getByRole('heading', { level: 1 }).textContent()) ?? '').trim())
+  if (i < 2) await admin.getByRole('button', { name: /^Lanjut/ }).click()
+}
+console.log('panitia onboarding:', adminTitles.join(' → '))
+check(new Set(adminTitles).size === 3, `judul onboarding panitia: ${adminTitles.join(' | ')}`)
+await admin.getByRole('button', { name: 'Masuk sebagai panitia' }).click()
+await admin.waitForURL(/\/admin\/masuk/)
+await shot(admin, '05-admin-masuk')
+await admin.getByLabel('Email').fill('panitia@summarevent.test')
+await admin.getByLabel('Kata sandi', { exact: true }).fill('salah123')
+await admin.getByRole('button', { name: 'Masuk', exact: true }).click()
+const refused = await admin.getByRole('alert').filter({ hasText: 'Email atau kata sandi salah' }).waitFor({ timeout: 3000 }).then(() => true, () => false)
+check(refused, 'kata sandi yang salah tidak ditolak')
+await admin.getByRole('button', { name: 'Isi otomatis' }).click()
+await admin.getByRole('button', { name: 'Masuk', exact: true }).click()
+await admin.waitForURL(/\/admin$/)
+await admin.getByRole('heading', { name: 'Dashboard' }).waitFor()
+await admin.reload({ waitUntil: 'networkidle' })
+check((await admin.locator('#splash').count()) === 0, 'splash panitia muncul lagi di sesi yang sama')
+check(/\/admin$/.test(admin.url()), 'panitia diminta masuk lagi setelah memuat ulang')
+console.log('panitia: splash, onboarding, sign-in (wrong password refused), dashboard')
 await adminCtx.close()
 
-// 5. Reduced motion: the splash is a still frame and leaves quickly
+// 5. Petugas, from the role picker: the splash named Petugas, the onboarding skipped, the sign-in, their home
+const staffCtx = await browser.newContext(phone)
+const staff = await staffCtx.newPage()
+watch(staff, 'staff')
+await staff.goto(BASE + '/', { waitUntil: 'networkidle' })
+await staff.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
+await staff.getByRole('button', { name: /Masuk sebagai petugas/ }).click()
+await staff.locator('#splash').waitFor({ timeout: 3000 })
+check((await staff.locator('#splash .sp-role').textContent()) === 'Petugas', 'splash petugas tidak menyebut perannya')
+await staff.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
+await staff.waitForURL(/\/staff\/mulai/)
+await staff.getByRole('button', { name: 'Lewati' }).click()
+await staff.waitForURL(/\/staff\/masuk/)
+await staff.getByRole('button', { name: 'Isi otomatis' }).click()
+await staff.getByRole('button', { name: 'Masuk', exact: true }).click()
+await staff.waitForURL(/\/staff$/)
+await staff.getByText('Halo,').first().waitFor()
+console.log('petugas: splash, onboarding skipped, sign-in, home')
+await staffCtx.close()
+
+// 6. Reduced motion: the splash is a still frame and leaves quickly
 const calmCtx = await browser.newContext({ ...phone, reducedMotion: 'reduce' })
 const calm = await calmCtx.newPage()
 watch(calm, 'reduced-motion')

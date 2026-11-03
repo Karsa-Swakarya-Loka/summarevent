@@ -11,7 +11,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { chromium } from 'playwright-core'
-import { skipIntro } from '../e2e/skip-intro.mjs'
+import { signIn, skipIntro } from '../e2e/skip-intro.mjs'
 
 const BASE = process.env.BASE || 'http://localhost:5173'
 const OUT = path.resolve(import.meta.dirname, '../../docs/gambar')
@@ -86,6 +86,7 @@ const cards = [
     alt: 'Scan di pintu: layar petugas hijau "Valid, Mangga lebet" dengan nomor kursi besar',
     shot: () =>
       capture('scan', async (page) => {
+        await signIn(page, 'STAFF', BASE)
         await page.goto(BASE + '/staff/scan/ses_sk_demo', { waitUntil: 'networkidle' })
         await page.getByRole('button', { name: /Alat bantu demo/ }).click()
         await page.getByRole('button', { name: 'Ambil tiket contoh' }).click()

@@ -2,7 +2,7 @@
 // Usage: dev server running (npm run dev), then node e2e/wizard.mjs [desktop|mobile]
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import { chromium } from 'playwright-core'
-import { skipIntro } from './skip-intro.mjs'
+import { signIn, skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'wizard')
@@ -26,6 +26,7 @@ const shot = async (name, full = true) => {
   if (sw > vw) errors.push(`${name}: scrollWidth ${sw} > ${vw} (geser horizontal)`)
 }
 const next = async () => { await page.getByRole('button', { name: /^Lanjut/ }).click(); await page.waitForTimeout(500) }
+await signIn(page, 'ADMIN', BASE)
 const t0 = Date.now()
 await page.goto(BASE + '/admin/events/new', { waitUntil: 'networkidle' })
 await page.waitForTimeout(800)

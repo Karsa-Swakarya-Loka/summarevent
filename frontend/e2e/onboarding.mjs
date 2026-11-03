@@ -42,7 +42,8 @@ await page.waitForURL(/\/app\/mulai/)
 const titles = []
 for (let i = 0; i < 3; i++) {
   const h = page.getByRole('heading', { level: 1 })
-  titles.push((await h.innerText()).trim())
+  // the text itself, not its rendering: titles are set in uppercase display type
+  titles.push(((await h.textContent()) ?? '').trim())
   await shot(page, `02-onboarding-${i + 1}`)
   if (i < 2) await page.getByRole('button', { name: /^Lanjut/ }).click()
 }

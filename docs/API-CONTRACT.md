@@ -91,6 +91,7 @@ login, bukan error), lalu klien mengirim ulang dengan `name`.
 | POST | `/staff/checkins` | Body `{ qr_token, session_id }` → `CheckinResponse` dengan `result` ∈ `VALID`, `ALREADY_USED` (+`firstScan`), `INVALID`, `WRONG_SESSION`, `OUTSIDE_WINDOW` |
 | GET | `/staff/tickets?q=&event_id=` | Cari manual (kode tiket, kode pesanan, HP, nama) |
 | GET | `/staff/sessions/:id/checkins` | `{ checkedIn, capacity, recent[] }` |
+| GET | `/staff/sessions/:id/offline-manifest` | Bekal scan offline (PT-07): `OfflineManifest { sessionId, generatedAt, event, session, categories, tickets[] }`. Tiap tiket berisi `tokenHash` (SHA-256 hex dari token QR; tokennya sendiri tidak pernah dikirim), `ticket` tanpa `qrToken`, `order { id, code, buyerName }`, dan `session`. Isinya semua tiket event, supaya tiket sesi lain tetap terbaca `WRONG_SESSION`. Scan yang tertahan offline dikirim belakangan lewat `POST /staff/checkins` biasa, dan hasil dari server yang berlaku. |
 | GET | `/staff/receipts?event_id=` | Antrean struk menunggu untuk dicek di desk (PT-06), bentuk sama dengan `/admin/receipts` |
 | PATCH | `/staff/receipts/:id` | Sama dengan `/admin/receipts/:id`, tapi `reviewedBy` = petugas yang login |
 

@@ -42,6 +42,14 @@ export function VisitorLayout() {
 
   useEffect(() => prefetchScreens(), [])
 
+  // dialogs and sheets render in a portal outside this layout: the body carries the visitor look for them too
+  useEffect(() => {
+    document.body.dataset.shell = 'visitor'
+    return () => {
+      delete document.body.dataset.shell
+    }
+  }, [])
+
   // installed on a phone, the status bar takes the colour of the top of the screen: green Beranda, cream elsewhere
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]')

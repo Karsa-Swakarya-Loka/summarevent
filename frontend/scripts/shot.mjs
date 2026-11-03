@@ -3,11 +3,13 @@
  * Screenshot helper (uses the installed Google Chrome via playwright-core).
  *   node scripts/shot.mjs [--base http://localhost:5173] [--desktop] [--out shots] /app /app/pass ...
  * Prints console errors / page errors so broken pages are caught.
- * Note: each run is a fresh browser profile → the mock seeds fresh demo data.
+ * Note: each run is a fresh browser profile → the mock seeds fresh demo data. The splash and the first-run onboarding
+ * are skipped; open /app/mulai to capture the onboarding itself.
  */
 import { chromium } from 'playwright-core'
 import fs from 'node:fs'
 import path from 'node:path'
+import { skipIntro } from '../e2e/skip-intro.mjs'
 
 const args = process.argv.slice(2)
 let base = 'http://localhost:5173'
@@ -26,6 +28,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH 
 const ctx = await browser.newContext(
   desktop ? { viewport: { width: 1366, height: 900 } } : { viewport: { width: 360, height: 740 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
 )
+await skipIntro(ctx)
 const page = await ctx.newPage()
 page.on('console', (m) => { if (m.type() === 'error') console.log(`[console.error] ${m.text()}`) })
 page.on('pageerror', (e) => console.log(`[pageerror] ${e.message}`))

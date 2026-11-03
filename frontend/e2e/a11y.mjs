@@ -1,9 +1,10 @@
-// Aksesibilitas: axe-core (WCAG 2.1 A + AA) di layar utama ketiga peran. Di HP 360 px, setiap target sentuh
+// Aksesibilitas: axe-core (WCAG 2.1 A + AA) di layar utama ketiga peran, termasuk onboarding, masuk, daftar, dan 404. Di HP 360 px, setiap target sentuh
 // minimal 44 px (AGENTS.md §3), dan kursi diukur setelah denah di-zoom ke kategori (PRD §13–14).
 // Usage: dev server running (npm run dev), then node e2e/a11y.mjs
 // Env: BASE (default http://localhost:5173), CHROME_PATH (installed Chrome).
 import { createRequire } from 'node:module'
 import { chromium } from 'playwright-core'
+import { skipIntro } from './skip-intro.mjs'
 
 const BASE = process.env.BASE || 'http://localhost:5173'
 const AXE = createRequire(import.meta.url).resolve('axe-core/axe.min.js')
@@ -90,6 +91,18 @@ const receiptReview = async (page) => {
   await page.waitForTimeout(600)
 }
 
+const onboardingLast = async (page) => {
+  await page.getByRole('button', { name: /^Lanjut/ }).click()
+  await page.getByRole('button', { name: /^Lanjut/ }).click()
+  await page.getByRole('button', { name: 'Masuk atau daftar' }).waitFor()
+}
+
+const otpStep = async (page) => {
+  await page.getByLabel('Nomor HP').fill('081299990088')
+  await page.getByRole('button', { name: 'Kirim kode OTP' }).click()
+  await page.getByTestId('sim-otp').waitFor()
+}
+
 /** Interactive elements under 44 px on a touch screen. Links inside a sentence are exempt (WCAG 2.5.5). */
 const smallTargets = (page) =>
   page.evaluate(() => {
@@ -115,6 +128,12 @@ const smallTargets = (page) =>
 
 const screens = [
   [phone, '/'],
+  [phone, '/app/mulai'],
+  [phone, '/app/mulai', onboardingLast],
+  [phone, '/app/masuk'],
+  [phone, '/app/masuk', otpStep],
+  [phone, '/app/daftar'],
+  [phone, '/halaman-tidak-ada'],
   [phone, '/app'],
   [phone, '/app', openDemoMenu],
   [phone, '/app/e/pentas-musikal-sangkuriang'],
@@ -148,6 +167,7 @@ const screens = [
 
 for (const [device, path, prep] of screens) {
   const ctx = await browser.newContext(device)
+  await skipIntro(ctx)
   const page = await ctx.newPage()
   page.on('pageerror', (e) => errors.push(`${path}: ${e.message}`))
   await page.goto(BASE + path, { waitUntil: 'networkidle' })

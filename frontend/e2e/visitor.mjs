@@ -2,6 +2,7 @@
 // Usage: dev server running (npm run dev), then node e2e/visitor.mjs [paid|receipt|free|conflict|expire|waitlist|manage|bonus|ocr|all]
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import { chromium } from 'playwright-core'
+import { skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'visitor')
@@ -44,6 +45,7 @@ async function pickCategory(page, name) {
 
 if (only === 'all' || only === 'paid') {
   const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
   const page = await newPage(ctx, 'paid')
   await page.goto(BASE + '/app', { waitUntil: 'networkidle' })
   await page.locator('a[href="/app/e/pentas-musikal-sangkuriang"]').click()
@@ -90,6 +92,7 @@ if (only === 'all' || only === 'paid') {
 
 if (only === 'all' || only === 'receipt') {
   const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
   const page = await newPage(ctx, 'receipt')
   await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', { waitUntil: 'networkidle' })
   await pickCategory(page, 'Tukar Struk')
@@ -110,6 +113,7 @@ if (only === 'all' || only === 'receipt') {
 
 if (only === 'all' || only === 'free') {
   const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
   const page = await newPage(ctx, 'free')
   await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang/s/ses_sk_13', { waitUntil: 'networkidle' })
   await pickCategory(page, 'Festival')
@@ -128,6 +132,7 @@ if (only === 'all' || only === 'free') {
 
 if (only === 'all' || only === 'conflict') {
   const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
   const page = await newPage(ctx, 'conflict')
   await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang/s/ses_sk_13', { waitUntil: 'networkidle' })
   await pickCategory(page, 'VIP')
@@ -158,6 +163,7 @@ if (only === 'all' || only === 'conflict') {
 
 if (only === 'all' || only === 'expire') {
   const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
   const page = await newPage(ctx, 'expire')
   await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', { waitUntil: 'networkidle' })
   await pickCategory(page, 'Reguler')
@@ -177,6 +183,7 @@ if (only === 'all' || only === 'expire') {
 
 if (only === 'all' || only === 'waitlist') {
   const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
   const page = await newPage(ctx, 'waitlist')
   await page.goto(BASE + '/app/e/kids-holiday-craft-class/s/ses_cr_1', { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: /Masuk daftar tunggu/ }).click()
@@ -200,6 +207,7 @@ if (only === 'all' || only === 'waitlist') {
 
 if (only === 'all' || only === 'manage') {
   const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
   const page = await newPage(ctx, 'manage')
   await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', { waitUntil: 'networkidle' })
   await pickCategory(page, 'Reguler')
@@ -228,6 +236,7 @@ if (only === 'all' || only === 'manage') {
 
 if (only === 'all' || only === 'bonus') {
   const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
   const page = await newPage(ctx, 'bonus')
   await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang', { waitUntil: 'networkidle' })
   await page.getByText(/Bonus VIP:/).waitFor()
@@ -241,6 +250,7 @@ if (only === 'all' || only === 'bonus') {
 
 if (only === 'all' || only === 'ocr') {
   const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
   const page = await newPage(ctx, 'ocr')
   await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', { waitUntil: 'networkidle' })
   await pickCategory(page, 'Tukar Struk')

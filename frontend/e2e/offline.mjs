@@ -3,6 +3,7 @@
 // Alur: HP petugas menyimpan daftar tiket → sinyal putus → Valid / Sudah digunakan / Tidak valid tetap jalan →
 // sinyal kembali → antrean terkirim; tiket yang lebih dulu dipindai pintu lain muncul sebagai konflik.
 import { chromium } from 'playwright-core'
+import { skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -36,6 +37,7 @@ const otherGate = await json('POST', '/auth/demo-login', { role: 'STAFF' })
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] })
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
+await skipIntro(ctx)
 await ctx.grantPermissions(['camera'], { origin: BASE })
 const page = await ctx.newPage()
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Staff (petugas) QA walk-through. Usage: node scripts/tmp/staff-qa.mjs [outDir]
 import { chromium } from 'playwright-core'
+import { skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -37,6 +38,7 @@ const browser = await chromium.launch({
   args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
 })
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
+await skipIntro(ctx)
 await ctx.grantPermissions(['camera'], { origin: BASE })
 const page = await ctx.newPage()
 watch(page, 'main')
@@ -175,6 +177,7 @@ await ctx.close()
 // 12. No camera at all → fallback panel
 const browser2 = await chromium.launch({ executablePath: CHROME, headless: true })
 const ctx2 = await browser2.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
+await skipIntro(ctx2)
 const page2 = await ctx2.newPage()
 watch(page2, 'nocam')
 await page2.goto(BASE + '/staff/scan/ses_sk_demo', { waitUntil: 'networkidle' })

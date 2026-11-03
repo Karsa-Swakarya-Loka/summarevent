@@ -2,6 +2,7 @@
 // Usage: dev server running (npm run dev), then node e2e/staff-admin-p1.mjs
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import { chromium } from 'playwright-core'
+import { skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'p1')
@@ -15,6 +16,7 @@ const watch = (page, tag) => {
 }
 // one context = one mock database, shared by panitia and petugas tabs
 const ctx = await browser.newContext({ viewport: { width: 1366, height: 900 } })
+await skipIntro(ctx)
 const admin = await ctx.newPage()
 watch(admin, 'admin')
 await admin.goto(BASE + '/admin/staff', { waitUntil: 'networkidle' })

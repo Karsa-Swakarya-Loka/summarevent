@@ -11,6 +11,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { chromium } from 'playwright-core'
+import { skipIntro } from '../e2e/skip-intro.mjs'
 
 const BASE = process.env.BASE || 'http://localhost:5173'
 const OUT = path.resolve(import.meta.dirname, '../../docs/gambar')
@@ -26,10 +27,11 @@ const phone = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isM
 
 async function capture(name, steps) {
   const ctx = await browser.newContext(phone)
+  await skipIntro(ctx)
   await ctx.grantPermissions(['camera'], { origin: BASE })
   const page = await ctx.newPage()
   await steps(page)
-  // the floating demo switcher is for judges, not for the poster
+  // the demo switcher is for judges, not for the poster
   await page.addStyleTag({ content: 'button[aria-label="Menu demo"] { display: none !important; }' })
   await page.waitForTimeout(900)
   const file = path.join(tmp, `${name}.png`)

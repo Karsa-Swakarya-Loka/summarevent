@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
-import { ArrowLeft, Clock } from 'lucide-react'
+import { ChevronLeft, Clock } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { SUNDA, type Tone } from '@/domain/labels'
 import { fmtCountdown } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useNow } from '@/hooks/useLive'
+import { useScrolled } from '@/hooks/useScrolled'
+import { useBack } from '@/lib/navStack'
+import { DemoMenu } from './DemoMenu'
 
 /* ---------- Sundanese microcopy + Indonesian meaning (PRD §1, NFR aksesibilitas) ---------- */
 export function SundaText({ k, className, size = 'lg' }: { k: keyof typeof SUNDA; className?: string; size?: 'sm' | 'lg' | 'xl' }) {
@@ -71,15 +73,39 @@ export function Countdown({ to, className, onDone, prefix }: { to: string; class
   )
 }
 
-/* ---------- Page header with back link ---------- */
-export function BackHeader({ to, title, right }: { to: string; title?: ReactNode; right?: ReactNode }) {
+/** The hold countdown as a dark pill in an app bar, red in the last two minutes. */
+export function HoldPill({ to, label }: { to: string; label: string }) {
+  const now = useNow(1000)
+  const urgent = new Date(to).getTime() - now.getTime() < 2 * 60_000
   return (
-    <div className="sticky top-0 z-20 flex min-h-14 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur">
-      <Link to={to} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-muted" aria-label="Kembali">
-        <ArrowLeft className="size-5" />
-      </Link>
+    <span className={cn('inline-flex h-9 shrink-0 items-center rounded-full px-3 shadow-sm transition-colors duration-300', urgent ? 'bg-status-invalid' : 'bg-ink')}>
+      <span className="sr-only">{label}: </span>
+      <Countdown to={to} className="text-sm text-white [&_svg]:size-3.5" />
+    </span>
+  )
+}
+
+/* ---------- Page header with back link ---------- */
+/**
+ * App bar of a pushed screen: back on the left, the title, then the screen's own action and the Demo button. It stays
+ * on top while the page scrolls, translucent, with a hairline once content runs under it.
+ */
+export function BackHeader({ to, title, right, demo = true }: { to: string; title?: ReactNode; right?: ReactNode; demo?: boolean }) {
+  const back = useBack(to)
+  const scrolled = useScrolled()
+  return (
+    <div
+      className={cn(
+        'sticky top-0 z-20 flex min-h-14 items-center gap-1 bg-background/85 px-1.5 pt-[env(safe-area-inset-top)] backdrop-blur-xl transition-shadow duration-200',
+        scrolled && 'shadow-[0_1px_0_rgb(0_0_0/0.08)]',
+      )}
+    >
+      <button type="button" onClick={back} className="inline-flex size-11 shrink-0 items-center justify-center rounded-full transition active:scale-90 active:bg-muted" aria-label="Kembali">
+        <ChevronLeft className="size-6" />
+      </button>
       <div className="min-w-0 flex-1 truncate font-semibold">{title}</div>
       {right}
+      {demo && <DemoMenu variant="bar" />}
     </div>
   )
 }

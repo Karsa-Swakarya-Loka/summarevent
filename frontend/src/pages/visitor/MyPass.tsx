@@ -12,7 +12,7 @@ import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { LoadError } from '@/components/visitor/Common'
+import { LoadError, TabHeader } from '@/components/visitor/Common'
 import { continuePath, isPendingOrder, seatRangeLabel, sessionName, sessionWhen } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { accessMethodNote, ORDER_STATUS_LABEL, TICKET_STATUS_LABEL, TICKET_TONE } from '@/domain/labels'
@@ -76,12 +76,9 @@ export default function MyPass() {
 
   return (
     <div>
-      <header className="px-4 pt-6 pb-2">
-        <h1 className="text-2xl font-extrabold tracking-tight">Pass Saya</h1>
-        <p className="text-sm text-muted-foreground">{user ? `E-ticket atas nama ${user.name}` : 'E-ticket QR kamu ada di sini.'}</p>
-      </header>
+      <TabHeader title="Pass Saya" subtitle={user ? `E-ticket atas nama ${user.name}` : 'E-ticket QR kamu ada di sini.'} />
 
-      <div className="space-y-5 px-4 pt-2 pb-16">
+      <div className="space-y-5 px-4 pt-1 pb-6">
         {pending.map((d) => (
           <Link key={d.order.id} to={continuePath(d)} className="flex items-center gap-3 rounded-2xl border border-status-warn/50 bg-status-warn/12 p-3 transition hover:bg-status-warn/20">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-status-warn/25 text-[#7a5600]">
@@ -193,7 +190,7 @@ export default function MyPass() {
       </div>
 
       <Dialog open={!!big} onOpenChange={(o) => !o && setBig(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           {big && (
             <>
               <DialogHeader>

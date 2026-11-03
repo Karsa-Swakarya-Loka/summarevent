@@ -55,28 +55,61 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  // on a phone the sheet follows a finger dragging its handle down, and closes past 80 px
+  const sheet = React.useRef<HTMLDivElement>(null)
+  const close = React.useRef<HTMLButtonElement>(null)
+  const drag = React.useRef<number | null>(null)
+  const release = (dy: number) => {
+    const el = sheet.current
+    drag.current = null
+    if (!el) return
+    el.style.transition = "transform 0.22s var(--ease-soft)"
+    if (dy > 80) close.current?.click()
+    else el.style.transform = ""
+  }
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
+        ref={sheet}
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // a sheet that rises from the bottom on a phone, a centred dialog from sm up
+          "fixed inset-x-0 bottom-0 z-50 mx-auto grid max-h-[calc(100dvh-2.5rem)] w-full gap-4 overflow-y-auto overscroll-contain rounded-t-[1.75rem] bg-popover px-5 pt-8 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm text-popover-foreground shadow-[0_-12px_40px_-12px_rgb(0_0_0/0.35)] ring-1 ring-foreground/10 outline-none data-open:animate-in data-open:slide-in-from-bottom data-open:duration-300 data-open:ease-(--ease-soft) data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-200",
+          "sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:mx-0 sm:max-h-[calc(100dvh-4rem)] sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:p-4 sm:shadow-none sm:data-open:slide-in-from-bottom-0 sm:data-open:fade-in-0 sm:data-open:zoom-in-95 sm:data-open:duration-100 sm:data-closed:slide-out-to-bottom-0 sm:data-closed:fade-out-0 sm:data-closed:zoom-out-95 sm:data-closed:duration-100",
           className
         )}
         {...props}
       >
+        <span
+          aria-hidden
+          className="absolute inset-x-16 top-0 z-10 flex h-8 cursor-grab touch-none justify-center pt-2.5 sm:hidden"
+          onPointerDown={(e) => {
+            drag.current = e.clientY
+            e.currentTarget.setPointerCapture(e.pointerId)
+            if (sheet.current) sheet.current.style.transition = "none"
+          }}
+          onPointerMove={(e) => {
+            if (drag.current === null || !sheet.current) return
+            sheet.current.style.transform = `translateY(${Math.max(0, e.clientY - drag.current)}px)`
+          }}
+          onPointerUp={(e) => drag.current !== null && release(e.clientY - drag.current)}
+          onPointerCancel={() => release(0)}
+        >
+          <span className="h-1.5 w-10 rounded-full bg-foreground/15" />
+        </span>
+        <DialogPrimitive.Close ref={close} className="hidden" tabIndex={-1} aria-hidden />
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close data-slot="dialog-close" asChild>
             <Button
               variant="ghost"
-              className="absolute top-2 right-2"
+              className="absolute top-3 right-3 sm:top-2 sm:right-2"
               size="icon-sm"
             >
               <XIcon
               />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">Tutup</span>
             </Button>
           </DialogPrimitive.Close>
         )}
@@ -107,7 +140,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        "mt-1 flex flex-col-reverse gap-2 *:min-h-12 *:w-full sm:-mx-4 sm:-mb-4 sm:mt-0 sm:flex-row sm:justify-end sm:rounded-b-xl sm:border-t sm:bg-muted/50 sm:p-4 sm:*:min-h-0 sm:*:w-auto",
         className
       )}
       {...props}

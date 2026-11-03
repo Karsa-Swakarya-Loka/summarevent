@@ -62,7 +62,7 @@ export function DoubleBookingButton({ className }: { className?: string }) {
         <ShieldCheck className="size-4" aria-hidden /> Kenapa satu kursi tidak bisa terjual dua kali?
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Satu kursi, satu pemesan</DialogTitle>
             <DialogDescription>Empat lapis yang menjaga kursimu. Coba sendiri dengan tombol Uji rebutan kursi di denah.</DialogDescription>

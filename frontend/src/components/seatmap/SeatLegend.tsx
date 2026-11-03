@@ -57,20 +57,71 @@ export function StatusLegend({ className, showPriority = true, availableColors }
   )
 }
 
-/** Category legend with price, how to get it and seats left. */
+/** What a category costs, as the legend and the chips show it. */
+function priceLabel(c: TicketCategory) {
+  // a receipt category costs nothing; when its name already says "Tukar Struk", show that price instead of repeating the name
+  return c.accessMethod === 'RECEIPT' ? (accessMethodNote(c) ? 'Tukar struk' : 'Rp0') : rupiah(c.price)
+}
+
+/**
+ * Category legend with price, how to get it and seats left. With `chips` (seat map) it is one row of small cards that
+ * scrolls sideways, so the map keeps the room.
+ */
 export function CategoryLegend({
   categories,
   availability,
   activeId,
   onPick,
+  chips = false,
   className,
 }: {
   categories: TicketCategory[]
   availability?: CategoryAvailability[]
   activeId?: string | null
   onPick?: (id: string) => void
+  chips?: boolean
   className?: string
 }) {
+  if (chips && onPick) {
+    return (
+      <div className={cn('-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pt-0.5 pb-1 [scrollbar-width:none]', className)} role="radiogroup" aria-label="Kategori tiket">
+        {categories.map((c) => {
+          const av = availability?.find((a) => a.categoryId === c.id)
+          const active = activeId === c.id
+          const soldOut = av ? av.available === 0 : false
+          return (
+            <button
+              key={c.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={soldOut}
+              onClick={() => onPick(c.id)}
+              className={cn(
+                'flex min-h-14 shrink-0 snap-start items-center gap-2.5 rounded-2xl border bg-card py-2 pr-4 pl-3 text-left transition active:scale-[0.97]',
+                active ? 'border-brand bg-brand-soft ring-2 ring-brand/25' : 'hover:border-foreground/30',
+                soldOut && 'opacity-50',
+              )}
+            >
+              <span className="size-3.5 shrink-0 rounded-[4px]" style={{ background: c.color }} aria-hidden />
+              <span className="leading-tight">
+                <span className="block text-sm font-bold whitespace-nowrap">{c.name}</span>
+                <span className="block text-xs whitespace-nowrap text-muted-foreground">
+                  {priceLabel(c)}
+                  {av && (
+                    <>
+                      {' · '}
+                      <span className={cn('font-semibold', soldOut ? 'text-[#a11b1b]' : 'text-foreground')}>{soldOut ? 'Habis' : `Sisa ${av.available}`}</span>
+                    </>
+                  )}
+                </span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
   return (
     <div className={cn('grid gap-2', className)} role={onPick ? 'radiogroup' : undefined} aria-label="Kategori tiket">
       {categories.map((c) => {
@@ -84,8 +135,7 @@ export function CategoryLegend({
               {/* on a narrow phone the price moves under the name instead of running past the card edge */}
               <span className="flex flex-wrap items-baseline justify-between gap-x-2">
                 <span className="font-semibold">{c.name}</span>
-                {/* a receipt category costs nothing; when its name already says "Tukar Struk", show that price instead of repeating the name */}
-                <span className="ml-auto font-semibold whitespace-nowrap">{c.accessMethod === 'RECEIPT' ? (accessMethodNote(c) ? 'Tukar struk' : 'Rp0') : rupiah(c.price)}</span>
+                <span className="ml-auto font-semibold whitespace-nowrap">{priceLabel(c)}</span>
               </span>
               <span className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
                 <span className="truncate">{c.description || accessMethodNote(c)}</span>

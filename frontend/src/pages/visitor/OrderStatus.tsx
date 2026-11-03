@@ -334,7 +334,7 @@ function ManageOrder({ detail }: { detail: OrderDetail }) {
       </p>
 
       <Dialog open={mode === 'names'} onOpenChange={(o) => !busy && setMode(o ? 'names' : null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Ubah nama peserta</DialogTitle>
             <DialogDescription>Nama tampil di e-ticket dan dicocokkan petugas. Tiket tetap terikat ke akunmu.</DialogDescription>
@@ -373,7 +373,7 @@ function ManageOrder({ detail }: { detail: OrderDetail }) {
       </Dialog>
 
       <Dialog open={mode === 'cancel'} onOpenChange={(o) => !busy && setMode(o ? 'cancel' : null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Batalkan tiket ini?</DialogTitle>
             <DialogDescription>

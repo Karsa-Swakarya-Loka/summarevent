@@ -268,7 +268,7 @@ export function ReviewPanel({
           if (!o && !busy) setAsk(null)
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Tetap setujui?</DialogTitle>
             <DialogDescription>Cek otomatis menemukan syarat yang belum terpenuhi:</DialogDescription>
@@ -300,7 +300,7 @@ export function ReviewPanel({
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           {(ask === 'NEEDS_REVISION' || ask === 'REJECT') && (
             <>
               <DialogHeader>

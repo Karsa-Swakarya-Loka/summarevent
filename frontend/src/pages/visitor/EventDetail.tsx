@@ -1,18 +1,21 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
-import { ArrowLeft, CalendarDays, CircleCheck, Clock, DoorOpen, Gift, MapPin, Radio } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
+import { CalendarDays, ChevronDown, ChevronLeft, CircleCheck, Clock, DoorOpen, Gift, MapPin, Radio } from 'lucide-react'
 import { api } from '@/api'
 import type { EventDetail as EventDetailData, SessionSummary } from '@/api/contract'
 import { SundaLabel } from '@/components/common/bits'
+import { DemoMenu } from '@/components/common/DemoMenu'
 import { Poster } from '@/components/common/Poster'
+import { POSTER_THEMES } from '@/components/common/posterThemes'
 import { CategoryLegend } from '@/components/seatmap/SeatLegend'
 import { Button } from '@/components/ui/button'
-import { BarActions, BottomBar, LoadError, PageSkeleton, SectionTitle } from '@/components/visitor/Common'
-import { recallSession, rememberSession, sessionName } from '@/components/visitor/helpers'
+import { BottomBar, LoadError, PageSkeleton, SectionTitle } from '@/components/visitor/Common'
+import { priceHint, recallSession, rememberSession, sessionName } from '@/components/visitor/helpers'
 import { ACCESS_METHOD_LABEL } from '@/domain/labels'
 import { saleState } from '@/domain/rules'
 import { useLive, useNow } from '@/hooks/useLive'
 import { fmtDate, fmtRange, fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
+import { useBack } from '@/lib/navStack'
 import { cn } from '@/lib/utils'
 
 export default function EventDetail() {
@@ -43,6 +46,7 @@ function sessionOpen(d: EventDetailData, s: SessionSummary, now: Date): { open: 
 function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: string | null; onPick: (id: string) => void; onGo: (id: string) => void }) {
   const { event, venue, categories } = d
   const now = useNow(30_000)
+  const back = useBack('/app')
   // real sessions first (chronological), the always-live demo session last
   const sessions = useMemo(
     () => [...d.sessions].sort((a, b) => Number(!!a.demoLive) - Number(!!b.demoLive) || a.startAt.localeCompare(b.startAt)),
@@ -52,41 +56,82 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
   const selected = sessions.find((s) => s.id === picked && sessionOpen(d, s, now).open) ?? fallback
   const selOpen = selected ? sessionOpen(d, selected, now) : { open: false }
   const isReserved = event.seatingMode === 'RESERVED'
+  const [more, setMore] = useState(false)
+  const longText = event.description.length > 160
+
+  // the app bar sits clear over the poster, and turns solid with the title once the poster has scrolled away
+  const hero = useRef<HTMLDivElement>(null)
+  const [pastHero, setPastHero] = useState(false)
+  useEffect(() => {
+    const el = hero.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setPastHero(!e.isIntersecting), { rootMargin: '-56px 0px 0px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
   const sameDay = fmtDate(event.startAt, { day: 'numeric', month: 'numeric' }) === fmtDate(event.endAt, { day: 'numeric', month: 'numeric' })
   const dateLabel = sameDay ? fmtDate(event.startAt) : `${fmtDate(event.startAt, { day: 'numeric', month: 'long' })} – ${fmtDate(event.endAt, { day: 'numeric', month: 'long', year: 'numeric' })}`
+  const list = terms(d)
 
   return (
-    <div>
-      <div className="relative">
-        <Poster theme={event.posterTheme} title={event.title} className="h-60" />
-        <Link
-          to="/app"
-          aria-label="Kembali ke Beranda"
-          className="absolute top-3 left-3 flex size-11 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/50"
+    <div className="flex flex-1 flex-col">
+      <div className="sticky top-0 z-30 h-0">
+        <div
+          className={cn(
+            'flex min-h-14 items-center gap-1 px-1.5 pt-[env(safe-area-inset-top)] transition-[background-color,box-shadow] duration-200',
+            pastHero ? 'bg-background/90 shadow-[0_1px_0_rgb(0_0_0/0.08)] backdrop-blur-xl' : 'bg-transparent',
+          )}
         >
-          <ArrowLeft className="size-5" />
-        </Link>
+          <button
+            type="button"
+            onClick={back}
+            aria-label="Kembali"
+            className={cn('flex size-11 shrink-0 items-center justify-center rounded-full transition active:scale-90', pastHero ? 'active:bg-muted' : 'bg-black/35 text-white backdrop-blur')}
+          >
+            <ChevronLeft className="size-6" />
+          </button>
+          <p aria-hidden className={cn('min-w-0 flex-1 truncate font-semibold transition-opacity duration-200', pastHero ? 'opacity-100' : 'opacity-0')}>
+            {event.title}
+          </p>
+          <DemoMenu variant="bar" className={cn(!pastHero && 'bg-black/35 text-white backdrop-blur hover:bg-black/45')} />
+        </div>
       </div>
 
-      <div className="space-y-6 px-4 pt-4">
-        <header className="space-y-2">
-          <h1 className="text-2xl leading-tight font-extrabold text-balance">{event.title}</h1>
-          {event.subtitle && <p className="text-muted-foreground">{event.subtitle}</p>}
-          <ul className="space-y-1.5 pt-1 text-sm">
-            <li className="flex items-start gap-2">
-              <CalendarDays className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
+      <div ref={hero} className="relative">
+        <Poster theme={event.posterTheme} title={event.title} bare className="h-64" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/25 via-transparent to-transparent" aria-hidden />
+      </div>
+
+      {/* the page itself rides up over the poster like a sheet */}
+      <div className="relative -mt-7 flex-1 space-y-6 rounded-t-[1.75rem] bg-background px-4 pt-6 pb-6">
+        <header>
+          <p className="text-[0.7rem] font-bold tracking-wide text-brand uppercase">{POSTER_THEMES[event.posterTheme].label}</p>
+          <h1 className="mt-1 text-[1.75rem] leading-tight font-extrabold tracking-tight text-balance">{event.title}</h1>
+          {event.subtitle && <p className="mt-1 text-muted-foreground">{event.subtitle}</p>}
+          <ul className="mt-4 divide-y overflow-hidden rounded-2xl border bg-card text-sm">
+            <li className="flex min-h-12 items-center gap-3 px-3.5 py-2.5">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+                <CalendarDays className="size-4" aria-hidden />
+              </span>
               <span>
                 {dateLabel}
                 {event.infoOnly && <> · {fmtRange(event.startAt, event.endAt)}</>}
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <MapPin className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
+            <li className="flex min-h-12 items-center gap-3 px-3.5 py-2.5">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+                <MapPin className="size-4" aria-hidden />
+              </span>
               <span>{venue.name}, Summarecon Mall Bandung</span>
             </li>
           </ul>
-          <p className="pt-1 text-sm leading-relaxed">{event.description}</p>
+          <p className={cn('mt-4 text-[0.95rem] leading-relaxed text-foreground/85', longText && !more && 'line-clamp-3')}>{event.description}</p>
+          {longText && (
+            <button type="button" onClick={() => setMore((m) => !m)} className="-ml-1 inline-flex min-h-11 items-center px-1 text-sm font-bold text-brand" aria-expanded={more}>
+              {more ? 'Tampilkan lebih sedikit' : 'Selengkapnya'}
+            </button>
+          )}
         </header>
 
         {event.infoOnly ? (
@@ -99,10 +144,10 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
         ) : (
           <>
             <section aria-labelledby="sesi-title">
-              <SectionTitle>
+              <SectionTitle right={<span className="text-xs text-muted-foreground">Geser untuk sesi lain</span>}>
                 <span id="sesi-title">Pilih sesi</span>
               </SectionTitle>
-              <div role="radiogroup" aria-labelledby="sesi-title" className="grid gap-2">
+              <div role="radiogroup" aria-labelledby="sesi-title" className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4 pt-0.5 pb-1.5 [scrollbar-width:none]">
                 {sessions.map((s) => {
                   const st = sessionOpen(d, s, now)
                   const active = selected?.id === s.id
@@ -116,48 +161,33 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                       disabled={!st.open}
                       onClick={() => onPick(s.id)}
                       className={cn(
-                        'relative flex min-h-16 flex-col gap-2 rounded-xl border bg-card p-3 text-left transition disabled:opacity-55',
-                        active ? 'border-brand ring-2 ring-brand/30' : 'hover:border-foreground/30',
+                        'w-44 shrink-0 snap-start rounded-2xl border bg-card p-3 text-left transition active:scale-[0.97] disabled:opacity-55',
+                        active ? 'border-brand bg-brand-soft ring-2 ring-brand/25' : 'hover:border-foreground/30',
                         s.demoLive && !active && 'border-dashed',
                       )}
                     >
-                      <span className="flex items-start justify-between gap-3">
-                        <span className="flex items-start gap-3">
-                          <span
-                            className={cn('mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border-2', active ? 'border-brand' : 'border-input')}
-                            aria-hidden
-                          >
-                            {active && <span className="size-2.5 rounded-full bg-brand" />}
+                      <span className="block text-[1.05rem] leading-tight font-extrabold tabular-nums">{fmtRange(s.startAt, s.endAt)}</span>
+                      <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                        {s.demoLive ? (
+                          <span className="inline-flex items-center gap-1 font-semibold text-brand">
+                            <Radio className="size-3.5" aria-hidden /> Sesi demo juri
                           </span>
-                          <span>
-                            <span className="block text-lg leading-tight font-extrabold tabular-nums">{fmtRange(s.startAt, s.endAt)}</span>
-                            <span className="block text-xs text-muted-foreground">
-                              {s.demoLive ? (
-                                <span className="inline-flex items-center gap-1 font-semibold text-brand">
-                                  <Radio className="size-3.5" aria-hidden /> Sesi demo juri · sedang berlangsung
-                                </span>
-                              ) : (
-                                <>
-                                  {sessionName(s)} · {fmtShortDate(s.startAt)}
-                                </>
-                              )}
-                            </span>
-                          </span>
-                        </span>
-                        <span className="text-right">
-                          {st.open ? (
-                            <>
-                              <span className={cn('block text-lg leading-tight font-extrabold tabular-nums', s.available === 0 && 'text-status-invalid')}>
-                                {s.available === 0 ? 'Habis' : s.available}
-                              </span>
-                              {s.available > 0 && <span className="block text-xs text-muted-foreground">sisa {isReserved ? 'kursi' : 'tempat'}</span>}
-                            </>
-                          ) : (
-                            <span className="text-xs font-semibold text-muted-foreground">{st.reason}</span>
-                          )}
-                        </span>
+                        ) : (
+                          <>
+                            {sessionName(s)} · {fmtShortDate(s.startAt)}
+                          </>
+                        )}
                       </span>
-                      <span className="block h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+                      <span className="mt-2.5 flex items-baseline justify-between gap-2 text-xs">
+                        {st.open ? (
+                          <span className={cn('font-bold', s.available === 0 ? 'text-[#a11b1b]' : 'text-foreground')}>
+                            {s.available === 0 ? 'Habis' : `Sisa ${s.available} ${isReserved ? 'kursi' : 'tempat'}`}
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-muted-foreground">{st.reason}</span>
+                        )}
+                      </span>
+                      <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-foreground/10" aria-hidden>
                         <span className="block h-full rounded-full bg-brand/70" style={{ width: `${pct}%` }} />
                       </span>
                     </button>
@@ -176,7 +206,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                 .map((c) => {
                   const left = selected?.availability.find((a) => a.categoryId === c.id)?.bonusLeft
                   return (
-                    <p key={c.id} className="mt-2 flex items-start gap-2 rounded-xl bg-brand-soft px-3 py-2 text-sm text-brand">
+                    <p key={c.id} className="mt-2 flex items-start gap-2 rounded-xl bg-brand-soft px-3 py-2.5 text-sm text-brand">
                       <Gift className="mt-0.5 size-4 shrink-0" aria-hidden />
                       <span>
                         <strong>Bonus {c.name}:</strong> {c.bonusDesc} untuk {c.bonusFirstN} tiket pertama tiap sesi
@@ -185,7 +215,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                     </p>
                   )
                 })}
-              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+              <ul className="mt-2 space-y-1 px-1 text-xs text-muted-foreground">
                 {[...new Set(categories.map((c) => c.accessMethod))].map((m) => (
                   <li key={m}>
                     <span className="font-semibold text-foreground">{ACCESS_METHOD_LABEL[m]}:</span>{' '}
@@ -199,39 +229,42 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
               </ul>
             </section>
 
-            <section aria-labelledby="syarat-title">
-              <SectionTitle>
-                <span id="syarat-title">Syarat</span>
-              </SectionTitle>
-              <ul className="space-y-2 rounded-2xl border bg-card p-4 text-sm">
-                {terms(d).map((t) => (
+            <details className="group rounded-2xl border bg-card">
+              <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 font-bold [&::-webkit-details-marker]:hidden">
+                <CircleCheck className="size-5 shrink-0 text-brand" aria-hidden />
+                <span className="flex-1">Syarat & ketentuan</span>
+                <span className="text-xs font-semibold text-muted-foreground">{list.length} poin</span>
+                <ChevronDown className="size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" aria-hidden />
+              </summary>
+              <ul className="space-y-2 border-t px-4 py-3.5 text-sm">
+                {list.map((t) => (
                   <li key={t} className="flex items-start gap-2.5">
-                    <CircleCheck className="mt-0.5 size-[18px] shrink-0 text-brand" aria-hidden />
+                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
                     <span>{t}</span>
                   </li>
                 ))}
               </ul>
-            </section>
+            </details>
           </>
         )}
       </div>
 
-      {!event.infoOnly ? (
-        <BottomBar aboveNav>
+      {!event.infoOnly && (
+        <BottomBar>
           {selected && !selOpen.open && <p className="mb-2 text-center text-sm text-muted-foreground">{selOpen.reason}</p>}
-          <BarActions>
-            <Button className="h-14 flex-1 text-base" disabled={!selected || !selOpen.open} onClick={() => selected && onGo(selected.id)}>
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                <Clock className="size-3.5 shrink-0" aria-hidden />
+                {selected ? `${selected.demoLive ? 'Sesi demo juri' : sessionName(selected)} · ${fmtRange(selected.startAt, selected.endAt)}` : 'Pilih sesi dulu'}
+              </p>
+              <p className="truncate text-lg font-extrabold">{priceHint(categories)}</p>
+            </div>
+            <Button className="h-14 shrink-0 px-6 text-base" disabled={!selected || !selOpen.open} onClick={() => selected && onGo(selected.id)}>
               {selected && selected.available === 0 ? 'Lihat & ikut daftar tunggu' : isReserved ? 'Pilih kursi' : <SundaLabel k="join" />}
             </Button>
-          </BarActions>
-          {selected && (
-            <p className="mt-1.5 flex items-center justify-center gap-1 text-xs text-muted-foreground">
-              <Clock className="size-3.5" aria-hidden /> {selected.demoLive ? 'Sesi demo juri' : `${sessionName(selected)}, ${fmtShortDate(selected.startAt)}`} · {fmtRange(selected.startAt, selected.endAt)}
-            </p>
-          )}
+          </div>
         </BottomBar>
-      ) : (
-        <div className="h-16" />
       )}
     </div>
   )

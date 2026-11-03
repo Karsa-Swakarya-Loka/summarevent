@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BarActions, LoadError, QtyStepper } from '@/components/visitor/Common'
+import { LoadError, QtyStepper } from '@/components/visitor/Common'
 import { continuePath, isPendingOrder, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { ORDER_STATUS_LABEL } from '@/domain/labels'
@@ -20,6 +20,7 @@ import { saleState, seatLabel } from '@/domain/rules'
 import type { Seat, SeatStatus, TicketCategory } from '@/domain/types'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
 import { fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
+import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 
 export default function SeatSelect() {
@@ -188,11 +189,13 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
     if (!cat || cat.quota != null) return
     setRuleError(null)
     if (selected.includes(seat.id)) {
+      haptic()
       setSelected((s) => s.filter((x) => x !== seat.id))
       return
     }
     if (status !== 'AVAILABLE') return
     if (cat.id !== categoryId) {
+      haptic()
       pickCategory(cat.id)
       setSelected([seat.id])
       return
@@ -205,6 +208,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
       )
       return
     }
+    haptic()
     setConflict(null)
     setSelected((s) => [...s, seat.id])
   }
@@ -219,6 +223,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         toast.error(`Sisa kursi ${category.name} tidak cukup untuk ${qty} orang. Kurangi jumlah orang atau pilih kategori lain.`)
         return
       }
+      haptic()
       setConflict(null)
       setSelected(ids)
       setZoomNonce((n) => n + 1)
@@ -239,10 +244,12 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
     try {
       const res = await api.createHold(sessionId, isGeneral ? { categoryId: category.id, qty } : { categoryId: category.id, seatIds: selected })
       if (res.ok) {
+        haptic('success')
         navigate(`/app/checkout/${res.order.id}`)
         return
       }
       holdingRef.current = false
+      haptic('error')
       if (res.reason === 'CONFLICT') {
         setSelected((s) => s.filter((id) => !res.conflictSeatIds.includes(id)))
         setConflict({ ids: res.conflictSeatIds, suggestions: res.suggestions, message: res.message })
@@ -389,13 +396,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
           </Link>
         )}
 
-        <CategoryLegend
-          categories={categories}
-          availability={availability}
-          activeId={categoryId}
-          onPick={pickCategory}
-          className={cn(categories.length > 1 && 'grid-cols-2', '[&_button]:min-h-15 [&_button]:p-2.5')}
-        />
+        <CategoryLegend categories={categories} availability={availability} activeId={categoryId} onPick={pickCategory} chips />
 
         {category && !isGeneral && hasLayout && (
           <div className="flex items-stretch gap-2">
@@ -508,7 +509,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
           </div>
           {category && count > 0 && <p className="shrink-0 text-2xl font-extrabold tabular-nums">{totalText}</p>}
         </div>
-        <BarActions className="mt-3">
+        <div className="mt-3 flex items-stretch gap-2">
           {pending ? (
             <Button asChild className="h-14 flex-1 text-base">
               <Link to={continuePath(pending)}>Lanjutkan pesananmu</Link>
@@ -531,11 +532,11 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
               <SundaLabel k="join" />
             </Button>
           )}
-        </BarActions>
+        </div>
       </div>
 
       <Dialog open={askLogin} onOpenChange={setAskLogin}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Masuk untuk ikut daftar tunggu</DialogTitle>
             <DialogDescription>Kabar tempat kosong dikirim ke nomor HP kamu lewat WhatsApp (simulasi).</DialogDescription>

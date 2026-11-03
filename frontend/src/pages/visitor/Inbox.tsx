@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/common/bits'
 import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { LoadError, SimTag } from '@/components/visitor/Common'
+import { LoadError, SimTag, TabHeader } from '@/components/visitor/Common'
 import { useVisitor } from '@/components/visitor/hooks'
 import { useLive } from '@/hooks/useLive'
 import { fmtDateTime, fmtTime } from '@/lib/format'
@@ -25,12 +25,9 @@ export default function Inbox() {
 
   return (
     <div>
-      <header className="px-4 pt-6 pb-2">
-        <h1 className="text-2xl font-extrabold tracking-tight">Pesan</h1>
-        <p className="text-sm text-muted-foreground">Konfirmasi dan pengingat yang dikirim lewat WhatsApp dan email.</p>
-      </header>
+      <TabHeader title="Pesan" subtitle="Konfirmasi dan pengingat yang dikirim lewat WhatsApp dan email." />
 
-      <div className="space-y-5 px-4 pt-2 pb-16">
+      <div className="space-y-5 px-4 pt-1 pb-6">
         <p className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
           <SimTag /> Di prototype ini WA dan email tidak benar-benar terkirim. Isinya ditampilkan di sini.
         </p>

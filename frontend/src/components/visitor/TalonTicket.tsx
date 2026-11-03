@@ -1,24 +1,29 @@
 /**
- * The e-ticket as a card-stock ticket: the body carries the event and the QR, and below a perforation the stub carries
- * the seat. Adapted from «Talón» by Moxen (moxen.cl/recursos, licence in docs/lisensi/moxen-talon.txt).
+ * The e-ticket as a black card-stock ticket, adapted from «Talón» by Moxen (moxen.cl/recursos, licence in
+ * docs/lisensi/moxen-talon.txt). The body carries the event and the real QR; below the perforation the stub carries the
+ * seat and a Code 128 barcode of the ticket code.
  *
- * A new ticket's real QR assembles the way a scanner reads it: the three finder squares drop in, the fixed marks appear,
- * the data modules arrive in reading order and a green line validates it. Once the gate has scanned the ticket, its stub
- * tears off along the perforation and falls, the way an usher tears it at the door. Both play once; reduced motion shows
- * the end state.
+ * - A new ticket assembles its QR the way a scanner reads it: the finder squares drop in, the fixed marks appear, the
+ *   data modules arrive in reading order and a green line validates it.
+ * - The stub can be pulled: it follows the finger on a spring, gives way at the perforation, falls turning and fluttering,
+ *   then a fresh stub slides back in (tearing it changes nothing about the ticket).
+ * - After the gate has scanned the ticket, the stub tears off once by itself and stays gone.
+ *
+ * Reduced motion shows the end states.
  */
 import { useEffect, useRef, useState } from 'react'
-import { Check, Gift, Maximize2, UserRound } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { encode, QrCodeDataType } from 'uqr'
+import '@fontsource/libre-barcode-128-text/latin-400.css'
 import type { PassItem } from '@/api/contract'
-import { BrandAppIcon } from '@/components/common/Brand'
-import { accessMethodNote, TICKET_STATUS_LABEL } from '@/domain/labels'
-import { fmtDate, fmtRange, fmtTime } from '@/lib/format'
+import { fmtDate, fmtTime } from '@/lib/format'
+import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 
-const INK = '#14241a'
-const OK = '#0b7a35'
+const QR_INK = '#231f20'
+const OK = '#2fb36d'
 const RAD = Math.PI / 180
+const MAX = 17 // degrees of turn at which the paper gives
 const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x))
 const smooth = (u: number) => (u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u))
 // a spring already solved: 0 to 1 with a small bounce, for things that land
@@ -34,6 +39,14 @@ function hash(text: string) {
   let h = 2166136261
   for (const ch of text) h = Math.imul(h ^ ch.charCodeAt(0), 16777619)
   return ((h >>> 0) % 2147483645) + 1
+}
+
+/** Code 128 B with its start, check and stop characters, so the barcode font draws a code a reader can scan. */
+function code128(t: string) {
+  let sum = 104
+  for (let i = 0; i < t.length; i++) sum += (t.charCodeAt(i) - 32) * (i + 1)
+  const v = sum % 103
+  return 'Ì' + t + (v === 0 ? 'Â' : String.fromCharCode(v < 95 ? v + 32 : v + 100)) + 'Î'
 }
 
 /* ---------- the QR: the real code, plus the order in which a reader meets it ---------- */
@@ -104,12 +117,12 @@ function drawQr(g: CanvasRenderingContext2D, q: QrModel, s: number, dpr: number,
     g.lineTo(a, b - e)
     g.stroke()
   }
-  g.strokeStyle = INK
+  g.strokeStyle = QR_INK
   g.lineWidth = 1.4 * dpr
   g.lineCap = 'round'
   g.globalAlpha = 0.38 * (t < 0 ? 1 : 1 - 0.6 * smooth((t - 1.2) / 0.4))
   corners()
-  g.fillStyle = INK
+  g.fillStyle = QR_INK
   if (t < 0) {
     // not issued yet: a faint grid of the modules to come
     g.globalAlpha = 0.13
@@ -146,7 +159,6 @@ function drawQr(g: CanvasRenderingContext2D, q: QrModel, s: number, dpr: number,
       }
     g.restore()
   })
-  // timing, alignment and format marks, together
   g.globalAlpha = 1
   const kf = smooth((t - T.fixed) / 0.18)
   q.fixed.forEach((i) => cell(i, kf))
@@ -163,9 +175,9 @@ function drawQr(g: CanvasRenderingContext2D, q: QrModel, s: number, dpr: number,
   if (ul > 0 && ul < 1) {
     const y = (-0.04 + 1.08 * (ul < 0.5 ? 4 * ul * ul * ul : 1 - Math.pow(-2 * ul + 2, 3) / 2)) * s
     const trail = g.createLinearGradient(0, y - m * 7, 0, y)
-    trail.addColorStop(0, 'rgba(11,122,53,0)')
+    trail.addColorStop(0, 'rgba(47,179,109,0)')
     trail.addColorStop(1, OK)
-    g.globalAlpha = 0.28
+    g.globalAlpha = 0.3
     g.fillStyle = trail
     g.fillRect(0, y - m * 7, s, m * 7)
     g.globalAlpha = 1
@@ -248,33 +260,29 @@ function splitSeat(label: string | null): { row: string; number: string } | null
   return m ? { row: m[1], number: m[2] } : null
 }
 
+/** Long event titles step down a size, so the display type always fits the ticket. */
+function titleSize(title: string) {
+  return title.length <= 14 ? 'text-[3.6rem]' : title.length <= 26 ? 'text-[3rem]' : 'text-[2.45rem]'
+}
+
 export function TalonTicket({
   item,
-  status,
-  live,
   issue = false,
   tear = false,
-  torn = false,
-  onZoom,
   onIssued,
   onTorn,
 }: {
   item: PassItem
-  /** what the ticket says next to the QR, e.g. "Mulai dalam 2 hari" */
-  status: string
-  live: boolean
   /** play the QR assembly (a ticket just issued) */
   issue?: boolean
-  /** play the stub tearing off (a ticket the gate has just scanned) */
+  /** a ticket the gate has just scanned: its stub tears off once by itself */
   tear?: boolean
-  /** the stub is already gone (checked in) */
-  torn?: boolean
-  onZoom?: () => void
-  /** the assembly or the tear started playing: the screen remembers it so it plays once */
+  /** the assembly or the check-in tear started playing: the screen remembers it so it plays once */
   onIssued?: () => void
   onTorn?: () => void
 }) {
   const { ticket, event, venue, session, category } = item
+  const used = ticket.status === 'USED'
   const seat = splitSeat(ticket.seatLabel)
   const body = useRef<HTMLElement>(null)
   const stub = useRef<HTMLDivElement>(null)
@@ -282,20 +290,19 @@ export function TalonTicket({
   const curl = useRef<HTMLElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const [stage, setStage] = useState<'issuing' | 'reading' | 'valid'>(issue && !reduced() ? 'issuing' : 'valid')
-  const [stubGone, setStubGone] = useState(torn && !tear)
+  const [stubGone, setStubGone] = useState(used && !tear)
   const [falling, setFalling] = useState(false)
   const seed = hash(ticket.id)
 
-  // the QR: drawn once, or assembled over three seconds for a new ticket
+  // the QR: drawn once, or assembled over three seconds for a new ticket, once it is on screen
   useEffect(() => {
     const el = canvas.current
     const g = el?.getContext('2d')
     if (!el || !g) return
     const q = modelQr(ticket.qrToken)
     const dpr = Math.min(2, devicePixelRatio || 1)
-    const css = el.offsetWidth
-    el.width = Math.round(css * dpr)
-    el.height = Math.round(css * dpr)
+    el.width = Math.round(el.offsetWidth * dpr)
+    el.height = Math.round(el.offsetWidth * dpr)
     if (!issue || reduced()) {
       drawQr(g, q, el.width, dpr, DONE)
       return
@@ -309,11 +316,13 @@ export function TalonTicket({
       const t = (now - t0) / 1000
       drawQr(g, q, el.width, dpr, t)
       const next = t >= T.valid ? 'valid' : t >= T.scan ? 'reading' : 'issuing'
-      if (next !== shown) setStage((shown = next))
+      if (next !== shown) {
+        if (next === 'valid') haptic('success')
+        setStage((shown = next))
+      }
       if (t < T.end) raf = requestAnimationFrame(frame)
       else drawQr(g, q, el.width, dpr, DONE)
     }
-    // it assembles once the visitor can see it, not below the fold
     const io = whenVisible(el, 0.6, () => {
       onIssued?.()
       raf = requestAnimationFrame(frame)
@@ -346,38 +355,21 @@ export function TalonTicket({
     return () => ro.disconnect()
   }, [seed, stubGone])
 
-  // the stub tears off: pulled on a spring until the paper gives, then it falls free, turning and fluttering
+  // the stub: held on, it follows the finger on a spring (and springs back if let go too early); torn, it is a free body
+  // with gravity, air and spin that flutters as it falls; gone, a fresh stub slides back in, unless the gate has used
+  // the ticket, in which case its room closes for good
   useEffect(() => {
-    if (!tear || stubGone) return
+    if (stubGone) return
     const s = stub.current
     const p = paper.current
     const cv = curl.current
     if (!s || !p || !cv) return
-    const collapse = () => {
-      const h = s.offsetHeight
-      const done = () => setStubGone(true)
-      if (reduced() || !s.animate) return done()
-      s.style.visibility = 'hidden'
-      s.animate([{ height: `${h}px`, marginTop: '-4px' }, { height: '0px', marginTop: '0px' }], { duration: 320, easing: 'cubic-bezier(.22,1,.36,1)' }).onfinish = done
-    }
-    if (reduced()) {
-      onTorn?.()
-      s.animate?.([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' })
-      const t = window.setTimeout(collapse, 240)
-      return () => window.clearTimeout(t)
-    }
-    const MAX = 17
     const side = -1
-    const w = s.offsetWidth
-    const h = s.offsetHeight
-    const pivot: Pt = [w, 2]
-    const centre: Pt = [w / 2, h / 2]
-    s.style.transformOrigin = `${pivot[0]}px ${pivot[1]}px`
-    p.style.transformOrigin = '50% 0'
-    let phase: 'pull' | 'fall' | 'gone' = 'pull'
+    let phase: 'on' | 'pull' | 'fall' | 'gone' = 'on'
     let ang = 0
     let vang = 0
-    const target = side * MAX * 1.1
+    let target = 0
+    let prog = 0
     let x = 0
     let y = 0
     let vx = 0
@@ -388,6 +380,17 @@ export function TalonTicket({
     let baseY = 0
     let raf = 0
     let last = 0
+    let reset = 0
+    let start: Pt | null = null
+    let lastMove: [number, number, number] = [0, 0, 0]
+    let speed: Pt = [0, 0]
+    const pivotOf = (): Pt => [s.offsetWidth, 2]
+    const centreOf = (): Pt => [s.offsetWidth / 2, s.offsetHeight / 2]
+    const home = () => {
+      s.style.transformOrigin = `${pivotOf()[0]}px 2px`
+      p.style.transformOrigin = '50% 0'
+    }
+    home()
     const paint = () => {
       if (phase === 'fall') {
         s.style.transform = `translate(${(shift[0] + x).toFixed(1)}px, ${(shift[1] + y).toFixed(1)}px) rotate(${ang.toFixed(2)}deg)`
@@ -397,97 +400,190 @@ export function TalonTicket({
       }
       const k = clamp(Math.abs(ang) / MAX, 0, 1)
       s.style.transform = ang ? `rotate(${ang.toFixed(2)}deg)` : ''
-      p.style.transform = k ? `perspective(900px) rotateX(${(k * 16).toFixed(2)}deg)` : ''
+      p.style.transform = k && !reduced() ? `perspective(900px) rotateX(${(k * 16).toFixed(2)}deg)` : ''
       cv.style.opacity = (k * 0.85).toFixed(3)
     }
+    const gone = () => {
+      phase = 'gone'
+      s.style.visibility = 'hidden'
+      setFalling(false)
+      if (used) {
+        // the gate has taken this stub for good: its room closes
+        const h = s.offsetHeight
+        if (reduced() || !s.animate) return setStubGone(true)
+        s.animate([{ height: `${h}px`, marginTop: '-4px' }, { height: '0px', marginTop: '0px' }], { duration: 320, easing: 'cubic-bezier(.22,1,.36,1)' }).onfinish = () => setStubGone(true)
+        return
+      }
+      reset = window.setTimeout(() => {
+        // a fresh stub slides back in
+        phase = 'on'
+        ang = vang = target = prog = x = y = 0
+        home()
+        s.style.visibility = ''
+        paint()
+        s.animate?.([{ transform: 'translateY(44px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: reduced() ? 1 : 720, easing: 'cubic-bezier(.34,1.4,.64,1)' })
+      }, 1300)
+    }
+    const wake = () => {
+      if (!raf) raf = requestAnimationFrame(step)
+    }
     const release = () => {
+      if (phase === 'fall' || phase === 'gone') return
+      haptic('tap')
+      if (reduced()) {
+        phase = 'gone'
+        const fade = s.animate?.([{ opacity: 1 }, { opacity: 0 }], { duration: 220 })
+        if (fade) fade.onfinish = gone
+        else gone()
+        return
+      }
       const r = ang * RAD
+      const pivot = pivotOf()
+      const centre = centreOf()
       const dx = pivot[0] - centre[0]
       const dy = pivot[1] - centre[1]
+      // turning about the pivot equals turning about the centre and moving by (I − R)(P − C): no jump when the axis changes
       shift = [dx - (dx * Math.cos(r) - dy * Math.sin(r)), dy - (dx * Math.sin(r) + dy * Math.cos(r))]
       s.style.transformOrigin = `${centre[0]}px ${centre[1]}px`
-      vx = -200 * 0.6 + side * -60
-      vy = 500 * 0.6 + 120
+      vx = clamp(speed[0], -1800, 1800) * 0.6 + side * -60
+      vy = clamp(speed[1], -600, 1800) * 0.6 + 120
       vang = vang * 0.5 + side * 110
+      x = y = flutter = fallTime = 0
       baseY = s.getBoundingClientRect().top
       phase = 'fall'
       setFalling(true)
+      wake()
     }
-    const step = (now: number) => {
+    function step(now: number) {
+      raf = 0
       const dt = Math.min(0.05, last ? (now - last) / 1000 : 1 / 60)
       last = now
-      const hstep = 1 / 240
-      for (let k = Math.max(1, Math.round(dt / hstep)); k > 0; k--) {
-        if (phase === 'pull') {
-          vang += (320 * (target - ang) - 19 * vang) * hstep
-          ang += vang * hstep
+      const h = 1 / 240
+      for (let k = Math.max(1, Math.round(dt / h)); k > 0; k--) {
+        if (phase === 'on' || phase === 'pull') {
+          vang += (320 * (target - ang) - 19 * vang) * h
+          ang += vang * h
         } else if (phase === 'fall') {
-          vy += 2600 * hstep
-          vx *= 1 - 0.7 * hstep
-          vy *= 1 - 0.25 * hstep
-          x += vx * hstep
-          y += vy * hstep
-          ang += vang * hstep
-          vang *= 1 - 0.3 * hstep
-          flutter += 7.5 * hstep
-          fallTime += hstep
+          vy += 2600 * h
+          vx *= 1 - 0.7 * h
+          vy *= 1 - 0.25 * h
+          x += vx * h
+          y += vy * h
+          ang += vang * h
+          vang *= 1 - 0.3 * h
+          flutter += 7.5 * h
+          fallTime += h
         }
       }
       if (phase === 'pull' && Math.abs(ang) >= MAX * 0.97) release()
       if (phase === 'fall' && (baseY + y > innerHeight + 80 || fallTime > 2.6)) {
-        phase = 'gone'
-        collapse()
-        return
+        last = 0
+        return gone()
       }
       paint()
-      raf = requestAnimationFrame(step)
+      const still = phase === 'on' && Math.abs(target - ang) + Math.abs(vang) < 0.01
+      if (still) {
+        ang = target
+        vang = 0
+        paint()
+      }
+      if (!still) wake()
+      else last = 0
     }
-    // once the stub is on screen, a beat for the eye to land on it, then the tear
-    let start = 0
-    const io = whenVisible(s, 0.6, () => {
-      onTorn?.()
-      start = window.setTimeout(() => (raf = requestAnimationFrame(step)), 650)
-    })
+    // a tear on its own: a real pull, with its spring, until the paper gives
+    const tearNow = () => {
+      if (phase !== 'on') return
+      if (reduced()) return release()
+      phase = 'pull'
+      prog = 1.2
+      target = side * MAX * 1.1
+      speed = [-200, 500]
+      wake()
+    }
+    const down = (e: PointerEvent) => {
+      if (phase !== 'on' || used) return
+      s.setPointerCapture(e.pointerId)
+      start = [e.clientX, e.clientY]
+      lastMove = [e.clientX, e.clientY, performance.now()]
+      speed = [0, 0]
+      phase = 'pull'
+      wake()
+    }
+    const move = (e: PointerEvent) => {
+      if (phase !== 'pull' || !start) return
+      const dx = e.clientX - start[0]
+      const dy = e.clientY - start[1]
+      const now = performance.now()
+      const dts = Math.max(8, now - lastMove[2]) / 1000
+      speed = [speed[0] * 0.4 + ((e.clientX - lastMove[0]) / dts) * 0.6, speed[1] * 0.4 + ((e.clientY - lastMove[1]) / dts) * 0.6]
+      lastMove = [e.clientX, e.clientY, now]
+      // pulling down (and outwards) opens the tear; past the breaking point the paper gives at once
+      prog = (dy - dx * 0.5) / 150
+      target = side * MAX * (prog >= 1 ? 1.1 : clamp(prog, 0, 1) * 0.92)
+      wake()
+    }
+    const up = () => {
+      if (phase !== 'pull' || !start) return
+      start = null
+      if (prog >= 1) return release()
+      phase = 'on'
+      target = 0
+      prog = 0
+      wake()
+    }
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return
+      e.preventDefault()
+      tearNow()
+    }
+    s.addEventListener('pointerdown', down)
+    s.addEventListener('pointermove', move)
+    s.addEventListener('pointerup', up)
+    s.addEventListener('pointercancel', up)
+    s.addEventListener('keydown', key)
+    // the check-in tear waits until the stub is on screen, then a beat for the eye to land on it
+    let auto = 0
+    const io = tear
+      ? whenVisible(s, 0.6, () => {
+          onTorn?.()
+          auto = window.setTimeout(tearNow, 650)
+        })
+      : () => undefined
     return () => {
       io()
-      window.clearTimeout(start)
+      window.clearTimeout(auto)
+      window.clearTimeout(reset)
       cancelAnimationFrame(raf)
+      s.removeEventListener('pointerdown', down)
+      s.removeEventListener('pointermove', move)
+      s.removeEventListener('pointerup', up)
+      s.removeEventListener('pointercancel', up)
+      s.removeEventListener('keydown', key)
     }
-  }, [tear, stubGone]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stubGone, tear, used]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const valid = stage === 'valid'
-  const usedAt = ticket.usedAt ? fmtTime(ticket.usedAt) : null
+  const day = session.demoLive ? 'Hari ini' : fmtDate(session.startAt, { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '')
   return (
     <article
-      className={cn('relative drop-shadow-[0_1px_1px_rgb(0_0_0/0.18)] drop-shadow-[0_18px_22px_rgb(20_36_26/0.16)]', falling && 'z-20')}
-      aria-label={`E-ticket ${ticket.seatLabel ? `kursi ${ticket.seatLabel}` : category.name}${torn ? ', sudah dipakai' : ''}`}
+      className={cn('relative mx-auto w-full max-w-[24rem] drop-shadow-[0_1px_1px_rgb(0_0_0/0.4)] drop-shadow-[0_26px_30px_rgb(0_0_0/0.28)]', falling && 'z-20')}
+      aria-label={`E-ticket ${ticket.seatLabel ? `kursi ${ticket.seatLabel}` : category.name}${used ? ', sudah dipakai' : ''}`}
     >
-      <section ref={body} className="talon-paper relative overflow-hidden rounded-t-[1.25rem] px-5 pt-5 pb-7 text-[#14241a]">
+      <section ref={body} className="talon-card relative overflow-hidden rounded-t-[1.1rem] px-6 pt-6 pb-8">
         <i className="talon-grain" aria-hidden />
         <div className="relative flex items-center justify-between gap-3">
-          <p className="flex min-w-0 items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.18em] text-[#5b5f55] uppercase">
-            <BrandAppIcon className="size-5 shrink-0 rounded-md" />
-            <span className="truncate">E-ticket</span>
-          </p>
-          <span
-            className={cn(
-              'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-bold ring-1',
-              ticket.status === 'ACTIVE' ? 'text-[#0b7a35] ring-[#0b7a35]/30' : 'text-[#5b5f55] ring-[#14241a]/15',
-            )}
-          >
-            {ticket.status === 'ACTIVE' && <span className="size-1.5 rounded-full bg-[#0b7a35]" aria-hidden />}
-            {TICKET_STATUS_LABEL[ticket.status]}
-          </span>
+          <p className="talon-label truncate">E-ticket · {category.name}</p>
+          <span className="talon-chip">{used ? 'Sudah dipakai' : 'SUMMABA'}</span>
         </div>
-        <h3 className="relative mt-4 text-[1.6rem] leading-[1.08] font-extrabold tracking-tight text-balance">{event.title}</h3>
-        <dl className="relative mt-4 grid grid-cols-[auto_auto_1fr] gap-x-5 border-t border-[#14241a]/14 pt-3">
+        <h2 className={cn('relative mt-3 font-poster leading-[0.9] text-balance uppercase', titleSize(event.title))}>{event.title}</h2>
+        <dl className="relative mt-5 grid grid-cols-[auto_auto_1fr] gap-x-5 border-t border-white/14 pt-4">
           <div>
             <dt className="talon-label">Tanggal</dt>
-            <dd className="talon-value">{session.demoLive ? 'Hari ini' : fmtDate(session.startAt, { weekday: 'short', day: 'numeric', month: 'short' })}</dd>
+            <dd className="talon-value">{day}</dd>
           </div>
           <div>
             <dt className="talon-label">Jam</dt>
-            <dd className="talon-value">{fmtRange(session.startAt, session.endAt).replace(' WIB', '')}</dd>
+            <dd className="talon-value">{fmtTime(session.startAt)}</dd>
           </div>
           <div className="min-w-0">
             <dt className="talon-label">Lokasi</dt>
@@ -495,84 +591,61 @@ export function TalonTicket({
           </div>
         </dl>
 
-        <div className="relative mt-4 flex items-center gap-4">
-          <button
-            type="button"
-            onClick={onZoom}
-            disabled={torn}
-            className="group relative shrink-0 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-[#14241a]/10 transition active:scale-95 disabled:opacity-60"
-            aria-label={`Perbesar QR tiket ${ticket.code}`}
-          >
-            <canvas ref={canvas} className="block size-36" aria-hidden />
-            {!torn && (
-              <span className="absolute right-1 bottom-1 flex size-7 items-center justify-center rounded-full bg-ink/80 text-white" aria-hidden>
-                <Maximize2 className="size-3.5" />
-              </span>
-            )}
-          </button>
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <p
-              className={cn('flex h-5 items-center gap-1.5 text-[0.7rem] font-bold tracking-[0.16em] uppercase transition-colors', torn ? 'text-[#5b5f55]' : valid ? 'text-[#0b7a35]' : 'text-[#5b5f55]')}
-              aria-live="polite"
-            >
-              {valid && !torn && <Check className="size-4" strokeWidth={3} aria-hidden />}
-              {torn ? `Masuk ${usedAt ?? ''} WIB` : stage === 'issuing' ? 'Menerbitkan…' : stage === 'reading' ? 'Membaca…' : 'Siap dipindai'}
-            </p>
-            <p className="flex items-center gap-1.5 text-sm font-semibold">
-              <UserRound className="size-4 shrink-0 text-[#5b5f55]" aria-hidden />
-              <span className="truncate">{ticket.attendeeName ?? 'Nama belum diisi'}</span>
-            </p>
-            <p className="font-mono text-[0.95rem] font-bold tracking-wider">{ticket.code}</p>
-            {status && (
-              <p className={cn('flex items-center gap-1.5 text-xs font-semibold', live ? 'text-[#0b7a35]' : 'text-[#5b5f55]')}>
-                {live && <span className="size-2 rounded-full bg-[#0b7a35]" aria-hidden />}
-                {status}
-              </p>
-            )}
+        <div className="relative mt-5 flex items-center gap-5">
+          <div className={cn('shrink-0 rounded-[0.9rem] bg-[#f4f1ea] p-1.5 transition-opacity', used && 'opacity-40')}>
+            <canvas ref={canvas} className="block size-[8.25rem]" aria-hidden />
           </div>
-        </div>
-        {ticket.bonus && (
-          <p className="relative mt-4 flex items-center gap-1.5 rounded-xl bg-[#0b7a35]/10 px-3 py-2 text-xs font-semibold text-[#0b6b35]">
-            <Gift className="size-4 shrink-0" aria-hidden /> Bonus: {ticket.bonus}. Tunjukkan ke petugas.
+          <p className={cn('talon-label flex items-center gap-1.5 transition-colors', valid && !used && 'text-[#2fb36d]')} aria-live="polite">
+            {valid && !used && <Check className="size-4" strokeWidth={3} aria-hidden />}
+            {used ? `Masuk ${ticket.usedAt ? fmtTime(ticket.usedAt) : ''}` : stage === 'issuing' ? 'Menerbitkan…' : stage === 'reading' ? 'Membaca…' : 'Siap dipindai'}
           </p>
-        )}
+        </div>
       </section>
 
       {!stubGone && (
-        <div ref={stub} className="relative -mt-1 will-change-transform" aria-hidden={tear || undefined}>
-          <div ref={paper} className="talon-paper relative flex items-end gap-4 rounded-b-[1.25rem] px-5 pt-6 pb-5 text-[#14241a] will-change-transform">
+        <div
+          ref={stub}
+          className={cn('relative -mt-1 touch-none will-change-transform select-none', !used && 'cursor-grab active:cursor-grabbing')}
+        >
+          <div ref={paper} className="talon-card relative rounded-b-[1.1rem] px-6 pt-6 pb-5 will-change-transform">
             <i className="talon-grain" aria-hidden />
-            <p className="relative flex flex-col">
-              <span className="talon-label">Untuk</span>
-              <span className="text-[3.4rem] leading-[0.9] font-extrabold tabular-nums">1</span>
-              <span className="text-[0.7rem] font-semibold text-[#5b5f55]">orang</span>
-            </p>
-            {seat ? (
-              <dl className="relative mb-1 flex gap-4">
-                <div>
-                  <dt className="talon-label">Baris</dt>
-                  <dd className="text-2xl leading-tight font-extrabold">{seat.row}</dd>
-                </div>
-                <div>
-                  <dt className="talon-label">Kursi</dt>
-                  <dd className="text-2xl leading-tight font-extrabold tabular-nums">{seat.number}</dd>
-                </div>
-              </dl>
-            ) : (
-              <p className="relative mb-1">
-                <span className="talon-label block">Area</span>
-                <span className="text-lg leading-tight font-extrabold">Tanpa nomor kursi</span>
+            <p className="talon-label absolute top-6 right-6 tabular-nums">Nº {ticket.code.replace('TKT-', '')}</p>
+            <div className="relative flex items-end gap-5">
+              <p className="flex flex-col">
+                <span className="talon-label">Untuk</span>
+                <span className="font-poster text-[4.4rem] leading-[0.95]">1</span>
               </p>
-            )}
-            <p className="relative mb-1 ml-auto text-right">
-              <span className="flex items-center justify-end gap-1.5 text-sm font-bold">
-                <span className="size-3 shrink-0 rounded-[4px]" style={{ background: category.color }} aria-hidden />
-                {category.name}
-              </span>
-              {accessMethodNote(category) && <span className="block text-xs text-[#5b5f55]">{accessMethodNote(category)}</span>}
-            </p>
+              {seat ? (
+                <dl className="mb-1.5 space-y-1">
+                  <div className="flex items-baseline gap-2.5">
+                    <dt className="talon-label w-12">Baris</dt>
+                    <dd className="font-poster text-2xl leading-none">{seat.row}</dd>
+                  </div>
+                  <div className="flex items-baseline gap-2.5">
+                    <dt className="talon-label w-12">Kursi</dt>
+                    <dd className="font-poster text-2xl leading-none tabular-nums">{seat.number}</dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className="mb-1.5">
+                  <span className="talon-label block">Area</span>
+                  <span className="font-poster text-2xl leading-none uppercase">{category.name}</span>
+                </p>
+              )}
+              <p className="talon-barcode mb-0.5 ml-auto" aria-hidden>
+                {code128(ticket.code)}
+              </p>
+            </div>
             <i ref={curl} className="talon-curl" aria-hidden />
           </div>
+          {/* the stub's own control, over the paper: pull it, or press Enter to tear it; the printed text stays readable */}
+          {!used && (
+            <button
+              type="button"
+              className="absolute inset-0 cursor-[inherit] rounded-b-[1.1rem] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              aria-label="Tarik talon untuk merobek"
+            />
+          )}
         </div>
       )}
     </article>

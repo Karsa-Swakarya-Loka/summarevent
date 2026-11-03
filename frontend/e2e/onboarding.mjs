@@ -20,6 +20,8 @@ const watch = (page, tag) => {
   page.on('pageerror', (e) => errors.push(`[${tag}] pageerror: ${e.message}`))
 }
 const shot = (page, name) => page.screenshot({ path: path.join(OUT, `${name}.png`) })
+// the splash names the role being entered; on a real network the name is written a moment after the splash paints
+const roleNamed = (page, name) => page.locator('#splash .sp-role', { hasText: name }).waitFor({ timeout: 3000 }).then(() => true, () => false)
 
 // 1. Splash: shows on the first visit, fades out on its own, and stays away for the rest of the session
 const ctx = await browser.newContext(phone)
@@ -40,7 +42,7 @@ console.log('splash: shown once, then gone')
 // 2. Entering a role from the role picker plays that role's splash, named; a new visitor then gets three steps
 await page.getByRole('button', { name: /Masuk sebagai pengunjung/ }).click()
 await splash.waitFor({ timeout: 3000 })
-check((await page.locator('#splash .sp-role').textContent()) === 'Pengunjung', 'splash pengunjung tidak menyebut perannya')
+check(await roleNamed(page, 'Pengunjung'), 'splash pengunjung tidak menyebut perannya')
 await page.waitForTimeout(900)
 await shot(page, '02-splash-pengunjung')
 await splash.waitFor({ state: 'detached', timeout: 5000 })
@@ -83,7 +85,7 @@ const admin = await adminCtx.newPage()
 watch(admin, 'admin')
 await admin.goto(BASE + '/admin', { waitUntil: 'commit' })
 await admin.locator('#splash').waitFor({ timeout: 3000 })
-check((await admin.locator('#splash .sp-role').textContent()) === 'Panitia', 'splash panitia tidak menyebut perannya')
+check(await roleNamed(admin, 'Panitia'), 'splash panitia tidak menyebut perannya')
 await admin.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
 await admin.waitForURL(/\/admin\/mulai/)
 const adminTitles = []
@@ -119,7 +121,7 @@ await staff.goto(BASE + '/', { waitUntil: 'networkidle' })
 await staff.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
 await staff.getByRole('button', { name: /Masuk sebagai petugas/ }).click()
 await staff.locator('#splash').waitFor({ timeout: 3000 })
-check((await staff.locator('#splash .sp-role').textContent()) === 'Petugas', 'splash petugas tidak menyebut perannya')
+check(await roleNamed(staff, 'Petugas'), 'splash petugas tidak menyebut perannya')
 await staff.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
 await staff.waitForURL(/\/staff\/mulai/)
 await staff.getByRole('button', { name: 'Lewati' }).click()
@@ -135,11 +137,17 @@ await staffCtx.close()
 const calmCtx = await browser.newContext({ ...phone, reducedMotion: 'reduce' })
 const calm = await calmCtx.newPage()
 watch(calm, 'reduced-motion')
-const t0 = Date.now()
+// timed from the page's first byte, so a slow answer from the server does not count against the splash
+await calm.addInitScript(() => {
+  new MutationObserver(() => {
+    if (document.getElementById('splash')) window.__splashSeen = true
+    else if (window.__splashSeen && !window.__splashGoneAt) window.__splashGoneAt = performance.now()
+  }).observe(document, { subtree: true, childList: true })
+})
 await calm.goto(BASE + '/', { waitUntil: 'commit' })
 await calm.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
-const ms = Date.now() - t0
-console.log(`reduced motion: splash gone after ${ms} ms`)
+const ms = await calm.evaluate(() => Math.round((window.__splashGoneAt ?? performance.now()) - performance.getEntriesByType('navigation')[0].responseStart))
+console.log(`reduced motion: splash gone ${ms} ms after the page arrived`)
 check(ms < 2000, `splash dengan reduced motion bertahan ${ms} ms`)
 await calmCtx.close()
 

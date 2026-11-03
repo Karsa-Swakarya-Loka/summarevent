@@ -49,7 +49,9 @@ if (only === 'all' || only === 'paid') {
   const page = await newPage(ctx, 'paid')
   await page.goto(BASE + '/app', { waitUntil: 'networkidle' })
   await page.locator('a[href="/app/e/pentas-musikal-sangkuriang"]').click()
-  await page.getByRole('radio', { name: /16\.00/ }).click()
+  // the 16.00 session itself: the judges' demo session always started 20 minutes ago and lasts 3 hours, so twice a day
+  // its times contain "16.00" too
+  await page.getByRole('radio', { name: /^16\.00–17\.00/ }).click()
   await page.getByRole('button', { name: 'Pilih kursi' }).click()
   await page.waitForURL(/\/s\/ses_sk_16/)
   await pickCategory(page, 'Reguler')

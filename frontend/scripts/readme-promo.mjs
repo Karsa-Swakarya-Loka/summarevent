@@ -50,9 +50,10 @@ async function capture(name, steps) {
 async function stickers(names) {
   const page = await browser.newPage()
   await page.goto(BASE + '/', { waitUntil: 'networkidle' })
-  const urls = await page.evaluate(async (list) => {
-    const kit = await import('/src/components/stickers/fun.ts')
-    const icons = await import('/src/components/stickers/icons.ts')
+  // imported inside the page, from the dev server, which compiles the kit on the fly
+  const urls = await page.evaluate(async ({ list, dir }) => {
+    const kit = await import(`${dir}/fun.ts`)
+    const icons = await import(`${dir}/icons.ts`)
     return Object.fromEntries(
       list.map((n) => {
         const canvas = document.createElement('canvas')
@@ -63,7 +64,7 @@ async function stickers(names) {
         return [n, canvas.toDataURL('image/png')]
       }),
     )
-  }, names)
+  }, { list: names, dir: '/src/components/stickers' })
   await page.close()
   return Object.fromEntries(
     Object.entries(urls).map(([n, url]) => {

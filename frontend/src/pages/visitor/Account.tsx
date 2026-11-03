@@ -4,7 +4,7 @@
  */
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { Hourglass, LogOut, Play, Ticket, UserRound } from 'lucide-react'
+import { ChevronRight, Hourglass, LogOut, Play, Ticket, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import { EmptyState, StatusBadge } from '@/components/common/bits'
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AppSetupRows } from '@/components/visitor/AppSetup'
 import { LoadError } from '@/components/visitor/Common'
+import { EditProfileSheet } from '@/components/visitor/EditProfileSheet'
 import { SettingsGroup, SettingsRow } from '@/components/visitor/SettingsList'
 import { continuePath, seatRangeLabel, sessionWhen } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
@@ -24,7 +25,7 @@ import { setOnboardingDone } from '@/lib/intro'
 
 export default function Account() {
   const { user, refresh } = useVisitor()
-  return user ? <Profile user={user} onLogout={refresh} /> : <SignedOut onLogin={refresh} />
+  return user ? <SignedIn user={user} onChange={refresh} /> : <SignedOut onLogin={refresh} />
 }
 
 /** Replays the visitor onboarding, from the preferences of either state. */
@@ -94,7 +95,9 @@ function SignedOut({ onLogin }: { onLogin: () => void }) {
   )
 }
 
-function Profile({ user, onLogout }: { user: User; onLogout: () => void }) {
+/** `onChange` re-reads the signed-in visitor: after editing the profile, and after signing out. */
+function SignedIn({ user, onChange }: { user: User; onChange: () => void }) {
+  const [edit, setEdit] = useState(false)
   const orders = useLive(() => api.myOrders(), [user.id])
   const waitlist = useLive(() => api.myWaitlist(), [user.id])
   const leave = async (id: string) => {
@@ -115,13 +118,19 @@ function Profile({ user, onLogout }: { user: User; onLogout: () => void }) {
   return (
     <div className="space-y-7 px-4 pt-[max(2.25rem,env(safe-area-inset-top))] pb-6">
       <header className="flex animate-rise flex-col items-center text-center">
-        <span className="grid size-24 place-items-center rounded-full bg-brand-yellow font-poster text-4xl text-ink shadow-md ring-4 ring-white" aria-hidden>
-          {initials}
-        </span>
-        <h1 className="mt-4 text-[1.7rem] leading-tight font-extrabold tracking-tight">{user.name}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground tabular-nums">{maskPhone(user.phone)}</p>
-        <Button asChild className="mt-4 h-11 px-6">
-          <Link to="/app/pass">Lihat Pass Saya</Link>
+        {/* the avatar and name open the profile, like a phone's settings */}
+        <Link to="/app/akun/profil" className="flex flex-col items-center rounded-3xl px-4 pt-1 pb-2 transition active:scale-[0.98]">
+          <span className="grid size-24 place-items-center rounded-full bg-brand-yellow font-poster text-4xl text-ink shadow-md ring-4 ring-white" aria-hidden>
+            {initials}
+          </span>
+          <h1 className="mt-4 text-[1.7rem] leading-tight font-extrabold tracking-tight">{user.name}</h1>
+          <span className="mt-0.5 text-sm text-muted-foreground tabular-nums">{user.email ?? maskPhone(user.phone)}</span>
+          <span className="mt-1 inline-flex items-center gap-0.5 text-sm font-semibold">
+            Lihat profil <ChevronRight className="size-4" aria-hidden />
+          </span>
+        </Link>
+        <Button className="mt-2 h-11 px-6" onClick={() => setEdit(true)}>
+          Edit profil
         </Button>
       </header>
 
@@ -207,6 +216,8 @@ function Profile({ user, onLogout }: { user: User; onLogout: () => void }) {
         </SettingsGroup>
       )}
 
+      <EditProfileSheet user={user} open={edit} onOpenChange={setEdit} onSaved={onChange} />
+
       <SettingsGroup id="pref-title" title="Preferensi">
         <AppSetupRows />
         <IntroRow />
@@ -216,7 +227,7 @@ function Profile({ user, onLogout }: { user: User; onLogout: () => void }) {
           title="Keluar dari akun"
           onClick={() => {
             api.logout('VISITOR')
-            onLogout()
+            onChange()
             toast('Kamu sudah keluar.')
           }}
         />

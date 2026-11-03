@@ -78,6 +78,7 @@ const router = createBrowserRouter([
       { path: 'inbox', lazy: screen('inbox') },
       { path: 'inbox/:noteId', lazy: screen('message') },
       { path: 'akun', lazy: screen('account') },
+      { path: 'akun/profil', lazy: screen('profile') },
       { path: 'mulai', element: page(VisitorOnboarding) },
       { path: 'masuk', element: page(SignIn) },
       { path: 'daftar', element: page(SignUp) },

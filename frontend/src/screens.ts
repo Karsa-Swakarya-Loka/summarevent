@@ -12,6 +12,7 @@ const load = {
   inbox: () => import('@/pages/visitor/Inbox'),
   message: () => import('@/pages/visitor/Message'),
   account: () => import('@/pages/visitor/Account'),
+  profile: () => import('@/pages/visitor/Profile'),
 }
 type ScreenName = keyof typeof load
 
@@ -26,6 +27,7 @@ const ROUTES: Array<[RegExp, ScreenName]> = [
   [/^\/app\/inbox\/?$/, 'inbox'],
   [/^\/app\/inbox\/[^/]+\/?$/, 'message'],
   [/^\/app\/akun\/?$/, 'account'],
+  [/^\/app\/akun\/profil\/?$/, 'profile'],
 ]
 
 /** Start loading the screen at `path`: the first screen, in parallel with the data. */

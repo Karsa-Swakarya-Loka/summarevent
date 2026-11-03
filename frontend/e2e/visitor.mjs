@@ -1,5 +1,5 @@
 // Visitor flows: paid, receipt, free, conflict (+ expire).
-// Usage: dev server running (npm run dev), then node e2e/visitor.mjs [paid|receipt|free|conflict|expire|waitlist|manage|bonus|ocr|all]
+// Usage: dev server running (npm run dev), then node e2e/visitor.mjs [paid|receipt|free|conflict|expire|waitlist|manage|bonus|profile|ocr|all]
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import { chromium } from 'playwright-core'
 import { skipIntro } from './skip-intro.mjs'
@@ -251,6 +251,38 @@ if (only === 'all' || only === 'bonus') {
   await page.getByText(/Bonus Foto bareng pemeran Sangkuriang untuk tiket pertama/).waitFor()
   console.log('bonus: offer shown on event detail and seat map')
   await shot(page, 'b1-bonus', false)
+  await ctx.close()
+}
+
+if (only === 'all' || only === 'profile') {
+  const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
+  const page = await newPage(ctx, 'profile')
+  await page.goto(BASE + '/app/masuk', { waitUntil: 'networkidle' })
+  await login(page, '081299990010', 'Hana Profil')
+  await page.goto(BASE + '/app/akun', { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: 'Edit profil' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Edit profil' })
+  // an email without a domain is refused before it is sent, one another account uses by the API
+  await sheet.getByLabel('Email').fill('hana@contoh')
+  await sheet.getByRole('button', { name: 'Simpan' }).click()
+  await sheet.getByRole('alert').filter({ hasText: 'email lengkap' }).waitFor()
+  await sheet.getByLabel('Email').fill('desk.atrium@summarevent.test')
+  await sheet.getByRole('button', { name: 'Simpan' }).click()
+  await sheet.getByRole('alert').filter({ hasText: 'sudah dipakai' }).waitFor()
+  await sheet.getByLabel('Nama').fill('Hana Pratiwi')
+  await sheet.getByLabel('Email').fill('Hana@Contoh.id')
+  await sheet.getByRole('button', { name: 'Simpan' }).click()
+  await page.getByText(/Profil disimpan/).waitFor()
+  await page.getByRole('heading', { name: 'Hana Pratiwi' }).waitFor()
+  await page.getByRole('link', { name: /Lihat profil/ }).click()
+  await page.waitForURL(/\/app\/akun\/profil$/)
+  const email = await page.getByText('hana@contoh.id').count()
+  if (!email) errors.push('profil tidak menampilkan email yang baru disimpan (hana@contoh.id)')
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByRole('heading', { name: 'Hana Pratiwi' }).waitFor()
+  console.log('profile: name and email saved, wrong and taken emails refused, kept after reload')
+  await shot(page, 'p1-profile')
   await ctx.close()
 }
 

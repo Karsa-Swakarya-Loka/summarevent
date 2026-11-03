@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
 import { CircleAlert, Minus, Plus, RefreshCw } from 'lucide-react'
 import { apiMode, DEMO_URL } from '@/api'
@@ -7,40 +7,58 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { errorMessage } from '@/hooks/useLive'
 import { cn } from '@/lib/utils'
-import { useAvoidDemoPill, useElementHeight } from './hooks'
 
 /**
- * Fixed action bar at the bottom of the phone shell, plus an in-flow spacer of the
- * same height so the page content never hides behind it. With `aboveNav` the floating
- * navigation sits on the bar's lower edge.
+ * Action bar at the bottom of a pushed screen. It stays in reach of the thumb while the page scrolls, and rests at the
+ * bottom of the screen when the page is short.
  */
-export function BottomBar({ children, aboveNav = false, className }: { children: ReactNode; aboveNav?: boolean; className?: string }) {
-  const [ref, height] = useElementHeight()
+export function BottomBar({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <>
-      {/* above the navigation the bar reaches under it, and the layout already keeps room for the navigation */}
-      <div aria-hidden style={{ height: aboveNav ? `max(0px, calc(${height}px - var(--spacing-nav)))` : height + 8 }} />
-      <div
-        ref={ref}
-        className={cn(
-          'fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md border-t bg-card/95 px-4 pt-3 shadow-[0_-10px_30px_-18px_rgb(0_0_0/0.35)] backdrop-blur',
-          aboveNav ? 'pb-[calc(var(--spacing-nav)+1.25rem)]' : 'pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
-          className,
-        )}
-      >
-        {children}
-      </div>
-    </>
+    <div
+      className={cn(
+        'sticky bottom-0 z-20 mt-auto border-t bg-card/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_-18px_rgb(0_0_0/0.35)] backdrop-blur',
+        className,
+      )}
+    >
+      {children}
+    </div>
   )
 }
 
-/** Row for the main button(s) of a bottom bar; steps aside for the floating Demo pill. */
-export function BarActions({ children, className }: { children: ReactNode; className?: string }) {
-  const [ref, inset] = useAvoidDemoPill()
+/**
+ * Header of a tab screen, iOS style: a large title under a translucent bar. Once the title scrolls under the bar it
+ * shows small in the bar, with a hairline.
+ */
+export function TabHeader({ title, subtitle, right }: { title: string; subtitle?: ReactNode; right?: ReactNode }) {
+  const ref = useRef<HTMLHeadingElement>(null)
+  const [under, setUnder] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setUnder(!e.isIntersecting), { rootMargin: '-56px 0px 0px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
   return (
-    <div ref={ref} className={cn('flex items-stretch gap-2', className)} style={inset ? { paddingLeft: inset } : undefined}>
-      {children}
-    </div>
+    <>
+      <div
+        className={cn(
+          'sticky top-0 z-20 flex min-h-14 items-center justify-center bg-background/85 px-16 pt-[env(safe-area-inset-top)] backdrop-blur-xl transition-shadow duration-200',
+          under && 'shadow-[0_1px_0_rgb(0_0_0/0.08)]',
+        )}
+      >
+        <span aria-hidden className={cn('truncate font-bold transition duration-200 ease-(--ease-soft)', under ? 'opacity-100' : 'translate-y-1.5 opacity-0')}>
+          {title}
+        </span>
+        {right && <div className="absolute right-2 bottom-0 flex h-14 items-center">{right}</div>}
+      </div>
+      <header className="px-4 pb-3">
+        <h1 ref={ref} className="text-[2rem] leading-tight font-extrabold tracking-tight">
+          {title}
+        </h1>
+        {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
+      </header>
+    </>
   )
 }
 

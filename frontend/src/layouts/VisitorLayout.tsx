@@ -1,9 +1,10 @@
-import { NavLink, Outlet, useLocation } from 'react-router'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, ScrollRestoration, useLocation, useNavigationType } from 'react-router'
 import { Home, Inbox, Ticket, UserRound } from 'lucide-react'
 import { DemoMenu } from '@/components/common/DemoMenu'
 import { NotificationWatcher } from '@/components/visitor/AppSetup'
+import { useNavStack } from '@/lib/navStack'
 import { cn } from '@/lib/utils'
-import { useEffect } from 'react'
 
 const NAV = [
   { to: '/app', label: 'Beranda', icon: Home, end: true },
@@ -11,31 +12,50 @@ const NAV = [
   { to: '/app/inbox', label: 'Pesan', icon: Inbox },
   { to: '/app/akun', label: 'Akun', icon: UserRound },
 ]
+/** The four tab screens. Every other screen is pushed on top of them: it has a back button and no tab bar. */
+const TAB_ROOT = /^\/app(\/(pass|inbox|akun))?\/?$/
 
-/** Phone-sized shell with a floating bottom navigation (hidden during checkout to keep one main action per screen). */
+/**
+ * Phone shell of the visitor app. Tab screens carry the floating tab bar; pushed screens (event, seats, checkout, order)
+ * get the whole screen and one main action. Screens change like in a native app: a pushed screen slides in from the
+ * right, going back slides from the left, tabs cross-fade.
+ */
 export function VisitorLayout() {
-  const { pathname } = useLocation()
-  // full-screen steps (onboarding, sign-in) and the checkout keep one main action on screen
+  const location = useLocation()
+  const { pathname } = location
+  const navType = useNavigationType()
+  useNavStack()
   const fullScreen = /^\/app\/(mulai|masuk|daftar)\/?$/.test(pathname)
-  const hideNav = fullScreen || pathname.includes('/checkout/') || /\/e\/[^/]+\/s\//.test(pathname)
+  const tabRoot = TAB_ROOT.test(pathname)
   const active = NAV.findIndex(({ to, end }) => (end ? pathname.replace(/\/$/, '') === to : pathname.startsWith(to)))
+
+  // the screen's entrance, worked out when the path changes; the first screen just appears
+  const [screen, setScreen] = useState({ path: pathname, motion: '' })
+  if (screen.path !== pathname) {
+    const back = navType === 'POP' || !!(location.state as { back?: boolean } | null)?.back
+    setScreen({
+      path: pathname,
+      motion: back ? 'animate-screen-pop' : TAB_ROOT.test(screen.path) && tabRoot ? 'animate-screen-fade' : 'animate-screen-push',
+    })
+  }
+
+  // installed on a phone, the status bar takes the colour of the top of the screen: green Beranda, cream elsewhere
   useEffect(() => {
-    window.scrollTo(0, 0)
+    const meta = document.querySelector('meta[name="theme-color"]')
+    meta?.setAttribute('content', /^\/app\/?$/.test(pathname) ? '#006426' : '#fbfaf7')
+    return () => meta?.setAttribute('content', '#006426')
   }, [pathname])
 
   return (
-    <div className="min-h-dvh bg-[#efece6]">
+    <div className="min-h-dvh overflow-x-clip bg-[#efece6]" data-shell="visitor">
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background shadow-sm">
-        {/* room for the floating navigation */}
-        <main className={cn('flex-1', !hideNav && 'pb-[calc(var(--spacing-nav)+1.5rem)]')}>
+        <main key={pathname} className={cn('flex flex-1 flex-col', screen.motion, tabRoot && 'pb-[calc(var(--spacing-nav)+1.5rem)]')}>
           <Outlet />
         </main>
-        {hideNav ? (
-          !fullScreen && <DemoMenu className="bottom-4 left-4" />
-        ) : (
+        {tabRoot ? (
           // the Demo button docks beside the navigation instead of floating over the page
           <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md gap-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] *:pointer-events-auto">
-            <DemoMenu docked />
+            <DemoMenu variant="docked" />
             <nav className="relative flex-1 rounded-[1.75rem] bg-ink/95 p-1.5 shadow-xl shadow-ink/25 backdrop-blur" aria-label="Navigasi utama">
               {active >= 0 && (
                 <span
@@ -52,7 +72,7 @@ export function VisitorLayout() {
                       end={end}
                       className={({ isActive }) =>
                         cn(
-                          'flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[1.35rem] text-[0.7rem] font-semibold transition-colors',
+                          'flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[1.35rem] text-[0.7rem] font-semibold transition active:scale-95',
                           isActive ? 'text-ink' : 'text-white/75 hover:text-white',
                         )
                       }
@@ -65,9 +85,12 @@ export function VisitorLayout() {
               </ul>
             </nav>
           </div>
+        ) : (
+          !fullScreen && <DemoMenu className="bottom-4 left-4" />
         )}
         <NotificationWatcher />
       </div>
+      <ScrollRestoration />
     </div>
   )
 }

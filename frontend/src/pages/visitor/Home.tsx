@@ -248,7 +248,7 @@ function FeaturedCard({ e, now }: { e: EventSummary; now: Date }) {
   return (
     <Link
       to={`/app/e/${e.event.slug}`}
-      className="group relative block animate-rise overflow-hidden rounded-[1.75rem] shadow-lg shadow-ink/10 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="group relative block animate-rise overflow-hidden rounded-[1.75rem] shadow-lg shadow-ink/10 transition-transform duration-200 active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <Poster theme={e.event.posterTheme} title={e.event.title} bare className="h-72 transition-transform duration-700 ease-(--ease-soft) group-hover:scale-[1.03]" />
       <div className="absolute inset-0 bg-linear-to-t from-ink/90 via-ink/35 to-transparent" aria-hidden />
@@ -283,7 +283,7 @@ function EventCard({ e, now }: { e: EventSummary; now: Date }) {
   return (
     <Link
       to={`/app/e/${e.event.slug}`}
-      className="group flex gap-3.5 rounded-[1.4rem] border bg-card p-3 shadow-xs transition hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="group flex gap-3.5 rounded-[1.4rem] border bg-card p-3 shadow-xs transition hover:shadow-md active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <div className="relative w-24 shrink-0 self-stretch overflow-hidden rounded-2xl">
         <Poster theme={e.event.posterTheme} title={e.event.title} bare className="absolute inset-0 transition-transform duration-500 ease-(--ease-soft) group-hover:scale-105" />

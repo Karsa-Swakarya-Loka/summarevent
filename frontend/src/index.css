@@ -179,6 +179,47 @@
     from { opacity: 0; transform: translateY(-20px) scale(0.96); }
     to { opacity: 1; transform: none; }
   }
+
+  /* screen changes in the visitor app: a pushed screen comes in from the right, a back from the left, tabs cross-fade */
+  --animate-screen-push: screen-push 0.32s var(--ease-soft) both;
+  --animate-screen-pop: screen-pop 0.32s var(--ease-soft) both;
+  --animate-screen-fade: screen-fade 0.2s ease-out both;
+  @keyframes screen-push {
+    from { opacity: 0.4; transform: translateX(28px); }
+  }
+  @keyframes screen-pop {
+    from { opacity: 0.4; transform: translateX(-28px); }
+  }
+  @keyframes screen-fade {
+    from { opacity: 0.5; }
+  }
+}
+
+/*
+ * App feel on a phone: no grey flash on tap; controls that do not select their text or open the long-press callout; no
+ * rubber band or pull-to-refresh once installed; the big buttons of the visitor app with a softer corner.
+ */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+button, [role='button'], [role='tab'], [role='radio'], [role='switch'], [role='menuitem'], nav a, summary, label {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+img { -webkit-touch-callout: none; }
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior-y: none; }
+}
+[data-shell='visitor'] [data-slot='button'].h-14,
+[data-shell='visitor'] [data-slot='button'].h-12 {
+  border-radius: 1rem;
+}
+/* the Demo button moves into the app bar on screens that have one, so the floating pill never covers the page */
+body:has([data-demo-header]) [data-demo-float] {
+  display: none;
 }
 
 /* Seat-grid dots, the motif of the splash and the logo's seat blocks. */

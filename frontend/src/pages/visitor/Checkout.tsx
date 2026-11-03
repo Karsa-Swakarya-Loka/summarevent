@@ -9,7 +9,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail, PaymentRequest } from '@/api/contract'
-import { BackHeader, Countdown } from '@/components/common/bits'
+import { BackHeader, HoldPill } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -174,12 +174,7 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
       <BackHeader
         to={seatPath}
         title="Selesaikan pesanan"
-        right={
-          <div className="mr-2 flex flex-col items-end leading-none">
-            <span className="text-[0.65rem] text-muted-foreground">{seats.length ? 'Kursi ditahan' : 'Tempat ditahan'}</span>
-            <Countdown to={order.holdExpiresAt} className="text-lg [&_svg]:size-4" />
-          </div>
-        }
+        right={<HoldPill to={order.holdExpiresAt} label={seats.length ? 'Kursi ditahan' : 'Tempat ditahan'} />}
       />
 
       <div className="space-y-3 p-4 pb-10">
@@ -292,7 +287,7 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
       </div>
 
       <Dialog open={askCancel} onOpenChange={(o) => busy !== 'cancel' && setAskCancel(o)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Batalkan pesanan ini?</DialogTitle>
             <DialogDescription>{what} akan dilepas dan bisa dipilih pengunjung lain.</DialogDescription>

@@ -10,7 +10,7 @@ import { EmptyState, StatusBadge } from '@/components/common/bits'
 import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { LoadError } from '@/components/visitor/Common'
+import { LoadError, TabHeader } from '@/components/visitor/Common'
 import { AppSetupCard } from '@/components/visitor/AppSetup'
 import { continuePath, seatRangeLabel, sessionWhen } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
@@ -86,39 +86,26 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
 
   return (
     <div>
-      <header className="px-4 pt-6 pb-2">
-        <h1 className="text-2xl font-extrabold tracking-tight">Akun</h1>
-      </header>
-      <div className="space-y-5 px-4 pt-2 pb-16">
-        <section className="flex items-center gap-3 rounded-2xl border bg-card p-4">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand text-lg font-bold text-white" aria-hidden>
+      <TabHeader title="Akun" />
+      <div className="space-y-6 px-4 pt-1 pb-6">
+        <section className="flex items-center gap-3.5 rounded-2xl border bg-card p-4">
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand text-xl font-bold text-white" aria-hidden>
             {initials}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-bold">{name}</p>
+            <p className="truncate text-lg font-bold">{name}</p>
             <p className="text-sm text-muted-foreground tabular-nums">{maskPhone(phone)}</p>
           </div>
-          <Button
-            variant="outline"
-            className="h-11"
-            onClick={() => {
-              api.logout('VISITOR')
-              onLogout()
-              toast('Kamu sudah keluar.')
-            }}
-          >
-            <LogOut /> Keluar
-          </Button>
         </section>
 
-        <AppSetupCard />
-
         {!!waitlist.data?.length && (
-          <section aria-label="Daftar tunggu" className="space-y-2">
-            <h2 className="px-1 text-base font-bold">Daftar tunggu</h2>
-            <ul className="space-y-2">
+          <section aria-labelledby="wl-title">
+            <h2 id="wl-title" className="mb-2 px-1 text-sm font-bold text-muted-foreground">
+              Daftar tunggu
+            </h2>
+            <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
               {waitlist.data.map((w) => (
-                <li key={w.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
+                <li key={w.id} className="flex min-h-16 items-center gap-3 px-4 py-3">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold">{w.event.title}</span>
                     <span className="block truncate text-xs text-muted-foreground">
@@ -145,12 +132,14 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
           </section>
         )}
 
-        <section aria-label="Riwayat pesanan" className="space-y-2">
-          <h2 className="px-1 text-base font-bold">Pesanan</h2>
+        <section aria-labelledby="orders-title">
+          <h2 id="orders-title" className="mb-2 px-1 text-sm font-bold text-muted-foreground">
+            Pesanan
+          </h2>
           {orders.loading && !orders.data ? (
             <div className="space-y-2" aria-busy="true" aria-label="Memuat pesanan">
               {[0, 1, 2].map((i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+                <Skeleton key={i} className="h-16 w-full rounded-2xl" />
               ))}
             </div>
           ) : orders.error && !orders.data ? (
@@ -166,16 +155,14 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
               }
             />
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
               {list.map((d) => {
                 const seats = d.order.items.map((i) => i.seatLabel).filter((x): x is string => !!x)
                 return (
                   <li key={d.order.id}>
-                    <Link to={continuePath(d)} className="flex items-center gap-3 rounded-2xl border bg-card p-3 transition hover:border-foreground/25">
+                    <Link to={continuePath(d)} className="flex min-h-16 items-center gap-3 px-4 py-3 transition active:bg-muted">
                       <span className="min-w-0 flex-1">
-                        <span className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-bold">{d.event.title}</span>
-                        </span>
+                        <span className="block truncate text-sm font-bold">{d.event.title}</span>
                         <span className="block truncate text-xs text-muted-foreground">
                           {sessionWhen(d.session)} · {d.category.name} · {seats.length ? seatRangeLabel(seats) : `${d.order.qty} orang`}
                         </span>
@@ -184,7 +171,7 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
                           <span className="font-mono text-[0.7rem] text-muted-foreground">{d.order.code}</span>
                         </span>
                       </span>
-                      <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                      <ChevronRight className="size-5 shrink-0 text-muted-foreground/70" aria-hidden />
                     </Link>
                   </li>
                 )
@@ -192,6 +179,25 @@ function Profile({ name, phone, userId, onLogout }: { name: string; phone: strin
             </ul>
           )}
         </section>
+
+        <section aria-labelledby="app-title">
+          <h2 id="app-title" className="mb-2 px-1 text-sm font-bold text-muted-foreground">
+            Aplikasi
+          </h2>
+          <AppSetupCard />
+        </section>
+
+        <button
+          type="button"
+          className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border bg-card font-semibold text-destructive transition active:scale-[0.98] active:bg-muted"
+          onClick={() => {
+            api.logout('VISITOR')
+            onLogout()
+            toast('Kamu sudah keluar.')
+          }}
+        >
+          <LogOut className="size-5" aria-hidden /> Keluar dari akun
+        </button>
       </div>
     </div>
   )

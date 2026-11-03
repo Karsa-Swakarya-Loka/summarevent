@@ -15,6 +15,9 @@ void bootApi().finally(() => {
   requestAnimationFrame(() => endSplash())
 })
 
+// iOS Safari only shows :active press states once the page listens for touches
+document.addEventListener('touchstart', () => undefined, { passive: true })
+
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => undefined)

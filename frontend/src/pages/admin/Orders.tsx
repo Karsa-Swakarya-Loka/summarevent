@@ -397,7 +397,7 @@ function OrderDetailPanel({ row }: { row: OrderRow }) {
       </div>
 
       <Dialog open={askCancel} onOpenChange={(o) => busy !== 'cancel' && setAskCancel(o)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Batalkan {order.code}?</DialogTitle>
             <DialogDescription>

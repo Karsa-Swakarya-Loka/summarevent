@@ -421,6 +421,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
     subtitle: 'Malam akustik di bawah langit Courtyard',
     description: 'Dua jam musik akustik dari musisi Bandung. Semua kursi bernomor. Kategori Gold paling dekat panggung.',
     posterTheme: 'acoustic',
+    posterPalette: { bg: '#1c2f5e', accent: '#f9a61b' },
     venueId: 'v_sawarga',
     layoutId: l2.id,
     seatingMode: 'RESERVED',
@@ -513,7 +514,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   await o({ user: euis, session: s1, category: struk, seatLabels: ['E8', 'E9', 'E10', 'E11'], status: 'CONFIRMED', createdMinAgo: 20360, receipts: [{ tenantId: 't_batik', amount: 275_000 }, { tenantId: 't_rasa', amount: 98_000 }] })
   await o({ user: galih, session: s1, category: reg, seatLabels: ['G7', 'G8'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 17920 })
   await o({ user: lestari, session: s1, category: reg, seatLabels: ['H1', 'H2', 'H3', 'H4'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 13260 })
-  await o({ user: bayu, session: s1, category: reg, seatLabels: ['G10', 'G11', 'G12'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 10530 })
+  await o({ user: bayu, session: s1, category: reg, seatLabels: ['G10', 'G11', 'G12'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 9300 })
   await o({ user: intan, session: s1, category: reg, seatLabels: ['I5', 'I6'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 7400 })
   await o({ user: rudi, session: s1, category: fest, qty: 3, status: 'CONFIRMED', method: 'FREE', createdMinAgo: 5860 })
 

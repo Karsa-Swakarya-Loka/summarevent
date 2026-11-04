@@ -9,7 +9,9 @@ import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
 import { DEMO_PASSWORD } from '@/lib/demoAccounts'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
 import { parseReceiptText } from '@/domain/ocr'
-import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, passwordCheck, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
+import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, passwordCheck, posterInk, posterPaletteCheck, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
+import type { EventDraft } from '@/api/contract'
+import { posterColors } from '@/components/common/posterThemes'
 import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
 import { wibDate } from '@/lib/format'
 
@@ -474,5 +476,48 @@ describe('panitia and petugas sign-in (email + kata sandi)', () => {
     await expect(api.resetPassword(token, 'sandi-baru-utara')).rejects.toMatchObject({ code: 'RESET_EXPIRED' })
     await expect(api.login('pintu.utara@summarevent.test', DEMO_PASSWORD, 'STAFF')).rejects.toMatchObject({ code: 'BAD_LOGIN' })
     expect((await api.login('pintu.utara@summarevent.test', 'sandi-baru-utara', 'STAFF')).id).toBe('u_staff_utara')
+
+describe('poster colours (AD-01)', () => {
+  beforeEach(freshDb)
+
+  it('tidies two hex colours and refuses anything else', () => {
+    expect(posterPaletteCheck({ bg: ' #1C2F5E ', accent: '#F9A61B' })).toEqual({ ok: true, palette: { bg: '#1c2f5e', accent: '#f9a61b' } })
+    expect(posterPaletteCheck({ bg: 'navy', accent: '#f9a61b' }).ok).toBe(false)
+    expect(posterPaletteCheck({ bg: '#fff', accent: '#f9a61b' }).ok).toBe(false)
+    expect(posterPaletteCheck({ bg: '#006426', accent: '#006426' }).ok).toBe(false)
+    expect(posterPaletteCheck(null).ok).toBe(false)
+  })
+
+  it('writes in white on a dark poster and in ink on a light one', () => {
+    expect(posterInk('#006426')).toBe('#ffffff')
+    expect(posterInk('#1c2f5e')).toBe('#ffffff')
+    expect(posterInk('#f26f22')).toBe('#231f20')
+    expect(posterInk('#fbf3e4')).toBe('#231f20')
+    expect(posterColors('stage').fg).toBe('#ffffff')
+    expect(posterColors('stage', { bg: '#fbf3e4', accent: '#006426' })).toMatchObject({ bg: '#fbf3e4', accent: '#006426', fg: '#231f20', label: 'Pertunjukan' })
+  })
+
+  it('keeps the palette on a new event, hands it back to the wizard, and refuses a broken one', async () => {
+    setSessionUserId('ADMIN', 'u_admin')
+    const now = new Date()
+    const draft: EventDraft = {
+      title: 'Uji Warna',
+      description: 'Event untuk menguji warna poster.',
+      posterTheme: 'expo',
+      posterPalette: { bg: '#1C2F5E', accent: '#f9a61b' },
+      venueId: 'v_ciunik',
+      seatingMode: 'GENERAL',
+      rules: { maxSeatsPerOrder: 4, paymentHoldMin: 10, receiptHoldMin: 30, checkinOpenMin: 60, checkinCloseMin: 0, transferable: true, reentryAllowed: false },
+      categories: [{ name: 'Umum', color: '#2d4c8f', accessMethod: 'FREE', price: 0, quota: 20, saleStart: now.toISOString(), saleCloseMinBeforeSession: 0 }],
+      sessions: [{ startAt: new Date(now.getTime() + 86_400_000).toISOString(), endAt: new Date(now.getTime() + 90_000_000).toISOString() }],
+    }
+    const ev = await api.admin.createEvent(draft)
+    expect(ev.posterPalette).toEqual({ bg: '#1c2f5e', accent: '#f9a61b' })
+    expect((await api.admin.getEventDraft(ev.id)).draft.posterPalette).toEqual({ bg: '#1c2f5e', accent: '#f9a61b' })
+    const plain = await api.admin.updateEvent(ev.id, { ...draft, posterPalette: null })
+    expect(plain.posterPalette).toBeUndefined()
+    await expect(api.admin.createEvent({ ...draft, posterPalette: { bg: 'biru', accent: '#f9a61b' } })).rejects.toMatchObject({ code: 'INVALID', details: { field: 'posterPalette' } })
+    const seeded = (await api.admin.listEvents()).find((e) => e.event.id === 'evt_akustik')
+    expect(seeded?.event.posterPalette).toEqual({ bg: '#1c2f5e', accent: '#f9a61b' })
   })
 })

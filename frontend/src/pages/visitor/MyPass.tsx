@@ -10,6 +10,7 @@ import { api } from '@/api'
 import type { OrderDetail, PassItem } from '@/api/contract'
 import { Countdown, EmptyState, SundaText } from '@/components/common/bits'
 import { Illustration } from '@/components/common/Illustration'
+import { Poster } from '@/components/common/Poster'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError, TabHeader } from '@/components/visitor/Common'
@@ -198,8 +199,11 @@ function MiniTicket({ item, now }: { item: PassItem; now: Date }) {
         to={`/app/pass/${ticket.id}`}
         className={cn('ticket-mini relative flex min-h-32 overflow-hidden rounded-[1.1rem] text-[#ededed] transition active:scale-[0.98]', active ? 'talon-card' : 'bg-[#4a4746]')}
       >
+        <span className={cn('absolute inset-x-0 top-0 h-6 overflow-hidden', !active && 'opacity-50 saturate-0')} aria-hidden>
+          <Poster theme={event.posterTheme} palette={event.posterPalette} title={event.title} bare className="absolute inset-0" />
+        </span>
         <i className="talon-grain" aria-hidden />
-        <span className="relative flex min-w-0 flex-1 flex-col justify-between gap-2.5 py-3.5 pr-3 pl-4">
+        <span className="relative flex min-w-0 flex-1 flex-col justify-between gap-2.5 pt-9 pr-3 pb-3.5 pl-4">
           <span className="talon-label truncate">
             {category.name} · {day} · {fmtTime(session.startAt)}
           </span>
@@ -209,7 +213,7 @@ function MiniTicket({ item, now }: { item: PassItem; now: Date }) {
             {note}
           </span>
         </span>
-        <span className="relative flex w-[5.5rem] shrink-0 flex-col items-center justify-center border-l-2 border-dashed border-white/20">
+        <span className="relative mt-6 flex w-[5.5rem] shrink-0 flex-col items-center justify-center border-l-2 border-dashed border-white/20">
           <span className="talon-label">{ticket.seatLabel ? 'Kursi' : 'Untuk'}</span>
           <span className="font-poster text-[2.2rem] leading-none">{ticket.seatLabel ?? '1'}</span>
         </span>

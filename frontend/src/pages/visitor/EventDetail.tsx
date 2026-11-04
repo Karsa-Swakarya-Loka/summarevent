@@ -98,7 +98,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
       </div>
 
       <div ref={hero} className="relative">
-        <Poster theme={event.posterTheme} title={event.title} bare className="h-64" />
+        <Poster theme={event.posterTheme} palette={event.posterPalette} title={event.title} bare className="h-64" />
         <div className="absolute inset-0 bg-linear-to-b from-black/25 via-transparent to-transparent" aria-hidden />
       </div>
 

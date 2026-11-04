@@ -1,9 +1,10 @@
-import { Armchair, Users } from 'lucide-react'
+import { AlertCircle, Armchair, Check, Pipette, Users } from 'lucide-react'
 import { Field, SectionCard } from '@/components/admin/AdminUi'
 import { Poster } from '@/components/common/Poster'
+import { POSTER_SWATCHES, POSTER_THEMES } from '@/components/common/posterThemes'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { PosterTheme, SeatingMode, Venue } from '@/domain/types'
+import type { PosterPalette, PosterTheme, SeatingMode, Venue } from '@/domain/types'
 import { cn } from '@/lib/utils'
 import { ChoiceCards, NumberInput, TextInput, ToggleRow } from './inputs'
 import type { StepProps } from './model'
@@ -26,6 +27,7 @@ export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps 
         quota: mode === 'GENERAL' && !Number.isFinite(c.quota) ? 50 : c.quota,
       })),
     }))
+  const setPalette = (p: PosterPalette) => update((f) => ({ ...f, posterPalette: p }))
   const rules = form.rules
   const setRule = <K extends keyof typeof rules>(k: K, v: (typeof rules)[K]) => update((f) => ({ ...f, rules: { ...f.rules, [k]: v } }))
 
@@ -67,7 +69,7 @@ export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps 
         </div>
       </SectionCard>
 
-      <SectionCard title="Tema poster" description="Poster dibuat otomatis dari judul. Tidak perlu unggah gambar.">
+      <SectionCard title="Tema poster" description="Poster dibuat otomatis dari judul: pilih gayanya, lalu warnanya kalau mau. Tiket pengunjung memakai tema yang sama.">
         <div role="radiogroup" aria-label="Tema poster" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {THEMES.map((t) => {
             const active = form.posterTheme === t.id
@@ -79,9 +81,9 @@ export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps 
                 aria-checked={active}
                 aria-label={`Tema ${t.name}`}
                 onClick={() => update((f) => ({ ...f, posterTheme: t.id }))}
-                className={cn('overflow-hidden rounded-xl text-left ring-1 ring-border transition focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none', active ? 'ring-3 ring-brand' : 'hover:ring-foreground/30')}
+                className={cn('overflow-hidden rounded-xl bg-card text-left shadow-[0_1px_2px_rgb(35_31_32/0.05)] transition focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none', active ? 'ring-3 ring-brand' : 'hover:ring-2 hover:ring-foreground/20')}
               >
-                <Poster theme={t.id} title={form.title.trim() || 'Judul event'} compact className="aspect-[5/3] w-full" />
+                <Poster theme={t.id} palette={form.posterPalette} title={form.title.trim() || 'Judul event'} compact className="aspect-[5/3] w-full" />
                 <span className={cn('flex items-center justify-between px-3 py-2 text-sm font-semibold', active && 'bg-brand-soft text-brand')}>
                   {t.name}
                   {active && <span className="text-xs">Dipilih</span>}
@@ -89,6 +91,27 @@ export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps 
               </button>
             )
           })}
+        </div>
+        <div className="mt-4 rounded-xl bg-card p-3 shadow-[0_1px_2px_rgb(35_31_32/0.05)]">
+          <ToggleRow
+            id="poster-custom"
+            checked={!!form.posterPalette}
+            onChange={(on) => update((f) => ({ ...f, posterPalette: on ? { bg: POSTER_THEMES[f.posterTheme].bg, accent: POSTER_THEMES[f.posterTheme].accent } : null }))}
+            title="Warna sendiri"
+            description="Ganti warna dasar dan aksen tema. Warna teks menyesuaikan sendiri supaya tetap terbaca."
+          />
+          {form.posterPalette && (
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <ColorField id="poster-bg" label="Warna dasar" value={form.posterPalette.bg} onChange={(bg) => setPalette({ ...form.posterPalette!, bg })} />
+              <ColorField id="poster-accent" label="Warna aksen" value={form.posterPalette.accent} onChange={(accent) => setPalette({ ...form.posterPalette!, accent })} />
+              {err('posterPalette') && (
+                <p id="poster-palette-error" role="alert" className="flex items-start gap-1 text-xs font-medium text-status-invalid sm:col-span-2">
+                  <AlertCircle className="mt-px size-3.5 shrink-0" aria-hidden />
+                  {err('posterPalette')}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </SectionCard>
 
@@ -126,6 +149,46 @@ export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps 
           <ToggleRow id="rule-reentry" checked={rules.reentryAllowed} onChange={(v) => setRule('reentryAllowed', v)} title="Boleh keluar-masuk" description="QR bisa dipindai ulang di sesi yang sama." />
         </div>
       </SectionCard>
+    </div>
+  )
+}
+
+/** One poster colour: the brand's swatches as radios, and a colour picker for any other. */
+function ColorField({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (hex: string) => void }) {
+  const custom = !POSTER_SWATCHES.some((s) => s.hex === value)
+  return (
+    <div>
+      <p className="flex items-center justify-between text-sm font-semibold" id={`${id}-label`}>
+        {label}
+        <span className="font-mono text-xs font-normal text-muted-foreground uppercase">{value}</span>
+      </p>
+      <div role="radiogroup" aria-labelledby={`${id}-label`} className="mt-2 flex flex-wrap gap-2">
+        {POSTER_SWATCHES.map((s) => {
+          const active = s.hex === value
+          return (
+            <button
+              key={s.hex}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={s.name}
+              title={s.name}
+              onClick={() => onChange(s.hex)}
+              className={cn('grid size-10 place-items-center rounded-full ring-1 ring-foreground/15 transition pointer-coarse:size-11 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none', active ? 'ring-3 ring-brand ring-offset-2 ring-offset-card' : 'hover:scale-105')}
+              style={{ background: s.hex }}
+            >
+              {active && <Check className="size-4" style={{ color: ['#231f20', '#1c2f5e', '#006426', '#8b2c6a', '#0e7c7b'].includes(s.hex) ? '#fff' : '#231f20' }} aria-hidden />}
+            </button>
+          )
+        })}
+        <label
+          className={cn('relative grid size-10 cursor-pointer place-items-center rounded-full ring-1 ring-foreground/15 transition pointer-coarse:size-11 focus-within:ring-3 focus-within:ring-ring/50', custom && 'ring-3 ring-brand ring-offset-2 ring-offset-card')}
+          style={{ background: custom ? value : 'conic-gradient(#f26f22, #fedc01, #12a150, #0e7c7b, #2d4c8f, #8b2c6a, #f26f22)' }}
+        >
+          <Pipette className="size-4 drop-shadow-[0_1px_1px_rgb(0_0_0/0.5)]" style={{ color: '#fff' }} aria-hidden />
+          <input type="color" value={value} onChange={(e) => onChange(e.target.value.toLowerCase())} aria-label={`Warna lain untuk ${label.toLowerCase()}`} className="absolute inset-0 size-full cursor-pointer opacity-0" />
+        </label>
+      </div>
     </div>
   )
 }

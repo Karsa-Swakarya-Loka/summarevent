@@ -105,6 +105,19 @@ export function createHttpApi(baseUrl: string): Api {
       store(TOKEN_KEY(role), null)
       store(USER_KEY(role), null)
     },
+    async login(email, password, role) {
+      const r = await req<{ user: User; token: string }>('POST', '/auth/login', { email, password, role })
+      store(TOKEN_KEY(role), r.token)
+      store(USER_KEY(role), JSON.stringify(r.user))
+      return r.user
+    },
+    forgotPassword: (email) => req('POST', '/auth/password/forgot', { email }),
+    async resetPassword(token, password) {
+      const r = await req<{ user: User; token: string }>('POST', '/auth/password/reset', { token, password })
+      store(TOKEN_KEY(r.user.role), r.token)
+      store(USER_KEY(r.user.role), JSON.stringify(r.user))
+      return r.user
+    },
 
     listEvents: () => req('GET', '/events'),
     getEvent: (slug) => req('GET', `/events/${encodeURIComponent(slug)}`),

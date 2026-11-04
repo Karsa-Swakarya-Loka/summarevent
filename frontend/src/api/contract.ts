@@ -336,7 +336,8 @@ export interface AdminApi {
   /** GET /admin/staff – petugas accounts with their scan activity (AD-13) */
   listStaff(): Promise<StaffAccount[]>
   /** POST /admin/staff { name, phone } */
-  createStaff(input: { name: string; phone: string }): Promise<User>
+  /** POST /admin/staff – the email is where the invitation to set a password goes (and the petugas' login) */
+  createStaff(input: { name: string; phone: string; email: string }): Promise<User>
   /** PATCH /admin/staff/:id { active } */
   setStaffActive(userId: string, active: boolean): Promise<User>
 }
@@ -374,9 +375,15 @@ export interface Api {
   requestOtp(phone: string): Promise<{ simulatedCode: string; expiresAt: string }>
   verifyOtp(phone: string, code: string, name?: string): Promise<{ user: User; isNew: boolean }>
   currentUser(role: Role): User | null
-  /** Demo login for admin/staff from the role picker (optionally as a specific staff account). */
+  /** Demo login for admin/staff from the demo menu (optionally as a specific staff account). */
   demoLogin(role: Role, userId?: string): Promise<User>
   logout(role: Role): void
+  /** POST /auth/login – panitia and petugas with email + password. Wrong pair → BAD_LOGIN, inactive → FORBIDDEN, too many tries → RATE_LIMIT. */
+  login(email: string, password: string, role: 'ADMIN' | 'STAFF'): Promise<User>
+  /** POST /auth/password/forgot – always ok. A known email gets a one-time reset link (30 min); the demo shows the link on screen. */
+  forgotPassword(email: string): Promise<{ ok: true; simulatedLink?: string }>
+  /** POST /auth/password/reset – sets the password and signs in. Token used or stale → RESET_EXPIRED. */
+  resetPassword(token: string, password: string): Promise<User>
 
   /* Public – GET /events, /events/:slug */
   listEvents(): Promise<EventSummary[]>

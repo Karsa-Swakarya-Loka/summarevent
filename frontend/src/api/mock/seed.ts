@@ -6,7 +6,7 @@
 import { dummyReceiptSvg, randomReceiptNo } from '@/domain/dummyReceipt'
 import { makeQrToken, sha256Hex } from '@/domain/qr'
 import { buildSeats, randomCode, resolveSession, rowIndex, seatLabel, uid } from '@/domain/rules'
-import { DEMO_SIGN_IN } from '@/lib/demoAccounts'
+import { DEMO_PASSWORD, DEMO_SIGN_IN } from '@/lib/demoAccounts'
 import { wibDate, wibTime } from '@/lib/format'
 import type {
   AppNotification,
@@ -276,7 +276,7 @@ function note(db: Db, n: Omit<AppNotification, 'id'>) {
 
 export async function buildSeed(now: Date = new Date()): Promise<Db> {
   const db: Db = {
-    schema: 3,
+    schema: 4,
     version: 1,
     seededAt: now.toISOString(),
     users: [],
@@ -302,6 +302,8 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
     notifications: [],
     otps: [],
     waitlist: [],
+    passwords: [],
+    resetTokens: [],
   }
   const ctx: Ctx = { db, now }
   // the events went on sale a month ago, so the dashboard's daily charts have a month of orders to show
@@ -319,6 +321,9 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   person(DEMO_STAFF_ID, 'Petugas Desk Atrium (demo)', '081100000002', 'STAFF')
   person('u_staff_utara', 'Petugas Pintu Utara (demo)', '081100000003', 'STAFF')
   person('u_staff_cibadak', 'Petugas Atrium Cibadak (demo)', '081100000004', 'STAFF')
+  // panitia and petugas sign in with email + kata sandi; the demo password is kept as its hash, as a server would
+  const demoHash = await sha256Hex(`pw:${DEMO_PASSWORD}`)
+  for (const u of db.users) if (u.role !== 'VISITOR') db.passwords.push({ userId: u.id, hash: demoHash, fails: [] })
   const rina = person(PERSONA_ID, 'Rina Kartika', '081234567890')
   const [dodi, sari, asep, nia, yudi, euis, galih, lestari, bayu, intan, rudi] = [
     ['u_dodi', 'Dodi Pratama'],

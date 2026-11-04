@@ -35,8 +35,12 @@ import {
   checkinWindow,
   effectiveSeatStatus,
   isHoldActive,
+  LOGIN_FAIL_WINDOW_MIN,
+  LOGIN_MAX_FAILS,
+  passwordCheck,
   profileChanges,
   randomCode,
+  RESET_TOKEN_MIN,
   receiptChecksPass,
   resolveSession,
   rowIndex,
@@ -790,6 +794,64 @@ export function createMockApi(): Api {
 
     logout(role) {
       setSessionUserId(role, null)
+    },
+
+    async login(rawEmail, password, role) {
+      await ensureMockDb()
+      const email = rawEmail.trim().toLowerCase()
+      const hash = await sha256Hex(`pw:${password}`)
+      // a failed attempt has to be remembered, and a thrown error would roll the write back: the outcome is returned
+      // and thrown afterwards
+      const outcome = await write((db, now): { user: User } | { error: ApiError } => {
+        const u = db.users.find((x) => x.role === role && x.email === email)
+        const entry = u && db.passwords.find((p) => p.userId === u.id)
+        const window = now.getTime() - LOGIN_FAIL_WINDOW_MIN * 60_000
+        if (entry) entry.fails = entry.fails.filter((t) => new Date(t).getTime() > window)
+        if (entry && entry.fails.length >= LOGIN_MAX_FAILS) return { error: new ApiError('RATE_LIMIT', `Terlalu banyak percobaan. Coba lagi dalam ${LOGIN_FAIL_WINDOW_MIN} menit.`) }
+        // one message for a wrong email and a wrong password, so an address cannot be probed
+        if (!u || !entry || entry.hash !== hash) {
+          if (entry) entry.fails.push(now.toISOString())
+          return { error: new ApiError('BAD_LOGIN', 'Email atau kata sandi salah.') }
+        }
+        if (u.active === false) return { error: new ApiError('FORBIDDEN', 'Akun ini dinonaktifkan panitia.') }
+        entry.fails = []
+        return { user: u }
+      })
+      if ('error' in outcome) throw outcome.error
+      setSessionUserId(role, outcome.user.id)
+      return outcome.user
+    },
+
+    forgotPassword(rawEmail) {
+      const email = rawEmail.trim().toLowerCase()
+      return write((db, now) => {
+        const u = db.users.find((x) => x.role !== 'VISITOR' && x.email === email)
+        // an unknown email gets the same answer, so the form cannot tell which addresses exist
+        if (!u) return { ok: true as const }
+        db.resetTokens = db.resetTokens.filter((t) => t.userId !== u.id)
+        const token = uid('rst').slice(4) + uid('rst').slice(4)
+        db.resetTokens.push({ token, userId: u.id, expiresAt: new Date(now.getTime() + RESET_TOKEN_MIN * 60_000).toISOString() })
+        // the demo shows the link the email would carry
+        return { ok: true as const, simulatedLink: `${globalThis.location?.origin ?? ''}/reset?token=${token}` }
+      })
+    },
+
+    async resetPassword(token, password) {
+      const check = passwordCheck(password)
+      if (!check.ok) throw new ApiError('INVALID', check.reason, { field: 'password' })
+      const hash = await sha256Hex(`pw:${password}`)
+      const user = await write((db, now) => {
+        const t = db.resetTokens.find((x) => x.token === token)
+        if (!t || new Date(t.expiresAt).getTime() <= now.getTime()) throw new ApiError('RESET_EXPIRED', 'Link ini sudah tidak berlaku. Minta link baru dari halaman masuk.')
+        db.resetTokens = db.resetTokens.filter((x) => x.token !== token)
+        const u = must(getUser(db, t.userId), 'Pengguna')
+        const entry = db.passwords.find((p) => p.userId === u.id)
+        if (entry) Object.assign(entry, { hash, fails: [] })
+        else db.passwords.push({ userId: u.id, hash, fails: [] })
+        return u
+      })
+      setSessionUserId(user.role, user.id)
+      return user
     },
 
     /* ---------- public ---------- */
@@ -1603,11 +1665,16 @@ export function createMockApi(): Api {
         return write((db, now) => {
           const name = input.name.trim()
           const phone = normalizePhone(input.phone)
-          if (name.length < 3) throw new ApiError('INVALID', 'Tulis nama petugas, minimal 3 huruf.')
-          if (!isValidPhone(phone)) throw new ApiError('INVALID', 'Nomor HP belum benar. Contoh: 0812 3456 7890.')
-          if (db.users.some((u) => u.role === 'STAFF' && u.phone === phone)) throw new ApiError('DUPLICATE', 'Nomor HP ini sudah dipakai akun petugas lain.')
-          const user: User = { id: uid('stf'), role: 'STAFF', name, phone, email: null, createdAt: now.toISOString(), active: true }
+          const checked = profileChanges({ email: input.email })
+          if (name.length < 3) throw new ApiError('INVALID', 'Tulis nama petugas, minimal 3 huruf.', { field: 'name' })
+          if (!isValidPhone(phone)) throw new ApiError('INVALID', 'Nomor HP belum benar. Contoh: 0812 3456 7890.', { field: 'phone' })
+          if (!checked.ok || !checked.email) throw new ApiError('INVALID', 'Tulis email petugas, misalnya nama@contoh.id.', { field: 'email' })
+          if (db.users.some((u) => u.role === 'STAFF' && u.phone === phone)) throw new ApiError('DUPLICATE', 'Nomor HP ini sudah dipakai akun petugas lain.', { field: 'phone' })
+          if (db.users.some((u) => u.email === checked.email)) throw new ApiError('DUPLICATE', 'Email ini sudah dipakai akun lain.', { field: 'email' })
+          const user: User = { id: uid('stf'), role: 'STAFF', name, phone, email: checked.email, createdAt: now.toISOString(), active: true }
           db.users.push(user)
+          // the invitation: a reset link, valid a day, so the petugas sets their own password (a backend emails it)
+          db.resetTokens.push({ token: uid('rst').slice(4) + uid('rst').slice(4), userId: user.id, expiresAt: new Date(now.getTime() + 24 * 3600_000).toISOString() })
           return user
         })
       },

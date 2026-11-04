@@ -248,7 +248,8 @@ function FilterChip({ active, onClick, count, children }: { active: boolean; onC
   )
 }
 
-function OrderDetailPanel({ row }: { row: OrderRow }) {
+/** The order, its receipts and the panitia's actions, in the side panel. Shared with the dashboard's table. */
+export function OrderDetailPanel({ row }: { row: OrderRow }) {
   const { order, event, session, category, receipts } = row
   const [busy, setBusy] = useState<null | 'paid' | 'cancel'>(null)
   const [askCancel, setAskCancel] = useState(false)

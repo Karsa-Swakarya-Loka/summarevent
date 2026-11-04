@@ -29,6 +29,37 @@ await signIn(page, 'ADMIN', BASE)
 await page.goto(BASE + '/admin', { waitUntil: 'networkidle' })
 await page.waitForTimeout(1200)
 await shot('dashboard')
+// the dashboard: every card has numbers, the orders table filters and pages, ⌘K finds an order
+const dash = page.getByRole('heading', { name: /^Selamat datang/ })
+await dash.waitFor()
+for (const label of ['Sesi', 'Pendapatan per hari', 'Tiket terjual per hari', 'Kehadiran', 'Ringkasan angka', 'Pesanan terbaru']) {
+  if (!(await page.getByRole('region', { name: label }).count())) errors.push(`dashboard: kartu "${label}" tidak ada`)
+}
+const orders = page.getByRole('region', { name: 'Pesanan terbaru' })
+const before = await orders.getByText(/^\d+ pesanan/).innerText()
+await orders.getByRole('combobox', { name: 'Filter status' }).click()
+await page.getByRole('option', { name: 'Menunggu pembayaran' }).click()
+await page.waitForTimeout(300)
+const after = await orders.getByText(/^\d+ pesanan/).innerText()
+console.log('dashboard orders:', before, '→', after)
+if (before === after) errors.push('dashboard: filter status tidak mengubah daftar pesanan')
+if (!mobile && !(await orders.getByRole('button', { name: 'Tandai lunas' }).count())) errors.push('dashboard: pesanan menunggu pembayaran tidak menawarkan Tandai lunas')
+await orders.getByRole('combobox', { name: 'Filter status' }).click()
+await page.getByRole('option', { name: 'Semua status' }).click()
+await orders.getByRole('button', { name: 'Halaman berikutnya' }).click()
+await page.waitForTimeout(300)
+if (!(await orders.getByRole('button', { name: '2', exact: true }).getAttribute('aria-current'))) errors.push('dashboard: halaman 2 tidak aktif setelah Berikutnya')
+if (!mobile) {
+  await page.keyboard.press('Meta+k')
+  const palette = page.getByRole('dialog', { name: 'Cari cepat' })
+  await palette.waitFor()
+  await page.keyboard.type('Bayu')
+  await palette.getByRole('option', { name: /Bayu Saputra/ }).first().waitFor({ timeout: 5000 })
+  await page.keyboard.press('Enter')
+  await page.waitForURL(/\/admin\/orders\?event=.*q=SEV/)
+  console.log('dashboard: ⌘K opened an order on the orders page')
+  await page.goto(BASE + '/admin', { waitUntil: 'networkidle' })
+}
 
 // ---- receipts
 await page.goto(BASE + '/admin/receipts', { waitUntil: 'networkidle' })

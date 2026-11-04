@@ -7,7 +7,7 @@
 import { dummyReceiptSvg, randomReceiptNo } from './dummyReceipt'
 import { makeQrToken, sha256Hex } from '../lib/crypto'
 import { buildSeats, randomCode, resolveSession, rowIndex, seatLabel, uid } from './rules'
-import { DEMO_SIGN_IN } from './demoAccounts'
+import { DEMO_PASSWORD, DEMO_SIGN_IN } from './demoAccounts'
 import { wibDate, wibTime } from './format'
 import type {
   AppNotification,
@@ -277,7 +277,7 @@ function note(db: Db, n: Omit<AppNotification, 'id'>) {
 
 export async function buildSeed(now: Date = new Date()): Promise<Db> {
   const db: Db = {
-    schema: 3,
+    schema: 4,
     version: 1,
     seededAt: now.toISOString(),
     users: [],
@@ -303,6 +303,8 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
     notifications: [],
     otps: [],
     waitlist: [],
+    passwords: [],
+    resetTokens: [],
   }
   const ctx: Ctx = { db, now }
   // the events went on sale a month ago, so the dashboard's daily charts have a month of orders to show
@@ -320,6 +322,9 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   person(DEMO_STAFF_ID, 'Petugas Desk Atrium (demo)', '081100000002', 'STAFF')
   person('u_staff_utara', 'Petugas Pintu Utara (demo)', '081100000003', 'STAFF')
   person('u_staff_cibadak', 'Petugas Atrium Cibadak (demo)', '081100000004', 'STAFF')
+  // panitia and petugas sign in with email + kata sandi; the demo password is kept as its hash, as a server would
+  const demoHash = await sha256Hex(`pw:${DEMO_PASSWORD}`)
+  for (const u of db.users) if (u.role !== 'VISITOR') db.passwords.push({ userId: u.id, hash: demoHash, fails: [] })
   const rina = person(PERSONA_ID, 'Rina Kartika', '081234567890')
   const [dodi, sari, asep, nia, yudi, euis, galih, lestari, bayu, intan, rudi] = [
     ['u_dodi', 'Dodi Pratama'],
@@ -417,6 +422,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
     subtitle: 'Malam akustik di bawah langit Courtyard',
     description: 'Dua jam musik akustik dari musisi Bandung. Semua kursi bernomor. Kategori Gold paling dekat panggung.',
     posterTheme: 'acoustic',
+    posterPalette: { bg: '#1c2f5e', accent: '#f9a61b' },
     venueId: 'v_sawarga',
     layoutId: l2.id,
     seatingMode: 'RESERVED',
@@ -509,7 +515,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   await o({ user: euis, session: s1, category: struk, seatLabels: ['E8', 'E9', 'E10', 'E11'], status: 'CONFIRMED', createdMinAgo: 20360, receipts: [{ tenantId: 't_batik', amount: 275_000 }, { tenantId: 't_rasa', amount: 98_000 }] })
   await o({ user: galih, session: s1, category: reg, seatLabels: ['G7', 'G8'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 17920 })
   await o({ user: lestari, session: s1, category: reg, seatLabels: ['H1', 'H2', 'H3', 'H4'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 13260 })
-  await o({ user: bayu, session: s1, category: reg, seatLabels: ['G10', 'G11', 'G12'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 10530 })
+  await o({ user: bayu, session: s1, category: reg, seatLabels: ['G10', 'G11', 'G12'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 9300 })
   await o({ user: intan, session: s1, category: reg, seatLabels: ['I5', 'I6'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 7400 })
   await o({ user: rudi, session: s1, category: fest, qty: 3, status: 'CONFIRMED', method: 'FREE', createdMinAgo: 5860 })
 

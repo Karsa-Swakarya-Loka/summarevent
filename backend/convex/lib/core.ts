@@ -4,7 +4,7 @@
  */
 import type { CategoryAvailability, CheckinResponse, EventDraft, EventSummary, HoldRequest, HoldResult, OrderDetail, SessionSummary, WaitlistItem } from '../shared/contract'
 import { fmtRange, fmtShortDate, fmtTime } from '../shared/format'
-import { buildSeats, effectiveSeatStatus, isHoldActive, randomCode, resolveSession, rowIndex, rowLetter, saleState, seatLabel, suggestSeats, uid } from '../shared/rules'
+import { buildSeats, effectiveSeatStatus, isHoldActive, posterPaletteCheck, randomCode, resolveSession, rowIndex, rowLetter, saleState, seatLabel, suggestSeats, uid } from '../shared/rules'
 import type {
   AppNotification,
   Checkin,
@@ -13,6 +13,7 @@ import type {
   OrderStatus,
   Payment,
   PaymentMethod,
+  PosterPalette,
   Receipt,
   Seat,
   SeatLayout,
@@ -486,6 +487,11 @@ export function slugify(s: string): string {
     .slice(0, 60)
 }
 
+/** JSON with object keys sorted, for comparing values whatever order their keys arrived in. */
+export function stableJson(value: unknown): string {
+  return JSON.stringify(value, (_k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : v))
+}
+
 /** Derive the admin wizard draft from a stored event. */
 export async function draftOf(tx: Tx, event: EventItem): Promise<EventDraft> {
   const categories = await categoriesOf(tx, event.id)
@@ -522,6 +528,7 @@ export async function draftOf(tx: Tx, event: EventItem): Promise<EventDraft> {
     subtitle: event.subtitle,
     description: event.description,
     posterTheme: event.posterTheme,
+    posterPalette: event.posterPalette ?? null,
     venueId: event.venueId,
     seatingMode: event.seatingMode,
     rules: { ...event.rules },
@@ -590,9 +597,18 @@ export function eventDates(draft: EventDraft, now: Date): { startAt: string; end
   return { startAt: list.map((s) => s.startAt).sort()[0], endAt: list.map((s) => s.endAt).sort().slice(-1)[0] }
 }
 
+/** The draft's own poster colours, tidied; undefined when the theme's colours apply (same as the mock). */
+export function posterPaletteOf(d: EventDraft): PosterPalette | undefined {
+  if (!d.posterPalette) return undefined
+  const c = posterPaletteCheck(d.posterPalette)
+  if (!c.ok) fail('INVALID', c.reason, { field: 'posterPalette' })
+  return c.palette
+}
+
 export function validateDraft(d: EventDraft) {
   if (!d || typeof d.title !== 'string' || !Array.isArray(d.categories) || !Array.isArray(d.sessions) || !d.rules) fail('BAD_REQUEST', 'Data event tidak lengkap.')
   if (!d.title.trim()) fail('INVALID', 'Judul event wajib diisi.')
+  posterPaletteOf(d)
   if (!d.venueId) fail('INVALID', 'Pilih venue.')
   if (!d.categories.length) fail('INVALID', 'Tambahkan minimal 1 kategori tiket.')
   for (const c of d.categories) {

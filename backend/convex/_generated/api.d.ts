@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as api_account from "../api/account.js";
 import type * as api_admin from "../api/admin.js";
 import type * as api_staff from "../api/staff.js";
 import type * as api_visitor from "../api/visitor.js";
@@ -18,7 +19,9 @@ import type * as lib_core from "../lib/core.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_links from "../lib/links.js";
+import type * as lib_password from "../lib/password.js";
 import type * as lib_tx from "../lib/tx.js";
+import type * as mail from "../mail.js";
 import type * as rpc from "../rpc.js";
 import type * as shared_contract from "../shared/contract.js";
 import type * as shared_db from "../shared/db.js";
@@ -37,6 +40,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "api/account": typeof api_account;
   "api/admin": typeof api_admin;
   "api/staff": typeof api_staff;
   "api/visitor": typeof api_visitor;
@@ -47,7 +51,9 @@ declare const fullApi: ApiFromModules<{
   "lib/crypto": typeof lib_crypto;
   "lib/errors": typeof lib_errors;
   "lib/links": typeof lib_links;
+  "lib/password": typeof lib_password;
   "lib/tx": typeof lib_tx;
+  mail: typeof mail;
   rpc: typeof rpc;
   "shared/contract": typeof shared_contract;
   "shared/db": typeof shared_db;

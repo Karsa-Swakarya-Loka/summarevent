@@ -61,9 +61,29 @@ export default defineSchema({
     .index('by_email', ['email']),
 
   /** Bearer tokens (only their SHA-256 is stored). */
-  authTokens: defineTable({ tokenHash: str, userId: str, role, createdAt: str }).index('by_token', ['tokenHash']),
+  authTokens: defineTable({ tokenHash: str, userId: str, role, createdAt: str }).index('by_token', ['tokenHash']).index('by_user', ['userId']),
 
   otps: defineTable({ phone: str, code: str, expiresAt: str, requests: v.array(str) }).index('by_phone', ['phone']),
+
+  /** Panitia and petugas passwords (PBKDF2, lib/password.ts) and their recent failed sign-ins (rate limit). */
+  passwords: defineTable({ userId: str, hash: str, fails: v.array(str) }).index('by_user', ['userId']),
+
+  /** One-time links to set a password: forgot-password (30 min) and a new petugas' invitation (24 h). Only the hash is kept. */
+  resetTokens: defineTable({ tokenHash: str, userId: str, purpose: v.union(v.literal('RESET'), v.literal('INVITE')), expiresAt: str, createdAt: str })
+    .index('by_token', ['tokenHash'])
+    .index('by_user', ['userId']),
+
+  /** Outgoing email (Resend). Queued inside the request's transaction, sent by mail.send once that commits. */
+  emails: defineTable({
+    to: str,
+    subject: str,
+    text: str,
+    html: str,
+    status: v.union(v.literal('QUEUED'), v.literal('SENT'), v.literal('FAILED'), v.literal('SKIPPED')),
+    error: opt(str),
+    providerId: opt(str),
+    createdAt: str,
+  }),
 
   venues: defineTable({ id: str, name: str, capacity: num }).index('by_key', ['id']),
   tenants: defineTable({ id: str, name: str, category: str }).index('by_key', ['id']),
@@ -80,6 +100,7 @@ export default defineSchema({
     subtitle: opt(str),
     description: str,
     posterTheme: v.union(v.literal('stage'), v.literal('acoustic'), v.literal('craft'), v.literal('expo')),
+    posterPalette: opt(v.object({ bg: str, accent: str })),
     venueId: str,
     layoutId: nul(str),
     seatingMode: v.union(v.literal('RESERVED'), v.literal('GENERAL')),

@@ -11,6 +11,7 @@ import type {
   Order,
   OrderStatus,
   PaymentMethod,
+  PosterPalette,
   PosterTheme,
   Receipt,
   ReceiptStatus,
@@ -180,6 +181,8 @@ export interface EventDraft {
   subtitle?: string
   description: string
   posterTheme: PosterTheme
+  /** The panitia's own colours; null or absent keeps the theme's. */
+  posterPalette?: PosterPalette | null
   venueId: string
   seatingMode: SeatingMode
   rules: EventRules

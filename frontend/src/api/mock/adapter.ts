@@ -41,6 +41,7 @@ import {
   profileChanges,
   randomCode,
   RESET_TOKEN_MIN,
+  posterPaletteCheck,
   receiptChecksPass,
   resolveSession,
   rowIndex,
@@ -622,6 +623,7 @@ function draftOf(db: Db, event: EventItem): EventDraft {
     subtitle: event.subtitle,
     description: event.description,
     posterTheme: event.posterTheme,
+    posterPalette: event.posterPalette ?? null,
     venueId: event.venueId,
     seatingMode: event.seatingMode,
     rules: { ...event.rules },
@@ -1225,6 +1227,7 @@ export function createMockApi(): Api {
             subtitle: draft.subtitle?.trim(),
             description: draft.description.trim(),
             posterTheme: draft.posterTheme,
+            posterPalette: posterPaletteOf(draft),
             venueId: draft.venueId,
             layoutId: null,
             seatingMode: draft.seatingMode,
@@ -1267,6 +1270,7 @@ export function createMockApi(): Api {
             subtitle: draft.subtitle?.trim(),
             description: draft.description.trim(),
             posterTheme: draft.posterTheme,
+            posterPalette: posterPaletteOf(draft),
             venueId: draft.venueId,
             seatingMode: draft.seatingMode,
             rules: { ...draft.rules },
@@ -1916,8 +1920,17 @@ function claimGuest(db: Db, guest: string, user: User) {
   for (const n of db.notifications) if (n.userId === guest) n.userId = user.id
 }
 
+/** The draft's own poster colours, tidied; none when the theme's colours apply. */
+function posterPaletteOf(d: EventDraft) {
+  if (!d.posterPalette) return undefined
+  const c = posterPaletteCheck(d.posterPalette)
+  if (!c.ok) throw new ApiError('INVALID', c.reason, { field: 'posterPalette' })
+  return c.palette
+}
+
 function validateDraft(d: EventDraft) {
   if (!d.title.trim()) throw new ApiError('INVALID', 'Judul event wajib diisi.')
+  posterPaletteOf(d)
   if (!d.venueId) throw new ApiError('INVALID', 'Pilih venue.')
   if (!d.categories.length) throw new ApiError('INVALID', 'Tambahkan minimal 1 kategori tiket.')
   for (const c of d.categories) {

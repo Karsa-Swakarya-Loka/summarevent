@@ -16,6 +16,8 @@ import { Check } from 'lucide-react'
 import { encode, QrCodeDataType } from 'uqr'
 import '@fontsource/libre-barcode-128-text/latin-400.css'
 import type { PassItem } from '@/api/contract'
+import { Poster } from '@/components/common/Poster'
+import { posterColors } from '@/components/common/posterThemes'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
@@ -563,6 +565,7 @@ export function TalonTicket({
   }, [stubGone, tear, used]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const valid = stage === 'valid'
+  const colors = posterColors(event.posterTheme, event.posterPalette)
   const day = session.demoLive ? 'Hari ini' : fmtDate(session.startAt, { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '')
   return (
     <article
@@ -570,6 +573,13 @@ export function TalonTicket({
       aria-label={`E-ticket ${ticket.seatLabel ? `kursi ${ticket.seatLabel}` : category.name}${used ? ', sudah dipakai' : ''}`}
     >
       <section ref={body} className="talon-card relative overflow-hidden rounded-t-[1.1rem] px-6 pt-6 pb-8">
+        {/* the event's poster printed along the top, in the panitia's colours */}
+        <div className={cn('relative -mx-6 -mt-6 mb-5 h-12 overflow-hidden', used && 'opacity-50 saturate-0')} aria-hidden>
+          <Poster theme={event.posterTheme} palette={event.posterPalette} title={event.title} bare className="absolute inset-0" />
+          <span className="absolute bottom-2.5 left-6 rounded-full px-2 py-0.5 text-[0.6rem] font-bold tracking-[0.16em] uppercase" style={{ background: colors.accent, color: '#231f20' }}>
+            {colors.label}
+          </span>
+        </div>
         <i className="talon-grain" aria-hidden />
         <div className="relative flex items-center justify-between gap-3">
           <p className="talon-label truncate">E-ticket · {category.name}</p>

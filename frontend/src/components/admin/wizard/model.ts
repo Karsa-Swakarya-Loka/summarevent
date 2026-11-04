@@ -4,8 +4,8 @@
  */
 import type { EventDraft } from '@/api/contract'
 import { CATEGORY_COLORS } from '@/domain/labels'
-import { buildSeats, rowIndex, rowLetter, seatLabel } from '@/domain/rules'
-import type { AccessMethod, EventRules, PosterTheme, ReceiptRules, Seat, SeatingMode, Tenant, Venue } from '@/domain/types'
+import { buildSeats, posterPaletteCheck, rowIndex, rowLetter, seatLabel } from '@/domain/rules'
+import type { AccessMethod, EventRules, PosterPalette, PosterTheme, ReceiptRules, Seat, SeatingMode, Tenant, Venue } from '@/domain/types'
 import { rupiahPlain, wibDate } from '@/lib/format'
 import { addDaysYmd, isoToLocalInput, localInputToIso, wibIso } from '../lib'
 
@@ -69,6 +69,8 @@ export interface WizardForm {
   subtitle: string
   description: string
   posterTheme: PosterTheme
+  /** The panitia's own colours, or null for the theme's. */
+  posterPalette: PosterPalette | null
   venueId: string
   seatingMode: SeatingMode
   rules: EventRules
@@ -159,6 +161,7 @@ export function emptyForm(venues: Venue[]): WizardForm {
     subtitle: '',
     description: '',
     posterTheme: 'stage',
+    posterPalette: null,
     venueId: venues[0]?.id ?? '',
     seatingMode: 'RESERVED',
     rules: { ...DEFAULT_RULES },
@@ -245,6 +248,10 @@ export function validate(form: WizardForm, venues: Venue[]): Issue[] {
   if (form.title.trim().length < 3) add('info', 'title', 'Isi judul event (minimal 3 huruf), misalnya "Pentas Musikal Keluarga".')
   if (!form.description.trim()) add('info', 'description', 'Tulis deskripsi singkat: isi acara, durasi, dan untuk siapa.')
   if (!form.venueId) add('info', 'venueId', 'Pilih venue tempat acara.')
+  if (form.posterPalette) {
+    const c = posterPaletteCheck(form.posterPalette)
+    if (!c.ok) add('info', 'posterPalette', c.reason)
+  }
   const r = form.rules
   if (!intIn(r.maxSeatsPerOrder, 1, 10)) add('info', 'rules.maxSeatsPerOrder', 'Isi angka 1–10 kursi per pesanan.')
   if (!intIn(r.paymentHoldMin, 3, 60)) add('info', 'rules.paymentHoldMin', 'Isi 3–60 menit. Disarankan 10 menit.')
@@ -393,6 +400,7 @@ export function toDraft(form: WizardForm): EventDraft {
     subtitle: form.subtitle.trim() || undefined,
     description: form.description.trim(),
     posterTheme: form.posterTheme,
+    posterPalette: form.posterPalette,
     venueId: form.venueId,
     seatingMode: form.seatingMode,
     rules: { ...form.rules },
@@ -451,6 +459,7 @@ export function fromDraft(draft: EventDraft): { form: WizardForm; categoryKeys: 
       subtitle: draft.subtitle ?? '',
       description: draft.description,
       posterTheme: draft.posterTheme,
+      posterPalette: draft.posterPalette ?? null,
       venueId: draft.venueId,
       seatingMode: draft.seatingMode,
       rules: { ...DEFAULT_RULES, ...draft.rules },

@@ -74,7 +74,7 @@ login, bukan error), lalu klien mengirim ulang dengan `name`.
 | --- | --- | --- |
 | GET | `/admin/events` | Semua event (draft juga) |
 | GET | `/admin/events/:id` | `{ draft: EventDraft, event }` untuk wizard edit |
-| POST | `/admin/events` | Body `EventDraft` → buat event + kategori + denah (template) + sesi + inventori kursi per sesi |
+| POST | `/admin/events` | Body `EventDraft` (termasuk `posterPalette` opsional, lihat Aturan) → buat event + kategori + denah (template) + sesi + inventori kursi per sesi |
 | PATCH | `/admin/events/:id` | Body `EventDraft` (atau `{ status: 'PUBLISHED' }`). Denah tidak boleh berubah kalau sudah ada pesanan → `409 LOCKED_LAYOUT` |
 | GET | `/admin/orders?eventId=&status=&q=` | `OrderRow[]` (q: kode, nama, HP, label kursi) |
 | PATCH | `/admin/orders/:id` | `{ action: 'MARK_PAID' \| 'CANCEL' }`. CANCEL pada pesanan lunas mencatat `refundAmount` (simulasi) dan `cancelledBy: 'ADMIN'` (AD-10). |
@@ -132,6 +132,7 @@ kode yang memanggilnya:
 - **Daftar tunggu (PV-14)**: entri `{ id, userId, sessionId, categoryId, qty, status: WAITING|NOTIFIED|LEFT, createdAt, notifiedAt }`. Setiap kali tempat lepas (hold kedaluwarsa, pesanan batal, struk ditolak), kabari orang terdepan yang jumlahnya muat lewat WA (simulasi), tanpa menahan tempat.
 - **Akun petugas (AD-13)**: user punya `active` (default true); check-in dari akun nonaktif ditolak.
 - **OCR struk (PV-16)** berjalan di browser (tesseract.js); backend tidak perlu endpoint khusus.
+- **Warna poster (AD-01)**: `event.posterPalette?: { bg, accent }` (dua warna hex 6 digit huruf kecil, harus berbeda) menimpa warna tema `posterTheme`; warna teks dihitung dari `bg` (`posterInk` di `domain/rules.ts`, dipakai poster dan e-ticket pengunjung). `EventDraft.posterPalette: null` atau tidak dikirim berarti memakai warna tema. Salah → `400 INVALID` dengan `details.field: 'posterPalette'` (validasinya `posterPaletteCheck` di `domain/rules.ts`). Seed: event `evt_akustik` memakai `{ bg: '#1c2f5e', accent: '#f9a61b' }`.
 
 ## Kode error
 

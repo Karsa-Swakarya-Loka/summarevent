@@ -245,6 +245,12 @@ for (const [device, path, prep] of screens) {
   await page.goto(BASE + path, { waitUntil: 'networkidle' })
   if (prep) await prep(page)
   await page.waitForTimeout(600)
+  // entrance animations fade text in; measure contrast once they have finished (a live backend answers later than
+  // the mock). Only animations that end are awaited: the looping ones (stickers, the stage) never finish.
+  await page.evaluate(() => {
+    const ending = document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity)
+    return Promise.race([Promise.all(ending.map((a) => a.finished.catch(() => undefined))), new Promise((r) => setTimeout(r, 1500))])
+  })
   await page.addScriptTag({ path: AXE })
   const violations = await page.evaluate(async () => {
     // eslint-disable-next-line no-undef

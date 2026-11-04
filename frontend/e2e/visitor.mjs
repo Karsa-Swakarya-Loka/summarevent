@@ -16,7 +16,8 @@ const mobile = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, is
 const errors = []
 async function newPage(ctx, tag) {
   const page = await ctx.newPage()
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(`[${tag}] console: ${m.text()}`) })
+  // a backend answers refused input with 4xx, which the browser also logs as a failed resource; the flows check the message itself
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource: the server responded with a status of 4\d\d/.test(m.text())) errors.push(`[${tag}] console: ${m.text()}`) })
   page.on('pageerror', (e) => errors.push(`[${tag}] pageerror: ${e.message}`))
   return page
 }
@@ -289,7 +290,8 @@ if (only === 'all' || only === 'profile') {
   await sheet.getByRole('button', { name: 'Hapus foto' }).waitFor()
   await sheet.getByRole('button', { name: 'Simpan' }).click()
   await page.getByRole('button', { name: 'Ganti foto profil' }).waitFor()
-  if (!(await page.locator('main img[src^="data:image/jpeg"]').count())) errors.push('foto profil tidak tampil setelah disimpan')
+  // the saved photo: a data URL in the demo, a storage URL from a backend
+  if (!(await page.locator('main img[src^="data:image/"], main img[src^="https://"]').count())) errors.push('foto profil tidak tampil setelah disimpan')
   await shot(page, 'p2-profile-photo')
   await page.getByRole('button', { name: 'Ganti foto profil' }).click()
   await sheet.getByRole('button', { name: 'Hapus foto' }).click()

@@ -113,15 +113,10 @@ export function messageWhen(iso: string, now = new Date()): string {
   return day === wibDate(now) ? fmtTime(iso) : fmtDayMonth(day)
 }
 
-/** The screen a message points to. Only reminders carry their order, so the rest lead to where their kind lives. */
+/** The screen a message points to: its order when it has one (every order message does), else where its kind lives. */
 export function messageNext(n: AppNotification): { to: string; label: string } {
-  switch (n.kind) {
-    case 'ORDER_CONFIRMED':
-    case 'REMINDER':
-      return { to: '/app/pass', label: 'Buka Pass Saya' }
-    case 'HOLD_EXPIRED':
-      return { to: '/app', label: 'Cari event' }
-    default:
-      return n.orderId ? { to: `/app/orders/${n.orderId}`, label: 'Lihat pesanan' } : { to: '/app/akun', label: 'Lihat di Akun' }
-  }
+  if (n.kind === 'HOLD_EXPIRED') return { to: '/app', label: 'Cari event' }
+  if (n.kind === 'WAITLIST') return { to: '/app/akun', label: 'Lihat di Akun' }
+  if (n.orderId) return { to: `/app/orders/${n.orderId}`, label: n.kind === 'ORDER_CONFIRMED' || n.kind === 'REMINDER' ? 'Lihat e-ticket' : 'Lihat pesanan' }
+  return { to: '/app/pass', label: 'Buka Pass Saya' }
 }

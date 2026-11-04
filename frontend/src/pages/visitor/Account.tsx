@@ -165,7 +165,7 @@ function SignedIn({ user, onChange }: { user: User; onChange: () => void }) {
       )}
 
       {orders.loading && !orders.data ? (
-        <div className="space-y-2" aria-busy="true" aria-label="Memuat pesanan">
+        <div className="space-y-2" role="status" aria-busy="true" aria-label="Memuat pesanan">
           {[0, 1].map((i) => (
             <Skeleton key={i} className="h-16 w-full rounded-2xl" />
           ))}

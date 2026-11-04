@@ -9,8 +9,9 @@ import { BellRing, FlaskConical, LoaderCircle, MousePointerClick, Users } from '
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderRow, SeatMapData } from '@/api/contract'
-import { EventSelect, LiveIndicator, LoadError, PageHeader, SectionCard } from '@/components/admin/AdminUi'
-import { SEAT_TONE, pickEventId, seatSummary, sessionLabel, ticketedEvents } from '@/components/admin/lib'
+import { LiveIndicator, LoadError, PageHeader, SectionCard } from '@/components/admin/AdminUi'
+import { useAdminEvent } from '@/components/admin/hooks'
+import { SEAT_TONE, seatSummary, sessionLabel } from '@/components/admin/lib'
 import { Countdown, StatusBadge, Swatch } from '@/components/common/bits'
 import { DoubleBookingPoints } from '@/components/common/DoubleBookingInfo'
 import { AvailableSample } from '@/components/seatmap/SeatLegend'
@@ -35,10 +36,7 @@ const LEGEND: Array<{ visual: SeatVisual; label: string }> = [
 
 export default function LiveSeats() {
   const [params, setParams] = useSearchParams()
-  const events = useLive(() => api.admin.listEvents(), [])
-  const list = ticketedEvents(events.data)
-  const eventId = pickEventId(list, params.get('event'))
-  const summary = list.find((e) => e.event.id === eventId)
+  const { eventId, summary, eventsError, reloadEvents } = useAdminEvent()
   const sessions = summary?.sessions ?? []
   const orders = useLive(() => api.admin.listOrders({ eventId }), [eventId], { enabled: !!eventId })
 
@@ -77,18 +75,10 @@ export default function LiveSeats() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Peta kursi live"
-        description="Denah yang sama dengan yang dilihat pengunjung. Status kursi diperbarui otomatis, tanpa reload."
+        description={`${summary ? `${summary.event.title} · ` : ''}Denah yang sama dengan yang dilihat pengunjung. Status kursi diperbarui otomatis, tanpa reload.`}
         actions={
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-              <EventSelect
-                events={events.data ? list : undefined}
-                value={eventId}
-                onChange={(id) => setParams({ event: id }, { replace: true })}
-                hideLabel
-                label="Pilih event"
-                className="w-full sm:w-auto"
-              />
               <div className="flex min-w-0 flex-col gap-1.5">
                 <Label htmlFor="session-select" className="sr-only">
                   Pilih sesi
@@ -112,7 +102,7 @@ export default function LiveSeats() {
         }
       />
 
-      {events.error ? <LoadError error={events.error} onRetry={events.reload} className="mb-4" /> : null}
+      {eventsError ? <LoadError error={eventsError} onRetry={reloadEvents} className="mb-4" /> : null}
       {map.error && !data ? <LoadError error={map.error} onRetry={map.reload} className="mb-4" /> : null}
 
       {!data ? (
@@ -198,13 +188,9 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
       >
         {hasMap ? (
           <>
-            <SeatMap
-              data={data}
-              interactive={false}
-              onSeatClick={(s) => setPicked(s.id)}
-              suggested={picked ? new Set([picked]) : undefined}
-              className="min-h-72"
-            />
+            <div className="rounded-xl bg-card p-2 shadow-[0_1px_2px_rgb(35_31_32/0.05)]">
+              <SeatMap data={data} interactive={false} onSeatClick={(s) => setPicked(s.id)} suggested={picked ? new Set([picked]) : undefined} className="min-h-72" />
+            </div>
             <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground" aria-label="Keterangan status kursi">
               {LEGEND.map((l) => (
                 <li key={l.label} className="flex items-center gap-1.5">
@@ -231,7 +217,7 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
 
       <div className="flex flex-col gap-4">
         {hasMap && (
-          <SectionCard title="Detail kursi">
+          <SectionCard title="Detail kursi" className="bg-card ring-1 ring-foreground/[0.07]">
             {seat ? (
               <div className="flex flex-col gap-3 text-sm" aria-live="polite">
                 <div className="flex items-center justify-between gap-2">

@@ -12,10 +12,10 @@ import { fmtClock } from './lib'
 
 export function PageHeader({ title, description, actions, className }: { title: string; description?: ReactNode; actions?: ReactNode; className?: string }) {
   return (
-    <div className={cn('mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between', className)}>
+    <div className={cn('mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between', className)}>
       <div className="min-w-0">
-        <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>}
+        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
+        {description && <p className="mt-0.5 max-w-2xl text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -116,7 +116,7 @@ export function Field({
       </Label>
       {children}
       {error ? (
-        <p id={`${id}-error`} className="flex items-start gap-1 text-xs font-medium text-status-invalid">
+        <p id={`${id}-error`} className="flex items-start gap-1 text-xs font-medium text-[#a11b1b]">
           <AlertCircle className="mt-px size-3.5 shrink-0" aria-hidden />
           {error}
         </p>
@@ -131,11 +131,11 @@ export function Field({
 
 export function SectionCard({ title, description, actions, children, className }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn('rounded-xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5', className)}>
+    <section className={cn('rounded-[1.25rem] bg-panel p-4 sm:p-5', className)}>
       {(title || actions) && (
         <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            {title && <h2 className="text-base font-bold">{title}</h2>}
+            {title && <h2 className="text-base font-semibold">{title}</h2>}
             {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
           </div>
           {actions}
@@ -150,7 +150,7 @@ export function ListSkeleton({ rows = 5, className }: { rows?: number; className
   return (
     <div className={cn('flex flex-col gap-2', className)} role="status" aria-busy="true" aria-label="Memuat">
       {Array.from({ length: rows }, (_, i) => (
-        <Skeleton key={i} className="h-14 w-full rounded-lg" />
+        <Skeleton key={i} className="h-14 w-full rounded-xl bg-panel" />
       ))}
     </div>
   )

@@ -31,7 +31,9 @@ yang di-build dengan `VITE_API_URL`, lalu:
 API_URL=https://alamat-backend/api BASE=https://alamat-app npm run e2e
 ```
 
-Data di backend di-reset (`POST /demo/reset`) sebelum tiap suite, dan suite `offline.mjs` ikut dijalankan.
+Data di backend di-reset (`POST /demo/reset`) sebelum tiap suite, dan suite `offline.mjs` ikut dijalankan. Di mode ini
+satu request bisa memakan setengah detik lebih, jadi suite menunggu elemen atau kondisinya, bukan jeda tetap; satu
+suite yang dijalankan sendiri (tanpa `run-all`) perlu reset data dulu, karena suite sebelumnya mengubah database bersama.
 
 Variabel: `BASE` (alamat app, default `http://localhost:5173`), `API_URL` (backend), `E2E_OUT` (folder screenshot,
 default `e2e/out/`, tidak masuk git), `CHROME_PATH` (lokasi Chrome kalau bukan bawaan macOS).

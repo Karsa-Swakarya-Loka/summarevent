@@ -1,0 +1,39 @@
+name: Backend
+
+# Typecheck dan unit test backend Convex, plus cek bahwa backend/convex/shared sama dengan aturan di frontend/src/domain.
+# Uji terima penuh (suite e2e + uji konkurensi) dijalankan terhadap deployment, lihat backend/README.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+      - run: npm run check-domain
+      - run: npm run typecheck
+      - run: npm test

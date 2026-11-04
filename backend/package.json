@@ -1,0 +1,25 @@
+{
+  "name": "summarevent-backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "sync-domain": "node scripts/sync-domain.mjs",
+    "check-domain": "node scripts/sync-domain.mjs --check",
+    "typecheck": "tsc -p convex --noEmit",
+    "test": "vitest run",
+    "acceptance": "node scripts/acceptance.mjs"
+  },
+  "dependencies": {
+    "convex": "1.49.0"
+  },
+  "devDependencies": {
+    "@edge-runtime/vm": "5.0.0",
+    "@types/node": "^24.19.2",
+    "convex-test": "0.0.67",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

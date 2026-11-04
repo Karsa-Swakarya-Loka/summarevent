@@ -171,7 +171,7 @@ Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. T
 | Bagian | Di mana | Catatan |
 | --- | --- | --- |
 | Frontend | Vercel, folder `frontend/` | `vercel deploy --prod` dari `frontend/`. Tanpa variabel build, hasilnya versi demo. Dipakai sampai ada domain sendiri. |
-| Backend | Convex, dikelola tim backend | Sedang dibangun mengikuti [kontrak API](docs/API-CONTRACT.md). Setelah siap, frontend cukup di-build dengan `VITE_API_URL`. |
+| Backend | Convex, dikelola tim backend | Di [`backend/`](backend/README.md), mengikuti [kontrak API](docs/API-CONTRACT.md). Frontend cukup di-build dengan `VITE_API_URL` yang menunjuk ke `https://<deployment>.convex.site/api`. |
 | Diagram arsitektur | GitHub Pages dari `main` `/docs` | [karsa-swakarya-loka.github.io/summarevent/arsitektur.html](https://karsa-swakarya-loka.github.io/summarevent/arsitektur.html) |
 
 ## Dokumentasi

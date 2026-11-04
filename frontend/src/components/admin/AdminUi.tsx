@@ -1,6 +1,5 @@
 /** Shared UI bits for the panitia screens. */
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import type { EventSummary } from '@/api/contract'
 import { Button } from '@/components/ui/button'
@@ -20,50 +19,6 @@ export function PageHeader({ title, description, actions, className }: { title: 
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
-  )
-}
-
-export function KpiTile({
-  label,
-  value,
-  hint,
-  icon,
-  to,
-  tone = 'default',
-  loading,
-  className,
-}: {
-  label: string
-  value: ReactNode
-  hint?: ReactNode
-  icon?: ReactNode
-  to?: string
-  tone?: 'default' | 'warn'
-  loading?: boolean
-  className?: string
-}) {
-  const body = (
-    <>
-      <div className="flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground">
-        <span>{label}</span>
-        {icon && <span className={cn('[&_svg]:size-4', tone === 'warn' ? 'text-[#7a5600]' : 'text-brand')}>{icon}</span>}
-      </div>
-      {loading ? <Skeleton className="mt-2 h-9 w-24" /> : <div className="mt-1 text-3xl font-extrabold tracking-tight tabular-nums xl:text-[1.6rem] 2xl:text-3xl">{value}</div>}
-      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
-    </>
-  )
-  const cls = cn(
-    'block rounded-xl bg-card p-4 ring-1 ring-foreground/10',
-    tone === 'warn' && 'bg-status-warn/10 ring-status-warn/50',
-    to && 'transition hover:ring-brand/40 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
-    className,
-  )
-  return to ? (
-    <Link to={to} className={cls}>
-      {body}
-    </Link>
-  ) : (
-    <div className={cls}>{body}</div>
   )
 }
 

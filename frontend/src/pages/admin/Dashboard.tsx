@@ -1,103 +1,373 @@
 /**
- * Panitia dashboard (AD-08 / AD-09): registrants, tickets, revenue, receipts,
- * attendance per session with venue occupancy, charts and CSV export.
+ * Panitia dashboard (AD-08 / AD-09), laid out like a product dashboard: a welcome row with the event picker and the
+ * main action; the sessions beside the money per day; tickets per day beside the attendance card; four stat tiles;
+ * then the latest orders as a table with filters and pages. Every number comes from `api.admin.stats`, refreshed
+ * every 5 seconds, and the table from `api.admin.listOrders`.
  */
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { ArrowRight, Banknote, Download, FileSpreadsheet, ReceiptText, Rows3, Ticket, Users, Wallet } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Download, FileSpreadsheet, Plus, ReceiptText, Rows3, Ticket, Users, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
-import type { SessionStats } from '@/api/contract'
-import { EventSelect, KpiTile, LiveIndicator, LoadError, PageHeader, SectionCard } from '@/components/admin/AdminUi'
-import { CategoryChart, StatusChart, TenantChart } from '@/components/admin/charts'
-import { downloadEventCsv, pickEventId, ticketedEvents } from '@/components/admin/lib'
-import { StatusBadge } from '@/components/common/bits'
+import type { EventStats, SessionStats } from '@/api/contract'
+import { EventSelect, LiveIndicator, LoadError } from '@/components/admin/AdminUi'
+import { CheckinHeatmap, RevenueBars, TicketsArea } from '@/components/admin/dashboardCharts'
+import { RANGES, downloadEventCsv, lastDays, pickEventId, seatSummary, sessionLabel, ticketedEvents, type Range } from '@/components/admin/lib'
+import { StatusBadge, Swatch } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
-import { SEAT_STATUS_LABEL, type Tone } from '@/domain/labels'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ORDER_STATUS_LABEL, ORDER_TONE, orderStatusLabel, type Tone } from '@/domain/labels'
+import type { OrderStatus } from '@/domain/types'
 import { errorMessage, useLive } from '@/hooks/useLive'
-import { fmtRange, fmtShortDate, rupiahPlain } from '@/lib/format'
+import { fmtDateTime, fmtRange, fmtShortDate, rupiahPlain } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { OrderDetailPanel } from './Orders'
 
-function occupancy(pct: number): { tone: Tone; label: string; bar: string } {
-  if (pct >= 90) return { tone: 'invalid', label: 'Hampir penuh', bar: 'bg-status-invalid' }
-  if (pct >= 70) return { tone: 'warn', label: 'Mulai padat', bar: 'bg-status-warn' }
-  return { tone: 'valid', label: 'Aman', bar: 'bg-status-valid' }
-}
-
-function SessionCard({ s, eventId }: { s: SessionStats; eventId: string }) {
-  const occ = occupancy(s.occupancyPct)
-  const soldPct = s.capacity ? Math.round((s.sold / s.capacity) * 100) : 0
-  const stats = [
-    { label: 'Kapasitas', value: s.capacity },
-    { label: SEAT_STATUS_LABEL.SOLD, value: s.sold },
-    { label: SEAT_STATUS_LABEL.HELD, value: s.held },
-    { label: 'Hadir', value: s.checkedIn },
-  ]
-  return (
-    <div className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="line-clamp-2 font-bold">{s.session.label ?? 'Sesi'}</div>
-          <div className="text-xs text-muted-foreground">
-            {s.session.demoLive ? 'Selalu berlangsung (demo juri)' : `${fmtShortDate(s.session.startAt)} · ${fmtRange(s.session.startAt, s.session.endAt)}`}
-          </div>
-        </div>
-        {s.session.demoLive && <StatusBadge tone="brand">Demo</StatusBadge>}
-      </div>
-      <dl className="grid grid-cols-4 gap-2">
-        {stats.map((x) => (
-          <div key={x.label} className="flex min-w-0 flex-col justify-end">
-            <dt className="text-[0.7rem] leading-tight text-muted-foreground">{x.label}</dt>
-            <dd className="text-xl font-extrabold tabular-nums">{x.value}</dd>
-          </div>
-        ))}
-      </dl>
-      <div className="flex flex-col gap-1">
-        <div className="flex justify-between text-xs">
-          <span className="text-muted-foreground">Tiket terjual</span>
-          <span className="font-semibold tabular-nums">{soldPct}%</span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-          <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, soldPct)}%` }} />
-        </div>
-      </div>
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between gap-2 text-xs">
-          <span className="text-muted-foreground">Okupansi venue (hadir ÷ kapasitas)</span>
-          <StatusBadge tone={occ.tone}>
-            {s.occupancyPct}% · {occ.label}
-          </StatusBadge>
-        </div>
-        <div className="relative h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-          <div className={cn('h-full rounded-full', occ.bar)} style={{ width: `${Math.min(100, s.occupancyPct)}%` }} />
-          <span className="absolute inset-y-0 left-[70%] w-px bg-foreground/25" />
-          <span className="absolute inset-y-0 left-[90%] w-px bg-foreground/25" />
-        </div>
-      </div>
-      <Button variant="ghost" size="sm" className="-mx-1 self-start text-brand" asChild>
-        <Link to={`/admin/live?event=${eventId}&session=${s.session.id}`}>
-          <Rows3 /> Lihat peta kursi live <ArrowRight />
-        </Link>
-      </Button>
-    </div>
-  )
-}
+const PAGE = 8
 
 export default function Dashboard() {
   const [params, setParams] = useSearchParams()
   const events = useLive(() => api.admin.listEvents(), [])
   const list = ticketedEvents(events.data)
   const eventId = pickEventId(list, params.get('event'))
-  const stats = useLive(() => api.admin.stats(eventId), [eventId], { intervalMs: 5000, enabled: !!eventId })
+  const stats = useLive(() => api.admin.stats(eventId), [eventId], {
+    intervalMs: 5000,
+    enabled: !!eventId,
+  })
   const s = stats.data && stats.data.event.id === eventId ? stats.data : undefined
+  const user = api.currentUser('ADMIN')
+  const firstName = (user?.name ?? 'Panitia').replace(/\s*\(demo\)\s*$/i, '').split(' ')[0]
+  const loading = !s && !stats.error
+
+  return (
+    <div className="mx-auto max-w-[80rem]">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Selamat datang, {firstName}</h1>
+          <LiveIndicator at={s?.generatedAt} everySec={5} className="mt-0.5" />
+        </div>
+        <EventSelect events={events.data ? list : undefined} value={eventId} onChange={(id) => setParams({ event: id }, { replace: true })} hideLabel label="Pilih event" className="w-full sm:w-auto" />
+        <Button asChild size="lg" className="h-10">
+          <Link to="/admin/events/new">
+            <Plus /> Buat event
+          </Link>
+        </Button>
+      </div>
+
+      {events.error ? <LoadError error={events.error} onRetry={events.reload} className="mb-4" /> : null}
+      {stats.error && !s ? <LoadError error={stats.error} onRetry={stats.reload} className="mb-4" /> : null}
+
+      <div className="grid gap-4 xl:grid-cols-[2fr_3fr]">
+        <SessionsCard s={s} eventId={eventId} loading={loading} />
+        <RevenueCard s={s} loading={loading} />
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[3fr_2fr]">
+        <TicketsCard s={s} loading={loading} />
+        <AttendanceCard s={s} loading={loading} />
+      </div>
+
+      <section aria-label="Ringkasan angka" className="mt-4 grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <StatTile icon={<Users />} label="Pendaftar" value={s?.registrants} hint="akun dengan pesanan aktif" loading={loading} />
+        <StatTile icon={<Ticket />} label="Tiket terjual" value={s?.ticketsSold} hint={s ? `${s.transactions.CONFIRMED} pesanan terkonfirmasi` : undefined} loading={loading} />
+        <StatTile icon={<Wallet />} label="Pendapatan" value={s ? rupiahPlain(s.revenue) : undefined} hint="QRIS & VA (simulasi)" loading={loading} />
+        <StatTile
+          icon={<ReceiptText />}
+          label="Struk menunggu"
+          value={s?.receiptsPending}
+          hint={s && s.receiptsPending > 0 ? 'perlu diverifikasi' : 'antrean kosong'}
+          tone={s && s.receiptsPending > 0 ? 'warn' : 'default'}
+          to="/admin/receipts"
+          loading={loading}
+        />
+      </section>
+
+      <OrdersCard eventId={eventId} eventTitle={s?.event.title} />
+    </div>
+  )
+}
+
+/* ---------------------------------------------------------------- cards */
+
+function Card({ className, children, label }: { className?: string; children: ReactNode; label?: string }) {
+  return (
+    <section aria-label={label} className={cn('rounded-2xl bg-card p-4 shadow-[0_1px_2px_rgb(35_31_32/0.05)] ring-1 ring-foreground/[0.07] sm:p-5', className)}>
+      {children}
+    </section>
+  )
+}
+
+/** Weekly / Monthly / Yearly in the reference: here the last 7, 14 or 30 days. */
+function RangeTabs({ value, onChange, id }: { value: Range; onChange: (r: Range) => void; id: string }) {
+  return (
+    <div role="tablist" aria-label="Rentang waktu" className="flex gap-1 rounded-lg bg-muted p-0.5 text-xs font-semibold">
+      {RANGES.map((r) => (
+        <button
+          key={r.days}
+          type="button"
+          role="tab"
+          id={`${id}-${r.days}`}
+          aria-selected={value === r.days}
+          onClick={() => onChange(r.days)}
+          className={cn('min-h-8 rounded-md px-2.5 transition pointer-coarse:min-h-11', value === r.days ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+        >
+          {r.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** "+14,8%" against the same number of days before; nothing when there is nothing to compare with. */
+function DeltaChip({ now, before, suffix = '' }: { now: number; before: number; suffix?: string }) {
+  if (!before) return null
+  const pct = Math.round(((now - before) / before) * 100)
+  const tone = pct > 0 ? 'bg-brand-soft text-[#0b6b35]' : pct < 0 ? 'bg-status-invalid/10 text-[#a11b1b]' : 'bg-muted text-muted-foreground'
+  return (
+    <span className={cn('rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums', tone)} title={`Dibanding ${suffix || 'periode sebelumnya'}`}>
+      {pct > 0 ? '+' : ''}
+      {pct.toLocaleString('id-ID')}%
+    </span>
+  )
+}
+
+function sumRange(daily: EventStats['daily'], days: Range, key: 'revenue' | 'tickets') {
+  const now = daily.slice(-days).reduce((a, d) => a + d[key], 0)
+  const before = daily.slice(-days * 2, -days).reduce((a, d) => a + d[key], 0)
+  return { now, before }
+}
+
+function occupancy(pct: number): { tone: Tone; label: string } {
+  if (pct >= 90) return { tone: 'invalid', label: 'Hampir penuh' }
+  if (pct >= 70) return { tone: 'warn', label: 'Mulai padat' }
+  return { tone: 'valid', label: 'Aman' }
+}
+
+/** The reference's "Recent hires": the event's sessions, four at a time, each with its seats and attendance. */
+function SessionsCard({ s, eventId, loading }: { s?: EventStats; eventId: string; loading: boolean }) {
+  const [page, setPage] = useState(0)
+  const sessions = s?.bySession ?? []
+  const pages = Math.max(1, Math.ceil(sessions.length / 4))
+  const at = Math.min(page, pages - 1)
+  const shown = sessions.slice(at * 4, at * 4 + 4)
+  return (
+    <Card label="Sesi">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-sm text-muted-foreground">Sesi</p>
+          {loading ? <Skeleton className="mt-1 h-8 w-10" /> : <p className="text-2xl font-semibold tabular-nums">{sessions.length}</p>}
+        </div>
+        <Button asChild variant="ghost" size="sm" className="-mr-2 text-foreground">
+          <Link to={`/admin/live?event=${eventId}`}>
+            Peta kursi live <Rows3 />
+          </Link>
+        </Button>
+      </div>
+      {loading ? (
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
+          ))}
+        </div>
+      ) : sessions.length ? (
+        <ul className="mt-4 grid grid-cols-2 gap-3">
+          {shown.map((x) => (
+            <li key={x.session.id}>
+              <SessionTile s={x} eventId={eventId} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-4 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">Event ini belum punya sesi.</p>
+      )}
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <Button variant="outline" className="h-10 bg-card" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={at === 0}>
+          <ArrowLeft /> Sebelumnya
+        </Button>
+        <Button variant="outline" className="h-10 bg-card" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))} disabled={at >= pages - 1}>
+          Berikutnya <ArrowRight />
+        </Button>
+      </div>
+    </Card>
+  )
+}
+
+function SessionTile({ s, eventId }: { s: SessionStats; eventId: string }) {
+  const occ = occupancy(s.occupancyPct)
+  const soldPct = s.capacity ? Math.round((s.sold / s.capacity) * 100) : 0
+  return (
+    <Link to={`/admin/live?event=${eventId}&session=${s.session.id}`} className="block rounded-xl bg-muted/60 p-3 transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+      <div className="flex items-center gap-2.5">
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-card text-sm font-bold tabular-nums ring-1 ring-foreground/10" aria-hidden>
+          {s.session.demoLive ? '▶' : fmtShortDate(s.session.startAt).split(',')[0].slice(0, 3)}
+        </span>
+        <span className="min-w-0 leading-tight">
+          <span className="block truncate text-sm font-semibold">{s.session.label ?? 'Sesi'}</span>
+          <span className="block truncate text-xs text-muted-foreground">{s.session.demoLive ? 'Selalu berlangsung' : fmtRange(s.session.startAt, s.session.endAt)}</span>
+        </span>
+      </div>
+      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg bg-card px-2.5 py-1.5 text-xs">
+        <span className="tabular-nums">
+          <span className="font-semibold">{s.sold}</span>
+          <span className="text-muted-foreground">
+            /{s.capacity} terjual · {soldPct}%
+          </span>
+        </span>
+        <StatusBadge tone={occ.tone}>Hadir {s.checkedIn}</StatusBadge>
+      </div>
+    </Link>
+  )
+}
+
+/** The reference's "Earned so far": money per day, the biggest day in the brand green. */
+function RevenueCard({ s, loading }: { s?: EventStats; loading: boolean }) {
+  const [range, setRange] = useState<Range>(7)
+  const rows = useMemo(() => (s ? lastDays(s.daily, range) : []), [s, range])
+  const sum = s ? sumRange(s.daily, range, 'revenue') : { now: 0, before: 0 }
+  return (
+    <Card label="Pendapatan per hari">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">Pendapatan {RANGES.find((r) => r.days === range)?.label.toLowerCase()}</p>
+          {loading ? (
+            <Skeleton className="mt-1 h-8 w-40" />
+          ) : (
+            <p className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
+              {rupiahPlain(sum.now)} <DeltaChip now={sum.now} before={sum.before} suffix={`${range} hari sebelumnya`} />
+            </p>
+          )}
+        </div>
+        <RangeTabs id="rev" value={range} onChange={setRange} />
+      </div>
+      <div className="mt-3">{loading ? <Skeleton className="h-56 rounded-xl" /> : <RevenueBars rows={rows} />}</div>
+    </Card>
+  )
+}
+
+/** The reference's "Revenue" area: tickets sold per day. */
+function TicketsCard({ s, loading }: { s?: EventStats; loading: boolean }) {
+  const [range, setRange] = useState<Range>(7)
+  const rows = useMemo(() => (s ? lastDays(s.daily, range) : []), [s, range])
+  const sum = s ? sumRange(s.daily, range, 'tickets') : { now: 0, before: 0 }
+  return (
+    <Card label="Tiket terjual per hari">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">Tiket terjual</p>
+          {loading ? (
+            <Skeleton className="mt-1 h-8 w-24" />
+          ) : (
+            <p className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
+              {sum.now} <DeltaChip now={sum.now} before={sum.before} suffix={`${range} hari sebelumnya`} />
+            </p>
+          )}
+        </div>
+        <RangeTabs id="tix" value={range} onChange={setRange} />
+      </div>
+      <div className="mt-3">{loading ? <Skeleton className="h-44 rounded-xl" /> : <TicketsArea rows={rows} />}</div>
+    </Card>
+  )
+}
+
+/** The reference's "Contributions": attendance, four small facts, and the check-in heatmap. */
+function AttendanceCard({ s, loading }: { s?: EventStats; loading: boolean }) {
+  const checkedIn = s ? s.bySession.reduce((a, x) => a + x.checkedIn, 0) : 0
+  const sold = s ? s.bySession.reduce((a, x) => a + x.sold, 0) : 0
+  const top = s?.topTenants[0]
+  const facts = [
+    {
+      label: 'Hadir dari terjual',
+      value: s ? `${sold ? Math.round((checkedIn / sold) * 100) : 0}%` : '',
+    },
+    {
+      label: 'No-show sesi selesai',
+      value: s ? (s.noShowPct == null ? '–' : `${s.noShowPct}%`) : '',
+    },
+    {
+      label: 'Nilai struk disetujui',
+      value: s ? rupiahPlain(s.receiptTotal) : '',
+    },
+    { label: 'Tenant teratas', value: top ? top.tenant.name : '–' },
+  ]
+  return (
+    <Card label="Kehadiran">
+      <p className="text-sm text-muted-foreground">Sudah check-in</p>
+      {loading ? (
+        <Skeleton className="mt-1 h-8 w-24" />
+      ) : (
+        <p className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
+          {checkedIn}
+          <span className="text-sm font-normal text-muted-foreground">dari {sold} tiket</span>
+        </p>
+      )}
+      <dl className="mt-4 grid grid-cols-2 gap-2">
+        {facts.map((f) => (
+          <div key={f.label} className="rounded-xl bg-muted/60 px-3 py-2.5">
+            {loading ? <Skeleton className="h-5 w-16" /> : <dd className="truncate text-base font-semibold tabular-nums">{f.value}</dd>}
+            <dt className="truncate text-xs text-muted-foreground">{f.label}</dt>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-4 mb-2 text-sm text-muted-foreground">Check-in per jam</p>
+      {loading || !s ? <Skeleton className="h-28 rounded-xl" /> : <CheckinHeatmap data={s.checkinsByHour} />}
+    </Card>
+  )
+}
+
+function StatTile({ icon, label, value, hint, tone = 'default', to, loading }: { icon: ReactNode; label: string; value?: ReactNode; hint?: string; tone?: 'default' | 'warn'; to?: string; loading: boolean }) {
+  const body = (
+    <>
+      <span className={cn('grid size-9 place-items-center rounded-lg ring-1 ring-foreground/10 [&_svg]:size-4', tone === 'warn' ? 'bg-brand-yellow/40 text-[#7a5600]' : 'bg-card text-foreground')} aria-hidden>
+        {icon}
+      </span>
+      <span className="mt-3 block text-sm text-muted-foreground">{label}</span>
+      {loading ? <Skeleton className="mt-1 h-8 w-20" /> : <span className="block truncate text-xl font-semibold tabular-nums sm:text-2xl">{value}</span>}
+      {hint && <span className="mt-0.5 block truncate text-xs text-muted-foreground">{hint}</span>}
+    </>
+  )
+  const cls = cn(
+    'block min-w-0 rounded-2xl bg-card p-4 shadow-[0_1px_2px_rgb(35_31_32/0.05)] ring-1 ring-foreground/[0.07]',
+    tone === 'warn' && 'ring-brand-yellow',
+    to && 'transition hover:ring-foreground/25 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
+  )
+  return to ? (
+    <Link to={to} className={cls}>
+      {body}
+    </Link>
+  ) : (
+    <div className={cls}>{body}</div>
+  )
+}
+
+/* ---------------------------------------------------------------- orders table */
+
+const STATUSES = Object.keys(ORDER_STATUS_LABEL) as OrderStatus[]
+
+/** The reference's customers table: the latest orders with status and category filters, pages of eight, CSV. */
+function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: string }) {
+  const rows = useLive(() => api.admin.listOrders({ eventId, status: 'ALL' }), [eventId], { intervalMs: 5000, enabled: !!eventId })
+  const [status, setStatus] = useState<OrderStatus | 'ALL'>('ALL')
+  const [category, setCategory] = useState('ALL')
+  const [page, setPage] = useState(0)
+  const [openId, setOpenId] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+
+  const all = useMemo(() => (rows.data ?? []).filter((r) => !r.order.simulated).sort((a, b) => b.order.createdAt.localeCompare(a.order.createdAt)), [rows.data])
+  const categories = useMemo(() => [...new Map(all.map((r) => [r.category.id, r.category])).values()], [all])
+  const shown = all.filter((r) => (status === 'ALL' || r.order.status === status) && (category === 'ALL' || r.category.id === category))
+  const pages = Math.max(1, Math.ceil(shown.length / PAGE))
+  const at = Math.min(page, pages - 1)
+  const slice = shown.slice(at * PAGE, at * PAGE + PAGE)
+  const open = openId ? all.find((r) => r.order.id === openId) : undefined
 
   const exportCsv = async (type: 'attendees' | 'transactions') => {
     setBusy(type)
     try {
-      const { filename, rows } = await downloadEventCsv(eventId, type)
-      toast.success(`${filename} diunduh (${rows} baris).`)
+      const { filename, rows: n } = await downloadEventCsv(eventId, type)
+      toast.success(`${filename} diunduh (${n} baris).`)
     } catch (e) {
       toast.error(errorMessage(e))
     } finally {
@@ -105,129 +375,183 @@ export default function Dashboard() {
     }
   }
 
-  const loading = !s && !stats.error
-
   return (
-    <div className="mx-auto max-w-7xl">
-      <PageHeader
-        title="Dashboard"
-        description="Pantau pendaftar, penjualan, struk, dan kehadiran per sesi. Angka diperbarui otomatis."
-        actions={
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-            <EventSelect
-              events={events.data ? list : undefined}
-              value={eventId}
-              onChange={(id) => setParams({ event: id }, { replace: true })}
-              hideLabel
-              label="Pilih event"
-              className="w-full sm:w-auto"
-            />
-            <LiveIndicator at={s?.generatedAt} everySec={5} />
-          </div>
-        }
-      />
-
-      {events.error ? <LoadError error={events.error} onRetry={events.reload} className="mb-4" /> : null}
-      {stats.error && !s ? <LoadError error={stats.error} onRetry={stats.reload} className="mb-4" /> : null}
-
-      <section aria-label="Ringkasan angka" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5 [&>*]:min-w-0">
-        <KpiTile label="Pendaftar" icon={<Users />} value={s?.registrants} loading={loading} hint="Akun unik dengan pesanan aktif" />
-        <KpiTile label="Tiket terjual" icon={<Ticket />} value={s?.ticketsSold} loading={loading} hint={s ? `${s.transactions.CONFIRMED} pesanan terkonfirmasi` : undefined} />
-        <KpiTile label="Pendapatan" icon={<Wallet />} value={s ? rupiahPlain(s.revenue) : undefined} loading={loading} hint="Simulasi QRIS / VA" className="col-span-2 md:col-span-1" />
-        <KpiTile
-          label="Struk menunggu"
-          icon={<ReceiptText />}
-          value={s?.receiptsPending}
-          loading={loading}
-          to="/admin/receipts"
-          tone={s && s.receiptsPending > 0 ? 'warn' : 'default'}
-          className="col-span-2 md:col-span-1"
-          hint={
-            <span className="inline-flex items-center gap-1 font-medium text-foreground">
-              Buka antrean verifikasi <ArrowRight className="size-3" />
-            </span>
-          }
-        />
-        <KpiTile label="Total nilai struk" icon={<Banknote />} value={s ? rupiahPlain(s.receiptTotal) : undefined} loading={loading} hint="Belanja di tenant dari struk disetujui" className="col-span-2 md:col-span-1" />
-      </section>
-
-      <section aria-labelledby="sesi-heading" className="mt-8">
-        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="sesi-heading" className="text-lg font-bold">
-            Kehadiran per sesi
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Okupansi: <span className="font-semibold text-foreground">≥70% mulai padat</span> · <span className="font-semibold text-foreground">≥90% hampir penuh</span>
-            {s?.noShowPct != null && <> · No-show sesi selesai: {s.noShowPct}%</>}
+    <Card label="Pesanan terbaru" className="mt-4 p-0 sm:p-0">
+      <div className="flex flex-wrap items-center gap-3 p-4 sm:p-5">
+        <div className="min-w-0 flex-1 basis-full md:basis-auto">
+          <p className="text-sm text-muted-foreground">Pesanan</p>
+          <p className="truncate text-base font-semibold">
+            {rows.data ? `${shown.length} pesanan` : 'Memuat…'}
+            {eventTitle && <span className="font-normal text-muted-foreground"> · {eventTitle}</span>}
           </p>
         </div>
-        {loading ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-60 rounded-xl" />
+        <Select
+          value={status}
+          onValueChange={(v) => {
+            setStatus(v as OrderStatus | 'ALL')
+            setPage(0)
+          }}
+        >
+          <SelectTrigger className="h-10 w-auto bg-card" aria-label="Filter status">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Semua status</SelectItem>
+            {STATUSES.map((st) => (
+              <SelectItem key={st} value={st}>
+                {ORDER_STATUS_LABEL[st]}
+              </SelectItem>
             ))}
-          </div>
-        ) : s && s.bySession.length ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {s.bySession.map((x) => (
-              <SessionCard key={x.session.id} s={x} eventId={eventId} />
+          </SelectContent>
+        </Select>
+        <Select
+          value={category}
+          onValueChange={(v) => {
+            setCategory(v)
+            setPage(0)
+          }}
+        >
+          <SelectTrigger className="h-10 w-auto bg-card" aria-label="Filter kategori">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Semua kategori</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
             ))}
-          </div>
-        ) : (
-          <p className="rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">Event ini belum punya sesi.</p>
-        )}
-      </section>
-
-      <div className="mt-8 grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Tiket per kategori" description="Terjual dibanding total kursi/kuota, semua sesi digabung.">
-          {s ? <CategoryChart data={s.byCategory} /> : <Skeleton className="h-48" />}
-        </SectionCard>
-        <SectionCard title="Transaksi per status" description="Jumlah pesanan (tanpa pembeli simulasi).">
-          {s ? <StatusChart data={s.transactions} /> : <Skeleton className="h-48" />}
-        </SectionCard>
-        <SectionCard title="Tenant teratas" description="Nilai struk belanja yang sudah disetujui.">
-          {s ? <TenantChart data={s.topTenants} /> : <Skeleton className="h-40" />}
-        </SectionCard>
-        <SectionCard title="Unduh laporan" description="File CSV (UTF-8) siap dibuka di Excel atau Google Sheets.">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ExportButton
-              icon={<Users />}
-              title="Unduh data peserta"
-              body="Kode tiket, nama, kursi, sesi, status & waktu check-in."
-              busy={busy === 'attendees'}
-              disabled={!eventId || busy !== null}
-              onClick={() => void exportCsv('attendees')}
-            />
-            <ExportButton
-              icon={<FileSpreadsheet />}
-              title="Unduh laporan transaksi"
-              body="Kode pesanan, pemesan, total, metode & status bayar."
-              busy={busy === 'transactions'}
-              disabled={!eventId || busy !== null}
-              onClick={() => void exportCsv('transactions')}
-            />
-          </div>
-        </SectionCard>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="lg" className="h-10 bg-card max-sm:size-10 max-sm:px-0" onClick={() => void exportCsv('attendees')} disabled={!eventId || !!busy} aria-label="Unduh data peserta">
+          <Download /> <span className="max-sm:sr-only">Unduh data peserta</span>
+        </Button>
+        <Button variant="outline" size="lg" className="h-10 bg-card max-sm:size-10 max-sm:px-0" onClick={() => void exportCsv('transactions')} disabled={!eventId || !!busy} aria-label="Unduh laporan transaksi">
+          <FileSpreadsheet /> <span className="max-sm:sr-only">Unduh laporan transaksi</span>
+        </Button>
       </div>
-    </div>
-  )
-}
 
-function ExportButton({ icon, title, body, onClick, disabled, busy }: { icon: ReactNode; title: string; body: string; onClick: () => void; disabled?: boolean; busy?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="flex min-h-24 items-start gap-3 rounded-xl border bg-background p-4 text-left transition hover:border-brand/50 hover:bg-brand-soft/40 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60"
-    >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand [&_svg]:size-5">{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5 font-semibold">
-          {title} <Download className="size-4 text-muted-foreground" aria-hidden />
-        </span>
-        <span className="mt-0.5 block text-xs text-muted-foreground">{busy ? 'Menyiapkan file…' : body}</span>
-      </span>
-    </button>
+      {rows.error && !rows.data ? (
+        <LoadError error={rows.error} onRetry={rows.reload} className="m-4" />
+      ) : !rows.data ? (
+        <div className="space-y-2 p-4" aria-busy="true" aria-label="Memuat pesanan">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-12 rounded-lg" />
+          ))}
+        </div>
+      ) : !slice.length ? (
+        <p className="px-5 pb-6 text-sm text-muted-foreground">Tidak ada pesanan di filter ini.</p>
+      ) : (
+        <>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="pl-5">Pemesan</TableHead>
+                  <TableHead>Kursi</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Dibuat</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="pr-5 text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {slice.map((r) => (
+                  <TableRow key={r.order.id} className="cursor-pointer" onClick={() => setOpenId(r.order.id)}>
+                    <TableCell className="pl-5">
+                      <span className="flex items-center gap-2.5">
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-[#0b6b35]" aria-hidden>
+                          {r.order.buyerName[0]}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block max-w-44 truncate font-medium">{r.order.buyerName}</span>
+                          <span className="block font-mono text-xs text-muted-foreground">{r.order.code}</span>
+                        </span>
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1.5">
+                        <Swatch color={r.category.color} />
+                        <span className="font-semibold tabular-nums">{seatSummary(r.order.items)}</span>
+                        <span className="max-w-32 truncate text-xs text-muted-foreground">· {sessionLabel(r.session)}</span>
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge tone={ORDER_TONE[r.order.status]}>{orderStatusLabel(r.order.status, r.order.paymentMethod, r.order.totalAmount)}</StatusBadge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtDateTime(r.order.createdAt)}</TableCell>
+                    <TableCell className="text-right">
+                      <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums">
+                        {r.order.totalAmount ? rupiahPlain(r.order.totalAmount) : r.category.accessMethod === 'RECEIPT' ? 'Struk' : 'Gratis'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="pr-5 text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 bg-card"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenId(r.order.id)
+                        }}
+                      >
+                        {r.order.status === 'AWAITING_PAYMENT' ? 'Tandai lunas' : 'Detail'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <ul className="flex flex-col divide-y md:hidden" aria-label="Pesanan terbaru">
+            {slice.map((r) => (
+              <li key={r.order.id}>
+                <button type="button" onClick={() => setOpenId(r.order.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-muted">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-[#0b6b35]" aria-hidden>
+                    {r.order.buyerName[0]}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{r.order.buyerName}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {seatSummary(r.order.items)} · {r.category.name} · {r.order.totalAmount ? rupiahPlain(r.order.totalAmount) : r.category.accessMethod === 'RECEIPT' ? 'Struk' : 'Gratis'}
+                    </span>
+                  </span>
+                  <StatusBadge tone={ORDER_TONE[r.order.status]}>{orderStatusLabel(r.order.status, r.order.paymentMethod, r.order.totalAmount)}</StatusBadge>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <nav className="flex items-center justify-between gap-3 border-t px-4 py-3 sm:px-5" aria-label="Halaman pesanan">
+            <Button variant="outline" size="sm" className="h-9 bg-card" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={at === 0} aria-label="Halaman sebelumnya">
+              <ArrowLeft /> <span className="max-sm:sr-only">Sebelumnya</span>
+            </Button>
+            <ol className="flex items-center gap-1 text-sm">
+              {Array.from({ length: pages }, (_, i) => i)
+                .filter((i) => i === 0 || i === pages - 1 || Math.abs(i - at) <= 1)
+                .map((i, idx, arr) => (
+                  <li key={i} className="flex items-center gap-1">
+                    {idx > 0 && arr[idx - 1] !== i - 1 && <span className="px-1 text-muted-foreground">…</span>}
+                    <button
+                      type="button"
+                      onClick={() => setPage(i)}
+                      aria-current={i === at ? 'page' : undefined}
+                      className={cn('grid size-9 place-items-center rounded-lg text-sm font-medium transition pointer-coarse:size-11', i === at ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}
+                    >
+                      {i + 1}
+                    </button>
+                  </li>
+                ))}
+            </ol>
+            <Button variant="outline" size="sm" className="h-9 bg-card" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))} disabled={at >= pages - 1} aria-label="Halaman berikutnya">
+              <span className="max-sm:sr-only">Berikutnya</span> <ArrowRight />
+            </Button>
+          </nav>
+        </>
+      )}
+
+      <Sheet open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-md">{open ? <OrderDetailPanel row={open} /> : <SheetTitle className="sr-only">Detail pesanan</SheetTitle>}</SheetContent>
+      </Sheet>
+    </Card>
   )
 }

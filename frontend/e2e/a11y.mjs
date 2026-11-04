@@ -130,6 +130,17 @@ const wizardCategories = async (page) => {
   await page.getByRole('textbox', { name: 'Nama kategori' }).first().waitFor()
 }
 
+const eventSwitcher = async (page) => {
+  await page.getByRole('button', { name: /ganti event$/ }).first().click()
+  await page.getByRole('tree', { name: 'Pilih event' }).waitFor()
+}
+
+const posterColours = async (page) => {
+  await page.getByRole('textbox', { name: 'Judul event' }).fill('Dongeng Sore Si Kancil')
+  await page.getByRole('switch', { name: 'Warna sendiri' }).click()
+  await page.getByRole('radiogroup', { name: 'Warna dasar' }).waitFor()
+}
+
 const orderDetail = async (page) => {
   await page.getByRole('list', { name: 'Daftar pesanan' }).getByRole('button').first().click()
   await page.getByRole('dialog').waitFor()
@@ -221,7 +232,9 @@ const screens = [
   [phone, '/admin/mulai'],
   [phone, '/admin/masuk'],
   [phone, '/admin'],
+  [phone, '/admin', eventSwitcher],
   [phone, '/admin/events'],
+  [phone, '/admin/events/new', posterColours],
   [phone, '/admin/events/new', wizardCategories],
   [phone, '/admin/live'],
   [phone, '/admin/orders', orderDetail],
@@ -229,6 +242,7 @@ const screens = [
   [phone, '/admin/staff'],
   [laptop, '/admin/masuk'],
   [laptop, '/admin'],
+  [laptop, '/admin', eventSwitcher],
   [laptop, '/admin/events'],
   [laptop, '/admin/events/new'],
   [laptop, '/admin/live'],

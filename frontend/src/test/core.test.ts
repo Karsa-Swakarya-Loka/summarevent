@@ -476,6 +476,8 @@ describe('panitia and petugas sign-in (email + kata sandi)', () => {
     await expect(api.resetPassword(token, 'sandi-baru-utara')).rejects.toMatchObject({ code: 'RESET_EXPIRED' })
     await expect(api.login('pintu.utara@summarevent.test', DEMO_PASSWORD, 'STAFF')).rejects.toMatchObject({ code: 'BAD_LOGIN' })
     expect((await api.login('pintu.utara@summarevent.test', 'sandi-baru-utara', 'STAFF')).id).toBe('u_staff_utara')
+  })
+})
 
 describe('poster colours (AD-01)', () => {
   beforeEach(freshDb)

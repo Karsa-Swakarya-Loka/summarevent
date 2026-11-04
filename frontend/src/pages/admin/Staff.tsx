@@ -5,7 +5,7 @@
 import { useState, type FormEvent } from 'react'
 import { LoaderCircle, Power, UserPlus, Users } from 'lucide-react'
 import { toast } from 'sonner'
-import { api } from '@/api'
+import { api, ApiError } from '@/api'
 import type { StaffAccount } from '@/api/contract'
 import { Field, ListSkeleton, LoadError, PageHeader, SectionCard } from '@/components/admin/AdminUi'
 import { fmtClock } from '@/components/admin/lib'
@@ -13,6 +13,7 @@ import { EmptyState, StatusBadge } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { errorMessage, useLive } from '@/hooks/useLive'
+import { profileChanges } from '@/domain/rules'
 import { fmtShortDate, isValidPhone, normalizePhone } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -20,24 +21,30 @@ export default function Staff() {
   const staff = useLive(() => api.admin.listStaff(), [])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [error, setError] = useState<{ name?: string; phone?: string } | null>(null)
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState<{ name?: string; phone?: string; email?: string } | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
   const add = async (e: FormEvent) => {
     e.preventDefault()
-    const errs: { name?: string; phone?: string } = {}
+    const errs: { name?: string; phone?: string; email?: string } = {}
     if (name.trim().length < 3) errs.name = 'Tulis nama petugas, minimal 3 huruf.'
     if (!isValidPhone(normalizePhone(phone))) errs.phone = 'Nomor HP belum benar. Contoh: 0812 3456 7890.'
-    if (errs.name || errs.phone) return setError(errs)
+    const mail = profileChanges({ email })
+    if (!mail.ok || !mail.email) errs.email = 'Tulis email petugas, misalnya nama@contoh.id.'
+    if (errs.name || errs.phone || errs.email) return setError(errs)
     setError(null)
     setBusy('add')
     try {
-      const u = await api.admin.createStaff({ name, phone })
-      toast.success(`Akun ${u.name} dibuat. Petugas bisa masuk dari halaman Petugas.`)
+      const u = await api.admin.createStaff({ name, phone, email })
+      toast.success(`Akun ${u.name} dibuat. Undangan untuk membuat kata sandi dikirim ke ${u.email}.`)
       setName('')
       setPhone('')
+      setEmail('')
     } catch (err) {
-      toast.error(errorMessage(err))
+      const field = err instanceof ApiError && (err.details as { field?: string } | undefined)?.field
+      if (field === 'email' || field === 'phone' || field === 'name') setError({ [field]: errorMessage(err) })
+      else toast.error(errorMessage(err))
     } finally {
       setBusy(null)
     }
@@ -105,13 +112,16 @@ export default function Staff() {
           )}
         </SectionCard>
 
-        <SectionCard title="Tambah petugas" description="Petugas masuk memakai nomor HP ini.">
+        <SectionCard title="Tambah petugas" description="Petugas masuk dengan email dan kata sandi; undangan untuk membuat kata sandi dikirim ke emailnya.">
           <form onSubmit={(e) => void add(e)} className="flex flex-col gap-3" noValidate>
             <Field id="staff-name" label="Nama" error={error?.name}>
               <Input id="staff-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Petugas Pintu Selatan" className="h-10" aria-invalid={!!error?.name} />
             </Field>
             <Field id="staff-phone" label="Nomor HP" error={error?.phone}>
               <Input id="staff-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0812 3456 7890" className="h-10" aria-invalid={!!error?.phone} />
+            </Field>
+            <Field id="staff-email" label="Email" error={error?.email}>
+              <Input id="staff-email" type="email" inputMode="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@contoh.id" className="h-10" aria-invalid={!!error?.email} />
             </Field>
             <Button type="submit" size="lg" className="h-11" disabled={busy === 'add'}>
               {busy === 'add' ? <LoaderCircle className="animate-spin" /> : <UserPlus />} Tambah petugas

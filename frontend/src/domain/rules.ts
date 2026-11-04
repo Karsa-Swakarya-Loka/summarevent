@@ -370,3 +370,17 @@ export function profileChanges(input: ProfileFields): ProfileCheck {
   }
   return { ok: true, ...out }
 }
+
+/* ------------------------------------------------------------------ panitia and petugas accounts */
+
+export const PASSWORD_MIN = 8
+export const LOGIN_MAX_FAILS = 5
+export const LOGIN_FAIL_WINDOW_MIN = 15
+export const RESET_TOKEN_MIN = 30
+
+/** A new password as typed: at least 8 characters, no leading or trailing spaces. */
+export function passwordCheck(password: string): { ok: true } | { ok: false; reason: string } {
+  if (password !== password.trim()) return { ok: false, reason: 'Kata sandi tidak boleh diawali atau diakhiri spasi.' }
+  if (password.length < PASSWORD_MIN) return { ok: false, reason: `Kata sandi minimal ${PASSWORD_MIN} karakter.` }
+  return { ok: true }
+}

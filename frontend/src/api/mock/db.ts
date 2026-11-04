@@ -31,8 +31,22 @@ export interface OtpEntry {
   requests: string[]
 }
 
+/** A panitia or petugas password: only its SHA-256 is kept, plus the recent failed attempts (rate limit). */
+export interface PasswordEntry {
+  userId: string
+  hash: string
+  fails: string[]
+}
+
+/** A one-time password reset link: valid for 30 minutes, then or once used it is gone. */
+export interface ResetToken {
+  token: string
+  userId: string
+  expiresAt: string
+}
+
 export interface Db {
-  schema: 3
+  schema: 4
   version: number
   seededAt: string
   users: User[]
@@ -54,6 +68,8 @@ export interface Db {
   notifications: AppNotification[]
   otps: OtpEntry[]
   waitlist: WaitlistEntry[]
+  passwords: PasswordEntry[]
+  resetTokens: ResetToken[]
 }
 
 /** Everything the core API needs from its environment: storage, change events and "who is calling". */
@@ -109,7 +125,7 @@ function browserReadDb(): Db | null {
   if (raw === cacheRaw && cacheDb) return cacheDb
   try {
     const parsed = JSON.parse(raw) as Db
-    if (parsed.schema !== 3) return null
+    if (parsed.schema !== 4) return null
     cacheRaw = raw
     cacheDb = parsed
     return parsed

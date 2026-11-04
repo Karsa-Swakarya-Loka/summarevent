@@ -6,9 +6,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createMockApi } from '@/api/mock/adapter'
 import { clearClientSessions, clearDb, readDb, replaceDb, setSessionUserId, transaction } from '@/api/mock/db'
 import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
+import { DEMO_PASSWORD } from '@/lib/demoAccounts'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
 import { parseReceiptText } from '@/domain/ocr'
-import { AVATAR_MAX, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
+import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, passwordCheck, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
 import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
 import { wibDate } from '@/lib/format'
 
@@ -368,8 +369,10 @@ describe('bonus, staff accounts, desk review, OCR (AD-12, AD-13, PT-06, PV-16)',
   })
 
   it('AD-13: the panitia adds a staff account; a switched-off account cannot scan', async () => {
-    const u = await api.admin.createStaff({ name: 'Petugas Uji', phone: '0812 9999 0101' })
-    await expect(api.admin.createStaff({ name: 'Dobel', phone: '081299990101' })).rejects.toThrow(/sudah dipakai/)
+    const u = await api.admin.createStaff({ name: 'Petugas Uji', phone: '0812 9999 0101', email: 'Uji@Contoh.id' })
+    expect(u.email).toBe('uji@contoh.id')
+    await expect(api.admin.createStaff({ name: 'Dobel', phone: '081299990101', email: 'lain@contoh.id' })).rejects.toThrow(/sudah dipakai/)
+    await expect(api.admin.createStaff({ name: 'Dobel', phone: '081299990102', email: 'uji@contoh.id' })).rejects.toThrow(/sudah dipakai/)
     await api.demoLogin('STAFF', u.id)
     const t = readDb()!.tickets.find((x) => x.sessionId === DEMO && x.status === 'ACTIVE')!
     const ok = await api.staff.checkin(t.qrToken, DEMO)
@@ -434,5 +437,42 @@ describe('profile (PV-06)', () => {
     const photo = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ=='
     expect(await api.updateProfile({ avatar: photo })).toMatchObject({ avatarUrl: photo, name: 'Rina K' })
     expect((await api.updateProfile({ avatar: null })).avatarUrl).toBeNull()
+  })
+})
+
+describe('panitia and petugas sign-in (email + kata sandi)', () => {
+  it('signs in with the demo password, refuses a wrong pair with one message, and locks after too many tries', async () => {
+    const u = await api.login('Panitia@Summarevent.test', DEMO_PASSWORD, 'ADMIN')
+    expect(u.id).toBe('u_admin')
+    expect(api.currentUser('ADMIN')?.id).toBe('u_admin')
+    api.logout('ADMIN')
+    await expect(api.login('panitia@summarevent.test', 'salah', 'ADMIN')).rejects.toMatchObject({ code: 'BAD_LOGIN' })
+    await expect(api.login('tidak-ada@summarevent.test', DEMO_PASSWORD, 'ADMIN')).rejects.toMatchObject({ code: 'BAD_LOGIN' })
+    // the petugas password does not open the panitia side
+    await expect(api.login('desk.atrium@summarevent.test', DEMO_PASSWORD, 'ADMIN')).rejects.toMatchObject({ code: 'BAD_LOGIN' })
+    for (let i = 1; i < LOGIN_MAX_FAILS; i++) await expect(api.login('panitia@summarevent.test', 'salah', 'ADMIN')).rejects.toMatchObject({ code: 'BAD_LOGIN' })
+    await expect(api.login('panitia@summarevent.test', DEMO_PASSWORD, 'ADMIN')).rejects.toMatchObject({ code: 'RATE_LIMIT' })
+  })
+
+  it('a switched-off petugas cannot sign in', async () => {
+    await api.demoLogin('ADMIN')
+    await api.admin.setStaffActive('u_staff_utara', false)
+    await expect(api.login('pintu.utara@summarevent.test', DEMO_PASSWORD, 'STAFF')).rejects.toMatchObject({ code: 'FORBIDDEN' })
+  })
+
+  it('forgot + reset: same answer for any email, a one-time link that sets the password and signs in', async () => {
+    expect(await api.forgotPassword('bukan-siapa@contoh.id')).toEqual({ ok: true })
+    const r = await api.forgotPassword('Pintu.Utara@summarevent.test')
+    expect(r.simulatedLink).toMatch(/\/reset\?token=/)
+    const token = new URL(r.simulatedLink!, 'http://localhost').searchParams.get('token')!
+    expect(passwordCheck('pendek')).toMatchObject({ ok: false })
+    await expect(api.resetPassword(token, 'pendek')).rejects.toMatchObject({ code: 'INVALID' })
+    const u = await api.resetPassword(token, 'sandi-baru-utara')
+    expect(u.id).toBe('u_staff_utara')
+    expect(api.currentUser('STAFF')?.id).toBe('u_staff_utara')
+    api.logout('STAFF')
+    await expect(api.resetPassword(token, 'sandi-baru-utara')).rejects.toMatchObject({ code: 'RESET_EXPIRED' })
+    await expect(api.login('pintu.utara@summarevent.test', DEMO_PASSWORD, 'STAFF')).rejects.toMatchObject({ code: 'BAD_LOGIN' })
+    expect((await api.login('pintu.utara@summarevent.test', 'sandi-baru-utara', 'STAFF')).id).toBe('u_staff_utara')
   })
 })

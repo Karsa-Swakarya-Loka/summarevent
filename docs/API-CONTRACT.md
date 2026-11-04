@@ -23,6 +23,9 @@ dengan `VITE_API_URL` yang menunjuk ke prefix-nya: `VITE_API_URL=https://api.con
 | POST | `/auth/otp/request` | `{ phone }` | `{ simulatedCode, expiresAt }` — kode ditampilkan di layar (simulasi). Rate limit 3×/menit/nomor → `429 RATE_LIMIT`. |
 | POST | `/auth/otp/verify` | `{ phone, code, name? }` | `{ user, isNew, token }`. Nomor baru tanpa `name` → `200 { needName: true, message }`. Pesanan tamu (hold sebelum login) diklaim ke user ini. |
 | POST | `/auth/demo-login` | `{ role: 'ADMIN' \| 'STAFF' \| 'VISITOR', user_id? }` | `{ user, token }` — akun demo untuk juri. `user_id` memilih akun petugas tertentu; akun nonaktif → `403 FORBIDDEN`. |
+| POST | `/auth/login` | `{ email, password, role: 'ADMIN' \| 'STAFF' }` | `{ user, token }` — masuk panitia dan petugas. Email dibandingkan huruf kecil. Email atau sandi salah → `401 BAD_LOGIN` "Email atau kata sandi salah." (sengaja tidak menyebut mana yang salah). Akun nonaktif → `403 FORBIDDEN`. 5× gagal dalam 15 menit → `429 RATE_LIMIT`. Akun demo tetap memakai sandi `summaba2026` (disimpan sebagai hash), jadi tombol Isi otomatis tetap jalan. |
+| POST | `/auth/password/forgot` | `{ email }` | Selalu `200 { ok: true }`, supaya tidak bisa dipakai mengecek email terdaftar. Kalau emailnya ada (panitia atau petugas), Resend mengirim link `<app>/reset?token=…` yang berlaku 30 menit dan sekali pakai (satu halaman untuk kedua role, rolenya dibaca dari token). Versi demo menambah `simulatedLink` dan menampilkannya di layar. |
+| POST | `/auth/password/reset` | `{ token, password }` | `{ user, token }` — langsung masuk sebagai role akun itu. Sandi minimal 8 karakter, tanpa spasi di awal atau akhir (`passwordCheck` di `domain/rules.ts`) → kalau tidak, `400 INVALID` dengan `details.field: 'password'`. Token kedaluwarsa atau sudah dipakai → `400 RESET_EXPIRED`. |
 
 Token dikirim sebagai `Authorization: Bearer <token>`. Path `/admin/*` butuh role ADMIN, `/staff/*` butuh STAFF
 (tanpa token yang cocok → `401 NEED_LOGIN`).
@@ -81,7 +84,7 @@ login, bukan error), lalu klien mengirim ulang dengan `name`.
 | GET | `/admin/events/:id/export?type=attendees\|transactions` | `{ filename, csv }` |
 | GET | `/admin/venues` · `/admin/tenants` | Data referensi |
 | GET | `/admin/staff` | `StaffAccount[]` (akun petugas + jumlah scan VALID + scan terakhir), AD-13 |
-| POST | `/admin/staff` | `{ name, phone }` → `User` role STAFF. Nomor ganda → `409 DUPLICATE`. |
+| POST | `/admin/staff` | `{ name, phone, email }` → `User` role STAFF. Email wajib dan dibuat huruf kecil; petugas lalu mendapat email undangan untuk membuat sandi (alur reset yang sama, link berlaku 24 jam). Nomor atau email ganda → `409 DUPLICATE` dengan `details.field`. |
 | PATCH | `/admin/staff/:id` | `{ active }` → akun nonaktif tidak bisa login dan check-in (`403 FORBIDDEN`) |
 
 ## Petugas (`/staff`)
@@ -132,7 +135,7 @@ kode yang memanggilnya:
 
 ## Kode error
 
-`400` BAD_REQUEST, INVALID, NEED_REASON, BAD_PHONE, BAD_OTP, OTP_EXPIRED, RULE · `401` NEED_LOGIN · `403` FORBIDDEN ·
+`400` BAD_REQUEST, INVALID, NEED_REASON, BAD_PHONE, BAD_OTP, OTP_EXPIRED, RESET_EXPIRED, RULE · `401` NEED_LOGIN, BAD_LOGIN · `403` FORBIDDEN ·
 `404` NOT_FOUND · `409` CONFLICT, BAD_STATE, HOLD_EXPIRED, SEAT_TAKEN, SOLD_OUT, LOCKED_LAYOUT, DUPLICATE,
 DUPLICATE_PAYMENT, ALREADY_USED · `429` RATE_LIMIT · `503` NOT_READY. Klien menampilkan `message` apa adanya; kalau
 server tidak terjangkau, klien membuat error `OFFLINE` sendiri.

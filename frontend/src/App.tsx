@@ -54,6 +54,8 @@ const SignIn = () => import('@/pages/visitor/Auth').then((m) => ({ default: () =
 const SignUp = () => import('@/pages/visitor/Auth').then((m) => ({ default: () => <m.default mode="daftar" /> }))
 const AdminSignIn = () => import('@/pages/RoleSignIn').then((m) => ({ default: () => <m.default role="ADMIN" /> }))
 const StaffSignIn = () => import('@/pages/RoleSignIn').then((m) => ({ default: () => <m.default role="STAFF" /> }))
+const ForgotPassword = () => import('@/pages/PasswordReset').then((m) => ({ default: m.ForgotPassword }))
+const ResetPassword = () => import('@/pages/PasswordReset').then((m) => ({ default: m.ResetPassword }))
 
 /**
  * Routes
@@ -88,6 +90,8 @@ const router = createBrowserRouter([
   { path: '/admin/masuk', element: page(AdminSignIn) },
   { path: '/staff/mulai', element: page(StaffOnboarding) },
   { path: '/staff/masuk', element: page(StaffSignIn) },
+  { path: '/lupa-sandi', element: page(ForgotPassword) },
+  { path: '/reset', element: page(ResetPassword) },
   {
     path: '/admin',
     element: <AdminLayout />,

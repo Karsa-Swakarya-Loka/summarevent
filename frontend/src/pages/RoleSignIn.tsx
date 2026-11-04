@@ -1,10 +1,10 @@
 /**
- * Masuk for panitia and petugas: email and kata sandi. Simulated until the backend has its own login: the demo
- * accounts (lib/demoAccounts.ts) are checked here, then opened through the demo login. Afterwards the user goes on to
- * where they were headed (?next=, inside their own area only).
+ * Masuk for panitia and petugas: email and kata sandi through `api.login` (the demo keeps the accounts of
+ * lib/demoAccounts.ts with the demo password). Afterwards the user goes on to where they were headed (?next=, inside
+ * their own area only).
  */
 import { useId, useState, type FormEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft, Eye, EyeOff, LoaderCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
@@ -57,12 +57,10 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
     const address = email.trim().toLowerCase()
     if (!EMAIL.test(address)) return setError({ field: 'email', text: 'Tulis email lengkap, misalnya nama@contoh.id.' })
     if (!password) return setError({ field: 'password', text: 'Isi kata sandi dulu.' })
-    const account = DEMO_SIGN_IN[role].find((a) => a.email === address)
-    if (!account || password !== DEMO_PASSWORD) return setError({ field: null, text: 'Email atau kata sandi salah.' })
     setError(null)
     setBusy(true)
     try {
-      const user = await api.demoLogin(role, account.userId)
+      const user = await api.login(address, password, role)
       toast.success(`Halo, ${user.name}!`)
       navigate(next, { replace: true })
     } catch (err) {
@@ -124,7 +122,12 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`${id}-password`}>Kata sandi</Label>
+              <div className="flex items-baseline justify-between">
+                <Label htmlFor={`${id}-password`}>Kata sandi</Label>
+                <Link to={`/lupa-sandi?role=${role}`} className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">
+                  Lupa kata sandi?
+                </Link>
+              </div>
               <div className="relative">
                 <Input
                   id={`${id}-password`}
@@ -181,7 +184,7 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
             </Button>
           </section>
 
-          <p className="mt-8 text-center text-xs text-muted-foreground">Login disimulasikan sampai server login siap.</p>
+          <p className="mt-8 text-center text-xs text-muted-foreground">Di versi demo, email undangan dan link reset tampil di layar.</p>
         </main>
       </div>
     </div>

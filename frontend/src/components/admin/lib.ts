@@ -2,18 +2,40 @@
  * Small helpers shared by the panitia (admin) screens. No React components here
  * (keeps react-refresh happy); see AdminUi.tsx for the shared UI bits.
  */
+import { CalendarDays, LayoutDashboard, ReceiptText, Rows3, UserCog, Users } from 'lucide-react'
 import { api } from '@/api'
-import type { EventSummary, ReceiptQueueItem } from '@/api/contract'
+import type { EventStats, EventSummary, ReceiptQueueItem } from '@/api/contract'
 import type { Tone } from '@/domain/labels'
 import type { EventItem, OrderItem, SeatStatus } from '@/domain/types'
-import { fmtShortDate, wibDate, wibTime } from '@/lib/format'
+import { fmtDayMonth, fmtShortDate, wibDate, wibTime } from '@/lib/format'
+
+/** The panitia menu: the sidebar, the breadcrumb and the command palette read it. */
+export const ADMIN_NAV = [
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/events', label: 'Event', icon: CalendarDays },
+  { to: '/admin/live', label: 'Peta kursi live', icon: Rows3 },
+  { to: '/admin/orders', label: 'Pesanan & peserta', icon: Users },
+  {
+    to: '/admin/receipts',
+    label: 'Verifikasi struk',
+    icon: ReceiptText,
+    badge: true,
+  },
+  { to: '/admin/staff', label: 'Petugas', icon: UserCog },
+]
 
 /** Main demo event (PRD §6) – default selection on every admin screen. */
 const MAIN_EVENT_ID = 'evt_sangkuriang'
 
 /** "10.21.33" – WIB wall clock with seconds, for "Diperbarui …" indicators. */
 export function fmtClock(iso: string | Date): string {
-  return new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  return new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  })
     .format(new Date(iso))
     .replace(/[:.]/g, '.')
 }
@@ -152,3 +174,44 @@ export function sessionLabel(s: { label?: string; startAt: string; endAt: string
 
 /** A receipt set can still be decided: the order waits for verification and has pending receipts. */
 export const canDecide = (it: ReceiptQueueItem) => it.order.status === 'AWAITING_VERIFICATION' && it.siblings.some((s) => s.status === 'PENDING')
+
+/* ---------- dashboard series ---------- */
+
+/** "1,2jt" / "450rb" / "0": one word, for a narrow axis. */
+export const axisRupiah = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })}jt` : n >= 1_000 ? `${Math.round(n / 1_000)}rb` : String(n))
+
+export type Range = 7 | 14 | 30
+export const RANGES: Array<{ days: Range; label: string }> = [
+  { days: 7, label: 'Minggu ini' },
+  { days: 14, label: '2 minggu' },
+  { days: 30, label: 'Bulan ini' },
+]
+
+/**
+ * The last `days` of the series, each with a short label for the axis: a day ("3 Nov") for a week or two, and for a
+ * month the days grouped by week ("6–12 Okt"), so the bars stay wide as in the reference.
+ */
+export function lastDays(daily: EventStats['daily'], days: Range) {
+  const rows = daily.slice(-days)
+  if (days <= 14) return rows.map((d) => ({ ...d, day: fmtDayMonth(d.date) }))
+  const weeks: Array<{
+    date: string
+    day: string
+    tickets: number
+    revenue: number
+    orders: number
+  }> = []
+  for (let i = 0; i < rows.length; i += 7) {
+    const chunk = rows.slice(i, i + 7)
+    const first = chunk[0]
+    const last = chunk[chunk.length - 1]
+    weeks.push({
+      date: first.date,
+      day: `${fmtDayMonth(first.date).split(' ')[0]}–${fmtDayMonth(last.date)}`,
+      tickets: chunk.reduce((a, d) => a + d.tickets, 0),
+      revenue: chunk.reduce((a, d) => a + d.revenue, 0),
+      orders: chunk.reduce((a, d) => a + d.orders, 0),
+    })
+  }
+  return weeks
+}

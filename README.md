@@ -48,7 +48,7 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
   - Tiket baru menyusun QR aslinya seperti sedang dibaca scanner, lalu tervalidasi garis hijau.
   - Talonnya bisa ditarik ke bawah sampai robek. Setelah dipindai petugas, talonnya robek dan jatuh sendiri, seperti disobek di pintu masuk.
   - Tiket bisa dibatalkan dengan refund sampai 24 jam sebelum sesi, dan nama peserta bisa diganti.
-- **Panitia.** Wizard event (info, kategori, denah dari template, sesi, publish), peta kursi live, pesanan dan peserta, verifikasi struk, dashboard penjualan dan kehadiran, unduh CSV, akun petugas, serta link dan poster QR untuk dibagikan.
+- **Panitia.** Dashboard dengan sidebar mengambang dan pencarian ⌘K: sesi dan kehadirannya, pendapatan dan tiket per hari, check-in per jam, angka ringkas, dan pesanan terbaru dengan filter, halaman, dan aksi Tandai lunas. Lalu wizard event (info, kategori, denah dari template, sesi, publish), peta kursi live, pesanan dan peserta, verifikasi struk, unduh CSV, akun petugas, serta link dan poster QR untuk dibagikan.
 - **Petugas.** Hasil scan Valid, Sudah digunakan, atau Tidak valid yang terbaca dari 1 meter, dengan bunyi dan getar berbeda. Ada cari tiket manual, check-in rombongan, dan verifikasi struk kertas di desk.
 - **Daftar tunggu dan bonus.** Kategori yang habis menawarkan daftar tunggu dengan kabar otomatis, dan N pembeli pertama bisa mendapat bonus.
 - **Sambutan yang bergerak, per role.** Splash menghidupkan logo Lorong: dua bloknya mengunci, lalu satu titik menyusuri lorong S. Splash muncul saat web dibuka, lalu sekali per sesi untuk tiap role yang dimasuki (Pengunjung, Panitia, Petugas) dengan nama rolenya, dan bisa diketuk untuk dilewati.

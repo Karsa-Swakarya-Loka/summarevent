@@ -237,11 +237,12 @@ async function addOrder(ctx: Ctx, spec: OrderSpec): Promise<Order> {
   if (spec.status === 'CONFIRMED') {
     let used = spec.usedCount ?? 0
     const resolved = resolveSession(spec.session, now)
-    for (const item of order.items) {
+    for (const [i, item] of order.items.entries()) {
       const ticketId = uid('tkt')
       const isUsed = used > 0
       used -= 1
-      const usedAt = isUsed ? iso(new Date(Math.min(now.getTime() - 4 * 60_000, new Date(resolved.startAt).getTime() + 5 * 60_000))) : null
+      // scanned a few minutes apart, in the session's first minutes and never later than a few minutes ago
+      const usedAt = isUsed ? iso(new Date(Math.min(now.getTime() - 4 * 60_000, new Date(resolved.startAt).getTime() + (5 + i * 7) * 60_000))) : null
       const ticket: Ticket = {
         id: ticketId,
         code: randomCode('TKT'),
@@ -303,8 +304,9 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
     waitlist: [],
   }
   const ctx: Ctx = { db, now }
-  const created = minutesAgo(now, 60 * 24 * 3).toISOString()
-  const saleStart = minutesAgo(now, 60 * 24 * 2).toISOString()
+  // the events went on sale a month ago, so the dashboard's daily charts have a month of orders to show
+  const created = minutesAgo(now, 60 * 24 * 31).toISOString()
+  const saleStart = minutesAgo(now, 60 * 24 * 30).toISOString()
 
   // panitia and petugas sign in with email + kata sandi (simulated, see lib/demoAccounts.ts)
   const emailOf = (id: string) => [...DEMO_SIGN_IN.ADMIN, ...DEMO_SIGN_IN.STAFF].find((a) => a.userId === id)?.email ?? null
@@ -498,24 +500,24 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   const o = (spec: Omit<OrderSpec, 'event'> & { event?: EventItem }) => addOrder(ctx, { event: e1, ...spec } as OrderSpec)
 
   // Sesi 1 (13.00)
-  await o({ user: dodi, session: s1, category: vip, seatLabels: ['A6', 'A7', 'A8', 'A9'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 2600 })
-  await o({ user: sari, session: s1, category: vip, seatLabels: ['B3', 'B4'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 2400 })
-  await o({ user: yudi, session: s1, category: vip, seatLabels: ['A1', 'A2'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 1900 })
-  await o({ user: asep, session: s1, category: struk, seatLabels: ['C7', 'C8', 'C9', 'C10'], status: 'CONFIRMED', createdMinAgo: 1500, receipts: [{ tenantId: 't_mainan', amount: 200_000 }, { tenantId: 't_kopi', amount: 150_000 }] })
-  await o({ user: nia, session: s1, category: struk, seatLabels: ['D5', 'D6', 'D7'], status: 'CONFIRMED', createdMinAgo: 1300, receipts: [{ tenantId: 't_segar', amount: 320_000 }] })
-  await o({ user: euis, session: s1, category: struk, seatLabels: ['E8', 'E9', 'E10', 'E11'], status: 'CONFIRMED', createdMinAgo: 1100, receipts: [{ tenantId: 't_batik', amount: 275_000 }, { tenantId: 't_rasa', amount: 98_000 }] })
-  await o({ user: galih, session: s1, category: reg, seatLabels: ['G7', 'G8'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 900 })
-  await o({ user: lestari, session: s1, category: reg, seatLabels: ['H1', 'H2', 'H3', 'H4'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 800 })
-  await o({ user: bayu, session: s1, category: reg, seatLabels: ['G10', 'G11', 'G12'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 700 })
-  await o({ user: intan, session: s1, category: reg, seatLabels: ['I5', 'I6'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 650 })
-  await o({ user: rudi, session: s1, category: fest, qty: 3, status: 'CONFIRMED', method: 'FREE', createdMinAgo: 600 })
+  await o({ user: dodi, session: s1, category: vip, seatLabels: ['A6', 'A7', 'A8', 'A9'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 39180 })
+  await o({ user: sari, session: s1, category: vip, seatLabels: ['B3', 'B4'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 34680 })
+  await o({ user: yudi, session: s1, category: vip, seatLabels: ['A1', 'A2'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 30640 })
+  await o({ user: asep, session: s1, category: struk, seatLabels: ['C7', 'C8', 'C9', 'C10'], status: 'CONFIRMED', createdMinAgo: 27420, receipts: [{ tenantId: 't_mainan', amount: 200_000 }, { tenantId: 't_kopi', amount: 150_000 }] })
+  await o({ user: nia, session: s1, category: struk, seatLabels: ['D5', 'D6', 'D7'], status: 'CONFIRMED', createdMinAgo: 23540, receipts: [{ tenantId: 't_segar', amount: 320_000 }] })
+  await o({ user: euis, session: s1, category: struk, seatLabels: ['E8', 'E9', 'E10', 'E11'], status: 'CONFIRMED', createdMinAgo: 20360, receipts: [{ tenantId: 't_batik', amount: 275_000 }, { tenantId: 't_rasa', amount: 98_000 }] })
+  await o({ user: galih, session: s1, category: reg, seatLabels: ['G7', 'G8'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 17920 })
+  await o({ user: lestari, session: s1, category: reg, seatLabels: ['H1', 'H2', 'H3', 'H4'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 13260 })
+  await o({ user: bayu, session: s1, category: reg, seatLabels: ['G10', 'G11', 'G12'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 10530 })
+  await o({ user: intan, session: s1, category: reg, seatLabels: ['I5', 'I6'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 7400 })
+  await o({ user: rudi, session: s1, category: fest, qty: 3, status: 'CONFIRMED', method: 'FREE', createdMinAgo: 5860 })
 
   // Sesi 2 (16.00)
-  await o({ user: intan, session: s2, category: vip, seatLabels: ['A7', 'A8'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 500 })
+  await o({ user: intan, session: s2, category: vip, seatLabels: ['A7', 'A8'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 4820 })
   await o({ user: rina, session: s2, category: struk, seatLabels: ['C7', 'C8', 'C9', 'C10'], status: 'AWAITING_VERIFICATION', createdMinAgo: 6, receipts: [{ tenantId: 't_mainan', amount: 200_000 }, { tenantId: 't_kopi', amount: 150_000 }] })
   await o({ user: yudi, session: s2, category: struk, seatLabels: ['D3', 'D4'], status: 'AWAITING_VERIFICATION', createdMinAgo: 4, receipts: [{ tenantId: 't_batik', amount: 280_000 }] })
-  await o({ user: sari, session: s2, category: reg, seatLabels: ['G5', 'G6'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 420 })
-  await o({ user: dodi, session: s2, category: reg, seatLabels: ['H7', 'H8', 'H9', 'H10'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 380 })
+  await o({ user: sari, session: s2, category: reg, seatLabels: ['G5', 'G6'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 3300 })
+  await o({ user: dodi, session: s2, category: reg, seatLabels: ['H7', 'H8', 'H9', 'H10'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 1820 })
   await o({ user: galih, session: s2, category: vip, seatLabels: ['B7', 'B8'], status: 'EXPIRED', createdMinAgo: 300 })
   await o({ user: euis, session: s2, category: reg, seatLabels: ['J5'], status: 'CANCELLED', createdMinAgo: 260 })
   await o({ user: otherBuyer, session: s2, category: reg, seatLabels: ['G9', 'G10'], status: 'AWAITING_PAYMENT', createdMinAgo: 2, holdMin: 7, simulated: true })
@@ -531,9 +533,9 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   await o({ user: otherBuyer, session: s3, category: vip, seatLabels: ['B5', 'B6'], status: 'AWAITING_PAYMENT', createdMinAgo: 1, holdMin: 8, simulated: true })
 
   // Konser akustik
-  await o({ event: e2, user: dodi, session: s4, category: gold, seatLabels: ['A5', 'A6', 'A7', 'A8'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 3000 })
-  await o({ event: e2, user: sari, session: s4, category: silver, seatLabels: ['E3', 'E4'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 2000 })
-  await o({ event: e2, user: intan, session: s4, category: gold, seatLabels: ['B6'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 1000 })
+  await o({ event: e2, user: dodi, session: s4, category: gold, seatLabels: ['A5', 'A6', 'A7', 'A8'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 36900 })
+  await o({ event: e2, user: sari, session: s4, category: silver, seatLabels: ['E3', 'E4'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 16540 })
+  await o({ event: e2, user: intan, session: s4, category: gold, seatLabels: ['B6'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 8940 })
 
   // Craft class
   await o({ event: e3, user: asep, session: craftSessions[0], category: peserta, qty: 4, status: 'CONFIRMED', createdMinAgo: 1400, receipts: [{ tenantId: 't_pustaka', amount: 310_000 }] })

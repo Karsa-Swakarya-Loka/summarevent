@@ -254,6 +254,10 @@ export interface EventStats {
   receiptsPending: number
   topTenants: Array<{ tenant: Tenant; amount: number; count: number }>
   noShowPct: number | null
+  /** The last 30 days (WIB, oldest first): tickets of orders confirmed that day and their money. Pending orders and simulated buyers are left out. */
+  daily: Array<{ date: string; tickets: number; revenue: number; orders: number }>
+  /** Successful check-ins by weekday (0 = Monday) and hour (0–23), for the attendance heatmap. */
+  checkinsByHour: number[][]
   generatedAt: string
 }
 

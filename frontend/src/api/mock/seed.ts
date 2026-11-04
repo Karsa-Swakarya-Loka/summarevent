@@ -514,7 +514,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
 
   // Sesi 2 (16.00)
   await o({ user: intan, session: s2, category: vip, seatLabels: ['A7', 'A8'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 4820 })
-  await o({ user: rina, session: s2, category: struk, seatLabels: ['C7', 'C8', 'C9', 'C10'], status: 'AWAITING_VERIFICATION', createdMinAgo: 6, receipts: [{ tenantId: 't_mainan', amount: 200_000 }, { tenantId: 't_kopi', amount: 150_000 }] })
+  const rinaReceipt = await o({ user: rina, session: s2, category: struk, seatLabels: ['C7', 'C8', 'C9', 'C10'], status: 'AWAITING_VERIFICATION', createdMinAgo: 6, receipts: [{ tenantId: 't_mainan', amount: 200_000 }, { tenantId: 't_kopi', amount: 150_000 }] })
   await o({ user: yudi, session: s2, category: struk, seatLabels: ['D3', 'D4'], status: 'AWAITING_VERIFICATION', createdMinAgo: 4, receipts: [{ tenantId: 't_batik', amount: 280_000 }] })
   await o({ user: sari, session: s2, category: reg, seatLabels: ['G5', 'G6'], status: 'CONFIRMED', method: 'SIM_VA', createdMinAgo: 3300 })
   await o({ user: dodi, session: s2, category: reg, seatLabels: ['H7', 'H8', 'H9', 'H10'], status: 'CONFIRMED', method: 'SIM_QRIS', createdMinAgo: 1820 })
@@ -568,9 +568,9 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
 
   // Rina's inbox
   const rinaSeats = rinaDemo.items.map((i) => i.seatLabel).join(', ')
-  note(db, { userId: rina.id, channel: 'WA', kind: 'ORDER_CONFIRMED', title: 'Pesanan terkonfirmasi', body: `Tos siap! Tiket ${e1.title} (${s3.label}) kursi ${rinaSeats} sudah aktif. Tunjukkan QR di Pass Saya saat masuk.`, createdAt: rinaDemo.confirmedAt!, scheduledFor: null })
-  note(db, { userId: rina.id, channel: 'EMAIL', kind: 'ORDER_CONFIRMED', title: `E-ticket ${rinaDemo.code}`, body: `Halo Rina, e-ticket untuk kursi ${rinaSeats} terlampir di Pass Saya. Sampai jumpa di SUMMABA!`, createdAt: rinaDemo.confirmedAt!, scheduledFor: null })
-  note(db, { userId: rina.id, channel: 'WA', kind: 'RECEIPT_RESULT', title: 'Struk sedang diverifikasi', body: 'Struk kamu untuk kategori Tukar Struk (Sesi 2, kursi C7–C10) sedang dicek panitia. Kursi ditahan 30 menit.', createdAt: minutesAgo(now, 6).toISOString(), scheduledFor: null })
+  note(db, { userId: rina.id, channel: 'WA', kind: 'ORDER_CONFIRMED', orderId: rinaDemo.id, title: 'Pesanan terkonfirmasi', body: `Tos siap! Tiket ${e1.title} (${s3.label}) kursi ${rinaSeats} sudah aktif. Tunjukkan QR di Pass Saya saat masuk.`, createdAt: rinaDemo.confirmedAt!, scheduledFor: null })
+  note(db, { userId: rina.id, channel: 'EMAIL', kind: 'ORDER_CONFIRMED', orderId: rinaDemo.id, title: `E-ticket ${rinaDemo.code}`, body: `Halo Rina, e-ticket untuk kursi ${rinaSeats} terlampir di Pass Saya. Sampai jumpa di SUMMABA!`, createdAt: rinaDemo.confirmedAt!, scheduledFor: null })
+  note(db, { userId: rina.id, channel: 'WA', kind: 'RECEIPT_RESULT', orderId: rinaReceipt.id, title: 'Struk sedang diverifikasi', body: 'Struk kamu untuk kategori Tukar Struk (Sesi 2, kursi C7–C10) sedang dicek panitia. Kursi ditahan 30 menit.', createdAt: minutesAgo(now, 6).toISOString(), scheduledFor: null })
 
   return db
 }

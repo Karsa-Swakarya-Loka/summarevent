@@ -215,16 +215,17 @@ img { -webkit-touch-callout: none; }
  * as the `intro` shell.
  */
 [data-shell='visitor'],
-[data-shell='intro'] {
+[data-shell='intro'],
+[data-shell='staff'] {
   --primary: #231f20;
   --primary-foreground: #fbfaf7;
   --ring: #231f20;
   --border: #ddd6ca;
 }
-:is([data-shell='visitor'], [data-shell='intro']) [data-slot='button'] {
+:is([data-shell='visitor'], [data-shell='intro'], [data-shell='staff']) [data-slot='button'] {
   border-radius: 999px;
 }
-:is([data-shell='visitor'], [data-shell='intro']) [data-slot='button'][data-variant='outline'] {
+:is([data-shell='visitor'], [data-shell='intro'], [data-shell='staff']) [data-slot='button'][data-variant='outline'] {
   border-color: #231f20;
 }
 /* the Demo button moves into the app bar on screens that have one, so the floating pill never covers the page */

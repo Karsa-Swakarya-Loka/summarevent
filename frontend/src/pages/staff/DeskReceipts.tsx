@@ -27,19 +27,22 @@ export default function DeskReceipts() {
 
   return (
     <div className="pb-24">
-      <BackHeader to={`/staff${eventId ? `?event=${eventId}` : ''}`} title="Verifikasi struk di desk" />
-      <div className="space-y-4 px-4 pt-4">
-        <p className="rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground">
-          Minta struk kertasnya, cocokkan tenant, nomor, nominal, dan jam dengan foto di bawah, lalu putuskan. Keputusan tercatat atas namamu.
-        </p>
+      <BackHeader to={`/staff${eventId ? `?event=${eventId}` : ''}`} title={current ? 'Verifikasi struk di desk' : undefined} />
+      <div className="space-y-4 px-4 pt-1">
+        {!current && (
+          <div>
+            <h1 className="font-poster text-[2.4rem] leading-[0.95] uppercase">Struk di desk</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Cocokkan struk kertasnya dengan foto dan cek otomatis, lalu putuskan. Keputusan tercatat atas namamu.</p>
+          </div>
+        )}
         {q.error && !q.data ? (
           <EmptyState title="Antrean struk belum bisa dimuat" action={<Button className="h-11" onClick={q.reload}>Coba lagi</Button>}>
             {errorMessage(q.error)}
           </EmptyState>
         ) : !q.data ? (
           <div className="space-y-2" role="status" aria-busy="true" aria-label="Memuat antrean">
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-24 rounded-[1.4rem]" />
+            <Skeleton className="h-24 rounded-[1.4rem]" />
           </div>
         ) : current ? (
           <div className="space-y-2">
@@ -53,13 +56,16 @@ export default function DeskReceipts() {
             Struk dari pengunjung kategori Tukar Struk muncul di sini sampai panitia atau petugas memutuskan.
           </EmptyState>
         ) : (
-          <ul className="flex flex-col gap-2" aria-label="Antrean struk">
-            {items.map((it) => (
-              <li key={it.order.id}>
-                <QueueRow item={it} active={false} onOpen={() => setOpenId(it.order.id)} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <p className="px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{items.length} menunggu</p>
+            <ul className="flex flex-col gap-2" aria-label="Antrean struk">
+              {items.map((it) => (
+                <li key={it.order.id}>
+                  <QueueRow item={it} active={false} onOpen={() => setOpenId(it.order.id)} />
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </div>

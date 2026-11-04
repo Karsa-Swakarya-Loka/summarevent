@@ -36,7 +36,7 @@ export default function Inbox() {
         </p>
 
         {notes.loading && !notes.data ? (
-          <div className="space-y-2" aria-busy="true" aria-label="Memuat pesan">
+          <div className="space-y-2" role="status" aria-busy="true" aria-label="Memuat pesan">
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-18 w-full rounded-2xl" />
             ))}

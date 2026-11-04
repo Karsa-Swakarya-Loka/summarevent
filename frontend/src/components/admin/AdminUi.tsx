@@ -148,7 +148,7 @@ export function SectionCard({ title, description, actions, children, className }
 
 export function ListSkeleton({ rows = 5, className }: { rows?: number; className?: string }) {
   return (
-    <div className={cn('flex flex-col gap-2', className)} aria-busy="true" aria-label="Memuat">
+    <div className={cn('flex flex-col gap-2', className)} role="status" aria-busy="true" aria-label="Memuat">
       {Array.from({ length: rows }, (_, i) => (
         <Skeleton key={i} className="h-14 w-full rounded-lg" />
       ))}

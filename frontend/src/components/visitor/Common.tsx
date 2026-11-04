@@ -64,7 +64,7 @@ export function TabHeader({ title, subtitle, right }: { title: string; subtitle?
 
 export function PageSkeleton({ hero = false }: { hero?: boolean }) {
   return (
-    <div className="space-y-4 p-4" aria-busy="true" aria-label="Memuat">
+    <div className="space-y-4 p-4" role="status" aria-busy="true" aria-label="Memuat">
       {hero && <Skeleton className="h-48 w-full rounded-2xl" />}
       <Skeleton className="h-7 w-2/3" />
       <Skeleton className="h-4 w-1/2" />

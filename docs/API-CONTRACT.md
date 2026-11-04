@@ -124,7 +124,7 @@ kode yang memanggilnya:
 - Satu tiket = satu kursi = satu QR. Token QR: `SEV1.<ticketId>.<qrVersion>.<HMAC-SHA256 base64url, 22 char>`, dengan secret yang hanya ada di server.
 - Check-in mengunci tiketnya di dalam transaksi, jadi dua petugas yang memindai QR yang sama berbarengan hanya menghasilkan satu `VALID`. Urutan cek: token valid → tiket ada & versi cocok → tidak dibatalkan → event sama → belum dipakai (kecuali boleh keluar-masuk) → sesi sama → di dalam jendela check-in.
 - Aturan struk R1–R4, R6: lihat `checkReceiptRules` di `domain/rules.ts` (pesan error ikut dari sana).
-- Notifikasi (WA/email) cukup disimpan, tidak dikirim sungguhan. Field opsional `orderId` dipakai untuk menghapus pengingat terjadwal saat pesanan dibatalkan.
+- Notifikasi (WA/email) cukup disimpan, tidak dikirim sungguhan. Field opsional `orderId` diisi di setiap pesan yang menyangkut satu pesanan (konfirmasi, e-ticket, pengingat, struk, kedaluwarsa, batal), supaya layar Pesan bisa membuka pesanannya. Pembatalan hanya menghapus pesan yang punya `orderId` **dan** `scheduledFor` (pengingat terjadwal). Pesan daftar tunggu tidak punya `orderId`.
 - **Bonus N pembeli pertama (AD-12)**: kategori dengan `bonusFirstN` + `bonusDesc`; saat konfirmasi, tiket ke-1…N per sesi per kategori (tiket non-batal yang sudah punya bonus dihitung) diberi `bonus = bonusDesc`.
 - **Daftar tunggu (PV-14)**: entri `{ id, userId, sessionId, categoryId, qty, status: WAITING|NOTIFIED|LEFT, createdAt, notifiedAt }`. Setiap kali tempat lepas (hold kedaluwarsa, pesanan batal, struk ditolak), kabari orang terdepan yang jumlahnya muat lewat WA (simulasi), tanpa menahan tempat.
 - **Akun petugas (AD-13)**: user punya `active` (default true); check-in dari akun nonaktif ditolak.

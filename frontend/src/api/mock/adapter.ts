@@ -1482,6 +1482,22 @@ export function createMockApi(): Api {
           const ended = bySession.filter((s) => new Date(s.session.endAt) < now && !s.session.demoLive)
           const endedSold = ended.reduce((a, b) => a + b.sold, 0)
           const endedIn = ended.reduce((a, b) => a + b.checkedIn, 0)
+          // the last 30 days, each with what was confirmed that day
+          const days = Array.from({ length: 30 }, (_, i) => wibDate(new Date(now.getTime() - (29 - i) * 86_400_000)))
+          const dayMap = new Map(days.map((d) => [d, { date: d, tickets: 0, revenue: 0, orders: 0 }]))
+          for (const o of confirmed.filter((x) => !x.simulated && x.confirmedAt)) {
+            const row = dayMap.get(wibDate(new Date(o.confirmedAt!)))
+            if (!row) continue
+            row.orders += 1
+            row.tickets += o.qty
+            row.revenue += o.totalAmount
+          }
+          const sessionIds = new Set(sessions.map((s) => s.id))
+          const checkinsByHour = Array.from({ length: 7 }, () => Array<number>(24).fill(0))
+          for (const c of db.checkins.filter((x) => x.result === 'VALID' && sessionIds.has(x.sessionId))) {
+            const at = new Date(new Date(c.scannedAt).getTime() + 7 * 3600_000) // WIB
+            checkinsByHour[(at.getUTCDay() + 6) % 7][at.getUTCHours()] += 1
+          }
           return {
             event,
             registrants: new Set(orders.filter((o) => !o.simulated && (o.status === 'CONFIRMED' || isPending(o))).map((o) => o.userId)).size,
@@ -1497,6 +1513,8 @@ export function createMockApi(): Api {
               .sort((a, b) => b.amount - a.amount)
               .slice(0, 5),
             noShowPct: endedSold ? Math.round(((endedSold - endedIn) / endedSold) * 100) : null,
+            daily: [...dayMap.values()],
+            checkinsByHour,
             generatedAt: now.toISOString(),
           }
         })

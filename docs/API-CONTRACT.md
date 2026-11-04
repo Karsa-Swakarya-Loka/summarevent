@@ -77,7 +77,7 @@ login, bukan error), lalu klien mengirim ulang dengan `name`.
 | PATCH | `/admin/orders/:id` | `{ action: 'MARK_PAID' \| 'CANCEL' }`. CANCEL pada pesanan lunas mencatat `refundAmount` (simulasi) dan `cancelledBy: 'ADMIN'` (AD-10). |
 | GET | `/admin/receipts?status=PENDING\|ALL\|…` | `ReceiptQueueItem[]` — satu item per pesanan (set struk digabung) + hasil cek aturan |
 | PATCH | `/admin/receipts/:id` | `{ decision: 'APPROVE'\|'NEEDS_REVISION'\|'REJECT', reason? }` — berlaku untuk seluruh set struk pesanan. Revisi/tolak wajib `reason`. |
-| GET | `/admin/events/:id/stats` | `EventStats` (polling 5 detik) |
+| GET | `/admin/events/:id/stats` | `EventStats` (polling 5 detik). Termasuk `daily` (30 hari terakhir WIB, urut dari yang terlama: `{ date, tickets, revenue, orders }` dari pesanan terkonfirmasi hari itu, tanpa pembeli simulasi) dan `checkinsByHour` (7 hari × 24 jam, Senin = 0, jumlah check-in VALID) untuk grafik dashboard. |
 | GET | `/admin/events/:id/export?type=attendees\|transactions` | `{ filename, csv }` |
 | GET | `/admin/venues` · `/admin/tenants` | Data referensi |
 | GET | `/admin/staff` | `StaffAccount[]` (akun petugas + jumlah scan VALID + scan terakhir), AD-13 |

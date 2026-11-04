@@ -9,7 +9,8 @@ import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderRow } from '@/api/contract'
 import { EventSelect, ListSkeleton, LoadError, PageHeader } from '@/components/admin/AdminUi'
-import { downloadEventCsv, pickEventId, seatSummary, sessionLabel, ticketedEvents } from '@/components/admin/lib'
+import { useAdminEvent } from '@/components/admin/hooks'
+import { downloadEventCsv, seatSummary, sessionLabel } from '@/components/admin/lib'
 import { EmptyState, StatusBadge, Swatch } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -31,10 +32,9 @@ const statusText = (r: OrderRow) => orderStatusLabel(r.order.status, r.order.pay
 
 export default function Orders() {
   const [params, setParams] = useSearchParams()
-  const events = useLive(() => api.admin.listEvents(), [])
-  const list = ticketedEvents(events.data)
-  const eventParam = params.get('event')
-  const eventId = eventParam === 'ALL' ? 'ALL' : pickEventId(list, eventParam)
+  const ctx = useAdminEvent()
+  // the event in view comes from the admin shell; this page alone can also look across all of them
+  const eventId = params.get('event') === 'ALL' ? 'ALL' : ctx.eventId
   const status = (STATUSES as string[]).includes(params.get('status') ?? '') ? (params.get('status') as OrderStatus) : 'ALL'
   const [q, setQ] = useState(() => params.get('q') ?? '')
   const dq = useDebounced(q.trim(), 250)
@@ -97,7 +97,7 @@ export default function Orders() {
       />
 
       <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-end">
-        <EventSelect events={events.data ? list : undefined} value={eventId} onChange={(id) => setQuery({ event: id })} allowAll label="Event" />
+        <EventSelect events={ctx.events ? ctx.list : undefined} value={eventId} onChange={(id) => (id === 'ALL' ? setQuery({ event: 'ALL' }) : ctx.setEventId(id))} allowAll label="Event" />
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <label htmlFor="order-search" className="text-xs text-muted-foreground">
             Cari
@@ -135,10 +135,10 @@ export default function Orders() {
         </EmptyState>
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 md:block">
+          <div className="hidden overflow-hidden rounded-[1.25rem] bg-card ring-1 ring-foreground/[0.07] md:block">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-panel hover:bg-panel">
                   <TableHead>Pesanan</TableHead>
                   <TableHead>Pemesan</TableHead>
                   <TableHead>Sesi & kategori</TableHead>
@@ -197,7 +197,7 @@ export default function Orders() {
           <ul className="flex flex-col gap-2 md:hidden" aria-label="Daftar pesanan">
             {shown.map((r) => (
               <li key={r.order.id}>
-                <button type="button" onClick={() => setOpenId(r.order.id)} className="w-full rounded-xl bg-card p-3 text-left ring-1 ring-foreground/10 hover:ring-brand/40 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+                <button type="button" onClick={() => setOpenId(r.order.id)} className="w-full rounded-xl bg-panel p-3 text-left transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-sm font-semibold">{r.order.code}</span>
                     <StatusBadge tone={ORDER_TONE[r.order.status]}>{statusText(r)}</StatusBadge>

@@ -34,7 +34,7 @@ export default function ReceiptQueue() {
     <div className="mx-auto max-w-7xl">
       <PageHeader title="Verifikasi struk" description="Cek foto struk dan hasil cek otomatis, lalu putuskan. Kursi pengunjung tetap ditahan selama struk menunggu." />
 
-      <div className="mb-4 inline-flex rounded-lg bg-muted p-1" role="tablist" aria-label="Filter antrean">
+      <div className="mb-4 inline-flex rounded-xl bg-panel p-1" role="tablist" aria-label="Filter antrean">
         {(
           [
             ['PENDING', `Menunggu (${pendingQ.data?.length ?? 0})`],
@@ -50,7 +50,7 @@ export default function ReceiptQueue() {
               setTab(key)
               setOpenId(null)
             }}
-            className={cn('min-h-9 rounded-md px-4 text-sm font-semibold transition pointer-coarse:min-h-11', tab === key ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+            className={cn('min-h-9 rounded-lg px-4 text-sm font-semibold transition pointer-coarse:min-h-11', tab === key ? 'bg-card shadow-[0_1px_2px_rgb(35_31_32/0.08)] ring-1 ring-foreground/[0.06]' : 'text-muted-foreground hover:text-foreground')}
           >
             {label}
           </button>

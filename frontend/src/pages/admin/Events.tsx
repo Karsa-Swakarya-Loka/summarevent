@@ -159,10 +159,10 @@ export default function Events() {
       ) : (
         <>
           {/* desktop / tablet table */}
-          <div className="hidden overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 md:block">
+          <div className="hidden overflow-hidden rounded-[1.25rem] bg-card ring-1 ring-foreground/[0.07] md:block">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableRow className="bg-panel hover:bg-panel">
                   <TableHead className="pl-4">Event</TableHead>
                   <TableHead>Venue</TableHead>
                   <TableHead>Tanggal</TableHead>
@@ -179,7 +179,7 @@ export default function Events() {
                     <TableRow key={e.event.id}>
                       <TableCell className="py-3 pl-4">
                         <div className="flex items-center gap-3">
-                          <Poster theme={e.event.posterTheme} title="" compact className="hidden h-12 w-16 shrink-0 rounded-lg lg:block [&_span]:hidden" />
+                          <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} title="" compact className="hidden h-12 w-16 shrink-0 rounded-lg lg:block [&_span]:hidden" />
                           <div className="min-w-0 max-w-[18rem] whitespace-normal">
                             <Link to={`/admin/events/${e.event.id}/edit`} className="line-clamp-2 font-semibold hover:underline">
                               {e.event.title}
@@ -214,8 +214,8 @@ export default function Events() {
             {list.map((e) => {
               const st = eventDisplayStatus(e.event)
               return (
-                <li key={e.event.id} className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-                  <Poster theme={e.event.posterTheme} title={e.event.title} compact className="h-24" />
+                <li key={e.event.id} className="overflow-hidden rounded-[1.25rem] bg-panel">
+                  <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} title={e.event.title} compact className="h-24" />
                   <div className="flex flex-col gap-3 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge tone={EVENT_STATUS_TONE[st]}>{EVENT_STATUS_LABEL[st]}</StatusBadge>

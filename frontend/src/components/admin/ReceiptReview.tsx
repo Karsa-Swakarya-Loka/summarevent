@@ -36,8 +36,8 @@ export function QueueRow({ item, active, onOpen }: { item: ReceiptQueueItem; act
       onClick={onOpen}
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'w-full rounded-xl bg-card p-3 text-left ring-1 ring-foreground/10 transition hover:ring-brand/40 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
-        active && 'ring-2 ring-brand',
+        'w-full rounded-xl bg-panel p-3 text-left transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
+        active && 'bg-card shadow-[0_1px_2px_rgb(35_31_32/0.06)] ring-2 ring-brand',
       )}
     >
       <div className="flex items-center justify-between gap-2">

@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { Bell, ChevronRight, ChevronsUpDown, LogOut, Menu, Search, X } from 'lucide-react'
 import { api } from '@/api'
+import type { EventSummary } from '@/api/contract'
 import { CommandPalette } from '@/components/admin/CommandPalette'
-import { ADMIN_NAV } from '@/components/admin/lib'
-import { BrandAppIcon, SummabaLogo } from '@/components/common/Brand'
+import { EventSwitcher } from '@/components/admin/EventSwitcher'
+import { ADMIN_NAV, EVENT_PAGES, pickEventId, rememberEventId, ticketedEvents, type AdminOutlet } from '@/components/admin/lib'
+import { BrandAppIcon } from '@/components/common/Brand'
 import { DemoMenu } from '@/components/common/DemoMenu'
+import { Poster } from '@/components/common/Poster'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useLive } from '@/hooks/useLive'
 import { onboardingDone } from '@/lib/intro'
@@ -24,14 +27,16 @@ function crumbsFor(pathname: string): Array<{ label: string; to?: string }> {
 }
 
 /**
- * Panitia shell, laid out like a floating dashboard: the sidebar is a card beside the page with the account on top,
- * search, the menu and the user at the bottom; the page opens with a breadcrumb. On a phone the sidebar is a drawer.
- * Signed out, it sends the visitor of an admin page to the panitia onboarding (first time on this device) or the
- * sign-in, and brings them back to that page afterwards.
+ * Panitia shell, laid out like a floating dashboard: the sidebar is a card beside the white page with the account on
+ * top, search, the menu, and the event in view at the foot; the page opens with a breadcrumb that names that event.
+ * The event comes from `?event=` or the one chosen last on this device, and every page gets it through the outlet
+ * context (useAdminEvent). On a phone the sidebar is a drawer. Signed out, it sends the visitor of an admin page to
+ * the panitia onboarding (first time on this device) or the sign-in, and brings them back to that page afterwards.
  */
 export function AdminLayout() {
   const navigate = useNavigate()
   const { pathname, search } = useLocation()
+  const [params, setParams] = useSearchParams()
   // the drawer remembers the path it opened on, so it is closed again on any other page
   const [openOn, setOpenOn] = useState<string | null>(null)
   const open = openOn === pathname
@@ -41,6 +46,14 @@ export function AdminLayout() {
 
   // pages load only once signed in, so the backend never sees a request without a token
   const pending = useLive(() => api.admin.listReceipts('PENDING').then((r) => r.length), [], { enabled: !!user })
+  const events = useLive(() => api.admin.listEvents(), [], { intervalMs: 15000, enabled: !!user })
+  const list = ticketedEvents(events.data)
+  const eventId = pickEventId(list, params.get('event'))
+  const summary = list.find((e) => e.event.id === eventId)
+  useEffect(() => {
+    if (eventId) rememberEventId(eventId)
+  }, [eventId])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -57,6 +70,29 @@ export function AdminLayout() {
     return <Navigate to={`/admin/${onboardingDone('admin') ? 'masuk' : 'mulai'}?next=${next}`} replace />
   }
 
+  const ctx: AdminOutlet = {
+    events: events.data,
+    eventsError: events.error,
+    reloadEvents: events.reload,
+    list,
+    eventId,
+    summary,
+    setEventId: (id) => {
+      rememberEventId(id)
+      if (EVENT_PAGES.includes(pathname)) {
+        setParams(
+          (p) => {
+            const n = new URLSearchParams(p)
+            n.set('event', id)
+            n.delete('session')
+            return n
+          },
+          { replace: true },
+        )
+      } else navigate(`/admin?event=${id}`)
+    },
+  }
+
   const signOut = () => {
     api.logout('ADMIN')
     navigate('/')
@@ -68,7 +104,7 @@ export function AdminLayout() {
     <div className="flex h-full flex-col gap-3 p-3">
       <AccountMenu user={user} onSignOut={signOut} />
 
-      <button type="button" onClick={() => setPalette(true)} className="flex h-11 items-center gap-2.5 rounded-xl bg-muted px-3 text-left text-sm text-muted-foreground transition hover:bg-muted/70 hover:text-foreground">
+      <button type="button" onClick={() => setPalette(true)} className="flex h-11 items-center gap-2.5 rounded-xl bg-panel px-3 text-left text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground">
         <Search className="size-4 shrink-0" aria-hidden />
         <span className="flex-1">Cari cepat</span>
         <kbd className="rounded-md bg-card px-1.5 py-0.5 font-sans text-[0.68rem] font-semibold text-muted-foreground ring-1 ring-foreground/10">⌘K</kbd>
@@ -81,7 +117,7 @@ export function AdminLayout() {
             to={to}
             end={end}
             className={({ isActive }) =>
-              cn('flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition', isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground/80 hover:bg-muted hover:text-foreground')
+              cn('flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition', isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground/80 hover:bg-panel hover:text-foreground')
             }
           >
             {({ isActive }) => (
@@ -96,33 +132,30 @@ export function AdminLayout() {
       </nav>
 
       <div className="mt-auto flex flex-col gap-2">
-        <div className="flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-xs text-muted-foreground">
-          <span>untuk</span>
-          <SummabaLogo className="h-5 text-xs" />
-        </div>
-        <button type="button" onClick={signOut} className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground">
+        <button type="button" onClick={signOut} className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition hover:bg-panel hover:text-foreground">
           <LogOut className="size-[1.125rem]" aria-hidden /> Keluar
         </button>
+        <EventSwitcher ctx={ctx} variant="card" />
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-dvh bg-background lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-4 lg:p-4">
-      <aside className="hidden lg:sticky lg:top-4 lg:block lg:h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:rounded-2xl lg:bg-card lg:shadow-[0_1px_2px_rgb(35_31_32/0.06),0_12px_32px_-20px_rgb(35_31_32/0.35)] lg:ring-1 lg:ring-foreground/[0.06]">
+    <div className="min-h-dvh bg-card lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-4 lg:p-4">
+      <aside className="hidden lg:sticky lg:top-4 lg:block lg:h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:rounded-2xl lg:bg-card lg:shadow-[0_1px_2px_rgb(35_31_32/0.06),0_12px_32px_-20px_rgb(35_31_32/0.35)] lg:ring-1 lg:ring-foreground/[0.07]">
         {sidebar}
       </aside>
 
       {/* phone: a top bar with the menu button, and the sidebar as a drawer */}
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-card/95 px-2 backdrop-blur lg:hidden">
-        <button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-muted" onClick={() => setOpen((v) => !v)} aria-label={open ? 'Tutup menu' : 'Buka menu'} aria-expanded={open}>
+        <button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-panel" onClick={() => setOpen((v) => !v)} aria-label={open ? 'Tutup menu' : 'Buka menu'} aria-expanded={open}>
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
         <Breadcrumb crumbs={crumbs} firstName={firstName} compact />
-        <button type="button" onClick={() => setPalette(true)} className="ml-auto flex size-11 items-center justify-center rounded-xl hover:bg-muted" aria-label="Cari cepat">
+        <button type="button" onClick={() => setPalette(true)} className="ml-auto flex size-11 items-center justify-center rounded-xl hover:bg-panel" aria-label="Cari cepat">
           <Search className="size-5" />
         </button>
-        <Link to="/admin/receipts" className="relative flex size-11 items-center justify-center rounded-xl hover:bg-muted" aria-label={pending.data ? `Struk menunggu: ${pending.data}` : 'Verifikasi struk'}>
+        <Link to="/admin/receipts" className="relative flex size-11 items-center justify-center rounded-xl hover:bg-panel" aria-label={pending.data ? `Struk menunggu: ${pending.data}` : 'Verifikasi struk'}>
           <Bell className="size-5" />
           {!!pending.data && <Badge n={pending.data} />}
         </Link>
@@ -136,10 +169,10 @@ export function AdminLayout() {
 
       <div className="min-w-0 lg:flex lg:flex-col">
         <div className="hidden items-center gap-3 px-1 pt-1 pb-4 lg:flex">
-          <Breadcrumb crumbs={crumbs} firstName={firstName} />
+          <Breadcrumb crumbs={crumbs} firstName={firstName} event={summary} />
           <Link
             to="/admin/receipts"
-            className="relative ml-auto flex size-10 items-center justify-center rounded-xl bg-card ring-1 ring-foreground/10 transition hover:bg-muted"
+            className="relative ml-auto flex size-10 items-center justify-center rounded-xl bg-card ring-1 ring-foreground/10 transition hover:bg-panel"
             aria-label={pending.data ? `Struk menunggu: ${pending.data}` : 'Verifikasi struk'}
           >
             <Bell className="size-[1.125rem]" />
@@ -147,7 +180,7 @@ export function AdminLayout() {
           </Link>
         </div>
         <main className="min-w-0 p-4 pb-24 lg:p-0 lg:pb-16">
-          <Outlet />
+          <Outlet context={ctx} />
         </main>
       </div>
 
@@ -167,16 +200,25 @@ function Badge({ n }: { n: number }) {
 
 const Sep = () => <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
 
-/** "Summarevent › Tim Event › Dashboard": the team, the person, the page. */
-function Breadcrumb({ crumbs, firstName, compact = false }: { crumbs: Array<{ label: string; to?: string }>; firstName: string; compact?: boolean }) {
+/** "Pentas Musikal … › Tim › Dashboard": the event in view, the person, the page, as the reference's team › user › page. */
+function Breadcrumb({ crumbs, firstName, event, compact = false }: { crumbs: Array<{ label: string; to?: string }>; firstName: string; event?: EventSummary; compact?: boolean }) {
   return (
     <nav aria-label="Lokasi halaman" className="min-w-0">
       <ol className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
         {!compact && (
           <>
-            <li className="flex items-center gap-1.5">
-              <BrandAppIcon className="size-5 rounded-md" />
-              Summarevent
+            <li className="flex min-w-0 items-center gap-1.5">
+              {event ? (
+                <Link to={`/admin?event=${event.event.id}`} className="-mx-1 flex min-h-11 min-w-0 items-center gap-1.5 px-1 hover:text-foreground">
+                  <Poster theme={event.event.posterTheme} palette={event.event.posterPalette} title={event.event.title} bare className="h-5 w-7 shrink-0 rounded-md" />
+                  <span className="max-w-[16rem] truncate">{event.event.title}</span>
+                </Link>
+              ) : (
+                <>
+                  <BrandAppIcon className="size-5 rounded-md" />
+                  Summarevent
+                </>
+              )}
             </li>
             <Sep />
             <li className="flex items-center gap-1.5">
@@ -211,7 +253,7 @@ function AccountMenu({ user, onSignOut }: { user: { name: string; email?: string
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="flex min-h-12 w-full items-center gap-2.5 rounded-xl px-2 text-left transition hover:bg-muted">
+        <button type="button" className="flex min-h-12 w-full items-center gap-2.5 rounded-xl px-2 text-left transition hover:bg-panel">
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-white" aria-hidden>
             {user.name[0]}
           </span>

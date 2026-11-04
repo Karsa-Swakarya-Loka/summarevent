@@ -159,11 +159,52 @@ export function ticketedEvents(events: EventSummary[] | undefined): EventSummary
   return (events ?? []).filter((e) => !e.event.infoOnly)
 }
 
+/** The event the panitia chose last, kept on this device so every admin screen opens on it again. */
+const EVENT_KEY = 'summarevent:admin:event'
+export function rememberedEventId(): string | null {
+  try {
+    return localStorage.getItem(EVENT_KEY)
+  } catch {
+    return null
+  }
+}
+export function rememberEventId(id: string) {
+  try {
+    localStorage.setItem(EVENT_KEY, id)
+  } catch {
+    /* private mode: the choice lives in the URL only */
+  }
+}
+
+/** Admin pages that show one event and carry it in `?event=`; the others only remember the choice. */
+export const EVENT_PAGES = ['/admin', '/admin/live', '/admin/orders']
+
+/** What the admin shell hands every page: the events, the one in view, and how to switch. */
+export interface AdminOutlet {
+  events: EventSummary[] | undefined
+  eventsError: unknown
+  reloadEvents: () => void
+  /** The events with something to monitor (sessions and tickets). */
+  list: EventSummary[]
+  eventId: string
+  summary: EventSummary | undefined
+  setEventId: (id: string) => void
+}
+
+/** The event to show: the one asked for, else the one chosen last, else the main demo event, else the first. */
 export function pickEventId(events: EventSummary[] | undefined, wanted: string | null | undefined): string {
   const list = events ?? []
-  if (wanted && list.some((e) => e.event.id === wanted)) return wanted
-  if (list.some((e) => e.event.id === MAIN_EVENT_ID)) return MAIN_EVENT_ID
+  const has = (id: string | null | undefined) => !!id && list.some((e) => e.event.id === id)
+  if (has(wanted)) return wanted!
+  const kept = rememberedEventId()
+  if (has(kept)) return kept!
+  if (has(MAIN_EVENT_ID)) return MAIN_EVENT_ID
   return list[0]?.event.id ?? ''
+}
+
+/** "33/200" of a session: tickets sold over its places. */
+export function sessionSold(s: EventSummary['sessions'][number]): { sold: number; total: number } {
+  return { sold: s.availability.reduce((a, x) => a + x.sold, 0), total: s.total }
 }
 
 export function sessionLabel(s: { label?: string; startAt: string; endAt: string; demoLive?: boolean }): string {

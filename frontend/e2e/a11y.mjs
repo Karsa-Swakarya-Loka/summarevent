@@ -210,6 +210,8 @@ const screens = [
   [phone, '/staff/mulai'],
   [phone, '/staff/masuk'],
   [phone, '/staff/masuk', signInError],
+  [phone, '/lupa-sandi?role=STAFF'],
+  [phone, '/reset?token=contoh'],
   [phone, '/staff'],
   [phone, '/staff/scan/ses_sk_demo'],
   [phone, '/staff/scan/ses_sk_demo', scanResult],

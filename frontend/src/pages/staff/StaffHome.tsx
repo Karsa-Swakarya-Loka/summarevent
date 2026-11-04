@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { CalendarDays, LogOut, MapPin, ReceiptText, ScanLine, Search, Ticket } from 'lucide-react'
+import { LogOut, ReceiptText, ScanLine, Search, Ticket } from 'lucide-react'
 import { api, type EventSummary, type SessionSummary } from '@/api'
 import { toast } from 'sonner'
 import type { User } from '@/domain/types'
 import { BrandLockup } from '@/components/common/Brand'
 import { EmptyState, StatusBadge } from '@/components/common/bits'
+import { Illustration } from '@/components/common/Illustration'
+import { Poster } from '@/components/common/Poster'
 import { scannableEvents, sessionName, sessionWindow, WINDOW_LABEL, type WindowState } from '@/components/staff/session'
+import { SectionLabel } from '@/components/visitor/Common'
+import { SettingsGroup, SettingsRow } from '@/components/visitor/SettingsList'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Tone } from '@/domain/labels'
@@ -34,8 +38,9 @@ export default function StaffHome() {
 
   return (
     <div className="pb-24">
-      <header className="bg-brand px-5 pt-5 pb-6 text-white">
-        <div className="flex items-center justify-between gap-3">
+      <header className="relative overflow-hidden bg-brand px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-6 text-white">
+        <div className="seat-dots absolute inset-0 text-white/10" aria-hidden />
+        <div className="relative flex items-center justify-between gap-3">
           <BrandLockup inverted className="h-7" />
           <button
             type="button"
@@ -48,9 +53,13 @@ export default function StaffHome() {
             <LogOut className="size-4" aria-hidden /> Keluar
           </button>
         </div>
-        <p className="mt-5 text-sm font-semibold text-white/80">Petugas check-in</p>
-        <h1 className="text-2xl leading-tight font-extrabold">Halo, {firstName}</h1>
-        <p className="mt-1 text-sm text-white/85">Pilih event dan sesi yang sedang berjalan, lalu mulai scan QR e-ticket.</p>
+        <div className="relative mt-4 flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[0.7rem] font-bold tracking-[0.18em] text-white/75 uppercase">Petugas check-in</p>
+            <h1 className="mt-1 font-poster text-[2.4rem] leading-[0.95] text-balance uppercase">Halo, {firstName}</h1>
+          </div>
+          <Illustration name="camera" className="-mb-3 w-24 shrink-0" enter={0.15} />
+        </div>
         <StaffSwitcher userId={user?.id ?? null} onSwitch={setUser} />
       </header>
 
@@ -61,9 +70,9 @@ export default function StaffHome() {
           </EmptyState>
         ) : !events.data ? (
           <div className="space-y-3" role="status" aria-busy="true" aria-label="Memuat event">
-            <Skeleton className="h-20 rounded-2xl" />
-            <Skeleton className="h-48 rounded-2xl" />
-            <Skeleton className="h-48 rounded-2xl" />
+            <Skeleton className="h-20 rounded-[1.4rem]" />
+            <Skeleton className="h-48 rounded-[1.4rem]" />
+            <Skeleton className="h-48 rounded-[1.4rem]" />
           </div>
         ) : !selected ? (
           <EmptyState icon={<Ticket />} title="Belum ada event untuk di-scan">
@@ -71,33 +80,18 @@ export default function StaffHome() {
           </EmptyState>
         ) : (
           <>
-            <section aria-labelledby="pick-event">
-              <h2 id="pick-event" className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
-                1 · Event
-              </h2>
-              {list.length > 1 ? (
-                <div role="radiogroup" aria-labelledby="pick-event" className="mt-2 space-y-2">
-                  {list.map((e) => (
-                    <EventOption
-                      key={e.event.id}
-                      summary={e}
-                      checked={e.event.id === selected.event.id}
-                      onSelect={() => setParams({ event: e.event.id }, { replace: true })}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-2">
-                  <EventOption summary={selected} checked onSelect={() => undefined} />
-                </div>
-              )}
+            <section aria-labelledby="pick-event" className="space-y-2.5">
+              <SectionLabel id="pick-event">Event</SectionLabel>
+              <div role="radiogroup" aria-labelledby="pick-event" className="divide-y overflow-hidden rounded-[1.4rem] bg-card shadow-xs">
+                {list.map((e) => (
+                  <EventOption key={e.event.id} summary={e} checked={e.event.id === selected.event.id} onSelect={() => setParams({ event: e.event.id }, { replace: true })} />
+                ))}
+              </div>
             </section>
 
-            <section aria-labelledby="pick-session">
-              <h2 id="pick-session" className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
-                2 · Sesi
-              </h2>
-              <div className="mt-2 space-y-3">
+            <section aria-labelledby="pick-session" className="space-y-2.5">
+              <SectionLabel id="pick-session">Sesi</SectionLabel>
+              <div className="space-y-3">
                 {sortSessions(selected, now).map((s) => (
                   <SessionCard key={s.id} summary={selected} session={s} now={now} />
                 ))}
@@ -106,8 +100,8 @@ export default function StaffHome() {
 
             <DeskReceiptsLink eventId={selected.event.id} />
 
-            <p className="rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground">
-              Tips demo: <b>Sesi Demo Juri</b> selalu sedang berlangsung, jadi scan bisa dicoba kapan saja. Di layar scan ada <b>Alat bantu demo</b> untuk mencoba tanpa HP kedua.
+            <p className="rounded-2xl bg-accent px-4 py-3 text-sm text-accent-foreground">
+              Demo: <b>Sesi Demo Juri</b> selalu berlangsung, dan di layar scan ada <b>Alat bantu demo</b> untuk mencoba tanpa HP kedua.
             </p>
           </>
         )}
@@ -122,7 +116,7 @@ function StaffSwitcher({ userId, onSwitch }: { userId: string | null; onSwitch: 
   const options = staff.data ?? []
   if (options.length < 2) return null
   return (
-    <label className="mt-3 flex flex-col gap-1.5 text-xs font-semibold text-white/85 sm:flex-row sm:items-center sm:gap-2">
+    <label className="relative mt-4 flex flex-col gap-1.5 text-[0.7rem] font-bold tracking-[0.18em] text-white/75 uppercase">
       Akun petugas (demo)
       <select
         value={userId ?? ''}
@@ -135,7 +129,7 @@ function StaffSwitcher({ userId, onSwitch }: { userId: string | null; onSwitch: 
             })
             .catch((err: unknown) => toast.error(errorMessage(err)))
         }
-        className="h-11 w-full min-w-0 rounded-lg border border-white/30 bg-white/10 px-2 text-sm text-white sm:w-auto sm:flex-1"
+        className="h-11 w-full min-w-0 rounded-full border border-white/30 bg-white/10 px-4 text-sm font-semibold tracking-normal text-white normal-case"
       >
         {options.map((s) => (
           <option key={s.id} value={s.id} className="text-ink">
@@ -150,23 +144,18 @@ function StaffSwitcher({ userId, onSwitch }: { userId: string | null; onSwitch: 
 /** PT-06: receipts can also be checked at the desk against the paper original. */
 function DeskReceiptsLink({ eventId }: { eventId: string }) {
   const pending = useLive(() => api.staff.listReceipts(eventId).then((r) => r.length), [eventId])
+  const n = pending.data ?? 0
   return (
-    <section aria-labelledby="desk-receipts">
-      <h2 id="desk-receipts" className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
-        3 · Struk di desk
-      </h2>
-      <Link
+    <SettingsGroup id="desk-receipts" title="Struk di desk">
+      <SettingsRow
+        icon={<ReceiptText />}
+        tint={n ? 'bg-[#ffe7a3] text-ink' : 'bg-muted text-ink'}
+        title="Verifikasi struk di desk"
+        sub="Cocokkan struk kertas, lalu setujui atau minta revisi"
+        right={n ? <StatusBadge tone="warn">{n} menunggu</StatusBadge> : undefined}
         to={`/staff/receipts?event=${eventId}`}
-        className="mt-2 flex min-h-14 items-center gap-3 rounded-2xl border bg-card px-4 py-3 hover:bg-muted/60"
-      >
-        <ReceiptText className="size-5 shrink-0 text-brand" aria-hidden />
-        <span className="min-w-0 flex-1">
-          <span className="block font-bold">Verifikasi struk di desk</span>
-          <span className="block text-xs text-muted-foreground">Cocokkan struk kertas, lalu setujui atau minta revisi</span>
-        </span>
-        {!!pending.data && <StatusBadge tone="warn">{pending.data} menunggu</StatusBadge>}
-      </Link>
-    </section>
+      />
+    </SettingsGroup>
   )
 }
 
@@ -182,31 +171,16 @@ function sortSessions(summary: EventSummary, now: Date): SessionSummary[] {
 function EventOption({ summary, checked, onSelect }: { summary: EventSummary; checked: boolean; onSelect: () => void }) {
   const { event, venue } = summary
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={checked}
-      onClick={onSelect}
-      className={cn(
-        'flex min-h-14 w-full items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-left',
-        checked ? 'border-brand ring-2 ring-brand/25' : 'hover:bg-muted/60',
-      )}
-    >
-      <span className={cn('flex size-5 shrink-0 items-center justify-center rounded-full border-2', checked ? 'border-brand' : 'border-muted-foreground/50')} aria-hidden>
-        {checked && <span className="size-2.5 rounded-full bg-brand" />}
-      </span>
+    <button type="button" role="radio" aria-checked={checked} onClick={onSelect} className={cn('flex min-h-16 w-full items-center gap-3 px-3.5 py-3 text-left transition active:bg-muted', checked && 'bg-muted/50')}>
+      <Poster theme={event.posterTheme} title={event.title} bare className="h-11 w-16 shrink-0 rounded-xl" />
       <span className="min-w-0 flex-1">
-        <span className="block font-bold leading-snug">{event.title}</span>
-        <span className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <CalendarDays className="size-3.5" aria-hidden />
-            {fmtShortDate(event.startAt)}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="size-3.5" aria-hidden />
-            {venue.name}
-          </span>
+        <span className="line-clamp-2 font-bold leading-snug">{event.title}</span>
+        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+          {fmtShortDate(event.startAt)} · {venue.name}
         </span>
+      </span>
+      <span className={cn('grid size-6 shrink-0 place-items-center rounded-full border-2 transition', checked ? 'border-ink' : 'border-muted-foreground/40')} aria-hidden>
+        {checked && <span className="size-3 rounded-full bg-ink" />}
       </span>
     </button>
   )
@@ -217,42 +191,52 @@ function SessionCard({ summary, session, now }: { summary: EventSummary; session
   const s = w.session
   const live = !!session.demoLive || w.running
   const counter = useLive(() => api.staff.recentCheckins(session.id), [session.id])
+  const pct = counter.data?.capacity ? Math.min(100, Math.round((counter.data.checkedIn / counter.data.capacity) * 100)) : 0
   const windowText =
     w.state === 'NOT_YET'
       ? `Check-in dibuka ${fmtDateTime(w.open.toISOString())}`
       : w.state === 'OPEN'
-        ? `Check-in dibuka sampai ${fmtTime(w.close.toISOString())} WIB`
+        ? `Check-in sampai ${fmtTime(w.close.toISOString())} WIB`
         : `Check-in ditutup ${fmtDateTime(w.close.toISOString())}`
 
   return (
-    <article
-      className={cn('rounded-2xl border bg-card p-4', live && 'border-brand bg-brand-soft/50 ring-2 ring-brand/25')}
-      aria-label={`${sessionName(s)}${live ? ', sedang berlangsung' : ''}`}
-      data-session={session.id}
-    >
-      <div className="flex flex-wrap items-center gap-1.5">
+    <article className={cn('overflow-hidden rounded-[1.4rem] bg-card shadow-xs', live && 'ring-2 ring-ink')} aria-label={`${sessionName(s)}${live ? ', sedang berlangsung' : ''}`} data-session={session.id}>
+      <div className={cn('flex flex-wrap items-center gap-1.5 px-4 pt-3', live && 'seat-dots bg-brand-soft py-2.5 text-brand/25')}>
         {live && <StatusBadge tone="brand">Sedang berlangsung</StatusBadge>}
         <StatusBadge tone={WINDOW_TONE[w.state]}>{WINDOW_LABEL[w.state]}</StatusBadge>
       </div>
-      <h3 className="mt-2 text-lg leading-snug font-bold">{sessionName(s)}</h3>
-      <p className="text-sm text-muted-foreground">
-        {fmtShortDate(s.startAt)} · {fmtRange(s.startAt, s.endAt)}
-      </p>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span>{windowText}</span>
-        <span className="font-semibold tabular-nums">{counter.data ? `Hadir ${counter.data.checkedIn} / ${counter.data.capacity}` : 'Hadir – / –'}</span>
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Button asChild className="h-12 text-base" variant={w.state === 'OPEN' ? 'default' : 'secondary'}>
-          <Link to={`/staff/scan/${session.id}`}>
-            <ScanLine className="size-5" /> Mulai scan
-          </Link>
-        </Button>
-        <Button asChild variant="outline" className="h-12 text-base">
-          <Link to={`/staff/search/${session.id}`}>
-            <Search className="size-5" /> Cari manual
-          </Link>
-        </Button>
+      <div className="p-4 pt-3">
+        <h3 className="font-poster text-[1.7rem] leading-[0.95] text-balance uppercase">{sessionName(s)}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {fmtShortDate(s.startAt)} · {fmtRange(s.startAt, s.endAt)}
+        </p>
+        <div className="mt-3 rounded-2xl bg-muted/60 px-3.5 py-3">
+          <div className="flex items-end justify-between gap-3">
+            <p className="leading-none">
+              <span className="block text-[0.62rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">Hadir</span>
+              <span className="mt-1 block font-poster text-3xl tabular-nums">
+                {counter.data ? counter.data.checkedIn : '–'}
+                <span className="text-base text-muted-foreground"> / {counter.data ? counter.data.capacity : '–'}</span>
+              </span>
+            </p>
+            <p className="max-w-[55%] text-right text-xs text-muted-foreground">{windowText}</p>
+          </div>
+          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-ink/10" aria-hidden>
+            <div className="h-full rounded-full bg-brand transition-[width] duration-500" style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Button asChild className="h-12 text-base" variant={w.state === 'OPEN' ? 'default' : 'secondary'}>
+            <Link to={`/staff/scan/${session.id}`}>
+              <ScanLine className="size-5" /> Mulai scan
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="h-12 text-base">
+            <Link to={`/staff/search/${session.id}`}>
+              <Search className="size-5" /> Cari manual
+            </Link>
+          </Button>
+        </div>
       </div>
     </article>
   )

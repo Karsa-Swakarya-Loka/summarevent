@@ -1,18 +1,20 @@
 /**
- * Panitia dashboard (AD-08 / AD-09), laid out like a product dashboard: a welcome row with the event picker and the
+ * Panitia dashboard (AD-08 / AD-09), laid out like a product dashboard: a welcome row with the event in view and the
  * main action; the sessions beside the money per day; tickets per day beside the attendance card; four stat tiles;
  * then the latest orders as a table with filters and pages. Every number comes from `api.admin.stats`, refreshed
- * every 5 seconds, and the table from `api.admin.listOrders`.
+ * every 5 seconds, and the table from `api.admin.listOrders`. The event comes from the admin shell (useAdminEvent).
  */
 import { useMemo, useState, type ReactNode } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link } from 'react-router'
 import { ArrowLeft, ArrowRight, Download, FileSpreadsheet, Plus, ReceiptText, Rows3, Ticket, Users, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { EventStats, SessionStats } from '@/api/contract'
-import { EventSelect, LiveIndicator, LoadError } from '@/components/admin/AdminUi'
-import { CheckinHeatmap, RevenueBars, TicketsArea } from '@/components/admin/dashboardCharts'
-import { RANGES, downloadEventCsv, lastDays, pickEventId, seatSummary, sessionLabel, ticketedEvents, type Range } from '@/components/admin/lib'
+import { LiveIndicator, LoadError } from '@/components/admin/AdminUi'
+import { CheckinHeatmap, RevenueBars, TicketsArea, type HeatCell } from '@/components/admin/dashboardCharts'
+import { EventSwitcher } from '@/components/admin/EventSwitcher'
+import { useAdminEvent, useCountUp } from '@/components/admin/hooks'
+import { RANGES, downloadEventCsv, lastDays, seatSummary, sessionLabel, type Range } from '@/components/admin/lib'
 import { StatusBadge, Swatch } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -29,10 +31,8 @@ import { OrderDetailPanel } from './Orders'
 const PAGE = 8
 
 export default function Dashboard() {
-  const [params, setParams] = useSearchParams()
-  const events = useLive(() => api.admin.listEvents(), [])
-  const list = ticketedEvents(events.data)
-  const eventId = pickEventId(list, params.get('event'))
+  const ctx = useAdminEvent()
+  const { eventId } = ctx
   const stats = useLive(() => api.admin.stats(eventId), [eventId], {
     intervalMs: 5000,
     enabled: !!eventId,
@@ -45,11 +45,11 @@ export default function Dashboard() {
   return (
     <div className="mx-auto max-w-[80rem]">
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-full sm:basis-auto">
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Selamat datang, {firstName}</h1>
           <LiveIndicator at={s?.generatedAt} everySec={5} className="mt-0.5" />
         </div>
-        <EventSelect events={events.data ? list : undefined} value={eventId} onChange={(id) => setParams({ event: id }, { replace: true })} hideLabel label="Pilih event" className="w-full sm:w-auto" />
+        <EventSwitcher ctx={ctx} variant="pill" className="min-w-0 flex-1 sm:flex-none" />
         <Button asChild size="lg" className="h-10">
           <Link to="/admin/events/new">
             <Plus /> Buat event
@@ -57,7 +57,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      {events.error ? <LoadError error={events.error} onRetry={events.reload} className="mb-4" /> : null}
+      {ctx.eventsError ? <LoadError error={ctx.eventsError} onRetry={ctx.reloadEvents} className="mb-4" /> : null}
       {stats.error && !s ? <LoadError error={stats.error} onRetry={stats.reload} className="mb-4" /> : null}
 
       <div className="grid gap-4 xl:grid-cols-[2fr_3fr]">
@@ -92,18 +92,19 @@ export default function Dashboard() {
 
 /* ---------------------------------------------------------------- cards */
 
+/** The reference's card: a grey panel on the white page, its tiles white. */
 function Card({ className, children, label }: { className?: string; children: ReactNode; label?: string }) {
   return (
-    <section aria-label={label} className={cn('rounded-2xl bg-card p-4 shadow-[0_1px_2px_rgb(35_31_32/0.05)] ring-1 ring-foreground/[0.07] sm:p-5', className)}>
+    <section aria-label={label} className={cn('flex flex-col rounded-[1.25rem] bg-panel p-4 sm:p-5', className)}>
       {children}
     </section>
   )
 }
 
-/** Weekly / Monthly / Yearly in the reference: here the last 7, 14 or 30 days. */
+/** Weekly / Monthly / Yearly in the reference: here the last 7, 14 or 30 days. The chosen one sits on a white pill. */
 function RangeTabs({ value, onChange, id }: { value: Range; onChange: (r: Range) => void; id: string }) {
   return (
-    <div role="tablist" aria-label="Rentang waktu" className="flex gap-1 rounded-lg bg-muted p-0.5 text-xs font-semibold">
+    <div role="tablist" aria-label="Rentang waktu" className="flex gap-0.5 text-sm font-semibold">
       {RANGES.map((r) => (
         <button
           key={r.days}
@@ -112,7 +113,7 @@ function RangeTabs({ value, onChange, id }: { value: Range; onChange: (r: Range)
           id={`${id}-${r.days}`}
           aria-selected={value === r.days}
           onClick={() => onChange(r.days)}
-          className={cn('min-h-8 rounded-md px-2.5 transition pointer-coarse:min-h-11', value === r.days ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+          className={cn('min-h-9 rounded-lg px-3 transition pointer-coarse:min-h-11', value === r.days ? 'bg-card text-foreground shadow-[0_1px_2px_rgb(35_31_32/0.08)] ring-1 ring-foreground/[0.06]' : 'text-muted-foreground hover:text-foreground')}
         >
           {r.label}
         </button>
@@ -125,12 +126,30 @@ function RangeTabs({ value, onChange, id }: { value: Range; onChange: (r: Range)
 function DeltaChip({ now, before, suffix = '' }: { now: number; before: number; suffix?: string }) {
   if (!before) return null
   const pct = Math.round(((now - before) / before) * 100)
-  const tone = pct > 0 ? 'bg-brand-soft text-[#0b6b35]' : pct < 0 ? 'bg-status-invalid/10 text-[#a11b1b]' : 'bg-muted text-muted-foreground'
+  const tone = pct > 0 ? 'bg-brand-soft text-[#0b6b35]' : pct < 0 ? 'bg-status-invalid/10 text-[#a11b1b]' : 'bg-card text-muted-foreground ring-1 ring-foreground/[0.06]'
   return (
     <span className={cn('rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums', tone)} title={`Dibanding ${suffix || 'periode sebelumnya'}`}>
       {pct > 0 ? '+' : ''}
       {pct.toLocaleString('id-ID')}%
     </span>
+  )
+}
+
+/** The card's headline: a label, the big number counting up, and what sits beside it. */
+function Headline({ label, value, format = (n) => n.toLocaleString('id-ID'), beside, loading, width = 'w-24' }: { label: ReactNode; value: number; format?: (n: number) => string; beside?: ReactNode; loading: boolean; width?: string }) {
+  const n = useCountUp(value)
+  return (
+    <div className="min-w-0">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      {loading ? (
+        <Skeleton className={cn('mt-1 h-8 bg-track', width)} />
+      ) : (
+        <p className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-semibold tabular-nums">
+          <span className="truncate">{format(Math.round(n))}</span>
+          {beside}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -156,11 +175,8 @@ function SessionsCard({ s, eventId, loading }: { s?: EventStats; eventId: string
   return (
     <Card label="Sesi">
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-sm text-muted-foreground">Sesi</p>
-          {loading ? <Skeleton className="mt-1 h-8 w-10" /> : <p className="text-2xl font-semibold tabular-nums">{sessions.length}</p>}
-        </div>
-        <Button asChild variant="ghost" size="sm" className="-mr-2 text-foreground">
+        <Headline label="Sesi" value={sessions.length} loading={loading} width="w-10" />
+        <Button asChild variant="ghost" size="sm" className="-mr-2 text-foreground hover:bg-card">
           <Link to={`/admin/live?event=${eventId}`}>
             Peta kursi live <Rows3 />
           </Link>
@@ -169,7 +185,7 @@ function SessionsCard({ s, eventId, loading }: { s?: EventStats; eventId: string
       {loading ? (
         <div className="mt-4 grid grid-cols-2 gap-3">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
+            <Skeleton key={i} className="h-24 rounded-xl bg-track" />
           ))}
         </div>
       ) : sessions.length ? (
@@ -181,13 +197,13 @@ function SessionsCard({ s, eventId, loading }: { s?: EventStats; eventId: string
           ))}
         </ul>
       ) : (
-        <p className="mt-4 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">Event ini belum punya sesi.</p>
+        <p className="mt-4 rounded-xl border border-dashed border-foreground/15 p-6 text-center text-sm text-muted-foreground">Event ini belum punya sesi.</p>
       )}
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <Button variant="outline" className="h-10 bg-card" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={at === 0}>
+      <div className="mt-auto grid grid-cols-2 gap-3 pt-3">
+        <Button variant="outline" className="h-10 border-transparent bg-card shadow-[0_1px_2px_rgb(35_31_32/0.06)]" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={at === 0}>
           <ArrowLeft /> Sebelumnya
         </Button>
-        <Button variant="outline" className="h-10 bg-card" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))} disabled={at >= pages - 1}>
+        <Button variant="outline" className="h-10 border-transparent bg-card shadow-[0_1px_2px_rgb(35_31_32/0.06)]" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))} disabled={at >= pages - 1}>
           Berikutnya <ArrowRight />
         </Button>
       </div>
@@ -199,9 +215,9 @@ function SessionTile({ s, eventId }: { s: SessionStats; eventId: string }) {
   const occ = occupancy(s.occupancyPct)
   const soldPct = s.capacity ? Math.round((s.sold / s.capacity) * 100) : 0
   return (
-    <Link to={`/admin/live?event=${eventId}&session=${s.session.id}`} className="block rounded-xl bg-muted/60 p-3 transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+    <Link to={`/admin/live?event=${eventId}&session=${s.session.id}`} className="block rounded-xl bg-card p-3 shadow-[0_1px_2px_rgb(35_31_32/0.05)] transition hover:shadow-[0_6px_18px_-8px_rgb(35_31_32/0.3)] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
       <div className="flex items-center gap-2.5">
-        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-card text-sm font-bold tabular-nums ring-1 ring-foreground/10" aria-hidden>
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-panel text-sm font-bold tabular-nums" aria-hidden>
           {s.session.demoLive ? '▶' : fmtShortDate(s.session.startAt).split(',')[0].slice(0, 3)}
         </span>
         <span className="min-w-0 leading-tight">
@@ -209,7 +225,7 @@ function SessionTile({ s, eventId }: { s: SessionStats; eventId: string }) {
           <span className="block truncate text-xs text-muted-foreground">{s.session.demoLive ? 'Selalu berlangsung' : fmtRange(s.session.startAt, s.session.endAt)}</span>
         </span>
       </div>
-      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg bg-card px-2.5 py-1.5 text-xs">
+      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg bg-panel px-2.5 py-1.5 text-xs">
         <span className="tabular-nums">
           <span className="font-semibold">{s.sold}</span>
           <span className="text-muted-foreground">
@@ -222,7 +238,7 @@ function SessionTile({ s, eventId }: { s: SessionStats; eventId: string }) {
   )
 }
 
-/** The reference's "Earned so far": money per day, the biggest day in the brand green. */
+/** The reference's "Earned so far": money per day as bars on tracks. */
 function RevenueCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   const [range, setRange] = useState<Range>(7)
   const rows = useMemo(() => (s ? lastDays(s.daily, range) : []), [s, range])
@@ -230,19 +246,10 @@ function RevenueCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   return (
     <Card label="Pendapatan per hari">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">Pendapatan {RANGES.find((r) => r.days === range)?.label.toLowerCase()}</p>
-          {loading ? (
-            <Skeleton className="mt-1 h-8 w-40" />
-          ) : (
-            <p className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
-              {rupiahPlain(sum.now)} <DeltaChip now={sum.now} before={sum.before} suffix={`${range} hari sebelumnya`} />
-            </p>
-          )}
-        </div>
+        <Headline label={`Pendapatan ${RANGES.find((r) => r.days === range)?.label.toLowerCase()}`} value={sum.now} format={rupiahPlain} beside={<DeltaChip now={sum.now} before={sum.before} suffix={`${range} hari sebelumnya`} />} loading={loading} width="w-40" />
         <RangeTabs id="rev" value={range} onChange={setRange} />
       </div>
-      <div className="mt-3">{loading ? <Skeleton className="h-56 rounded-xl" /> : <RevenueBars rows={rows} />}</div>
+      <div className="mt-4 flex min-h-56 flex-1 flex-col">{loading ? <Skeleton className="flex-1 rounded-xl bg-track" /> : <RevenueBars rows={rows} className="flex-1" />}</div>
     </Card>
   )
 }
@@ -255,25 +262,17 @@ function TicketsCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   return (
     <Card label="Tiket terjual per hari">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">Tiket terjual</p>
-          {loading ? (
-            <Skeleton className="mt-1 h-8 w-24" />
-          ) : (
-            <p className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
-              {sum.now} <DeltaChip now={sum.now} before={sum.before} suffix={`${range} hari sebelumnya`} />
-            </p>
-          )}
-        </div>
+        <Headline label="Tiket terjual" value={sum.now} beside={<DeltaChip now={sum.now} before={sum.before} suffix={`${range} hari sebelumnya`} />} loading={loading} />
         <RangeTabs id="tix" value={range} onChange={setRange} />
       </div>
-      <div className="mt-3">{loading ? <Skeleton className="h-44 rounded-xl" /> : <TicketsArea rows={rows} />}</div>
+      <div className="mt-4 flex min-h-48 flex-1 flex-col">{loading ? <Skeleton className="flex-1 rounded-xl bg-track" /> : <TicketsArea rows={rows} className="flex-1" />}</div>
     </Card>
   )
 }
 
-/** The reference's "Contributions": attendance, four small facts, and the check-in heatmap. */
+/** The reference's "Contributions": attendance, four small facts, and the check-in heatmap, whose hovered cell takes over the headline. */
 function AttendanceCard({ s, loading }: { s?: EventStats; loading: boolean }) {
+  const [cell, setCell] = useState<HeatCell | null>(null)
   const checkedIn = s ? s.bySession.reduce((a, x) => a + x.checkedIn, 0) : 0
   const sold = s ? s.bySession.reduce((a, x) => a + x.sold, 0) : 0
   const top = s?.topTenants[0]
@@ -294,45 +293,39 @@ function AttendanceCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   ]
   return (
     <Card label="Kehadiran">
-      <p className="text-sm text-muted-foreground">Sudah check-in</p>
-      {loading ? (
-        <Skeleton className="mt-1 h-8 w-24" />
-      ) : (
-        <p className="flex items-center gap-2 text-2xl font-semibold tabular-nums">
-          {checkedIn}
-          <span className="text-sm font-normal text-muted-foreground">dari {sold} tiket</span>
-        </p>
-      )}
+      <Headline
+        label={cell ? `${cell.day} ${String(cell.hour).padStart(2, '0')}.00` : 'Sudah check-in'}
+        value={cell ? cell.value : checkedIn}
+        beside={<span className="text-sm font-normal text-muted-foreground">{cell ? 'check-in' : `dari ${sold} tiket`}</span>}
+        loading={loading}
+      />
       <dl className="mt-4 grid grid-cols-2 gap-2">
         {facts.map((f) => (
-          <div key={f.label} className="rounded-xl bg-muted/60 px-3 py-2.5">
-            {loading ? <Skeleton className="h-5 w-16" /> : <dd className="truncate text-base font-semibold tabular-nums">{f.value}</dd>}
+          <div key={f.label} className="rounded-xl bg-card px-3 py-2.5 shadow-[0_1px_2px_rgb(35_31_32/0.05)]">
+            {loading ? <Skeleton className="h-5 w-16 bg-track" /> : <dd className="truncate text-base font-semibold tabular-nums">{f.value}</dd>}
             <dt className="truncate text-xs text-muted-foreground">{f.label}</dt>
           </div>
         ))}
       </dl>
       <p className="mt-4 mb-2 text-sm text-muted-foreground">Check-in per jam</p>
-      {loading || !s ? <Skeleton className="h-28 rounded-xl" /> : <CheckinHeatmap data={s.checkinsByHour} />}
+      {loading || !s ? <Skeleton className="h-28 rounded-xl bg-track" /> : <CheckinHeatmap data={s.checkinsByHour} onHover={setCell} />}
     </Card>
   )
 }
 
+/** The reference's metric tiles: an icon on a white square, the label, the number. */
 function StatTile({ icon, label, value, hint, tone = 'default', to, loading }: { icon: ReactNode; label: string; value?: ReactNode; hint?: string; tone?: 'default' | 'warn'; to?: string; loading: boolean }) {
   const body = (
     <>
-      <span className={cn('grid size-9 place-items-center rounded-lg ring-1 ring-foreground/10 [&_svg]:size-4', tone === 'warn' ? 'bg-brand-yellow/40 text-[#7a5600]' : 'bg-card text-foreground')} aria-hidden>
+      <span className={cn('grid size-10 place-items-center rounded-xl shadow-[0_1px_2px_rgb(35_31_32/0.06)] [&_svg]:size-[1.125rem]', tone === 'warn' ? 'bg-brand-yellow text-ink' : 'bg-card text-foreground')} aria-hidden>
         {icon}
       </span>
-      <span className="mt-3 block text-sm text-muted-foreground">{label}</span>
-      {loading ? <Skeleton className="mt-1 h-8 w-20" /> : <span className="block truncate text-xl font-semibold tabular-nums sm:text-2xl">{value}</span>}
+      <span className="mt-4 block text-sm text-muted-foreground">{label}</span>
+      {loading ? <Skeleton className="mt-1 h-8 w-20 bg-track" /> : <span className="block truncate text-xl font-semibold tabular-nums sm:text-2xl">{value}</span>}
       {hint && <span className="mt-0.5 block truncate text-xs text-muted-foreground">{hint}</span>}
     </>
   )
-  const cls = cn(
-    'block min-w-0 rounded-2xl bg-card p-4 shadow-[0_1px_2px_rgb(35_31_32/0.05)] ring-1 ring-foreground/[0.07]',
-    tone === 'warn' && 'ring-brand-yellow',
-    to && 'transition hover:ring-foreground/25 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
-  )
+  const cls = cn('block min-w-0 rounded-[1.25rem] bg-panel p-4 sm:p-5', tone === 'warn' && 'ring-2 ring-brand-yellow', to && 'transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none')
   return to ? (
     <Link to={to} className={cls}>
       {body}
@@ -376,7 +369,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
   }
 
   return (
-    <Card label="Pesanan terbaru" className="mt-4 p-0 sm:p-0">
+    <section aria-label="Pesanan terbaru" className="mt-4 overflow-hidden rounded-[1.25rem] bg-card ring-1 ring-foreground/[0.07]">
       <div className="flex flex-wrap items-center gap-3 p-4 sm:p-5">
         <div className="min-w-0 flex-1 basis-full md:basis-auto">
           <p className="text-sm text-muted-foreground">Pesanan</p>
@@ -446,7 +439,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
           <div className="hidden md:block">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableRow className="bg-panel hover:bg-panel">
                   <TableHead className="pl-5">Pemesan</TableHead>
                   <TableHead>Kursi</TableHead>
                   <TableHead>Status</TableHead>
@@ -481,7 +474,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtDateTime(r.order.createdAt)}</TableCell>
                     <TableCell className="text-right">
-                      <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums">
+                      <span className="rounded-md bg-panel px-2 py-1 text-xs font-semibold tabular-nums">
                         {r.order.totalAmount ? rupiahPlain(r.order.totalAmount) : r.category.accessMethod === 'RECEIPT' ? 'Struk' : 'Gratis'}
                       </span>
                     </TableCell>
@@ -552,6 +545,6 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
       <Sheet open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-md">{open ? <OrderDetailPanel row={open} /> : <SheetTitle className="sr-only">Detail pesanan</SheetTitle>}</SheetContent>
       </Sheet>
-    </Card>
+    </section>
   )
 }

@@ -60,7 +60,7 @@ export default function StaffHome() {
             {errorMessage(events.error)}
           </EmptyState>
         ) : !events.data ? (
-          <div className="space-y-3" aria-busy="true" aria-label="Memuat event">
+          <div className="space-y-3" role="status" aria-busy="true" aria-label="Memuat event">
             <Skeleton className="h-20 rounded-2xl" />
             <Skeleton className="h-48 rounded-2xl" />
             <Skeleton className="h-48 rounded-2xl" />

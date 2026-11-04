@@ -434,7 +434,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
       {rows.error && !rows.data ? (
         <LoadError error={rows.error} onRetry={rows.reload} className="m-4" />
       ) : !rows.data ? (
-        <div className="space-y-2 p-4" aria-busy="true" aria-label="Memuat pesanan">
+        <div className="space-y-2 p-4" role="status" aria-busy="true" aria-label="Memuat pesanan">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-12 rounded-lg" />
           ))}

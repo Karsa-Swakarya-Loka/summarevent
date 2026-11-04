@@ -37,7 +37,7 @@ export default function DeskReceipts() {
             {errorMessage(q.error)}
           </EmptyState>
         ) : !q.data ? (
-          <div className="space-y-2" aria-busy="true" aria-label="Memuat antrean">
+          <div className="space-y-2" role="status" aria-busy="true" aria-label="Memuat antrean">
             <Skeleton className="h-24 rounded-xl" />
             <Skeleton className="h-24 rounded-xl" />
           </div>

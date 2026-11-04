@@ -123,7 +123,7 @@ export default function RolePicker() {
               <strong>Versi live:</strong> semua HP dan laptop memakai data yang sama di server. Buka denah yang sama di dua HP, pilih
               kursi yang sama, lalu tekan Hayu ngiring berbarengan: hanya satu yang berhasil.
             </p>
-            <a href={DEMO_URL} className="font-semibold text-brand-yellow underline-offset-4 hover:underline">
+            <a href={DEMO_URL} className="inline-flex min-h-11 items-center font-semibold text-brand-yellow underline-offset-4 hover:underline">
               Versi demo (data per browser) →
             </a>
           </section>

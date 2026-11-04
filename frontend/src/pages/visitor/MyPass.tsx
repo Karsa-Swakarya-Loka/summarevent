@@ -96,7 +96,7 @@ export default function MyPass() {
         ))}
 
         {tickets.loading && !tickets.data ? (
-          <div className="space-y-3" aria-busy="true" aria-label="Memuat tiket">
+          <div className="space-y-3" role="status" aria-busy="true" aria-label="Memuat tiket">
             <Skeleton className="h-32 w-full rounded-[1.1rem]" />
             <Skeleton className="h-32 w-full rounded-[1.1rem]" />
           </div>

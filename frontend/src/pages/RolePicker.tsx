@@ -1,22 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ArrowRight, RadioTower, RotateCcw, Smartphone } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiMode, DEMO_URL, LIVE_URL, liveVersionReady } from '@/api'
-import { CoBrand } from '@/components/common/Brand'
+import { BrandLockup, CoBrand } from '@/components/common/Brand'
 import { Illustration } from '@/components/common/Illustration'
-import { SundaText } from '@/components/common/bits'
-import { Button } from '@/components/ui/button'
+import { StickerSlap, type StickerSpec } from '@/components/landing/StickerSlap'
 
-/** DM-01: one link, three roles – so judges can try every side of the system. */
+/**
+ * DM-01: one link, three roles, so judges can try every side of the system. The page is the Sticker Slap landing:
+ * the three roles as columns on the green panel, the wordmark writing itself along the bottom, and our stickers
+ * slapped on it. Each role opens with its splash, its onboarding the first time, and its sign-in; Rina is the
+ * visitor shortcut.
+ */
 export default function RolePicker() {
   const navigate = useNavigate()
   const [busy, setBusy] = useState<string | null>(null)
   const live = apiMode === 'live'
   const [liveReady, setLiveReady] = useState(false)
 
-  // Demo version: offer the live version (shared backend, real two-phone test) only when one is
-  // configured (VITE_LIVE_URL) and it answers its health check.
+  // Demo version: offer the live version (shared backend, real two-phone test) only when one is configured
+  // (VITE_LIVE_URL) and it answers its health check.
   useEffect(() => {
     if (live || !LIVE_URL) return
     const ctl = new AbortController()
@@ -26,7 +30,6 @@ export default function RolePicker() {
     return () => ctl.abort()
   }, [live])
 
-  // each role opens with its splash, its onboarding the first time, and its sign-in (Rina is the visitor shortcut)
   const enter = async (role: 'VISITOR' | 'VISITOR_RINA' | 'ADMIN' | 'STAFF') => {
     setBusy(role)
     try {
@@ -37,126 +40,93 @@ export default function RolePicker() {
     }
   }
 
-  const roles = [
-    {
-      key: 'VISITOR' as const,
-      art: 'kursi' as const,
-      title: 'Pengunjung',
-      body: 'Pilih event, pilih kursi di denah, bayar (simulasi) atau tukar struk, lalu dapat e-ticket QR.',
-      cta: 'Masuk sebagai pengunjung',
-    },
-    {
-      key: 'ADMIN' as const,
-      art: 'notes' as const,
-      title: 'Panitia',
-      body: 'Atur event, kategori, harga, denah & periode jual. Pantau kursi, transaksi, struk, dan kehadiran.',
-      cta: 'Masuk sebagai panitia',
-    },
-    {
-      key: 'STAFF' as const,
-      art: 'camera' as const,
-      title: 'Petugas',
-      body: 'Scan QR di pintu masuk: Valid, Sudah digunakan, atau Tidak valid. Cari tiket manual kalau QR rusak.',
-      cta: 'Masuk sebagai petugas',
-    },
+  const reset = async () => {
+    if (live && !window.confirm('Versi live dipakai bersama. Reset akan menghapus pesanan dan check-in dari semua HP. Lanjut?')) return
+    await api.demo.reset()
+    toast.success('Data demo dikembalikan ke awal.')
+  }
+
+  const stickers: StickerSpec[] = [
+    { node: <Illustration name="kursi" className="w-full" />, label: 'Stiker kursi', size: 12 },
+    { kind: 'burst', text: 'hayu!', label: 'Stiker "hayu!"' },
+    { node: <Illustration name="tiket" className="w-full" />, label: 'Stiker tiket', size: 12 },
+    { node: <Illustration name="camera" className="w-full" />, label: 'Stiker kamera', size: 12 },
+    { kind: 'bubble', text: 'sampurasun', label: 'Stiker "sampurasun"' },
+    { node: <Illustration name="coins" className="w-full" />, label: 'Stiker koin', size: 12 },
   ]
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-brand text-white">
-      {/* the splash's seat-grid dots carry on behind the page, so the splash hands over without a seam */}
-      <div className="seat-dots pointer-events-none absolute inset-0 text-white/[0.07]" aria-hidden />
-      <div className="relative mx-auto flex min-h-dvh max-w-5xl flex-col px-4 py-8 sm:px-6">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <CoBrand tone="light" />
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold ring-1 ring-white/20">
-            Bandung Build Challenge 2026 · {live ? 'Versi live' : 'Prototype'}
-          </span>
-        </header>
-
-        <section className="mt-10 grid gap-8 lg:mt-16 lg:grid-cols-[1.1fr_1fr] lg:items-end">
-          <div>
-            <SundaText k="welcome" size="xl" />
-            <h1 className="mt-6 text-3xl font-extrabold leading-tight text-balance sm:text-5xl">
-              Satu pass untuk semua event <span className="text-brand-yellow">Summarecon Mall Bandung</span>.
-            </h1>
-            <p className="mt-4 max-w-xl text-base text-white/80 sm:text-lg">
-              Pilih kursi langsung dari denah. Bayar, daftar gratis, atau tukar struk belanja — semuanya berakhir di satu e-ticket QR.
-            </p>
-          </div>
-          <div className="hidden justify-end lg:flex">
-            <Illustration name="tiket" className="w-80 drop-shadow-2xl" />
-          </div>
-        </section>
-
-        <section className="mt-10 grid gap-4 md:grid-cols-3" aria-label="Pilih role demo">
-          {roles.map(({ key, art, title, body, cta }, i) => (
-            <div key={key} className="flex animate-rise flex-col rounded-[1.75rem] bg-white p-5 text-ink shadow-xl shadow-ink/20" style={{ animationDelay: `${i * 80}ms` }}>
-              <div className="flex items-center gap-3">
-                <span className="relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-brand-soft">
-                  <span className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
-                  <Illustration name={art} className="relative w-16" />
-                </span>
-                <h2 className="text-xl font-extrabold">{title}</h2>
-              </div>
-              <p className="mt-3 flex-1 text-sm text-muted-foreground">{body}</p>
-              <Button size="lg" className="mt-4 h-12 text-base" disabled={busy !== null} onClick={() => void enter(key)}>
-                {cta} <ArrowRight />
-              </Button>
-              {key === 'VISITOR' && (
-                <button
-                  type="button"
-                  className="mt-2 min-h-11 text-sm font-medium text-brand underline-offset-4 hover:underline"
-                  onClick={() => void enter('VISITOR_RINA')}
-                  disabled={busy !== null}
-                >
-                  atau masuk cepat sebagai Rina (persona) →
-                </button>
-              )}
-            </div>
-          ))}
-        </section>
-
-        {live ? (
-          <section className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-white/10 p-4 text-sm ring-1 ring-white/20">
-            <RadioTower className="size-5 shrink-0 text-brand-yellow" aria-hidden />
-            <p className="min-w-0 flex-1">
-              <strong>Versi live:</strong> semua HP dan laptop memakai data yang sama di server. Buka denah yang sama di dua HP, pilih
-              kursi yang sama, lalu tekan Hayu ngiring berbarengan: hanya satu yang berhasil.
-            </p>
-            <a href={DEMO_URL} className="inline-flex min-h-11 items-center font-semibold text-brand-yellow underline-offset-4 hover:underline">
-              Versi demo (data per browser) →
-            </a>
-          </section>
-        ) : (
-          liveReady &&
-          LIVE_URL && (
-            <section className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-white/10 p-4 text-sm ring-1 ring-white/20">
-              <Smartphone className="size-5 shrink-0 text-brand-yellow" aria-hidden />
-              <p className="min-w-0 flex-1">
-                Mau uji rebutan kursi pakai <strong>dua HP sungguhan</strong>? Versi live memakai server dan database bersama.
-              </p>
-              <a href={LIVE_URL} className="font-semibold text-brand-yellow underline-offset-4 hover:underline">
-                Buka versi live →
-              </a>
-            </section>
-          )
-        )}
-
-        <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-10 text-xs text-white/80">
-          <span>Data contoh · pembayaran, OTP, dan WA/email disimulasikan · bukan transaksi sungguhan</span>
+    <main>
+      <h1 className="sr-only">Summarevent: satu pass untuk semua event Summarecon Mall Bandung</h1>
+      <StickerSlap
+        wordmark="summarevent"
+        nav={
+          live
+            ? { label: 'live', href: DEMO_URL, title: 'Versi live memakai server bersama. Buka versi demo (data per browser).' }
+            : liveReady && LIVE_URL
+              ? { label: 'demo', href: LIVE_URL, title: 'Versi demo: data di browser ini. Buka versi live untuk uji dua HP.' }
+              : { label: 'demo', title: 'Versi demo: data di browser ini, pembayaran dan WA/email disimulasikan.' }
+        }
+        centre={
+          <>
+            <CoBrand tone="dark" className="max-sm:hidden" />
+            <BrandLockup className="h-7 sm:hidden" />
+          </>
+        }
+        corner={
           <button
             type="button"
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 font-semibold text-white ring-1 ring-white/30 hover:bg-white/10"
-            onClick={async () => {
-              if (live && !window.confirm('Versi live dipakai bersama. Reset akan menghapus pesanan dan check-in dari semua HP. Lanjut?')) return
-              await api.demo.reset()
-              toast.success('Data demo dikembalikan ke awal.')
-            }}
+            onClick={() => void reset()}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full text-sm font-semibold text-ink ring-1 ring-ink/20 transition max-sm:size-11 max-sm:justify-center sm:px-3 hover:bg-ink/5"
           >
-            <RotateCcw className="size-3.5" /> Reset data demo
+            <RotateCcw className="size-4" aria-hidden /> <span className="max-sm:sr-only">Reset data demo</span>
           </button>
-        </footer>
-      </div>
+        }
+        columns={[
+          {
+            tag: 'pengunjung',
+            lines: [
+              { label: 'Masuk sebagai pengunjung', onClick: () => void enter('VISITOR'), disabled: busy !== null },
+              {
+                label: (
+                  <>
+                    masuk cepat sebagai Rina<span className="ssf-ast">*</span>
+                  </>
+                ),
+                name: 'atau masuk cepat sebagai Rina (persona)',
+                onClick: () => void enter('VISITOR_RINA'),
+                disabled: busy !== null,
+              },
+            ],
+            note: '*Rina sudah punya tiket. Pilih kursi di denah, bayar (simulasi) atau tukar struk, lalu dapat e-ticket QR.',
+          },
+          {
+            tag: 'panitia',
+            lines: [{ label: 'Masuk sebagai panitia', onClick: () => void enter('ADMIN'), disabled: busy !== null }, { label: 'dashboard, event, struk' }],
+            note: 'Atur event, kategori, denah, dan sesi. Pantau kursi, transaksi, struk, dan kehadiran.',
+          },
+          {
+            tag: 'petugas',
+            lines: [{ label: 'Masuk sebagai petugas', onClick: () => void enter('STAFF'), disabled: busy !== null }, { label: 'scan QR di pintu' }],
+            note: 'Valid, sudah dipakai, atau tidak valid. Cari tiket manual kalau QR rusak.',
+          },
+        ]}
+        stickers={stickers}
+        credits={[
+          { role: 'frontend', name: 'Haikal' },
+          { role: 'backend', name: 'Bintang' },
+          { role: 'user testing & ux', name: 'Shelvia' },
+          { role: 'product & pitch', name: 'Awwal' },
+          { role: 'system qa', name: 'Said' },
+          { role: 'stiker', name: 'fun-isometric, digambar dalam kode' },
+          { role: 'e-ticket', name: 'Talón oleh Moxen' },
+        ]}
+        note={
+          <span className="ssf-pill">
+            <span>{live ? 'Versi live · semua HP memakai data yang sama' : 'Prototype · bayar, OTP, dan WA/email disimulasikan'}</span>
+          </span>
+        }
+      />
     </main>
   )
 }

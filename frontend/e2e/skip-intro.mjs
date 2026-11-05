@@ -19,3 +19,18 @@ export async function signIn(page, role, base = process.env.BASE || 'http://loca
   await page.getByRole('button', { name: 'Masuk', exact: true }).click()
   await page.waitForURL((url) => url.pathname.startsWith(`/${area}`) && !url.pathname.endsWith('/masuk'))
 }
+
+/**
+ * The role picker is a fan of posters: only the one in the centre is fully in front, so a suite brings the poster it
+ * wants to the centre (by the legend's title) before pressing the action printed on it.
+ */
+export async function toPoster(page, title) {
+  const legend = page.locator('.af-datos b')
+  for (let i = 0; i < 6; i++) {
+    if ((await legend.innerText()).trim().toLowerCase() === title.toLowerCase()) break
+    await page.getByRole('button', { name: 'Poster berikutnya' }).click()
+    await page.waitForTimeout(350)
+  }
+  // the springs settle before the poster is pressed
+  await page.waitForTimeout(900)
+}

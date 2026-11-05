@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { api, apiMode, DEMO_URL, LIVE_URL, liveVersionReady } from '@/api'
 import { BrandLockup, CoBrand } from '@/components/common/Brand'
 import { Illustration } from '@/components/common/Illustration'
+import { Afiche, type PosterSpec } from '@/components/landing/Afiche'
 import { StickerSlap, type StickerSpec } from '@/components/landing/StickerSlap'
 
 const TEAM = [
@@ -14,19 +15,19 @@ const TEAM = [
   ['product & pitch', 'Awwal'],
   ['system QA', 'Said'],
   ['stiker', 'fun-isometric, digambar dalam kode'],
-  ['e-ticket', 'Talón oleh Moxen'],
+  ['e-ticket & poster', 'Talón dan Afiche oleh Moxen'],
 ] as const
 
 /**
- * DM-01: one link, three roles, so judges can try every side of the system. The page is the Sticker Slap landing:
- * the three roles as columns on the green panel, the wordmark writing itself along the bottom, and our stickers
- * slapped on it. Each role opens with its splash, its onboarding the first time, and its sign-in; Rina is the
- * visitor shortcut. The info menu in the corner says which version this is, resets the demo data, opens the other
- * version, and names the team.
+ * DM-01: one link, three roles, so judges can try every side of the system. The page is the Sticker Slap landing;
+ * on the green panel a notch switches between the fan of posters (one per way in: pengunjung, Rina, panitia,
+ * petugas, the seat race) and the team. The wordmark writes itself along the bottom with our stickers slapped on it.
+ * Each role opens with its splash, its onboarding the first time, and its sign-in; Rina is the visitor shortcut.
  */
 export default function RolePicker() {
   const navigate = useNavigate()
   const [busy, setBusy] = useState<string | null>(null)
+  const [tab, setTab] = useState<0 | 1>(0)
   const live = apiMode === 'live'
   const [liveReady, setLiveReady] = useState(false)
 
@@ -58,6 +59,84 @@ export default function RolePicker() {
   }
 
   const other = live ? { href: DEMO_URL, label: 'Buka versi demo', hint: 'data per browser' } : liveReady && LIVE_URL ? { href: LIVE_URL, label: 'Buka versi live', hint: 'uji dua HP, data bersama' } : null
+  const off = busy !== null
+
+  const posters: PosterSpec[] = [
+    {
+      key: 'visitor',
+      variant: 'verde',
+      word: 'Kursi',
+      title: 'Pengunjung',
+      note: 'Pilih kursi di denah, bayar atau tukar struk, dapat e-ticket QR',
+      top: ['Pengunjung', '01'],
+      foot: (
+        <>
+          <b>01</b>Pilih kursimu sendiri.
+        </>
+      ),
+      art: <Illustration name="kursi" className="w-full" />,
+      action: { label: 'Masuk sebagai pengunjung', onClick: () => void enter('VISITOR'), disabled: off },
+    },
+    {
+      key: 'rina',
+      variant: 'negro',
+      word: 'Pass',
+      sub: 'Saya · Rina',
+      title: 'Rina, persona',
+      note: 'Sudah punya tiket: langsung ke Pass Saya dengan QR-nya',
+      top: ['Persona', '02'],
+      foot: (
+        <>
+          <b>02</b>Tiket sudah di tangan.
+        </>
+      ),
+      art: <Illustration name="tiket" className="w-full" />,
+      action: { label: 'masuk cepat sebagai Rina', name: 'atau masuk cepat sebagai Rina (persona)', onClick: () => void enter('VISITOR_RINA'), disabled: off },
+    },
+    {
+      key: 'admin',
+      variant: 'crema',
+      word: 'Event',
+      title: 'Panitia',
+      note: 'Dashboard, event, denah, struk, dan kehadiran',
+      top: ['Panitia', '03'],
+      foot: (
+        <>
+          <b>03</b>Atur, lalu pantau.
+        </>
+      ),
+      art: <Illustration name="notes" className="w-full" />,
+      action: { label: 'Masuk sebagai panitia', onClick: () => void enter('ADMIN'), disabled: off },
+    },
+    {
+      key: 'staff',
+      variant: 'ritmo',
+      word: 'Scan',
+      title: 'Petugas',
+      note: 'Scan QR di pintu: valid, sudah dipakai, atau tidak valid',
+      foot: (
+        <>
+          <b>04</b>Valid dalam sedetik.
+        </>
+      ),
+      art: <Illustration name="camera" className="w-full" />,
+      action: { label: 'Masuk sebagai petugas', onClick: () => void enter('STAFF'), disabled: off },
+    },
+    {
+      key: 'race',
+      variant: 'naranja',
+      word: 'Rebut',
+      title: live ? 'Versi demo' : 'Rebutan kursi',
+      note: live ? 'Data per browser, tanpa server' : 'Dua HP memilih kursi yang sama: hanya satu yang berhasil',
+      top: ['Dua HP', '05'],
+      foot: (
+        <>
+          <b>05</b>Satu kursi, satu pemesan.
+        </>
+      ),
+      action: other ? { label: other.label, href: other.href } : { label: 'Coba di denah', onClick: () => void enter('VISITOR'), disabled: off },
+    },
+  ]
 
   const stickers: StickerSpec[] = [
     { node: <Illustration name="kursi" className="w-full" />, label: 'Stiker kursi', size: 12 },
@@ -112,37 +191,32 @@ export default function RolePicker() {
             </dl>
           </>
         }
-        columns={[
-          {
-            tag: 'pengunjung',
-            lines: [
-              { label: 'Masuk sebagai pengunjung', onClick: () => void enter('VISITOR'), disabled: busy !== null },
-              {
-                label: (
-                  <>
-                    masuk cepat sebagai Rina<span className="ssf-ast">*</span>
-                  </>
-                ),
-                name: 'atau masuk cepat sebagai Rina (persona)',
-                onClick: () => void enter('VISITOR_RINA'),
-                disabled: busy !== null,
-              },
-            ],
-            note: '*Rina sudah punya tiket. Pilih kursi di denah, bayar (simulasi) atau tukar struk, lalu dapat e-ticket QR.',
-          },
-          {
-            tag: 'panitia',
-            lines: [{ label: 'Masuk sebagai panitia', onClick: () => void enter('ADMIN'), disabled: busy !== null }, { label: 'dashboard, event, struk' }],
-            note: 'Atur event, kategori, denah, dan sesi. Pantau kursi, transaksi, struk, dan kehadiran.',
-          },
-          {
-            tag: 'petugas',
-            lines: [{ label: 'Masuk sebagai petugas', onClick: () => void enter('STAFF'), disabled: busy !== null }, { label: 'scan QR di pintu' }],
-            note: 'Valid, sudah dipakai, atau tidak valid. Cari tiket manual kalau QR rusak.',
-          },
-        ]}
+        notch={{ tabs: ['Pilih peran', 'Tim'], value: tab, onChange: setTab, label: 'Isi panel' }}
         stickers={stickers}
-      />
+      >
+        <div className="ssf-slides" style={{ transform: `translateX(${-tab * 100}%)` }}>
+          <section className="ssf-slide" aria-label="Pilih peran" inert={tab !== 0}>
+            <div className="h-[clamp(440px,60svh,600px)] max-sm:h-[520px]">
+              <Afiche posters={posters} label="Kipas poster: satu untuk tiap cara masuk; geser untuk mengocok, klik untuk membuka" />
+            </div>
+          </section>
+          <section className="ssf-slide" aria-label="Tim" inert={tab !== 1}>
+            <div className="mx-auto flex h-[clamp(440px,60svh,600px)] max-w-3xl flex-col justify-center px-6 text-[#fbf3e4] max-sm:h-[520px]">
+              <p className="text-[0.7rem] font-bold tracking-[0.18em] uppercase opacity-75">Tim Summarevent</p>
+              <h2 className="mt-2 font-poster text-[clamp(2.4rem,6vw,4.5rem)] leading-[0.95] uppercase">Lima orang, satu pass</h2>
+              <ul className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+                {TEAM.slice(0, 5).map(([role, name]) => (
+                  <li key={role} className="flex items-baseline justify-between gap-4 border-b border-white/15 pb-2">
+                    <span className="text-lg font-bold">{name}</span>
+                    <span className="text-sm opacity-80">{role}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-5 text-sm opacity-80">Bandung Build Challenge 2026 · Summarecon Mall Bandung</p>
+            </div>
+          </section>
+        </div>
+      </StickerSlap>
     </main>
   )
 }

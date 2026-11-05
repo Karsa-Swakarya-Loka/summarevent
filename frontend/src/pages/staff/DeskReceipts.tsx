@@ -2,9 +2,9 @@
  * PT-06: verifikasi struk di desk. The petugas compares the paper receipt with the photo and the
  * automatic checks, then decides on the spot. Same rules and panel as the panitia queue (AD-07).
  */
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
-import { ArrowLeft, Inbox } from 'lucide-react'
+import { Inbox } from 'lucide-react'
 import { api } from '@/api'
 import { QueueRow, ReviewPanel } from '@/components/admin/ReceiptReview'
 import { BackHeader, EmptyState } from '@/components/common/bits'
@@ -13,21 +13,38 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { errorMessage, useLive } from '@/hooks/useLive'
 
 export default function DeskReceipts() {
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const eventId = params.get('event') ?? undefined
   const q = useLive(() => api.staff.listReceipts(eventId), [eventId])
-  const [openId, setOpenId] = useState<string | null>(null)
+  // the open receipt lives in the URL, so the header back and the phone's back button return to the queue
+  const openId = params.get('order')
   const items = q.data ?? []
   const current = items.find((i) => i.order.id === openId)
+  // the next receipt (or the queue) starts at its top, not where the last long panel was scrolled to
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [openId])
+  const listUrl = `/staff/receipts${eventId ? `?event=${eventId}` : ''}`
+
+  const open = (orderId: string | null, replace: boolean) =>
+    setParams(
+      (p) => {
+        const n = new URLSearchParams(p)
+        if (orderId) n.set('order', orderId)
+        else n.delete('order')
+        return n
+      },
+      { replace },
+    )
 
   const next = (doneId: string) => {
     const rest = items.filter((i) => i.order.id !== doneId)
-    setOpenId(rest[0]?.order.id ?? null)
+    open(rest[0]?.order.id ?? null, true)
   }
 
   return (
     <div className="pb-24">
-      <BackHeader to={`/staff${eventId ? `?event=${eventId}` : ''}`} title={current ? 'Verifikasi struk di desk' : undefined} />
+      <BackHeader to={current ? listUrl : `/staff${eventId ? `?event=${eventId}` : ''}`} title={current ? 'Verifikasi struk' : undefined} />
       <div className="space-y-4 px-4 pt-1">
         {!current && (
           <div>
@@ -46,9 +63,6 @@ export default function DeskReceipts() {
           </div>
         ) : current ? (
           <div className="space-y-2">
-            <Button variant="ghost" size="lg" className="-ml-2" onClick={() => setOpenId(null)}>
-              <ArrowLeft /> Kembali ke antrean
-            </Button>
             <ReviewPanel key={current.order.id} item={current} onDone={next} review={(id, d, r) => api.staff.reviewReceipt(id, d, r)} />
           </div>
         ) : !items.length ? (
@@ -57,11 +71,11 @@ export default function DeskReceipts() {
           </EmptyState>
         ) : (
           <>
-            <p className="px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{items.length} menunggu</p>
+            <p className="px-1 text-sm font-semibold text-muted-foreground">{items.length} struk menunggu keputusan</p>
             <ul className="flex flex-col gap-2" aria-label="Antrean struk">
               {items.map((it) => (
                 <li key={it.order.id}>
-                  <QueueRow item={it} active={false} onOpen={() => setOpenId(it.order.id)} />
+                  <QueueRow item={it} active={false} onOpen={() => open(it.order.id, false)} />
                 </li>
               ))}
             </ul>

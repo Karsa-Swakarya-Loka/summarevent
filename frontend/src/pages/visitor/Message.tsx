@@ -16,6 +16,10 @@ import { MessageAvatar } from '@/components/visitor/MessageAvatar'
 import { useLive } from '@/hooks/useLive'
 import { fmtDate, fmtDateTime, fmtTime } from '@/lib/format'
 import { markSeen } from '@/lib/seen'
+import { cn } from '@/lib/utils'
+
+/** On a laptop a message reads in a narrow column, like a letter. */
+const READING = 'lg:mx-auto lg:w-full lg:max-w-2xl lg:px-4'
 
 export default function Message() {
   const { noteId = '' } = useParams()
@@ -29,7 +33,7 @@ export default function Message() {
 
   if (notes.loading && !notes.data) {
     return (
-      <div>
+      <div className={READING}>
         <BackHeader to="/app/inbox" title="Pesan" />
         <PageSkeleton />
       </div>
@@ -37,7 +41,7 @@ export default function Message() {
   }
   if (!n) {
     return (
-      <div>
+      <div className={READING}>
         <BackHeader to="/app/inbox" title="Pesan" />
         <LoadError error={notes.error ?? new ApiError('NOT_FOUND', 'Pesan tidak ditemukan. Pastikan kamu masuk dengan nomor HP yang sama.')} onRetry={notes.error ? notes.reload : undefined} backTo="/app/inbox" backLabel="Kembali ke Pesan" />
       </div>
@@ -50,7 +54,7 @@ function Chat({ n }: { n: AppNotification }) {
   const next = messageNext(n)
   const at = n.scheduledFor ?? n.createdAt
   return (
-    <div className="flex flex-1 flex-col">
+    <div className={cn('flex flex-1 flex-col', READING)}>
       <BackHeader
         to="/app/inbox"
         title={
@@ -63,7 +67,7 @@ function Chat({ n }: { n: AppNotification }) {
           </span>
         }
       />
-      <div className="relative flex-1 overflow-hidden bg-[#efe9dd] px-4 pt-5 pb-10">
+      <div className="relative flex-1 overflow-hidden bg-[#efe9dd] px-4 pt-5 pb-10 lg:mt-2 lg:mb-12 lg:min-h-[26rem] lg:flex-none lg:rounded-[1.75rem] lg:px-6 lg:pt-6">
         <div className="seat-dots pointer-events-none absolute inset-0 text-ink/[0.05]" aria-hidden />
         <div className="relative space-y-3">
           <p className="mx-auto w-fit rounded-full bg-white/85 px-3 py-1 text-xs font-semibold text-muted-foreground shadow-xs">
@@ -77,7 +81,7 @@ function Chat({ n }: { n: AppNotification }) {
               {n.scheduledFor ? <Clock3 className="size-3.5" aria-label="Belum terkirim" /> : <CheckCheck className="size-3.5 text-[#2d4c8f]" aria-label="Terkirim" />}
             </p>
           </article>
-          <div className="max-w-[86%] animate-rise [animation-delay:160ms]">
+          <div className="max-w-[86%] animate-rise [animation-delay:160ms] lg:max-w-xs">
             <Button asChild variant="outline" className="h-11 w-full bg-white">
               <Link to={next.to}>{next.label}</Link>
             </Button>
@@ -91,7 +95,7 @@ function Chat({ n }: { n: AppNotification }) {
 function Letter({ n, user }: { n: AppNotification; user: User | null }) {
   const next = messageNext(n)
   return (
-    <div>
+    <div className={READING}>
       <BackHeader to="/app/inbox" title="Email" right={<SimTag className="mr-1" />} />
       <article aria-labelledby="mail-subject" className="px-4 pt-2 pb-10">
         <h1 id="mail-subject" className="animate-rise font-poster text-[2.3rem] leading-[0.95] text-balance uppercase">

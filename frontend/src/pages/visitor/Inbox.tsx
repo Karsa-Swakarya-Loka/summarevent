@@ -27,7 +27,7 @@ export default function Inbox() {
   const sent = list.filter((n) => !n.scheduledFor)
 
   return (
-    <div>
+    <div className="lg:mx-auto lg:w-full lg:max-w-3xl lg:px-4">
       <TabHeader title="Pesan" />
 
       <div className="space-y-6 px-4 pt-1 pb-6">

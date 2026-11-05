@@ -208,6 +208,41 @@ await shot(tim, 'tim')
 console.log('tim: posters open, the arrows move between members, no scroll')
 await timCtx.close()
 
+// 8. The fan: a hovered or opened poster stays whole; the scene's top edge, just under the notch, never cuts it
+for (const [width, height] of [[1680, 938], [1440, 780], [1280, 720], [360, 640]]) {
+  const touch = width < 700
+  const fanCtx = await browser.newContext(touch ? { ...phone, viewport: { width, height } } : { viewport: { width, height } })
+  await skipIntro(fanCtx)
+  const fan = await fanCtx.newPage()
+  watch(fan, 'kipas')
+  await fan.goto(BASE + '/', { waitUntil: 'networkidle' })
+  await fan.locator('.af-cartel').first().waitFor()
+  await fan.waitForTimeout(1500)
+  // how far under the scene's top edge the front poster starts: below 0 it is cut, null means nothing came to the front
+  const headroom = () =>
+    fan.evaluate(() => {
+      const front = [...document.querySelectorAll('.af-cartel')].find((c) => Number(c.style.zIndex) >= 200)
+      return front ? Math.round(front.getBoundingClientRect().top - document.querySelector('.af-escena').getBoundingClientRect().top) : null
+    })
+  const whole = (room, what) => check(room !== null && room >= 0, `kipas ${width}x${height}: poster ${what} ${room === null ? 'tidak maju' : `terpotong ${-room} px di bawah notch`}`)
+  const scene = await fan.locator('.af-escena').boundingBox()
+  const posterW = await fan.locator('.af-cartel').first().evaluate((c) => c.offsetWidth)
+  const x = scene.x + scene.width / 2
+  const y = scene.y + (scene.height - 76) / 2
+  if (!touch) {
+    for (const side of [-1, 0, 1]) {
+      await fan.mouse.move(x + side * posterW * 0.6, y, { steps: 3 })
+      await fan.waitForTimeout(900)
+      whole(await headroom(), 'yang di-hover')
+    }
+  }
+  await fan.mouse.click(x, y)
+  await fan.waitForTimeout(900)
+  whole(await headroom(), 'yang dibuka')
+  await fanCtx.close()
+}
+console.log('kipas: hovered and opened posters checked for a cut at the notch')
+
 await browser.close()
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'onboarding: all checks passed')
 process.exitCode = errors.length ? 1 : 0

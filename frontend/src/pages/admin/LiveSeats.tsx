@@ -3,7 +3,7 @@
  * the same seat map visitors see, refreshed every 3 s, with counts per category and
  * a detail panel for the seat you click.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { BellRing, FlaskConical, LoaderCircle, MousePointerClick, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -127,6 +127,11 @@ interface Counts {
 
 function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orders: OrderRow[]; busy: boolean; onFakeBuyer: () => void }) {
   const [picked, setPicked] = useState<string | null>(null)
+  const detail = useRef<HTMLDivElement>(null)
+  // below lg the detail sits under the map, out of sight: bring it up once a seat is picked
+  useEffect(() => {
+    if (picked && typeof matchMedia === 'function' && matchMedia('(max-width: 1023px)').matches) detail.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [picked])
   const hasMap = !!data.layout && data.seats.length > 0
   const seatCats = useMemo(() => data.categories.filter((c) => c.quota == null), [data.categories])
   const seatColors = seatCats.map((c) => c.color)
@@ -176,7 +181,7 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
   const owner = seat && (status === 'HELD' || status === 'SOLD') ? ownerBySeat.get(seat.id) : undefined
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       <SectionCard
         title={sessionLabel(data.session)}
         description={hasMap ? `${totals.total} kursi dijual · ${totals.available} tersedia · ${totals.held} sedang dipesan · ${totals.sold} terjual` : 'Event tanpa nomor kursi, pantau kuota di samping.'}
@@ -217,66 +222,68 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
 
       <div className="flex flex-col gap-4">
         {hasMap && (
-          <SectionCard title="Detail kursi" className="bg-card ring-1 ring-foreground/[0.07]">
-            {seat ? (
-              <div className="flex flex-col gap-3 text-sm" aria-live="polite">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-3xl font-extrabold tabular-nums">{seatLabel(seat)}</span>
-                  <StatusBadge tone={SEAT_TONE[status]}>{SEAT_STATUS_LABEL[status]}</StatusBadge>
-                </div>
-                <dl className="grid grid-cols-[6rem_1fr] gap-x-2 gap-y-1.5">
-                  <dt className="text-muted-foreground">Kategori</dt>
-                  <dd className="flex items-center gap-1.5 font-medium">
-                    {category ? (
+          <div ref={detail} className="scroll-mt-20">
+            <SectionCard title="Detail kursi" className="bg-card ring-1 ring-foreground/[0.07]">
+              {seat ? (
+                <div className="flex flex-col gap-3 text-sm" aria-live="polite">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-3xl font-extrabold tabular-nums">{seatLabel(seat)}</span>
+                    <StatusBadge tone={SEAT_TONE[status]}>{SEAT_STATUS_LABEL[status]}</StatusBadge>
+                  </div>
+                  <dl className="grid grid-cols-[6rem_1fr] gap-x-2 gap-y-1.5">
+                    <dt className="text-muted-foreground">Kategori</dt>
+                    <dd className="flex items-center gap-1.5 font-medium">
+                      {category ? (
+                        <>
+                          <Swatch color={category.color} /> {category.name}
+                        </>
+                      ) : (
+                        '–'
+                      )}
+                    </dd>
+                    {seat.isPriority && (
                       <>
-                        <Swatch color={category.color} /> {category.name}
+                        <dt className="text-muted-foreground">Catatan</dt>
+                        <dd className="font-medium">Kursi prioritas difabel</dd>
                       </>
-                    ) : (
-                      '–'
                     )}
-                  </dd>
-                  {seat.isPriority && (
-                    <>
-                      <dt className="text-muted-foreground">Catatan</dt>
-                      <dd className="font-medium">Kursi prioritas difabel</dd>
-                    </>
+                    {status === 'HELD' && ss?.holdExpiresAt && (
+                      <>
+                        <dt className="text-muted-foreground">Ditahan s.d.</dt>
+                        <dd className="flex flex-wrap items-center gap-2 font-medium">
+                          {fmtTime(ss.holdExpiresAt)} WIB <Countdown to={ss.holdExpiresAt} className="text-xs text-muted-foreground" />
+                        </dd>
+                      </>
+                    )}
+                    {owner && (
+                      <>
+                        <dt className="text-muted-foreground">Pemesan</dt>
+                        <dd className="min-w-0 font-medium">
+                          <span className="block truncate">{owner.order.buyerName}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {owner.order.code} · {seatSummary(owner.order.items)}
+                          </span>
+                        </dd>
+                        <dt className="text-muted-foreground">Pesanan</dt>
+                        <dd>
+                          <StatusBadge tone={ORDER_TONE[owner.order.status]}>{ORDER_STATUS_LABEL[owner.order.status]}</StatusBadge>
+                        </dd>
+                      </>
+                    )}
+                  </dl>
+                  {owner && !owner.order.simulated && (
+                    <Button variant="outline" size="lg" asChild>
+                      <Link to={`/admin/orders?event=${owner.order.eventId}&q=${owner.order.code}`}>Buka pesanan</Link>
+                    </Button>
                   )}
-                  {status === 'HELD' && ss?.holdExpiresAt && (
-                    <>
-                      <dt className="text-muted-foreground">Ditahan s.d.</dt>
-                      <dd className="flex flex-wrap items-center gap-2 font-medium">
-                        {fmtTime(ss.holdExpiresAt)} WIB <Countdown to={ss.holdExpiresAt} className="text-xs text-muted-foreground" />
-                      </dd>
-                    </>
-                  )}
-                  {owner && (
-                    <>
-                      <dt className="text-muted-foreground">Pemesan</dt>
-                      <dd className="min-w-0 font-medium">
-                        <span className="block truncate">{owner.order.buyerName}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {owner.order.code} · {seatSummary(owner.order.items)}
-                        </span>
-                      </dd>
-                      <dt className="text-muted-foreground">Pesanan</dt>
-                      <dd>
-                        <StatusBadge tone={ORDER_TONE[owner.order.status]}>{ORDER_STATUS_LABEL[owner.order.status]}</StatusBadge>
-                      </dd>
-                    </>
-                  )}
-                </dl>
-                {owner && !owner.order.simulated && (
-                  <Button variant="outline" size="lg" asChild>
-                    <Link to={`/admin/orders?event=${owner.order.eventId}&q=${owner.order.code}`}>Buka pesanan</Link>
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MousePointerClick className="size-4 shrink-0" aria-hidden /> Klik kursi di denah untuk melihat status dan pemesannya.
-              </p>
-            )}
-          </SectionCard>
+                </div>
+              ) : (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MousePointerClick className="size-4 shrink-0" aria-hidden /> Pilih kursi di denah untuk melihat status dan pemesannya.
+                </p>
+              )}
+            </SectionCard>
+          </div>
         )}
 
         <SectionCard title="Per kategori">
@@ -353,7 +360,8 @@ function WaitingNote({ count }: { count: number }) {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="min-w-0">
+    // a label on two lines (Sedang dipesan) keeps the three numbers on one baseline
+    <div className="flex min-w-0 flex-col justify-between">
       <dt className="leading-tight text-muted-foreground">{label}</dt>
       <dd className="text-base font-bold tabular-nums">{value}</dd>
     </div>

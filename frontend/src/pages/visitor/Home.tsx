@@ -91,31 +91,42 @@ export default function Home() {
 
   return (
     <div>
-      <header className="relative h-[23.5rem] overflow-hidden text-white">
-        <StageScene className="absolute inset-0 size-full" />
-        <div className="relative flex items-center gap-3 px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
-          {user && <Avatar user={user} />}
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-white/85">Selamat datang</p>
-            <h1 className="truncate text-xl leading-tight font-extrabold">{user ? user.name : 'Mau nonton apa?'}</h1>
+      {/* on a laptop the stage becomes a green band: the greeting on the left, the stage framed on the right; the
+          avatar and the bell go, the top bar already has Akun and Pesan */}
+      <header className="relative h-[23.5rem] overflow-hidden text-white lg:h-auto lg:bg-brand">
+        <div className="contents lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center lg:gap-12 lg:px-8 lg:pt-10 lg:pb-16">
+          <div className="absolute inset-0 lg:relative lg:inset-auto lg:order-2 lg:aspect-[390/334] lg:overflow-hidden lg:rounded-[2rem] lg:shadow-xl lg:ring-1 lg:shadow-ink/30 lg:ring-white/15">
+            <StageScene className="absolute inset-0 size-full lg:bottom-auto lg:h-auto lg:aspect-[390/376]" />
           </div>
-          <Link
-            to="/app/inbox"
-            aria-label={unread ? `Pesan, ${unread} belum dibaca` : 'Pesan'}
-            className="relative grid size-11 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition active:scale-90"
-          >
-            <Bell className="size-5" aria-hidden />
-            {unread > 0 && (
-              <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-status-invalid px-1 text-[0.65rem] font-bold text-white ring-2 ring-white" aria-hidden>
-                {unread}
-              </span>
-            )}
-          </Link>
+          <div className="relative flex items-center gap-3 px-5 pt-[max(1.25rem,env(safe-area-inset-top))] lg:px-0 lg:pt-0">
+            {user && <Avatar user={user} />}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-white/85 lg:text-xl">Selamat datang</p>
+              <h1 className="truncate text-xl leading-tight font-extrabold lg:mt-3 lg:font-poster lg:text-[5.5rem] lg:leading-[0.92] lg:font-normal lg:text-balance lg:whitespace-normal lg:uppercase">
+                {user ? user.name : 'Mau nonton apa?'}
+              </h1>
+            </div>
+            <Link
+              to="/app/inbox"
+              aria-label={unread ? `Pesan, ${unread} belum dibaca` : 'Pesan'}
+              className="relative grid size-11 shrink-0 place-items-center rounded-full bg-white text-ink shadow-md transition active:scale-90 lg:hidden"
+            >
+              <Bell className="size-5" aria-hidden />
+              {unread > 0 && (
+                <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-status-invalid px-1 text-[0.65rem] font-bold text-white ring-2 ring-white" aria-hidden>
+                  {unread}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* the visitor's own status, over the bottom of the stage */}
-      <ul className="relative z-10 -mt-7 flex gap-3 overflow-x-auto px-4 pt-1 pb-3 [scrollbar-width:none]" aria-label="Ringkasan">
+      <ul
+        className="relative z-10 -mt-7 flex gap-3 overflow-x-auto px-4 pt-1 pb-3 [scrollbar-width:none] lg:mx-auto lg:-mt-10 lg:grid lg:max-w-6xl lg:auto-cols-fr lg:grid-flow-col lg:gap-4 lg:overflow-visible lg:px-8"
+        aria-label="Ringkasan"
+      >
         {pending.map((d) => (
           <li key={d.order.id} className="animate-rise">
             <StatusCard to={continuePath(d)} tint="orange" icon={<Hourglass />} label={pendingTitle(d, true)} value={<Countdown to={d.order.holdExpiresAt} className="[&_svg]:hidden" />} />
@@ -138,13 +149,13 @@ export default function Home() {
         )}
       </ul>
 
-      <div className="space-y-8 px-4 pt-4 pb-4">
+      <div className="space-y-8 px-4 pt-4 pb-4 lg:mx-auto lg:max-w-6xl lg:space-y-12 lg:px-8 lg:pt-10">
         {(demoSession || free || receipt) && (
           <section aria-labelledby="quick-title">
             <h2 id="quick-title" className="px-1 font-poster text-[1.9rem] leading-none uppercase">
               Pintasan
             </h2>
-            <ul className="mt-3 divide-y overflow-hidden rounded-[1.4rem] bg-card shadow-xs">
+            <ul className="mt-3 divide-y overflow-hidden rounded-[1.4rem] bg-card shadow-xs lg:grid lg:grid-cols-3 lg:gap-4 lg:divide-y-0 lg:overflow-visible lg:rounded-none lg:bg-transparent lg:shadow-none">
               {demo && demoSession && (
                 <QuickRow
                   to={`/app/e/${demo.event.slug}/s/${demoSession.id}`}
@@ -179,9 +190,12 @@ export default function Home() {
             <h2 id="spot-title" className="px-1 font-poster text-[1.9rem] leading-none uppercase">
               Sorotan
             </h2>
-            <ul className="-mx-4 mt-3 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]" aria-label="Event sorotan">
+            <ul
+              className="-mx-4 mt-3 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0"
+              aria-label="Event sorotan"
+            >
               {spotlight.map((e, i) => (
-                <li key={e.event.id} className="w-[80%] max-w-[20rem] shrink-0 animate-rise snap-start" style={{ animationDelay: `${Math.min(i, 4) * 70}ms` }}>
+                <li key={e.event.id} className="w-[80%] max-w-[20rem] shrink-0 animate-rise snap-start lg:w-auto lg:max-w-none" style={{ animationDelay: `${Math.min(i, 4) * 70}ms` }}>
                   <SpotCard e={e} now={now} />
                 </li>
               ))}
@@ -193,20 +207,23 @@ export default function Home() {
           <h2 id="event-list" className="px-1 font-poster text-[1.9rem] leading-none uppercase">
             Semua event
           </h2>
-          <WhenTabs value={when} onChange={setWhen} />
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="group" aria-label="Filter venue">
-            <VenueChip active={!venue} onClick={() => setVenue(null)}>
-              Semua venue
-            </VenueChip>
-            {venues.map(([id, name]) => (
-              <VenueChip key={id} active={venue === id} onClick={() => setVenue(venue === id ? null : id)}>
-                {name}
+          {/* on a laptop the two filters sit on one line */}
+          <div className="space-y-3 lg:flex lg:flex-wrap lg:items-center lg:gap-3 lg:space-y-0">
+            <WhenTabs value={when} onChange={setWhen} />
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0" role="group" aria-label="Filter venue">
+              <VenueChip active={!venue} onClick={() => setVenue(null)}>
+                Semua venue
               </VenueChip>
-            ))}
+              {venues.map(([id, name]) => (
+                <VenueChip key={id} active={venue === id} onClick={() => setVenue(venue === id ? null : id)}>
+                  {name}
+                </VenueChip>
+              ))}
+            </div>
           </div>
 
           {events.loading && !events.data ? (
-            <div className="space-y-3">
+            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 xl:grid-cols-3">
               <Skeleton className="h-28 w-full rounded-[1.4rem]" />
               <Skeleton className="h-28 w-full rounded-[1.4rem]" />
             </div>
@@ -218,7 +235,7 @@ export default function Home() {
               {venue ? ' di venue ini' : ''}. Coba pilih “Semua”.
             </EmptyState>
           ) : (
-            <ul className="space-y-3" aria-label="Daftar event">
+            <ul className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 xl:grid-cols-3" aria-label="Daftar event">
               {list.map((e, i) => (
                 <li key={e.event.id} className="animate-rise" style={{ animationDelay: `${Math.min(i, 5) * 60}ms` }}>
                   <EventCard e={e} now={now} today={when === 'TODAY'} />
@@ -234,7 +251,7 @@ export default function Home() {
 
 function Avatar({ user }: { user: User }) {
   return (
-    <Link to="/app/akun" aria-label={`Akun ${user.name}`} className="shrink-0 rounded-full transition active:scale-90">
+    <Link to="/app/akun" aria-label={`Akun ${user.name}`} className="shrink-0 rounded-full transition active:scale-90 lg:hidden">
       <UserAvatar user={user} className="size-11 text-lg ring-2 ring-white/40" />
     </Link>
   )
@@ -260,7 +277,7 @@ function StatusCard({ to, onClick, tint, icon, label, value }: { to?: string; on
       </span>
     </>
   )
-  const cls = 'flex w-[10.5rem] shrink-0 items-center gap-3 rounded-[1.4rem] bg-card p-3 shadow-[0_12px_28px_-16px_rgb(35_31_32/0.45)] transition active:scale-[0.97]'
+  const cls = 'flex w-[10.5rem] shrink-0 items-center gap-3 rounded-[1.4rem] bg-card p-3 shadow-[0_12px_28px_-16px_rgb(35_31_32/0.45)] transition active:scale-[0.97] lg:w-full lg:gap-4 lg:p-4'
   return to ? (
     <Link to={to} className={cls}>
       {body}
@@ -280,7 +297,7 @@ function Chip({ children }: { children: ReactNode }) {
 function QuickRow({ to, art, tint, title, sub, chip }: { to: string; art: ArtName; tint: string; title: string; sub: string; chip?: ReactNode }) {
   return (
     <li>
-      <Link to={to} className="flex min-h-20 items-center gap-3.5 px-3.5 py-3 transition active:bg-muted">
+      <Link to={to} className="flex min-h-20 items-center gap-3.5 px-3.5 py-3 transition active:bg-muted lg:h-full lg:rounded-[1.4rem] lg:bg-card lg:shadow-xs lg:hover:shadow-md">
         <span className={cn('grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl', tint)}>
           <Illustration name={art} loop={false} className="w-16 max-w-none" />
         </span>
@@ -298,7 +315,7 @@ function QuickRow({ to, art, tint, title, sub, chip }: { to: string; art: ArtNam
 function WhenTabs({ value, onChange }: { value: When; onChange: (w: When) => void }) {
   const index = WHEN.findIndex((w) => w.key === value)
   return (
-    <div role="tablist" aria-label="Filter waktu" className="relative grid grid-cols-3 rounded-full bg-ink/[0.07] p-1">
+    <div role="tablist" aria-label="Filter waktu" className="relative grid grid-cols-3 rounded-full bg-ink/[0.07] p-1 lg:w-[22rem] lg:shrink-0">
       <span
         aria-hidden
         className="absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-ink shadow-sm transition-transform duration-300 ease-(--ease-soft)"
@@ -399,7 +416,7 @@ function EventCard({ e, now, today = false }: { e: EventSummary; now: Date; toda
   return (
     <Link
       to={`/app/e/${e.event.slug}`}
-      className="group flex gap-3.5 rounded-[1.4rem] bg-card p-3 shadow-xs transition hover:shadow-md active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="group flex gap-3.5 rounded-[1.4rem] bg-card p-3 shadow-xs transition hover:shadow-md active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:h-full"
     >
       <div className="relative aspect-square w-28 shrink-0 self-start overflow-hidden rounded-2xl">
         <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} image={e.event.posterImage} title={e.event.title} bare className="absolute inset-0 transition-transform duration-500 ease-(--ease-soft) group-hover:scale-105" />

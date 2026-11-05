@@ -41,6 +41,7 @@ import {
   profileChanges,
   randomCode,
   RESET_TOKEN_MIN,
+  FORGOT_MIN_INTERVAL_SEC,
   posterPaletteCheck,
   receiptChecksPass,
   resolveSession,
@@ -830,9 +831,12 @@ export function createMockApi(): Api {
         const u = db.users.find((x) => x.role !== 'VISITOR' && x.email === email)
         // an unknown email gets the same answer, so the form cannot tell which addresses exist
         if (!u) return { ok: true as const }
+        // asked again within a minute: the same answer, no new link (as the backend, so the inbox is not flooded)
+        const recent = db.resetTokens.find((t) => t.userId === u.id && t.createdAt && now.getTime() - new Date(t.createdAt).getTime() < FORGOT_MIN_INTERVAL_SEC * 1000)
+        if (recent) return { ok: true as const }
         db.resetTokens = db.resetTokens.filter((t) => t.userId !== u.id)
         const token = uid('rst').slice(4) + uid('rst').slice(4)
-        db.resetTokens.push({ token, userId: u.id, expiresAt: new Date(now.getTime() + RESET_TOKEN_MIN * 60_000).toISOString() })
+        db.resetTokens.push({ token, userId: u.id, expiresAt: new Date(now.getTime() + RESET_TOKEN_MIN * 60_000).toISOString(), createdAt: now.toISOString() })
         // the demo shows the link the email would carry
         return { ok: true as const, simulatedLink: `${globalThis.location?.origin ?? ''}/reset?token=${token}` }
       })
@@ -845,8 +849,9 @@ export function createMockApi(): Api {
       const user = await write((db, now) => {
         const t = db.resetTokens.find((x) => x.token === token)
         if (!t || new Date(t.expiresAt).getTime() <= now.getTime()) throw new ApiError('RESET_EXPIRED', 'Link ini sudah tidak berlaku. Minta link baru dari halaman masuk.')
-        db.resetTokens = db.resetTokens.filter((x) => x.token !== token)
         const u = must(getUser(db, t.userId), 'Pengguna')
+        if (u.active === false) throw new ApiError('FORBIDDEN', 'Akun ini dinonaktifkan panitia.')
+        db.resetTokens = db.resetTokens.filter((x) => x.token !== token)
         const entry = db.passwords.find((p) => p.userId === u.id)
         if (entry) Object.assign(entry, { hash, fails: [] })
         else db.passwords.push({ userId: u.id, hash, fails: [] })

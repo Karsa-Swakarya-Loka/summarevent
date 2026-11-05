@@ -466,6 +466,8 @@ describe('panitia and petugas sign-in (email + kata sandi)', () => {
   it('forgot + reset: same answer for any email, a one-time link that sets the password and signs in', async () => {
     expect(await api.forgotPassword('bukan-siapa@contoh.id')).toEqual({ ok: true })
     const r = await api.forgotPassword('Pintu.Utara@summarevent.test')
+    // asked again right away: the same answer, no new link, and the first link still works
+    expect(await api.forgotPassword('pintu.utara@summarevent.test')).toEqual({ ok: true })
     expect(r.simulatedLink).toMatch(/\/reset\?token=/)
     const token = new URL(r.simulatedLink!, 'http://localhost').searchParams.get('token')!
     expect(passwordCheck('pendek')).toMatchObject({ ok: false })
@@ -477,6 +479,20 @@ describe('panitia and petugas sign-in (email + kata sandi)', () => {
     await expect(api.resetPassword(token, 'sandi-baru-utara')).rejects.toMatchObject({ code: 'RESET_EXPIRED' })
     await expect(api.login('pintu.utara@summarevent.test', DEMO_PASSWORD, 'STAFF')).rejects.toMatchObject({ code: 'BAD_LOGIN' })
     expect((await api.login('pintu.utara@summarevent.test', 'sandi-baru-utara', 'STAFF')).id).toBe('u_staff_utara')
+  })
+})
+
+describe('reset for a deactivated account', () => {
+  beforeEach(freshDb)
+
+  it('is refused with FORBIDDEN, and the link is kept for when the account is switched on again', async () => {
+    const r = await api.forgotPassword('atrium.cibadak@summarevent.test')
+    const token = new URL(r.simulatedLink!, 'http://localhost').searchParams.get('token')!
+    setSessionUserId('ADMIN', 'u_admin')
+    await api.admin.setStaffActive('u_staff_cibadak', false)
+    await expect(api.resetPassword(token, 'sandi-baru-cibadak')).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await api.admin.setStaffActive('u_staff_cibadak', true)
+    expect((await api.resetPassword(token, 'sandi-baru-cibadak')).id).toBe('u_staff_cibadak')
   })
 })
 

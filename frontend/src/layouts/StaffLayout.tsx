@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router'
+import { unlockAudio } from '@/components/staff/beep'
 import { useAccount } from '@/hooks/useLive'
 import { onboardingDone } from '@/lib/intro'
 import { useNavStack } from '@/lib/navStack'
@@ -27,7 +28,8 @@ export function StaffLayout() {
     return <Navigate to={`/staff/${onboardingDone('staff') ? 'masuk' : 'mulai'}?next=${next}`} replace />
   }
   return (
-    <div className="min-h-dvh bg-[#efece6]" data-shell={scanning ? undefined : 'staff'}>
+    // any tap on a petugas page unlocks the scan beep, so the first camera scan is heard too (iOS needs a tap first)
+    <div className="min-h-dvh bg-[#efece6]" data-shell={scanning ? undefined : 'staff'} onPointerDown={unlockAudio}>
       <div className="mx-auto min-h-dvh w-full max-w-md bg-background">
         <Outlet />
       </div>

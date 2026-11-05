@@ -130,6 +130,12 @@ const wizardCategories = async (page) => {
   await page.getByRole('textbox', { name: 'Nama kategori' }).first().waitFor()
 }
 
+// the landing's info menu behind the morphing toggle
+const infoMenu = async (page) => {
+  await page.getByRole('button', { name: 'Info dan pengaturan demo' }).click()
+  await page.getByRole('region', { name: 'Info dan pengaturan demo' }).waitFor()
+}
+
 const eventSwitcher = async (page) => {
   await page.getByRole('button', { name: /ganti event$/ }).first().click()
   await page.getByRole('tree', { name: 'Pilih event' }).waitFor()
@@ -194,6 +200,7 @@ const smallTargets = (page) =>
 
 const screens = [
   [phone, '/'],
+  [phone, '/', infoMenu],
   [phone, '/app/mulai'],
   [phone, '/app/mulai', onboardingLast],
   [phone, '/app/masuk'],

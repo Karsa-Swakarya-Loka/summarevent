@@ -49,6 +49,8 @@ export interface SeatMapProps {
   focusSeatIds?: string[]
   /** Extra buttons for the bar under the map (left of the zoom buttons). */
   toolbar?: ReactNode
+  /** On a laptop, show the whole map in its frame instead of zooming into a category (the visitor seat picker). */
+  wholeOnDesk?: boolean
 }
 
 type Box = { x0: number; x1: number; y0: number; y1: number }
@@ -66,8 +68,32 @@ function seatBox(list: Seat[]): Box | null {
   }
 }
 
-function Controls() {
-  const { zoomIn, zoomOut, centerView } = useControls()
+/** On a laptop the whole map is shown as long as a seat stays at least this big; a mouse needs no 44 px target. */
+const DESK_MIN_PX = 24
+
+/** Laptop width (Tailwind `lg`): the map has a large frame there and is shown whole. */
+const isDesk = () => typeof window !== 'undefined' && !!window.matchMedia?.('(min-width: 1024px)').matches
+
+type ZoomControls = ReturnType<typeof useControls>
+
+/** The scale and offset that fit the whole map in its frame, centred both ways, or null before the frame has a size. */
+function wholeView(c: ZoomControls): { x: number; y: number; scale: number } | null {
+  const wrapper = c.instance.wrapperComponent
+  const content = c.instance.contentComponent
+  if (!wrapper || !content || !content.offsetWidth || !content.offsetHeight) return null
+  const scale = Math.min(1, wrapper.clientWidth / content.offsetWidth, wrapper.clientHeight / content.offsetHeight)
+  return { x: (wrapper.clientWidth - content.offsetWidth * scale) / 2, y: (wrapper.clientHeight - content.offsetHeight * scale) / 2, scale }
+}
+
+function Controls({ wholeOnDesk }: { wholeOnDesk: boolean }) {
+  const controls = useControls()
+  const { zoomIn, zoomOut, centerView } = controls
+  // on a laptop "see everything" fits the whole map in the frame, also when it is taller than the frame
+  const showAll = () => {
+    const whole = wholeOnDesk && isDesk() ? wholeView(controls) : null
+    if (whole) void controls.setTransform(whole.x, whole.y, whole.scale)
+    else centerView(1)
+  }
   const btn = 'flex size-11 items-center justify-center rounded-full bg-card shadow-xs ring-1 ring-border hover:bg-muted'
   return (
     <div className="flex shrink-0 items-center gap-1.5">
@@ -77,7 +103,7 @@ function Controls() {
       <button type="button" className={btn} onClick={() => zoomIn()} aria-label="Perbesar denah" title="Perbesar denah">
         <Plus className="size-5" />
       </button>
-      <button type="button" className={btn} onClick={() => centerView(1)} aria-label="Lihat seluruh denah" title="Lihat seluruh denah">
+      <button type="button" className={btn} onClick={showAll} aria-label="Lihat seluruh denah" title="Lihat seluruh denah">
         <Maximize2 className="size-4" />
       </button>
     </div>
@@ -88,7 +114,7 @@ function Controls() {
  * Frames `focus()` whenever `zoomKey` changes: scaled so a seat pitch is TOUCH_PX on screen, centred on
  * the box, and clamped so no blank space shows past the map's edges. No focus → the whole map.
  */
-function ZoomTo({ mapWidth, focus, zoomKey }: { mapWidth: number; focus: () => Box | null; zoomKey: string }) {
+function ZoomTo({ mapWidth, focus, zoomKey, wholeOnDesk }: { mapWidth: number; focus: () => Box | null; zoomKey: string; wholeOnDesk: boolean }) {
   const controls = useControls()
   const latest = useRef({ controls, focus })
   useEffect(() => {
@@ -103,6 +129,12 @@ function ZoomTo({ mapWidth, focus, zoomKey }: { mapWidth: number; focus: () => B
       const wrapper = c.instance.wrapperComponent
       const content = c.instance.contentComponent
       const box = getFocus()
+      // on a laptop the whole map fits the frame, so no edge column is cut off, as long as the seats stay big enough
+      const whole = wholeOnDesk && isDesk() ? wholeView(c) : null
+      if (whole && content && (content.offsetWidth / mapWidth) * SEAT_UNIT * whole.scale >= DESK_MIN_PX) {
+        void c.setTransform(whole.x, whole.y, whole.scale, ms)
+        return
+      }
       if (!box || !wrapper || !content || !content.offsetWidth) {
         void c.centerView(1, ms)
         return
@@ -144,6 +176,7 @@ export function SeatMap({
   zoomKey,
   focusSeatIds,
   toolbar,
+  wholeOnDesk = false,
 }: SeatMapProps) {
   const { seats, sessionSeats, categories, layout } = data
   // seat numbers are drawn only while the seats are big enough on screen to read them (zoomed into a category, a wide screen)
@@ -197,7 +230,7 @@ export function SeatMap({
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <TransformWrapper
-        minScale={0.6}
+        minScale={wholeOnDesk && isDesk() ? 0.3 : 0.6}
         maxScale={MAX_SCALE}
         initialScale={1}
         centerOnInit
@@ -207,7 +240,7 @@ export function SeatMap({
         onInit={(ref) => readable(ref.instance.contentComponent, ref.state.scale)}
         onTransform={(ref, state) => readable(ref.instance.contentComponent, state.scale)}
       >
-        <ZoomTo mapWidth={geo.width} focus={focus} zoomKey={zoomKey ?? ''} />
+        <ZoomTo mapWidth={geo.width} focus={focus} zoomKey={zoomKey ?? ''} wholeOnDesk={wholeOnDesk} />
         <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border bg-[#fdfcf9]">
           <TransformComponent wrapperClass="!size-full" contentClass="!w-full">
             <svg viewBox={`0 0 ${geo.width} ${geo.height}`} className="block h-auto w-full touch-manipulation select-none" role="group" aria-label="Denah kursi">
@@ -291,7 +324,7 @@ export function SeatMap({
         </div>
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">{toolbar}</div>
-          <Controls />
+          <Controls wholeOnDesk={wholeOnDesk} />
         </div>
       </TransformWrapper>
     </div>

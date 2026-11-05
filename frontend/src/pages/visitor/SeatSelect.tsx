@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { Skeleton } from '@/components/ui/skeleton'
-import { LoadError, QtyStepper } from '@/components/visitor/Common'
+import { DeskHead, LoadError, PhoneOnly, QtyStepper } from '@/components/visitor/Common'
 import { continuePath, isPendingOrder, pendingTitle, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen, tapSeat } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { saleState, seatLabel } from '@/domain/rules'
@@ -32,8 +32,11 @@ export default function SeatSelect() {
 
   if (map.loading && !map.data) {
     return (
-      <div>
-        <BackHeader to={`/app/e/${slug}`} title="Pilih kursi" />
+      <div className="lg:mx-auto lg:w-full lg:max-w-6xl lg:px-8">
+        <PhoneOnly>
+          <BackHeader to={`/app/e/${slug}`} title="Pilih kursi" />
+        </PhoneOnly>
+        <DeskHead to={`/app/e/${slug}`} title="Pilih kursi" />
         <div className="space-y-3 p-4" role="status" aria-busy="true" aria-label="Memuat denah">
           <div className="grid grid-cols-2 gap-2">
             {[0, 1, 2, 3].map((i) => (
@@ -47,8 +50,11 @@ export default function SeatSelect() {
   }
   if (!map.data) {
     return (
-      <div>
-        <BackHeader to={`/app/e/${slug}`} title="Pilih kursi" />
+      <div className="lg:mx-auto lg:w-full lg:max-w-6xl lg:px-8">
+        <PhoneOnly>
+          <BackHeader to={`/app/e/${slug}`} title="Pilih kursi" />
+        </PhoneOnly>
+        <DeskHead to={`/app/e/${slug}`} title="Pilih kursi" />
         <LoadError error={map.error} onRetry={map.reload} backTo={`/app/e/${slug}`} backLabel="Kembali ke detail event" />
       </div>
     )
@@ -374,20 +380,24 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
   const canHold = !!category && !closedReason && !pending && (isGeneral ? !generalShort && qty >= 1 : selected.length > 0) && busy !== 'hold'
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <BackHeader
-        to={`/app/e/${slug}`}
-        title={
-          <div className="min-w-0 leading-tight">
-            <div className="truncate">{event.title}</div>
-            <div className="truncate text-xs font-normal text-muted-foreground">
-              {sessionName(session)} · {sessionWhen(session)}
+    // on a laptop: the map fills the left, categories, the summary and the action stand in a column on the right
+    <div className="flex min-h-dvh flex-col lg:mx-auto lg:grid lg:min-h-0 lg:w-full lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[auto_auto_1fr] lg:items-start lg:gap-x-8 lg:px-8 lg:pb-10">
+      <PhoneOnly>
+        <BackHeader
+          to={`/app/e/${slug}`}
+          title={
+            <div className="min-w-0 leading-tight">
+              <div className="truncate">{event.title}</div>
+              <div className="truncate text-xs font-normal text-muted-foreground">
+                {sessionName(session)} · {sessionWhen(session)}
+              </div>
             </div>
-          </div>
-        }
-      />
+          }
+        />
+      </PhoneOnly>
+      <DeskHead to={`/app/e/${slug}`} title={event.title} subtitle={`${sessionName(session)} · ${sessionWhen(session)}`} className="lg:col-span-2" />
 
-      <div className="space-y-3 px-4 pt-3">
+      <div className="space-y-3 px-4 pt-3 lg:col-start-2 lg:row-start-2 lg:px-0 lg:pt-0">
         {pending && (
           <Link to={continuePath(pending)} className="flex items-center gap-3 rounded-xl border border-status-warn/50 bg-status-warn/12 p-3">
             <Hourglass className="size-5 shrink-0 text-[#7a5600]" aria-hidden />
@@ -401,7 +411,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
           </Link>
         )}
 
-        <CategoryLegend categories={categories} availability={availability} activeId={categoryId} onPick={pickCategory} chips />
+        <CategoryLegend categories={categories} availability={availability} activeId={categoryId} onPick={pickCategory} chips className="lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0" />
 
         {category && !isGeneral && hasLayout && (
           <div className="flex items-stretch gap-2">
@@ -422,9 +432,10 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         )}
       </div>
 
+      <div className="contents lg:sticky lg:top-[calc(var(--spacing-desk-bar)+1rem)] lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:flex lg:h-[calc(100dvh-var(--spacing-desk-bar)-8.5rem)] lg:min-h-[26rem] lg:flex-col">
       {hasLayout && !isGeneral ? (
         <>
-          <div className="relative mx-4 mt-3 min-h-[18rem] flex-1">
+          <div className="relative mx-4 mt-3 min-h-[18rem] flex-1 lg:mx-0 lg:mt-0">
             <SeatMap
               data={data}
               selected={selectedSet}
@@ -435,6 +446,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
               onSeatClick={onSeatClick}
               zoomKey={`${category?.id ?? 'all'}-${zoomNonce}`}
               focusSeatIds={selected}
+              wholeOnDesk
               className="absolute inset-0"
               toolbar={
                 selected.length > 0 && !pending && !closedReason ? (
@@ -462,21 +474,22 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
             />
           </div>
           <StatusLegend
-            className="gap-x-3 gap-y-1.5 px-4 pt-2.5 text-[0.72rem]"
+            className="gap-x-3 gap-y-1.5 px-4 pt-2.5 text-[0.72rem] lg:gap-x-5 lg:px-0 lg:pt-3 lg:text-xs"
             showPriority
             availableColors={categories.filter((c) => c.quota == null).map((c) => c.color)}
           />
-          <DoubleBookingButton className="mx-4 self-start" />
+          <DoubleBookingButton className="mx-4 self-start lg:mx-0" />
         </>
       ) : category && isGeneral ? (
         <GeneralPanel category={category} available={catAvail?.available ?? 0} total={catAvail?.total ?? 0} qty={qty} max={generalMax} onQty={changeQty} disabled={!!closedReason} />
       ) : !hasLayout ? (
-        <p className="mx-4 mt-4 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">Event ini tanpa nomor kursi. Pilih kategori di atas.</p>
+        <p className="mx-4 mt-4 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground lg:mx-0 lg:mt-0">Event ini tanpa nomor kursi. Pilih kategori di atas.</p>
       ) : null}
+      </div>
 
-      {!hasLayout && !(category && isGeneral) && <div className="flex-1" />}
+      {!hasLayout && !(category && isGeneral) && <div className="flex-1 lg:hidden" />}
 
-      <div className="sticky bottom-0 z-20 mt-3 border-t bg-card/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-10px_30px_-18px_rgb(0_0_0/0.35)] backdrop-blur">
+      <div className="sticky bottom-0 z-20 mt-3 border-t bg-card/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-10px_30px_-18px_rgb(0_0_0/0.35)] backdrop-blur lg:static lg:col-start-2 lg:row-start-3 lg:mt-4 lg:rounded-[1.4rem] lg:border-0 lg:bg-card lg:p-5 lg:shadow-xs lg:backdrop-blur-none">
         {conflict && (
           <div role="alert" className="mb-3 rounded-xl border border-status-invalid/35 bg-status-invalid/8 p-3">
             <p className="flex items-start gap-2 text-sm font-bold text-[#a11b1b]">
@@ -597,7 +610,7 @@ function GeneralPanel({
   let mine = available > 0 ? Math.min(cells - takenCells, Math.ceil(qty / per)) : 0
   const dots = Array.from({ length: cells }, (_, i) => (taken.has(i) ? 'taken' : mine-- > 0 ? 'mine' : 'free'))
   return (
-    <section className="mx-4 mt-3 flex flex-1 flex-col rounded-[1.4rem] bg-card p-4 shadow-xs" aria-label={`Kuota ${category.name}`}>
+    <section className="mx-4 mt-3 flex flex-1 flex-col rounded-[1.4rem] bg-card p-4 shadow-xs lg:mx-0 lg:mt-0" aria-label={`Kuota ${category.name}`}>
       <p className="flex items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
         <span className="size-2.5 shrink-0 rounded-full" style={{ background: category.color }} aria-hidden />
         {category.name}

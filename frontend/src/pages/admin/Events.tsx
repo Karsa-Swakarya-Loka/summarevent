@@ -159,7 +159,7 @@ export default function Events() {
       ) : (
         <>
           {/* desktop / tablet table */}
-          <div className="hidden overflow-hidden rounded-[1.25rem] bg-card ring-1 ring-foreground/[0.07] md:block">
+          <div className="hidden overflow-hidden rounded-[1.25rem] bg-card ring-1 ring-foreground/[0.07] xl:block">
             <Table>
               <TableHeader>
                 <TableRow className="bg-panel hover:bg-panel">
@@ -210,7 +210,7 @@ export default function Events() {
           </div>
 
           {/* mobile cards */}
-          <ul className="flex flex-col gap-3 md:hidden">
+          <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">
             {list.map((e) => {
               const st = eventDisplayStatus(e.event)
               return (

@@ -201,6 +201,12 @@ export function sessionLabel(s: { label?: string; startAt: string; endAt: string
   return s.label ? `${s.label} · ${time}` : time
 }
 
+/** "Sesi 2", or the date and time when a session has no name; a note in brackets is left out ("Sesi Demo Juri"). For tight cells. */
+export function sessionShort(s: { label?: string; startAt: string; endAt: string; demoLive?: boolean }): string {
+  const name = s.label?.replace(/\s*\(.*\)\s*$/, '').trim()
+  return name || sessionLabel({ ...s, label: undefined })
+}
+
 /** A receipt set can still be decided: the order waits for verification and has pending receipts. */
 export const canDecide = (it: ReceiptQueueItem) => it.order.status === 'AWAITING_VERIFICATION' && it.siblings.some((s) => s.status === 'PENDING')
 

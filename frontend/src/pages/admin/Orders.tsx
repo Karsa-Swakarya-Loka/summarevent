@@ -10,7 +10,7 @@ import { api } from '@/api'
 import type { OrderRow } from '@/api/contract'
 import { EventSelect, ListSkeleton, LoadError, PageHeader } from '@/components/admin/AdminUi'
 import { useAdminEvent } from '@/components/admin/hooks'
-import { downloadEventCsv, seatSummary, sessionLabel } from '@/components/admin/lib'
+import { downloadEventCsv, seatSummary, sessionLabel, sessionShort } from '@/components/admin/lib'
 import { EmptyState, StatusBadge, Swatch } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -107,9 +107,9 @@ export default function Orders() {
           </label>
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-            <Input id="order-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Kode pesanan, nama, no. HP, atau kursi (mis. C7)" className="h-10 bg-card pr-10 pl-9" />
+            <Input id="order-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Kode, nama, no. HP, atau kursi" className="h-11 bg-card pr-11 pl-9 sm:h-10" />
             {q && (
-              <button type="button" className="absolute top-1/2 right-1 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted" onClick={() => setQ('')} aria-label="Hapus pencarian">
+              <button type="button" className="absolute top-1/2 right-0 flex size-11 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted sm:size-10" onClick={() => setQ('')} aria-label="Hapus pencarian">
                 <X className="size-4" />
               </button>
             )}
@@ -133,8 +133,27 @@ export default function Orders() {
       ) : !rows.data ? (
         <ListSkeleton rows={6} />
       ) : !shown.length ? (
-        <EmptyState icon={<Search />} title="Tidak ada pesanan yang cocok">
-          {dq ? `Tidak ada hasil untuk “${dq}”. ` : ''}Coba ganti filter status atau event.
+        <EmptyState
+          icon={<Search />}
+          title={all.length || dq ? 'Tidak ada pesanan yang cocok' : 'Belum ada pesanan'}
+          action={
+            dq || status !== 'ALL' ? (
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-11"
+                onClick={() => {
+                  setQ('')
+                  setQuery({ status: null, q: null })
+                }}
+              >
+                Hapus pencarian dan filter
+              </Button>
+            ) : undefined
+          }
+        >
+          {dq ? `Tidak ada hasil untuk “${dq}”. ` : ''}
+          {dq || status !== 'ALL' ? 'Coba kata lain, atau lihat semua status.' : 'Pesanan muncul di sini begitu pengunjung memesan tiket event ini.'}
         </EmptyState>
       ) : (
         <>
@@ -166,11 +185,13 @@ export default function Orders() {
                       <div className="text-xs text-muted-foreground tabular-nums">{maskPhone(r.order.buyerPhone)}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="max-w-56 truncate">{sessionLabel(r.session)}</div>
+                      <div className="max-w-56 truncate" title={sessionLabel(r.session)}>
+                        {r.session.demoLive ? sessionShort(r.session) : sessionLabel(r.session)}
+                      </div>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Swatch color={r.category.color} /> {r.category.name}
-                        {eventId === 'ALL' && <span className="truncate">· {r.event.title}</span>}
                       </div>
+                      {eventId === 'ALL' && <div className="max-w-56 truncate text-xs text-muted-foreground" title={r.event.title}>{r.event.title}</div>}
                     </TableCell>
                     <TableCell className="max-w-40 truncate font-semibold tabular-nums">{seatSummary(r.order.items)}</TableCell>
                     <TableCell className="text-right">
@@ -198,7 +219,7 @@ export default function Orders() {
             </Table>
           </div>
 
-          <ul className="grid gap-2 md:grid-cols-2 xl:hidden" aria-label="Daftar pesanan">
+          <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:hidden" aria-label="Daftar pesanan">
             {shown.map((r) => (
               <li key={r.order.id}>
                 <button type="button" onClick={() => setOpenId(r.order.id)} className="h-full w-full rounded-xl bg-panel p-3 text-left transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">

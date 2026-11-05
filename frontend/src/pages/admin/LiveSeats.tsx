@@ -75,7 +75,7 @@ export default function LiveSeats() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Peta kursi live"
-        description={`${summary ? `${summary.event.title} · ` : ''}Denah yang sama dengan yang dilihat pengunjung. Status kursi diperbarui otomatis, tanpa reload.`}
+        description={`${summary ? `${summary.event.title} · ` : ''}Denah yang sama dengan yang dilihat pengunjung, berubah sendiri saat ada pesanan.`}
         actions={
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -97,7 +97,7 @@ export default function LiveSeats() {
                 </Select>
               </div>
             </div>
-            <LiveIndicator at={data?.serverTime} everySec={3} />
+            <LiveIndicator at={data?.serverTime} />
           </div>
         }
       />

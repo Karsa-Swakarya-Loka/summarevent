@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import { Camera, CircleCheck, CircleDashed, CircleX, ImagePlus, LoaderCircle, Plus, ScanText, Sparkles, Trash2, TriangleAlert } from 'lucide-react'
+import { Camera, CircleCheck, CircleDashed, CircleX, FlaskConical, ImagePlus, LoaderCircle, Plus, ScanText, Sparkles, Trash2, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail, ReceiptInput, RuleCheck } from '@/api/contract'
@@ -67,7 +67,7 @@ const randInt = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n
 
 /**
  * Tukar Struk form (PV-09): photo + tenant + receipt number + amount + date/time per receipt, a meter toward the minimum
- * spend (R3), a live checklist of the other rules (R1, R2, R4, R6) and a "Pakai struk contoh" helper for judges. It
+ * spend (R3), a live checklist of every rule, and two demo helpers for judges without a SUMMABA receipt at hand. It
  * ends the screen: its send button sits in the bottom bar, so render it as the last block of a page.
  */
 export function ReceiptForm({
@@ -218,7 +218,7 @@ export function ReceiptForm({
     const target: Draft = { ...(empty ?? emptyDraft()), photoUrl, photoHash, receiptDate: '', receiptTime: '' }
     setTouched(true)
     setDrafts((ds) => (empty ? ds.map((d) => (d.key === empty.key ? target : d)) : [...ds, target]))
-    toast('Foto struk contoh ditambahkan tanpa data. Tekan Baca otomatis.')
+    toast('Foto struk contoh ditambahkan. Tekan Baca otomatis dari foto.')
   }
 
   const missingPhoto = drafts.findIndex((d) => !d.photoUrl)
@@ -251,7 +251,8 @@ export function ReceiptForm({
     }
   }
 
-  const listed = allChecks.filter((c) => c.rule !== 'R3')
+  // the meter tells how far the total is; the checklist names the minimum once, so it counts the same rules as the bar
+  const listed = allChecks.map((c) => (c.rule === 'R3' ? { ...c, message: `Total belanja minimal ${rupiahPlain(rules.minSpend)}` } : c))
   const passed = allChecks.filter((c) => c.ok).length
   const short = Math.max(0, rules.minSpend - total)
   const chips = ['Tenant SUMMABA', rules.sameDayRequired ? 'Struk hari ini' : null, `Sebelum ${rules.cutoffTime.replace(':', '.')}`, `Maks ${rules.maxReceiptsCombined} struk`].filter(
@@ -299,13 +300,29 @@ export function ReceiptForm({
           </div>
         </section>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Button type="button" variant="outline" className="h-12 bg-card px-2" onClick={() => void fillSample()} disabled={disabled}>
-            <Sparkles className="size-4" /> Pakai struk contoh
-          </Button>
-          <Button type="button" variant="outline" className="h-12 bg-card px-2" onClick={() => void samplePhotoOnly()} disabled={disabled}>
-            <ScanText className="size-4" /> Coba baca otomatis
-          </Button>
+        {/* no SUMMABA receipt at hand: a filled sample, or a sample photo for the automatic reading */}
+        <div className="rounded-2xl border border-dashed border-ink/25 p-1.5">
+          <p className="flex items-center gap-1.5 px-1.5 pt-1 pb-1.5 text-[0.66rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">
+            <FlaskConical className="size-3.5" aria-hidden /> Demo · tanpa struk asli
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => void fillSample()}
+              disabled={disabled}
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-ink/15 bg-card px-2 text-xs font-bold transition hover:bg-muted active:scale-95 disabled:opacity-60"
+            >
+              <Sparkles className="size-3.5 shrink-0" aria-hidden /> Isi struk contoh
+            </button>
+            <button
+              type="button"
+              onClick={() => void samplePhotoOnly()}
+              disabled={disabled}
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-ink/15 bg-card px-2 text-xs font-bold transition hover:bg-muted active:scale-95 disabled:opacity-60"
+            >
+              <ScanText className="size-3.5 shrink-0" aria-hidden /> Foto contoh
+            </button>
+          </div>
         </div>
 
         <ol className="space-y-3">

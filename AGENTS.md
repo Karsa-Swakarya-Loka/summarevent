@@ -45,7 +45,7 @@ Semua pola ada di `scripts/check-no-ai.sh` dan contohnya di `scripts/test-check-
 - Layar hanya bicara lewat `api` (`src/api/index.ts`), tidak pernah langsung ke storage atau `fetch`.
 - Aturan bisnis yang murni ada di `src/domain/rules.ts`, alur per endpoint di `src/api/mock/adapter.ts`. Aturan baru masuk ke sana dulu, lengkap dengan unit test, baru dipakai layar.
 - Satu kosakata status untuk semua layar: `src/domain/labels.ts`. Jangan menulis label status sendiri.
-- Teks UI berbahasa Indonesia. Microcopy Sunda selalu disertai artinya (`SundaText`).
+- Teks UI berbahasa Indonesia, tanpa bahasa daerah, supaya semua pengunjung paham. Tulis singkat dan langsung ke inti.
 - Target sentuh minimal 44 px, status tidak dibedakan warna saja, dan tampilan dicek di HP 360 px sampai desktop.
 - Tidak ada kode, aset, atau dependency yang tidak dipakai. `npx knip` di `frontend/` membantu menemukannya.
 

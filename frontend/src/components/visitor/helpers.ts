@@ -46,7 +46,7 @@ export function sessionWhen(s: Pick<Session, 'startAt' | 'endAt' | 'demoLive'>):
 }
 
 export function sessionName(s: Pick<Session, 'label' | 'demoLive'>): string {
-  if (s.demoLive) return 'Sesi demo juri'
+  if (s.demoLive) return 'Sesi demo'
   return s.label ?? 'Sesi'
 }
 
@@ -75,6 +75,21 @@ export function wibWeekRange(now = new Date()): { from: Date; to: Date } {
 export function eventInRange(e: EventSummary, from: Date, to: Date): boolean {
   const spans = e.sessions.length ? e.sessions.map((s) => [s.startAt, s.endAt]) : [[e.event.startAt, e.event.endAt]]
   return spans.some(([a, b]) => new Date(a) < to && new Date(b) > from)
+}
+
+/**
+ * What an unfinished order waits for, in a few words: the visitor's next step, or that the panitia has the receipt.
+ * `short` fits a small card ("Bayar"), the full one heads the order's own screen ("Tinggal bayar").
+ */
+export function pendingTitle(d: Pick<OrderDetail, 'order' | 'receipts'>, short = false): string {
+  const { order, receipts } = d
+  if (order.status === 'AWAITING_VERIFICATION') {
+    if (receipts.some((r) => r.status === 'PENDING')) return short ? 'Struk dicek' : 'Struk dicek panitia'
+    if (receipts.some((r) => r.status === 'NEEDS_REVISION')) return short ? 'Perbaiki struk' : 'Struk perlu diperbaiki'
+    return short ? 'Kirim struk' : 'Struk belum dikirim'
+  }
+  if (order.paymentMethod === 'FREE' || order.totalAmount === 0) return short ? 'Konfirmasi' : 'Tinggal konfirmasi'
+  return short ? 'Bayar' : 'Tinggal bayar'
 }
 
 /** Where a visitor should continue an order. */

@@ -12,12 +12,19 @@ import { axisRupiah, type lastDays } from './lib'
 
 type Row = ReturnType<typeof lastDays>[number]
 
-/** The axis top: the largest value rounded up to 1, 2, 2.5 or 5 × 10ⁿ, so the ticks read as round numbers. */
-function niceTop(max: number): number {
-  if (max <= 0) return 1
-  const p = 10 ** Math.floor(Math.log10(max))
-  const u = max / p
-  return (u <= 1 ? 1 : u <= 2 ? 2 : u <= 2.5 ? 2.5 : u <= 5 ? 5 : 10) * p
+/**
+ * The axis: three gridlines a round step apart (1, 1.5, 2, 2.5, 3, 4, 5, 6 or 8 × 10ⁿ) that clear the largest value,
+ * so every label reads as a round number ("150rb", "300rb", "450rb"; "8", "16", "24"), never "333rb" or "13".
+ */
+function axisTicks(max: number, integer = false): number[] {
+  const raw = Math.max(max, 0) / 3
+  let step = 1
+  if (raw > 0) {
+    const p = 10 ** Math.floor(Math.log10(raw))
+    step = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].map((m) => m * p).find((x) => x >= raw) ?? 10 * p
+  }
+  if (integer) step = Math.max(1, Math.ceil(step))
+  return [step * 3, step * 2, step, 0]
 }
 
 function Tip({ children, side }: { children: React.ReactNode; side: 'left' | 'right' }) {
@@ -30,8 +37,8 @@ function Tip({ children, side }: { children: React.ReactNode; side: 'left' | 'ri
 
 /** Money per day: a bar on a full-height track for every day, as the reference's "Earned so far". */
 export function RevenueBars({ rows, className }: { rows: Row[]; className?: string }) {
-  const top = niceTop(Math.max(0, ...rows.map((r) => r.revenue)))
-  const ticks = [top, (top * 2) / 3, top / 3, 0]
+  const ticks = axisTicks(Math.max(0, ...rows.map((r) => r.revenue)))
+  const top = ticks[0]
   const [hover, setHover] = useState<number | null>(null)
   const many = rows.length > 7
   const summary = rows
@@ -122,9 +129,9 @@ export function TicketsArea({ rows, className }: { rows: Row[]; className?: stri
   const [box, size] = useSize<HTMLDivElement>()
   const gradient = useId()
   const [hover, setHover] = useState<number | null>(null)
-  // at least four on the axis, so one ticket does not fill the whole chart
-  const top = Math.max(4, niceTop(Math.max(0, ...rows.map((r) => r.tickets))))
-  const ticks = [top, (top * 2) / 3, top / 3, 0].map((t) => Math.round(t))
+  // whole tickets, at least three on the axis, so one ticket does not fill the whole chart
+  const ticks = axisTicks(Math.max(0, ...rows.map((r) => r.tickets)), true)
+  const top = ticks[0]
   const pad = { l: 30, r: 10, t: 12, b: 26 }
   const w = size.w
   const h = size.h

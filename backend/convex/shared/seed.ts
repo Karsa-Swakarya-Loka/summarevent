@@ -406,7 +406,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   db.events.push(e1)
   const s1: Session = { id: 'ses_sk_13', eventId: e1.id, label: 'Sesi 1', startAt: wib('2026-11-21', '13:00'), endAt: wib('2026-11-21', '14:00') }
   const s2: Session = { id: 'ses_sk_16', eventId: e1.id, label: 'Sesi 2', startAt: wib('2026-11-21', '16:00'), endAt: wib('2026-11-21', '17:00') }
-  const s3: Session = { id: 'ses_sk_demo', eventId: e1.id, label: 'Sesi Demo Juri (selalu berlangsung)', startAt: e1.startAt, endAt: e1.endAt, demoLive: true }
+  const s3: Session = { id: 'ses_sk_demo', eventId: e1.id, label: 'Sesi Demo Juri', startAt: e1.startAt, endAt: e1.endAt, demoLive: true }
   db.sessions.push(s1, s2, s3)
   for (const s of [s1, s2, s3]) addSessionInventory(ctx, e1, s, seats1, [vip, struk, reg, fest])
 
@@ -575,7 +575,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
 
   // Rina's inbox
   const rinaSeats = rinaDemo.items.map((i) => i.seatLabel).join(', ')
-  note(db, { userId: rina.id, channel: 'WA', kind: 'ORDER_CONFIRMED', orderId: rinaDemo.id, title: 'Pesanan terkonfirmasi', body: `Tos siap! Tiket ${e1.title} (${s3.label}) kursi ${rinaSeats} sudah aktif. Tunjukkan QR di Pass Saya saat masuk.`, createdAt: rinaDemo.confirmedAt!, scheduledFor: null })
+  note(db, { userId: rina.id, channel: 'WA', kind: 'ORDER_CONFIRMED', orderId: rinaDemo.id, title: 'Pesanan terkonfirmasi', body: `Tiket ${e1.title} (${s3.label}) kursi ${rinaSeats} sudah aktif. Tunjukkan QR di Pass Saya saat masuk.`, createdAt: rinaDemo.confirmedAt!, scheduledFor: null })
   note(db, { userId: rina.id, channel: 'EMAIL', kind: 'ORDER_CONFIRMED', orderId: rinaDemo.id, title: `E-ticket ${rinaDemo.code}`, body: `Halo Rina, e-ticket untuk kursi ${rinaSeats} terlampir di Pass Saya. Sampai jumpa di SUMMABA!`, createdAt: rinaDemo.confirmedAt!, scheduledFor: null })
   note(db, { userId: rina.id, channel: 'WA', kind: 'RECEIPT_RESULT', orderId: rinaReceipt.id, title: 'Struk sedang diverifikasi', body: 'Struk kamu untuk kategori Tukar Struk (Sesi 2, kursi C7–C10) sedang dicek panitia. Kursi ditahan 30 menit.', createdAt: minutesAgo(now, 6).toISOString(), scheduledFor: null })
 

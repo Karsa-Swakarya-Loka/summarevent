@@ -1,34 +1,12 @@
 import type { ReactNode } from 'react'
 import { ChevronLeft, Clock } from 'lucide-react'
-import { SUNDA, type Tone } from '@/domain/labels'
+import type { Tone } from '@/domain/labels'
 import { fmtCountdown } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useNow } from '@/hooks/useLive'
 import { useScrolled } from '@/hooks/useScrolled'
 import { useBack } from '@/lib/navStack'
 import { DemoMenu } from './DemoMenu'
-
-/* ---------- Sundanese microcopy + Indonesian meaning (PRD §1, NFR aksesibilitas) ---------- */
-export function SundaText({ k, className, size = 'lg' }: { k: keyof typeof SUNDA; className?: string; size?: 'sm' | 'lg' | 'xl' }) {
-  const t = SUNDA[k]
-  return (
-    <span className={cn('inline-flex flex-col leading-tight', className)}>
-      <span className={cn('font-bold', size === 'xl' ? 'text-4xl' : size === 'lg' ? 'text-2xl' : 'text-base')}>{t.su}</span>
-      <span className={cn('opacity-75', size === 'xl' ? 'text-lg' : 'text-xs')}>{t.id}</span>
-    </span>
-  )
-}
-
-/** Button label with the Sundanese CTA on top and Indonesian below. */
-export function SundaLabel({ k }: { k: keyof typeof SUNDA }) {
-  const t = SUNDA[k]
-  return (
-    <span className="flex flex-col items-center leading-tight">
-      <span className="font-bold">{t.su}</span>
-      <span className="text-[0.7rem] font-normal opacity-85">{t.id}</span>
-    </span>
-  )
-}
 
 /* ---------- Status badge (green/yellow/red only for status) ---------- */
 const TONE_CLASS: Record<Tone, string> = {

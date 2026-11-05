@@ -6,8 +6,10 @@ import { toast } from 'sonner'
 import type { User } from '@/domain/types'
 import { BrandLockup } from '@/components/common/Brand'
 import { EmptyState, StatusBadge } from '@/components/common/bits'
+import { DemoMenu } from '@/components/common/DemoMenu'
 import { Illustration } from '@/components/common/Illustration'
 import { Poster } from '@/components/common/Poster'
+import { clearOfflineManifests } from '@/components/staff/offline'
 import { scannableEvents, sessionName, sessionWindow, WINDOW_LABEL, type WindowState } from '@/components/staff/session'
 import { SectionLabel } from '@/components/visitor/Common'
 import { SettingsGroup, SettingsRow } from '@/components/visitor/SettingsList'
@@ -40,12 +42,15 @@ export default function StaffHome() {
     <div className="pb-24">
       <header className="relative overflow-hidden bg-brand px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-6 text-white">
         <div className="seat-dots absolute inset-0 text-white/10" aria-hidden />
-        <div className="relative flex items-center justify-between gap-3">
-          <BrandLockup inverted className="h-7" />
+        <div className="relative flex items-center gap-1">
+          <BrandLockup inverted className="mr-auto h-6 min-w-0" />
+          {/* the demo shortcuts live in the bar, never floating over a session's Mulai scan */}
+          <DemoMenu variant="bar" className="text-white hover:bg-white/10" />
           <button
             type="button"
             onClick={() => {
               api.logout('STAFF')
+              clearOfflineManifests()
               navigate('/staff/masuk', { replace: true })
             }}
             className="-mr-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-white/85 hover:bg-white/10"
@@ -60,7 +65,6 @@ export default function StaffHome() {
           </div>
           <Illustration name="camera" className="-mb-3 w-24 shrink-0" enter={0.15} />
         </div>
-        <StaffSwitcher userId={user?.id ?? null} onSwitch={setUser} />
       </header>
 
       <div className="space-y-6 px-4 pt-5">
@@ -100,9 +104,13 @@ export default function StaffHome() {
 
             <DeskReceiptsLink eventId={selected.event.id} />
 
-            <p className="rounded-2xl bg-accent px-4 py-3 text-sm text-accent-foreground">
-              Demo: <b>Sesi Demo Juri</b> selalu berlangsung, dan di layar scan ada <b>Alat bantu demo</b> untuk mencoba tanpa HP kedua.
-            </p>
+            {/* everything only a judge needs, together: the always-open session, the scan tools, another petugas */}
+            <section aria-label="Demo" className="rounded-2xl bg-accent px-4 py-3 text-sm text-accent-foreground">
+              <p>
+                Demo: <b>Sesi Demo Juri</b> selalu berlangsung, dan di layar scan ada <b>Alat demo</b> untuk mencoba tanpa HP kedua.
+              </p>
+              <StaffSwitcher userId={user?.id ?? null} onSwitch={setUser} />
+            </section>
           </>
         )}
       </div>
@@ -110,14 +118,14 @@ export default function StaffHome() {
   )
 }
 
-/** Demo: switch between staff accounts (AD-13) so "dipindai oleh …" shows different people. */
+/** Demo: switch between staff accounts (AD-13) so "dipindai oleh …" shows different people. Kept with the other demo help. */
 function StaffSwitcher({ userId, onSwitch }: { userId: string | null; onSwitch: (u: User) => void }) {
   const staff = useLive(() => api.staff.accounts(), [])
   const options = staff.data ?? []
   if (options.length < 2) return null
   return (
-    <label className="relative mt-4 flex flex-col gap-1.5 text-[0.7rem] font-bold tracking-[0.18em] text-white/75 uppercase">
-      Akun petugas (demo)
+    <label className="mt-3 flex flex-col gap-1.5 text-[0.7rem] font-bold tracking-[0.18em] uppercase">
+      Ganti akun petugas
       <select
         value={userId ?? ''}
         onChange={(e) =>
@@ -129,7 +137,7 @@ function StaffSwitcher({ userId, onSwitch }: { userId: string | null; onSwitch: 
             })
             .catch((err: unknown) => toast.error(errorMessage(err)))
         }
-        className="h-11 w-full min-w-0 rounded-full border border-white/30 bg-white/10 px-4 text-sm font-semibold tracking-normal text-white normal-case"
+        className="h-11 w-full min-w-0 rounded-full border border-ink/15 bg-card px-4 text-sm font-semibold tracking-normal text-ink normal-case"
       >
         {options.map((s) => (
           <option key={s.id} value={s.id} className="text-ink">

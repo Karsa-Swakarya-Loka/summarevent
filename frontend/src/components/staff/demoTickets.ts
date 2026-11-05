@@ -1,5 +1,5 @@
 /**
- * "Alat bantu demo": lets a judge with only a laptop run real tickets through the
+ * "Alat demo": lets a judge with only a laptop run real tickets through the
  * normal check-in path. Uses only the public StaffApi (searchTickets), so it works
  * against the mock and the HTTP backend alike.
  */

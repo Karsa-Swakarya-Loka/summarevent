@@ -1,6 +1,6 @@
 /**
  * Pass Saya (PV-10): every ticket as a small black ticket with its seat on the stub. Tapping one opens it on its own
- * screen, with the QR and the stub to pull.
+ * screen, with its QR.
  */
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -8,15 +8,15 @@ import { ChevronRight, CircleCheck, Hourglass } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail, PassItem } from '@/api/contract'
-import { Countdown, EmptyState, SundaText } from '@/components/common/bits'
+import { Countdown, EmptyState } from '@/components/common/bits'
 import { Illustration } from '@/components/common/Illustration'
 import { Poster } from '@/components/common/Poster'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError, TabHeader } from '@/components/visitor/Common'
-import { continuePath, isPendingOrder, seatRangeLabel } from '@/components/visitor/helpers'
+import { continuePath, isPendingOrder, pendingTitle, seatRangeLabel } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
-import { ORDER_STATUS_LABEL, TICKET_STATUS_LABEL } from '@/domain/labels'
+import { TICKET_STATUS_LABEL } from '@/domain/labels'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -86,10 +86,10 @@ export default function MyPass() {
               <Hourglass className="size-5" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-bold">Selesaikan pesananmu</span>
+              <span className="block font-bold">{pendingTitle(d)}</span>
               <span className="flex items-center gap-2 text-xs">
-                <span className="font-semibold text-[#7a5600]">{ORDER_STATUS_LABEL[d.order.status]}</span>
-                <Countdown to={d.order.holdExpiresAt} className="text-xs" />
+                <span className="min-w-0 truncate font-semibold text-[#7a5600]">{d.event.title}</span>
+                <Countdown to={d.order.holdExpiresAt} className="shrink-0 text-xs" />
               </span>
             </span>
             <ChevronRight className="size-5 shrink-0 text-[#7a5600]" aria-hidden />
@@ -216,13 +216,14 @@ function MiniTicket({ item, now }: { item: PassItem; now: Date }) {
         <span className="relative mt-6 flex w-[5.5rem] shrink-0 flex-col items-center justify-center border-l-2 border-dashed border-white/20">
           <span className="talon-label">{ticket.seatLabel ? 'Kursi' : 'Untuk'}</span>
           <span className="font-poster text-[2.2rem] leading-none">{ticket.seatLabel ?? '1'}</span>
+          {!ticket.seatLabel && <span className="talon-label mt-1">orang</span>}
         </span>
       </Link>
     </article>
   )
 }
 
-/** How long the "Hatur nuhun!" card stays after the gate scanned a ticket. */
+/** How long the thank-you card stays after the gate scanned a ticket. */
 const THANKS_MS = 3 * 3600_000
 
 function isRecentCheckin(it: PassItem, now: Date): boolean {
@@ -230,7 +231,7 @@ function isRecentCheckin(it: PassItem, now: Date): boolean {
   return now.getTime() - new Date(it.ticket.usedAt).getTime() < THANKS_MS
 }
 
-/** "Hatur nuhun!" after check-in (PRD §1), once per order, while the visit is fresh. */
+/** A thank-you after check-in, once per order, while the visit is fresh. */
 function ThanksCard({ items }: { items: PassItem[] }) {
   const firstScan = items.map((it) => it.ticket.usedAt ?? '').sort()[0]
   const seats = items.map((it) => it.ticket.seatLabel).filter((s): s is string => !!s)
@@ -240,9 +241,9 @@ function ThanksCard({ items }: { items: PassItem[] }) {
         <CircleCheck className="size-6" aria-hidden />
       </span>
       <div className="min-w-0">
-        <SundaText k="thanks" size="lg" />
+        <p className="text-xl leading-tight font-bold">Terima kasih sudah datang</p>
         <p className="mt-1 text-sm text-white/85">
-          {seats.length ? seatRangeLabel(seats) : `${items.length} tiket`} masuk jam {fmtTime(firstScan)}
+          {seats.length ? `Kursi ${seatRangeLabel(seats)}` : `${items.length} tiket`} masuk jam {fmtTime(firstScan)}
         </p>
       </div>
     </section>

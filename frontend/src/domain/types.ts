@@ -208,7 +208,7 @@ export interface Order {
   items: OrderItem[]
   buyerName: string
   buyerPhone: string
-  /** Created by the "Simulasikan pembeli lain" demo button. */
+  /** Created by the demo buttons "Uji pembeli lain" (visitor seat map) and "Simulasikan pembeli lain" (panitia). */
   simulated?: boolean
   /** PV-12 / AD-10: who cancelled a confirmed or pending order, and the simulated refund. */
   cancelledAt?: string | null

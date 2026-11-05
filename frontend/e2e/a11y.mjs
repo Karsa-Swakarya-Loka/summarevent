@@ -20,7 +20,7 @@ const pickReguler = async (page) => {
 }
 const toCheckout = async (page) => {
   await pickReguler(page)
-  await page.getByRole('button', { name: /Hayu ngiring/ }).click()
+  await page.getByRole('button', { name: /^Pesan( \d+)? (kursi|tiket)$/ }).click()
   await page.waitForURL(/\/checkout\//)
 }
 
@@ -55,20 +55,20 @@ const otpLogin = async (page, phoneNo, name) => {
 const receiptForm = async (page) => {
   await page.getByRole('radiogroup', { name: 'Kategori tiket' }).getByRole('radio', { name: /Tukar Struk/ }).click()
   await page.getByRole('button', { name: /Pilihkan 2 kursi/ }).click()
-  await page.getByRole('button', { name: /Hayu ngiring/ }).click()
+  await page.getByRole('button', { name: /^Pesan( \d+)? (kursi|tiket)$/ }).click()
   await page.waitForURL(/\/checkout\//)
   await otpLogin(page, '081299990077', 'Sari Lestari')
-  await page.getByRole('button', { name: 'Pakai struk contoh' }).click()
+  await page.getByRole('button', { name: 'Isi struk contoh' }).click()
   await page.waitForTimeout(800)
 }
 
 const scanResult = async (page) => {
-  await page.getByRole('button', { name: /Alat bantu demo/ }).click()
+  await page.getByRole('button', { name: /Alat demo/ }).click()
   await page.getByRole('button', { name: 'Ambil tiket contoh' }).click()
   await page.locator('section[data-result]').waitFor()
 }
 
-// Rina's ticket goes through the gate, then her own Pass Saya says "Hatur nuhun!".
+// Rina's ticket goes through the gate, then her own Pass Saya thanks her for coming.
 const rinaAfterCheckin = async (page) => {
   await page.getByLabel('Kode tiket, kode pesanan, nomor HP, atau nama').fill('Rina')
   await page.locator('li[data-ticket]').getByRole('button', { name: 'Check-in', exact: true }).first().click()

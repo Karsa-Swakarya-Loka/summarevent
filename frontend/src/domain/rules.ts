@@ -203,7 +203,7 @@ export function checkReceiptRules(inputs: Array<Omit<ReceiptInput, 'photoUrl'>>,
   if (inputs.length === 0) {
     checks.push({ rule: 'R1', ok: false, message: 'Tambahkan minimal 1 struk dari tenant SUMMABA.' })
   } else if (missing.length) {
-    checks.push({ rule: 'R1', ok: false, message: 'Pilih tenant dari daftar tenant SUMMABA untuk setiap struk.' })
+    checks.push({ rule: 'R1', ok: false, message: 'Pilih tenant SUMMABA untuk tiap struk.' })
   } else if (excluded.length) {
     const names = [...new Set(excluded.map((r) => tenantById.get(r.tenantId)?.name ?? '-'))].join(', ')
     checks.push({ rule: 'R1', ok: false, message: `Struk dari ${names} tidak berlaku untuk event ini. Ganti dengan struk tenant lain.` })
@@ -216,7 +216,7 @@ export function checkReceiptRules(inputs: Array<Omit<ReceiptInput, 'photoUrl'>>,
   const wrongDay = rules.sameDayRequired ? inputs.filter((r) => r.receiptDate && r.receiptDate !== today) : []
   const late = inputs.filter((r) => r.receiptTime && r.receiptTime > rules.cutoffTime)
   if (inputs.some((r) => !r.receiptDate || !r.receiptTime)) {
-    checks.push({ rule: 'R2', ok: false, message: 'Isi tanggal dan jam yang tertulis di struk.' })
+    checks.push({ rule: 'R2', ok: false, message: 'Isi tanggal dan jam di struk.' })
   } else if (wrongDay.length) {
     checks.push({
       rule: 'R2',
@@ -264,7 +264,7 @@ export function checkReceiptRules(inputs: Array<Omit<ReceiptInput, 'photoUrl'>>,
   const dupInSet = inputKeys.some((k, i) => inputKeys.indexOf(k) !== i)
   const dupExisting = inputs.find((r) => r.receiptNo && seen.has(key(r)))
   if (inputs.some((r) => !r.receiptNo.trim())) {
-    checks.push({ rule: 'R6', ok: false, message: 'Isi nomor struk sesuai yang tertulis di struk.' })
+    checks.push({ rule: 'R6', ok: false, message: 'Isi nomor struk.' })
   } else if (dupInSet) {
     checks.push({ rule: 'R6', ok: false, message: 'Ada struk yang sama diunggah dua kali. Hapus salah satunya.' })
   } else if (dupExisting) {

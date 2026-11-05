@@ -27,19 +27,6 @@ export const ADMIN_NAV = [
 /** Main demo event (PRD §6) – default selection on every admin screen. */
 const MAIN_EVENT_ID = 'evt_sangkuriang'
 
-/** "10.21.33" – WIB wall clock with seconds, for "Diperbarui …" indicators. */
-export function fmtClock(iso: string | Date): string {
-  return new Intl.DateTimeFormat('id-ID', {
-    timeZone: 'Asia/Jakarta',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  })
-    .format(new Date(iso))
-    .replace(/[:.]/g, '.')
-}
-
 /** WIB date + time inputs → ISO (UTC). */
 export function wibIso(date: string, time: string): string {
   return new Date(`${date}T${time}:00+07:00`).toISOString()

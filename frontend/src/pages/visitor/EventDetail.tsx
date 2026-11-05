@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router'
 import { CalendarDays, ChevronDown, ChevronLeft, CircleCheck, Clock, DoorOpen, Gift, MapPin, Radio } from 'lucide-react'
 import { api } from '@/api'
 import type { EventDetail as EventDetailData, SessionSummary } from '@/api/contract'
-import { SundaLabel } from '@/components/common/bits'
+import { BackHeader } from '@/components/common/bits'
 import { DemoMenu } from '@/components/common/DemoMenu'
 import { Poster } from '@/components/common/Poster'
 import { POSTER_THEMES } from '@/components/common/posterThemes'
@@ -24,7 +24,14 @@ export default function EventDetail() {
   const [picked, setPicked] = useState<string | null>(() => recallSession(slug))
 
   if (q.loading && !q.data) return <PageSkeleton hero />
-  if (!q.data) return <LoadError error={q.error} onRetry={q.reload} />
+  if (!q.data) {
+    return (
+      <div>
+        <BackHeader to="/app" title="Event" />
+        <LoadError error={q.error} onRetry={q.reload} />
+      </div>
+    )
+  }
   const d = q.data
 
   return <Detail d={d} picked={picked} onPick={(id) => {
@@ -169,7 +176,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                       <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                         {s.demoLive ? (
                           <span className="inline-flex items-center gap-1 font-semibold text-[#c2410c]">
-                            <Radio className="size-3.5" aria-hidden /> Sesi demo juri
+                            <Radio className="size-3.5" aria-hidden /> Sesi demo
                           </span>
                         ) : (
                           <>
@@ -243,12 +250,12 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
                 <Clock className="size-3.5 shrink-0" aria-hidden />
-                {selected ? `${selected.demoLive ? 'Sesi demo juri' : sessionName(selected)} · ${fmtRange(selected.startAt, selected.endAt)}` : 'Pilih sesi dulu'}
+                {selected ? `${sessionName(selected)} · ${fmtRange(selected.startAt, selected.endAt)}` : 'Pilih sesi dulu'}
               </p>
               <p className="truncate text-lg font-extrabold">{priceHint(categories)}</p>
             </div>
             <Button className="h-14 shrink-0 px-6 text-base" disabled={!selected || !selOpen.open} onClick={() => selected && onGo(selected.id)}>
-              {selected && selected.available === 0 ? 'Lihat & ikut daftar tunggu' : isReserved ? 'Pilih kursi' : <SundaLabel k="join" />}
+              {selected && selected.available === 0 ? 'Lihat & ikut daftar tunggu' : isReserved ? 'Pilih kursi' : 'Pilih tiket'}
             </Button>
           </div>
         </BottomBar>

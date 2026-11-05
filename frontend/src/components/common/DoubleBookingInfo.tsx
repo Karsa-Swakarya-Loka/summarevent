@@ -10,19 +10,19 @@ import { cn } from '@/lib/utils'
 const POINTS = [
   {
     title: 'Ditahan sekaligus',
-    body: 'Saat Hayu ngiring ditekan, semua kursi pilihanmu ditahan dalam satu transaksi. Kalau satu saja sudah diambil orang, tidak ada yang ditahan dan kamu langsung dapat saran kursi terdekat.',
+    body: 'Semua kursi pilihanmu ditahan dalam satu transaksi. Kalau satu saja sudah diambil orang, tidak ada yang ditahan dan kamu langsung dapat saran kursi terdekat.',
   },
   {
     title: 'Terlihat oleh semua',
-    body: 'Kursi yang ditahan langsung berstatus Sedang dipesan di layar semua orang, lalu kembali Tersedia kalau waktu tahannya habis.',
+    body: 'Kursi yang ditahan langsung tampil Sedang dipesan di layar semua orang, lalu Tersedia lagi kalau waktu tahannya habis.',
   },
   {
     title: 'Dicek ulang saat konfirmasi',
-    body: 'Tiket hanya terbit kalau kursi masih ditahan pesanan itu, dan sistem menolak tiket kedua untuk kursi yang sama di sesi yang sama.',
+    body: 'Tiket hanya terbit kalau kursinya masih ditahan pesananmu. Satu kursi tidak bisa punya dua tiket di sesi yang sama.',
   },
   {
     title: 'Satu pembayaran per percobaan',
-    body: 'Setiap percobaan bayar punya kunci unik, jadi tombol yang tertekan dua kali tetap tercatat satu pembayaran.',
+    body: 'Tombol bayar yang tertekan dua kali tetap tercatat satu pembayaran.',
   },
 ] as const
 
@@ -65,7 +65,7 @@ export function DoubleBookingButton({ className }: { className?: string }) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Satu kursi, satu pemesan</DialogTitle>
-            <DialogDescription>Empat lapis yang menjaga kursimu. Coba sendiri dengan tombol Uji rebutan kursi di denah.</DialogDescription>
+            <DialogDescription>Empat lapis yang menjaga kursimu. Coba dengan tombol Uji rebutan kursi di denah.</DialogDescription>
           </DialogHeader>
           <DoubleBookingPoints />
         </DialogContent>

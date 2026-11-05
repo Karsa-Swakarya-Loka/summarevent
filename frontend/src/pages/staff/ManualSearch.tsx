@@ -91,7 +91,7 @@ export default function ManualSearch() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Rina, 0812…, TKT-…, SEV-…"
-                className="h-14 rounded-full border-transparent bg-card pr-12 pl-12 text-base shadow-xs md:text-base"
+                className="h-14 rounded-full border-transparent bg-card pr-12 pl-12 text-base shadow-xs md:text-base [&::-webkit-search-cancel-button]:appearance-none"
               />
               {q && (
                 <button

@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { api, ApiError } from '@/api'
 import type { ReceiptQueueItem, ReviewDecision } from '@/api/contract'
 import { SectionCard } from '@/components/admin/AdminUi'
-import { canDecide, fmtClock, seatSummary, sessionLabel } from '@/components/admin/lib'
+import { canDecide, seatSummary, sessionLabel } from '@/components/admin/lib'
 import { Countdown, StatusBadge, Swatch } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -52,7 +52,7 @@ export function QueueRow({ item, active, onOpen }: { item: ReceiptQueueItem; act
           <span className="font-bold tabular-nums">{rupiahPlain(total)}</span>
           <span className="text-xs text-muted-foreground"> · {item.siblings.length} struk</span>
         </span>
-        {canDecide(item) ? <Countdown to={item.order.holdExpiresAt} className="text-xs text-muted-foreground" /> : <span className="text-xs text-muted-foreground">{fmtClock(item.receipt.createdAt)}</span>}
+        {canDecide(item) ? <Countdown to={item.order.holdExpiresAt} className="text-xs text-muted-foreground" /> : <span className="text-xs text-muted-foreground">{fmtTime(item.receipt.createdAt)}</span>}
       </div>
       {(failing || dup) && (
         <div className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-[#a11b1b]">
@@ -251,7 +251,7 @@ export function ReviewPanel({
           ) : (
             <p className="border-t pt-4 text-sm text-muted-foreground">
               {reviewed?.reviewedAt
-                ? `Diputuskan ${fmtClock(reviewed.reviewedAt)}: ${RECEIPT_STATUS_LABEL[reviewed.status].toLowerCase()}${reviewed.reason ? `, alasan: ${reviewed.reason}` : ''}.`
+                ? `Diputuskan ${fmtTime(reviewed.reviewedAt)}: ${RECEIPT_STATUS_LABEL[reviewed.status].toLowerCase()}${reviewed.reason ? `, alasan: ${reviewed.reason}` : ''}.`
                 : item.order.status === 'EXPIRED'
                   ? 'Waktu tahan kursi habis sebelum struk diputuskan. Pesanan kedaluwarsa.'
                   : item.siblings.some((s) => s.status === 'NEEDS_REVISION')

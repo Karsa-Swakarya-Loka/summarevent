@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Ban, CalendarX2, CircleCheck, Clock, Gift, OctagonX, UsersRound, type LucideIcon } from 'lucide-react'
 import { api, type CheckinResponse, type TicketSearchRow } from '@/api'
-import { SundaText } from '@/components/common/bits'
 import { CHECKIN_RESULT_LABEL } from '@/domain/labels'
 import type { CheckinResult } from '@/domain/types'
 import { errorMessage } from '@/hooks/useLive'
@@ -42,9 +41,6 @@ const NEXT_BUTTON: Record<BeepKind, string> = {
   warn: 'bg-ink text-white',
   invalid: 'bg-white text-[#a11b1b]',
 }
-
-/** SundaText at scan-result size; Indonesian line kept at full opacity for contrast on colour. */
-const SUNDA_BIG = '[&>span:first-child]:text-5xl [&>span:first-child]:font-black [&>span:last-child]:mt-1 [&>span:last-child]:text-2xl [&>span:last-child]:font-bold [&>span:last-child]:opacity-100'
 
 type GroupItem = { row: TicketSearchRow; res: CheckinResponse | null; error?: string }
 type Group =
@@ -153,7 +149,7 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
   if (res.result === 'VALID') {
     body = (
       <>
-        <SundaText k="enter" size="xl" className={cn('mt-5', SUNDA_BIG)} />
+        <p className="mt-4 text-4xl leading-tight font-black">Silakan masuk</p>
         <div className={cn('mt-5 rounded-3xl px-4 py-4 text-center', PANEL.valid)}>
           {seat ? (
             <>
@@ -201,7 +197,6 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
   } else if (res.result === 'INVALID') {
     body = (
       <>
-        <SundaText k="invalid" size="xl" className={cn('mt-5', SUNDA_BIG, '[&>span:first-child]:text-4xl')} />
         <p className="mt-5 text-2xl font-bold leading-snug">{res.message}</p>
         {ticket && <TicketFacts res={res} kind={kind} />}
       </>
@@ -210,7 +205,8 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
     body = (
       <>
         <p className="mt-5 text-3xl font-extrabold leading-tight">{res.message}</p>
-        <TicketFacts res={res} kind={kind} showSessionTime />
+        {/* "Sesi lain" already names the ticket's session and time in its message */}
+        <TicketFacts res={res} kind={kind} showSessionTime={res.result === 'OUTSIDE_WINDOW'} />
         <p className="mt-4 text-xl font-bold leading-snug">
           {res.result === 'WRONG_SESSION'
             ? 'Belum bisa masuk di sesi ini. Minta pengunjung datang di sesi yang tertulis di tiket.'

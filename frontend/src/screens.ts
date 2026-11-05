@@ -36,8 +36,13 @@ export function preloadScreen(path: string) {
   if (hit) void load[hit[1]]()
 }
 
-/** Fetch the other screens a moment after the page has loaded, when the phone is idle, so they never compete with it. */
+/**
+ * Fetch the other screens a moment after the page has loaded, when the phone is idle, so they never compete with it.
+ * A visitor saving data, or on a 2G connection, fetches each screen only when it is opened.
+ */
 export function prefetchScreens() {
+  const net = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+  if (net?.saveData || /(^|-)2g$/.test(net?.effectiveType ?? '')) return
   const run = () => Object.values(load).forEach((l) => void l())
   const idle = () => (typeof requestIdleCallback === 'function' ? requestIdleCallback(run, { timeout: 3000 }) : run())
   const later = () => window.setTimeout(idle, 2500)

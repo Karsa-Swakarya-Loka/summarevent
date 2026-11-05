@@ -2,9 +2,6 @@ import { lazy, Suspense, type ComponentType } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Toaster } from '@/components/ui/sonner'
-import { TooltipProvider } from '@/components/ui/tooltip'
-import { AdminLayout } from '@/layouts/AdminLayout'
-import { StaffLayout } from '@/layouts/StaffLayout'
 import { VisitorLayout } from '@/layouts/VisitorLayout'
 import { roleSplash } from '@/lib/splash'
 import NotFound from '@/pages/NotFound'
@@ -21,18 +18,33 @@ import { screen } from '@/screens'
 function page(load: () => Promise<{ default: ComponentType }>) {
   const Page = lazy(load)
   return (
-    <Suspense
-      fallback={
-        <div className="flex flex-col gap-3 p-6" role="status" aria-busy="true" aria-label="Memuat halaman">
-          <Skeleton className="h-8 w-56" />
-          <Skeleton className="h-4 w-80 max-w-full" />
-          <Skeleton className="h-64 w-full rounded-xl" />
-        </div>
-      }
-    >
+    <Suspense fallback={<Loading />}>
       <Page />
     </Suspense>
   )
+}
+
+/**
+ * The outline of a page while its code arrives. The router shows it too when a link opens straight on a screen that
+ * loads on demand (a ticket, the panitia, the petugas), so a slow phone never stares at a blank page.
+ */
+function Loading() {
+  return (
+    <div className="flex flex-col gap-3 p-6" role="status" aria-busy="true" aria-label="Memuat halaman">
+      <Skeleton className="h-8 w-56" />
+      <Skeleton className="h-4 w-80 max-w-full" />
+      <Skeleton className="h-64 w-full rounded-xl" />
+    </div>
+  )
+}
+
+// their shells too: the panitia sidebar, event switcher and search stay off a visitor's phone. Opened straight on an
+// admin or petugas link, the shell starts loading at once, beside the sample data
+const adminLayout = () => import('@/layouts/AdminLayout').then((m) => ({ Component: m.AdminLayout }))
+const staffLayout = () => import('@/layouts/StaffLayout').then((m) => ({ Component: m.StaffLayout }))
+if (typeof location !== 'undefined') {
+  if (/^\/admin(\/|$)/.test(location.pathname)) void adminLayout()
+  else if (/^\/staff(\/|$)/.test(location.pathname)) void staffLayout()
 }
 
 const AdminDashboard = () => import('@/pages/admin/Dashboard')
@@ -69,6 +81,7 @@ const router = createBrowserRouter([
   {
     path: '/app',
     element: <VisitorLayout />,
+    hydrateFallbackElement: <Loading />,
     children: [
       { index: true, element: <Home /> },
       { path: 'e/:slug', element: <EventDetail /> },
@@ -94,7 +107,8 @@ const router = createBrowserRouter([
   { path: '/reset', element: page(ResetPassword) },
   {
     path: '/admin',
-    element: <AdminLayout />,
+    lazy: adminLayout,
+    hydrateFallbackElement: <Loading />,
     children: [
       { index: true, element: page(AdminDashboard) },
       { path: 'events', element: page(AdminEvents) },
@@ -108,7 +122,8 @@ const router = createBrowserRouter([
   },
   {
     path: '/staff',
-    element: <StaffLayout />,
+    lazy: staffLayout,
+    hydrateFallbackElement: <Loading />,
     children: [
       { index: true, element: page(StaffHome) },
       { path: 'scan/:sessionId', element: page(Scanner) },
@@ -127,9 +142,9 @@ const finePointer = typeof matchMedia === 'function' && matchMedia('(pointer: fi
 
 export default function App() {
   return (
-    <TooltipProvider>
+    <>
       <RouterProvider router={router} />
       <Toaster position="top-center" richColors closeButton={finePointer} />
-    </TooltipProvider>
+    </>
   )
 }

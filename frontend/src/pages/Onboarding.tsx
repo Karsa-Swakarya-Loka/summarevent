@@ -39,7 +39,7 @@ const STEPS: Record<IntroRole, ReadonlyArray<Step>> = {
       ],
       ...PANELS[1],
       title: 'Bayar, gratis, atau tukar struk',
-      body: 'QRIS, Virtual Account, gratis, atau struk belanja di tenant SUMMABA.',
+      body: 'Bayar lewat QRIS atau Virtual Account, atau tukar struk belanja dari tenant SUMMABA.',
     },
     { art: [{ name: 'tiket' }], ...PANELS[2], title: 'Satu QR untuk masuk', body: 'Satu e-ticket per kursi, tersimpan di Pass Saya. Tunjukkan di pintu.' },
   ],

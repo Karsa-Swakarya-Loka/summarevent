@@ -67,7 +67,7 @@ await page.waitForURL('**/staff/scan/ses_sk_demo')
 await page.waitForFunction(() => !!localStorage.getItem('summarevent:offline:manifest:ses_sk_demo'), null, { timeout: 10_000 })
 const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('summarevent:offline:manifest:ses_sk_demo')).tickets.length)
 console.log(`manifest tersimpan: ${stored} tiket`)
-await page.getByRole('button', { name: /Alat bantu demo/ }).click()
+await page.getByRole('button', { name: /Alat demo/ }).click()
 
 await ctx.setOffline(true)
 await page.getByTestId('offline-bar').waitFor()

@@ -118,8 +118,9 @@ export function CameraView({ onToken, onProblem }: { onToken: (token: string) =>
       {scanner}
 
       {/* Static aiming frame (guide only – the whole picture is scanned). */}
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4 px-6" aria-hidden>
-        <div className="relative aspect-square w-[min(68vw,52vh,300px)] rounded-3xl shadow-[0_0_0_200vmax_rgba(0,0,0,0.42)]">
+      {/* sized to the camera's own box, so the frame and its hint fit when the demo tools take room below */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 [container-type:size]" aria-hidden>
+        <div className="relative aspect-square w-[clamp(7rem,min(68cqw,calc(100cqh-6rem)),300px)] rounded-3xl shadow-[0_0_0_200vmax_rgba(0,0,0,0.42)]">
           <span className="absolute -top-1 -left-1 size-12 rounded-tl-3xl border-t-[6px] border-l-[6px] border-white" />
           <span className="absolute -top-1 -right-1 size-12 rounded-tr-3xl border-t-[6px] border-r-[6px] border-white" />
           <span className="absolute -bottom-1 -left-1 size-12 rounded-bl-3xl border-b-[6px] border-l-[6px] border-white" />

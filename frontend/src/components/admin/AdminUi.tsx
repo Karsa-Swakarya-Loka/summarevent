@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { errorMessage } from '@/hooks/useLive'
+import { errorMessage, useNow } from '@/hooks/useLive'
+import { fmtTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { fmtClock } from './lib'
 
 export function PageHeader({ title, description, actions, className }: { title: string; description?: ReactNode; actions?: ReactNode; className?: string }) {
   return (
@@ -22,14 +22,19 @@ export function PageHeader({ title, description, actions, className }: { title: 
   )
 }
 
-/** "● Diperbarui 10.21.33 · tiap 5 detik" */
-export function LiveIndicator({ at, everySec, className }: { at?: string; everySec: number; className?: string }) {
+/**
+ * "● Diperbarui baru saja": how fresh the numbers are, in words. The screen refreshes itself every few seconds; when it
+ * stops (no signal), the line says how long ago instead, and its dot turns amber.
+ */
+export function LiveIndicator({ at, className }: { at?: string; className?: string }) {
+  const now = useNow(15_000)
+  const ago = at ? Math.max(0, now.getTime() - new Date(at).getTime()) : 0
+  const fresh = ago < 60_000
+  const text = !at ? 'Memuat…' : fresh ? 'Diperbarui baru saja' : ago < 3_600_000 ? `Diperbarui ${Math.floor(ago / 60_000)} menit lalu` : `Diperbarui pukul ${fmtTime(at)}`
   return (
     <span className={cn('inline-flex items-center gap-2 text-xs text-muted-foreground', className)} aria-live="off">
-      <span className="inline-flex size-2.5 rounded-full bg-status-valid" aria-hidden />
-      <span>
-        {at ? <>Diperbarui {fmtClock(at)}</> : 'Memuat…'} · otomatis tiap {everySec} detik
-      </span>
+      <span className={cn('inline-flex size-2.5 rounded-full', fresh || !at ? 'bg-status-valid' : 'bg-status-warn')} aria-hidden />
+      <span>{text}</span>
     </span>
   )
 }

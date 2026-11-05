@@ -2,7 +2,7 @@
  * Event wizard (AD-01…AD-04, brief: "Mengatur acara, jenis tiket, harga, kuota,
  * denah kursi, dan periode penjualan"): Info → Kategori → Denah → Sesi → Publish.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, ExternalLink, Rocket, Rows3, Save } from 'lucide-react'
 import { toast } from 'sonner'
@@ -24,8 +24,15 @@ import { cn } from '@/lib/utils'
 
 function Stepper({ step, onPick, skipped, issuesByStep }: { step: StepId; onPick: (s: StepId) => void; skipped: Set<StepId>; issuesByStep: Map<StepId, number> }) {
   const current = STEPS.findIndex((s) => s.id === step)
+  // on a narrow phone the row can still be wider than the screen: keep the step in progress in sight
+  const nav = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = nav.current
+    const now = el?.querySelector<HTMLElement>('[aria-current="step"]')
+    if (el && now) el.scrollLeft = now.offsetLeft - (el.clientWidth - now.offsetWidth) / 2
+  }, [step])
   return (
-    <nav aria-label="Langkah pembuatan event" className="mb-6 overflow-x-auto">
+    <nav ref={nav} aria-label="Langkah pembuatan event" className="mb-6 overflow-x-auto [scrollbar-width:none]">
       <ol className="flex min-w-max items-center gap-1 sm:gap-2">
         {STEPS.map((s, i) => {
           const active = s.id === step
@@ -40,8 +47,8 @@ function Stepper({ step, onPick, skipped, issuesByStep }: { step: StepId; onPick
                 aria-current={active ? 'step' : undefined}
                 onClick={() => onPick(s.id)}
                 className={cn(
-                  'flex min-h-11 items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm font-semibold transition focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
-                  active ? 'bg-brand text-white' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  'flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full py-1 pl-1 text-sm font-semibold transition focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
+                  active ? 'bg-brand pr-3 text-white' : 'pr-1 text-muted-foreground hover:bg-muted hover:text-foreground sm:pr-3',
                   disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent',
                 )}
               >
@@ -57,7 +64,7 @@ function Stepper({ step, onPick, skipped, issuesByStep }: { step: StepId; onPick
                 <span className={cn(!active && 'sr-only sm:not-sr-only')}>{s.label}</span>
                 {disabled && <span className="hidden text-xs font-normal lg:inline">(tidak perlu)</span>}
               </button>
-              {i < STEPS.length - 1 && <span className="h-px w-3 bg-border sm:w-6" aria-hidden />}
+              {i < STEPS.length - 1 && <span className="h-px w-2 bg-border sm:w-6" aria-hidden />}
             </li>
           )
         })}
@@ -131,7 +138,8 @@ export default function EventWizard() {
     if (s === 'denah' && form && !form.layout.ranges.length && seatCategories(form).length) {
       update((f) => ({ ...f, layout: { ...f.layout, ranges: distributeRows(f) } }))
     }
-    if (s !== 'publish') setAttempted((a) => (a.has(s) ? a : new Set(a).add(s)))
+    // the step being left shows what is still missing from now on; a step that just opened starts without red
+    setAttempted((a) => (a.has(step) ? a : new Set(a).add(step)))
     setStep(s)
     setServerError(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -282,7 +290,7 @@ export default function EventWizard() {
         description={
           <>
             Langkah {idx + 1} dari {order.length}: {stepTitle}.{' '}
-            {!editing && 'Isi seperlunya, sisanya sudah diberi nilai umum. Target: kurang dari 5 menit.'}
+            {!editing && step === 'info' && 'Isi seperlunya, sisanya sudah terisi nilai umum.'}
             {editing && form.title && <span className="font-medium text-foreground">{form.title}</span>}
           </>
         }

@@ -1,7 +1,7 @@
 /** AD-01 / AD-06 / AD-11: event list with publish, edit, live view and link + QR poster. */
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { CalendarPlus, Eye, Pencil, QrCode, Rocket, Rows3 } from 'lucide-react'
+import { CalendarPlus, Eye, Pencil, Plus, QrCode, Rocket, Rows3 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { EventSummary } from '@/api/contract'
@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { EventItem } from '@/domain/types'
 import { errorMessage, useLive } from '@/hooks/useLive'
+import { cn } from '@/lib/utils'
 
 function totals(e: EventSummary) {
   const sold = e.sessions.reduce((a, s) => a + s.availability.reduce((x, y) => x + y.sold, 0), 0)
@@ -43,7 +44,8 @@ function IconAction({ label, to, onClick, children, disabled }: { label: string;
       <Link to={to}>{children}</Link>
     </Button>
   ) : (
-    <Button variant="outline" size="icon-lg" onClick={onClick} aria-label={label} disabled={disabled}>
+    // aria-disabled instead of disabled: a disabled button gets no hover or focus, and then its tooltip cannot say why
+    <Button variant="outline" size="icon-lg" onClick={disabled ? undefined : onClick} aria-label={label} aria-disabled={disabled || undefined} className={cn(disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent')}>
       {children}
     </Button>
   )
@@ -134,8 +136,8 @@ export default function Events() {
         title="Event"
         description="Kategori, denah, dan sesi tiap event. Draft belum terlihat pengunjung."
         actions={
-          <Button size="lg" className="h-11 px-4 text-base" onClick={() => navigate('/admin/events/new')}>
-            <CalendarPlus /> Buat event
+          <Button size="lg" className="h-11 sm:h-10" onClick={() => navigate('/admin/events/new')}>
+            <Plus /> Buat event
           </Button>
         }
       />
@@ -154,7 +156,7 @@ export default function Events() {
             </Button>
           }
         >
-          Mulai dari judul, kategori tiket, denah, lalu sesi. Kurang dari 5 menit.
+          Isi judul, kategori tiket, denah, lalu sesi. Event baru tersimpan sebagai draft sampai dipublikasikan.
         </EmptyState>
       ) : (
         <>
@@ -185,7 +187,7 @@ export default function Events() {
                               {e.event.title}
                             </Link>
                             <div className="text-xs text-muted-foreground">
-                              {e.event.seatingMode === 'RESERVED' ? 'Kursi bernomor' : 'Tanpa nomor kursi'} · {e.categories.length} kategori
+                              {e.event.infoOnly ? 'Hanya informasi, tanpa pendaftaran' : `${e.event.seatingMode === 'RESERVED' ? 'Kursi bernomor' : 'Tanpa nomor kursi'} · ${e.categories.length} kategori`}
                             </div>
                           </div>
                         </div>
@@ -219,7 +221,7 @@ export default function Events() {
                   <div className="flex flex-col gap-3 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge tone={EVENT_STATUS_TONE[st]}>{EVENT_STATUS_LABEL[st]}</StatusBadge>
-                      <span className="text-xs text-muted-foreground">{e.event.seatingMode === 'RESERVED' ? 'Kursi bernomor' : 'Tanpa nomor kursi'}</span>
+                      <span className="text-xs text-muted-foreground">{e.event.infoOnly ? 'Hanya informasi' : e.event.seatingMode === 'RESERVED' ? 'Kursi bernomor' : 'Tanpa nomor kursi'}</span>
                     </div>
                     <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                       <div>
@@ -230,16 +232,20 @@ export default function Events() {
                         <dt className="text-xs text-muted-foreground">Tanggal</dt>
                         <dd className="font-medium">{eventDateLabel(e.event)}</dd>
                       </div>
-                      <div>
-                        <dt className="text-xs text-muted-foreground">Sesi</dt>
-                        <dd className="font-medium">{e.sessions.length || '–'}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs text-muted-foreground">Terjual / total</dt>
-                        <dd>
-                          <SoldCell e={e} />
-                        </dd>
-                      </div>
+                      {!e.event.infoOnly && (
+                        <>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">Sesi</dt>
+                            <dd className="font-medium">{e.sessions.length || '–'}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">Terjual / total</dt>
+                            <dd>
+                              <SoldCell e={e} />
+                            </dd>
+                          </div>
+                        </>
+                      )}
                     </dl>
                     {actions(e, true)}
                   </div>

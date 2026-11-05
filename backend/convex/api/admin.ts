@@ -1,7 +1,7 @@
 /** Panitia endpoints (`/admin/*`, ADMIN token). Ported from the mock adapter's `admin` block. */
 import type { EventDraft, EventStats, OrderRow, ReceiptQueueItem, ReviewDecision, StaffAccount } from '../shared/contract'
 import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL, TICKET_STATUS_LABEL } from '../shared/labels'
-import { fmtRange, fmtShortDate, fmtTime, isValidPhone, normalizePhone, rupiahPlain, wibDate } from '../shared/format'
+import { csvCell, fmtRange, fmtShortDate, fmtTime, isValidPhone, normalizePhone, rupiahPlain, wibDate } from '../shared/format'
 import { checkReceiptRules, profileChanges, resolveSession, uid } from '../shared/rules'
 import type { Checkin, EventItem, Order, OrderStatus, Payment, Receipt, Session, SessionQuota, SessionSeat, Tenant, Ticket, TicketCategory, User, Venue } from '../shared/types'
 import { requireRole, type Req } from '../lib/auth'
@@ -468,11 +468,6 @@ export async function stats(tx: Tx, req: Req): Promise<EventStats> {
     checkinsByHour,
     generatedAt: now.toISOString(),
   }
-}
-
-function csvCell(v: unknown): string {
-  const s = v == null ? '' : String(v)
-  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
 export async function exportCsv(tx: Tx, req: Req) {

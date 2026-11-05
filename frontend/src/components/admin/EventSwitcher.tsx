@@ -12,7 +12,7 @@ import { Poster } from '@/components/common/Poster'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { finePointer } from '@/lib/pointer'
 import { cn } from '@/lib/utils'
-import { eventDateLabel, eventDisplayStatus, EVENT_STATUS_LABEL, sessionLabel, sessionSold, type AdminOutlet } from './lib'
+import { eventDateLabel, eventDisplayStatus, EVENT_STATUS_LABEL, sessionLabel, sessionShort, sessionSold, type AdminOutlet } from './lib'
 
 export function EventSwitcher({ ctx, variant, className }: { ctx: AdminOutlet; variant: 'card' | 'pill'; className?: string }) {
   const [open, setOpen] = useState(false)
@@ -237,7 +237,7 @@ function EventTree({ list, eventId, onPick, onSession }: { list: EventSummary[];
                         className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg px-2 text-sm outline-none transition hover:bg-panel focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
                       >
                         {s.demoLive ? <Play className="size-3.5 shrink-0 text-brand" aria-hidden /> : <Rows3 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />}
-                        <span className="min-w-0 flex-1 truncate">{sessionLabel(s)}</span>
+                        <span className="min-w-0 flex-1 truncate">{s.demoLive ? sessionShort(s) : sessionLabel(s)}</span>
                         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                           {n.sold}/{n.total}
                         </span>

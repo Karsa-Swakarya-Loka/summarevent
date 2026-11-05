@@ -172,7 +172,7 @@ export default function Orders() {
                     <TableCell className="max-w-40 truncate font-semibold tabular-nums">{seatSummary(r.order.items)}</TableCell>
                     <TableCell className="text-right">
                       <div className="font-semibold tabular-nums">{r.order.totalAmount ? rupiahPlain(r.order.totalAmount) : r.category.accessMethod === 'RECEIPT' ? 'Tukar struk' : 'Gratis'}</div>
-                      <div className="text-xs text-muted-foreground">{methodLabel(r)}</div>
+                      <div className="ml-auto max-w-28 text-xs leading-tight whitespace-normal text-muted-foreground">{methodLabel(r)}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap items-center gap-1.5">

@@ -78,7 +78,7 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
         <CoBrand tone="light" className="relative" />
         <div className="relative">
           <Illustration name={c.art} className="w-56" />
-          <p className="mt-6 text-[0.7rem] font-bold tracking-[0.2em] text-white/75 uppercase">{c.role} SUMMABA</p>
+          <p className="mt-6 text-base font-semibold text-white/80">{c.role} SUMMABA</p>
           <ul className="mt-3 space-y-2">
             {c.points.map((point) => (
               <li key={point} className="font-poster text-[2.4rem] leading-[0.95] uppercase">
@@ -98,14 +98,15 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
         </header>
 
         <main className="flex-1 px-6 pb-10">
-          <div className="relative grid size-36 place-items-center overflow-hidden rounded-[2rem] bg-brand-soft lg:hidden">
+          {/* on a short phone the form and the demo account come first, so the tile gives way */}
+          <div className="relative mb-6 grid size-28 place-items-center overflow-hidden rounded-[1.75rem] bg-brand-soft lg:hidden [@media(max-height:780px)]:hidden">
             <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
-            <Illustration name={c.art} className="relative w-28 animate-pop" />
+            <Illustration name={c.art} className="relative w-22 animate-pop" />
           </div>
-          <h1 className="mt-6 animate-rise font-poster text-[2.5rem] leading-[0.95] uppercase">{c.title}</h1>
+          <h1 className="mt-2 animate-rise font-poster text-[2.5rem] leading-[0.95] uppercase">{c.title}</h1>
           <p className="mt-1.5 animate-rise text-base text-muted-foreground [animation-delay:60ms]">{c.lead}</p>
 
-          <form onSubmit={(e) => void submit(e)} className="mt-7 space-y-4" noValidate>
+          <form onSubmit={(e) => void submit(e)} className="mt-6 space-y-4" noValidate>
             <div className="space-y-1.5">
               <Label htmlFor={`${id}-email`}>Email</Label>
               <Input
@@ -160,20 +161,22 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
             </Button>
           </form>
 
-          <section aria-label="Akun demo" className="mt-6 rounded-2xl border border-dashed border-ink/25 p-4 text-sm">
-            <p className="flex items-center gap-2 font-semibold">
-              <SimTag /> Akun demo
-            </p>
-            <dl className="mt-2.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-              <dt className="text-muted-foreground">Email</dt>
-              <dd className="font-mono text-xs break-all">{demo.email}</dd>
-              <dt className="text-muted-foreground">Kata sandi</dt>
-              <dd className="font-mono text-xs">{DEMO_PASSWORD}</dd>
-            </dl>
+          <section aria-label="Akun demo" className="mt-5 flex items-center gap-3 rounded-2xl border border-dashed border-ink/25 py-2.5 pr-2.5 pl-4 text-sm">
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-2 font-semibold">
+                <SimTag /> Akun demo
+              </p>
+              <dl className="mt-1 font-mono text-xs leading-relaxed">
+                <dt className="sr-only">Email</dt>
+                <dd className="break-all">{demo.email}</dd>
+                <dt className="sr-only">Kata sandi</dt>
+                <dd>{DEMO_PASSWORD}</dd>
+              </dl>
+            </div>
             <Button
               type="button"
               variant="outline"
-              className="mt-3 h-11 w-full"
+              className="h-11 shrink-0 px-4"
               onClick={() => {
                 setEmail(demo.email)
                 setPassword(DEMO_PASSWORD)
@@ -184,7 +187,7 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
             </Button>
           </section>
 
-          <p className="mt-8 text-center text-xs text-muted-foreground">Di versi demo, email undangan dan link reset tampil di layar.</p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">Di versi demo, email undangan dan link reset tampil di layar.</p>
         </main>
       </div>
     </div>

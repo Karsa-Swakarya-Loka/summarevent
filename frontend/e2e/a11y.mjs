@@ -138,6 +138,12 @@ const infoMenu = async (page) => {
   await page.getByRole('region', { name: 'Info dan pengaturan demo' }).waitFor()
 }
 
+// the team slide: the posters load on demand, and the legend comes in once the first one has landed
+const teamSlide = async (page) => {
+  await page.getByRole('tab', { name: 'Tim' }).click()
+  await page.locator('.cc-root[data-ready]').waitFor({ timeout: 30000 })
+}
+
 const eventSwitcher = async (page) => {
   await page.getByRole('button', { name: /ganti event$/ }).first().click()
   await page.getByRole('tree', { name: 'Pilih event' }).waitFor()
@@ -203,6 +209,8 @@ const smallTargets = (page) =>
 const screens = [
   [phone, '/'],
   [phone, '/', infoMenu],
+  [phone, '/', teamSlide],
+  [laptop, '/', teamSlide],
   [phone, '/app/mulai'],
   [phone, '/app/mulai', onboardingLast],
   [phone, '/app/masuk'],

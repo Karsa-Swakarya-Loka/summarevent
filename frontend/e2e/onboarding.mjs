@@ -5,7 +5,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { chromium } from 'playwright-core'
-import { toPoster } from './skip-intro.mjs'
+import { skipIntro, toPoster } from './skip-intro.mjs'
 
 const BASE = process.env.BASE || 'http://localhost:5173'
 const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'onboarding')
@@ -187,6 +187,26 @@ const ms = await calm.evaluate(() => Math.round((window.__splashGoneAt ?? perfor
 console.log(`reduced motion: splash gone ${ms} ms after the page arrived`)
 check(ms < 2000, `splash dengan reduced motion bertahan ${ms} ms`)
 await calmCtx.close()
+
+// 7. The team slide: a poster per member that the arrows move between, still one screen without scrolling
+const timCtx = await browser.newContext(phone)
+await skipIntro(timCtx)
+const tim = await timCtx.newPage()
+watch(tim, 'tim')
+await tim.goto(BASE + '/', { waitUntil: 'networkidle' })
+await tim.getByRole('tab', { name: 'Tim' }).click()
+await tim.locator('.cc-root[data-ready]').waitFor({ timeout: 30000 })
+const ruler = tim.getByRole('slider', { name: 'Anggota tim' })
+check(/^Haikal/.test(await ruler.getAttribute('aria-valuetext')), 'slide tim tidak dibuka di poster pertama')
+await tim.getByRole('button', { name: 'Anggota berikutnya', exact: true }).click()
+await tim.locator('.cc-name', { hasText: 'Bintang' }).waitFor({ timeout: 5000 })
+check(/^Bintang/.test(await ruler.getAttribute('aria-valuetext')), 'penggaris tidak mengikuti poster')
+await tim.getByRole('button', { name: 'Anggota sebelumnya' }).click()
+await tim.locator('.cc-name', { hasText: 'Haikal' }).waitFor({ timeout: 5000 })
+check(await tim.evaluate(() => document.documentElement.scrollHeight === window.innerHeight), 'slide tim butuh scroll')
+await shot(tim, 'tim')
+console.log('tim: posters open, the arrows move between members, no scroll')
+await timCtx.close()
 
 await browser.close()
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'onboarding: all checks passed')

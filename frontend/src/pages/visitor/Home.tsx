@@ -92,9 +92,10 @@ export default function Home() {
   return (
     <div>
       {/* on a laptop the stage becomes a green band: the greeting on the left, the stage framed on the right; the
-          avatar and the bell go, the top bar already has Akun and Pesan */}
+          avatar and the bell go, the top bar already has Akun and Pesan; on a short laptop the stage is smaller, so the
+          shortcuts still show without scrolling */}
       <header className="relative h-[23.5rem] overflow-hidden text-white lg:h-auto lg:bg-brand">
-        <div className="contents lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center lg:gap-12 lg:px-8 lg:pt-10 lg:pb-16">
+        <div className="contents lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center lg:gap-12 lg:px-8 lg:pt-10 lg:pb-16 lg:[@media(max-height:760px)]:grid-cols-[minmax(0,1fr)_15rem] lg:[@media(max-height:760px)]:pt-6 lg:[@media(max-height:760px)]:pb-14">
           <div className="absolute inset-0 lg:relative lg:inset-auto lg:order-2 lg:aspect-[390/334] lg:overflow-hidden lg:rounded-[2rem] lg:shadow-xl lg:ring-1 lg:shadow-ink/30 lg:ring-white/15">
             <StageScene className="absolute inset-0 size-full lg:bottom-auto lg:h-auto lg:aspect-[390/376]" />
           </div>

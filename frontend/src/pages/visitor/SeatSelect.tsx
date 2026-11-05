@@ -432,7 +432,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         )}
       </div>
 
-      <div className="contents lg:sticky lg:top-[calc(var(--spacing-desk-bar)+1rem)] lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:flex lg:h-[calc(100dvh-var(--spacing-desk-bar)-8.5rem)] lg:min-h-[26rem] lg:flex-col">
+      <div className="contents lg:sticky lg:top-[calc(var(--spacing-desk-bar)+1rem)] lg:col-start-1 lg:row-span-2 lg:row-start-2 lg:flex lg:h-[calc(100dvh-var(--spacing-desk-bar)-8.5rem)] lg:min-h-[34rem] lg:flex-col">
       {hasLayout && !isGeneral ? (
         <>
           <div className="relative mx-4 mt-3 min-h-[18rem] flex-1 lg:mx-0 lg:mt-0">

@@ -60,6 +60,8 @@ export default function Scanner() {
       // the result is up from the moment it resolves, before React has re-rendered
       void submit(token).then((res) => {
         if (res) showing.current = true
+        // a failed request is not a scan: the same QR, still in view, is tried again on the next sighting
+        else if (last.current?.token === token.trim()) last.current = null
       })
     },
     [submit],

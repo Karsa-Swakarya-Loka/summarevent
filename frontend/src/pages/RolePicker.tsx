@@ -1,17 +1,28 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { RotateCcw } from 'lucide-react'
+import { ExternalLink, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiMode, DEMO_URL, LIVE_URL, liveVersionReady } from '@/api'
 import { BrandLockup, CoBrand } from '@/components/common/Brand'
 import { Illustration } from '@/components/common/Illustration'
 import { StickerSlap, type StickerSpec } from '@/components/landing/StickerSlap'
 
+const TEAM = [
+  ['frontend', 'Haikal'],
+  ['backend', 'Bintang'],
+  ['user testing & UX', 'Shelvia'],
+  ['product & pitch', 'Awwal'],
+  ['system QA', 'Said'],
+  ['stiker', 'fun-isometric, digambar dalam kode'],
+  ['e-ticket', 'Talón oleh Moxen'],
+] as const
+
 /**
  * DM-01: one link, three roles, so judges can try every side of the system. The page is the Sticker Slap landing:
  * the three roles as columns on the green panel, the wordmark writing itself along the bottom, and our stickers
  * slapped on it. Each role opens with its splash, its onboarding the first time, and its sign-in; Rina is the
- * visitor shortcut.
+ * visitor shortcut. The info menu in the corner says which version this is, resets the demo data, opens the other
+ * version, and names the team.
  */
 export default function RolePicker() {
   const navigate = useNavigate()
@@ -46,6 +57,8 @@ export default function RolePicker() {
     toast.success('Data demo dikembalikan ke awal.')
   }
 
+  const other = live ? { href: DEMO_URL, label: 'Buka versi demo', hint: 'data per browser' } : liveReady && LIVE_URL ? { href: LIVE_URL, label: 'Buka versi live', hint: 'uji dua HP, data bersama' } : null
+
   const stickers: StickerSpec[] = [
     { node: <Illustration name="kursi" className="w-full" />, label: 'Stiker kursi', size: 12 },
     { kind: 'burst', text: 'hayu!', label: 'Stiker "hayu!"' },
@@ -60,27 +73,44 @@ export default function RolePicker() {
       <h1 className="sr-only">Summarevent: satu pass untuk semua event Summarecon Mall Bandung</h1>
       <StickerSlap
         wordmark="summarevent"
-        nav={
-          live
-            ? { label: 'live', href: DEMO_URL, title: 'Versi live memakai server bersama. Buka versi demo (data per browser).' }
-            : liveReady && LIVE_URL
-              ? { label: 'demo', href: LIVE_URL, title: 'Versi demo: data di browser ini. Buka versi live untuk uji dua HP.' }
-              : { label: 'demo', title: 'Versi demo: data di browser ini, pembayaran dan WA/email disimulasikan.' }
-        }
+        badge={{
+          label: live ? 'live' : 'demo',
+          href: other?.href,
+          title: live ? 'Versi live: semua HP memakai data yang sama di server. Buka versi demo.' : other ? 'Versi demo: data di browser ini. Buka versi live untuk uji dua HP.' : 'Versi demo: data di browser ini, pembayaran dan WA/email disimulasikan.',
+        }}
         centre={
           <>
             <CoBrand tone="dark" className="max-sm:hidden" />
             <BrandLockup className="h-7 sm:hidden" />
           </>
         }
-        corner={
-          <button
-            type="button"
-            onClick={() => void reset()}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full text-sm font-semibold text-ink ring-1 ring-ink/20 transition max-sm:size-11 max-sm:justify-center sm:px-3 hover:bg-ink/5"
-          >
-            <RotateCcw className="size-4" aria-hidden /> <span className="max-sm:sr-only">Reset data demo</span>
-          </button>
+        menu={
+          <>
+            <p className="ssf-mhead">{live ? 'Versi live' : 'Prototype'}</p>
+            <p className="ssf-mnote">{live ? 'Semua HP dan laptop memakai data yang sama di server. Buka denah yang sama di dua HP dan rebut kursinya.' : 'Data contoh di browser ini. Bayar, OTP, dan WA/email disimulasikan, bukan transaksi sungguhan.'}</p>
+            <div className="ssf-msep" />
+            <button type="button" className="ssf-mi" onClick={() => void reset()}>
+              <RotateCcw aria-hidden /> Reset data demo
+            </button>
+            {other && (
+              <a className="ssf-mi" href={other.href}>
+                <ExternalLink aria-hidden /> {other.label}
+                <span className="ssf-mnote" style={{ marginTop: 0 }}>
+                  · {other.hint}
+                </span>
+              </a>
+            )}
+            <div className="ssf-msep" />
+            <p className="ssf-mhead">Tim Summarevent</p>
+            <dl className="ssf-mcred">
+              {TEAM.map(([role, name]) => (
+                <div key={role} className="contents">
+                  <dt>{role}</dt>
+                  <dd>{name}</dd>
+                </div>
+              ))}
+            </dl>
+          </>
         }
         columns={[
           {
@@ -112,20 +142,6 @@ export default function RolePicker() {
           },
         ]}
         stickers={stickers}
-        credits={[
-          { role: 'frontend', name: 'Haikal' },
-          { role: 'backend', name: 'Bintang' },
-          { role: 'user testing & ux', name: 'Shelvia' },
-          { role: 'product & pitch', name: 'Awwal' },
-          { role: 'system qa', name: 'Said' },
-          { role: 'stiker', name: 'fun-isometric, digambar dalam kode' },
-          { role: 'e-ticket', name: 'Talón oleh Moxen' },
-        ]}
-        note={
-          <span className="ssf-pill">
-            <span>{live ? 'Versi live · semua HP memakai data yang sama' : 'Prototype · bayar, OTP, dan WA/email disimulasikan'}</span>
-          </span>
-        }
       />
     </main>
   )

@@ -36,23 +36,19 @@ export type StickerSpec = {
 
 export type Line = { label: React.ReactNode; name?: string; onClick?: () => void; to?: string; href?: string; disabled?: boolean }
 export type Column = { tag: string; lines: Line[]; note?: React.ReactNode }
-export type Credit = { role: string; name: string }
 
 export interface StickerSlapProps {
   /** The giant script wordmark. Letters a–z, `!` and `.`; anything else is a space. */
   wordmark: string
-  /** The starburst in the top-left corner. */
-  nav?: { label: string; href?: string; to?: string; title?: string }
-  /** What sits in the middle and on the right of the top bar. */
+  /** The starburst sticker in the top-left corner: a word in the script (letters a–z), and where it links. */
+  badge?: { label: string; href?: string; to?: string; title?: string }
+  /** What sits in the middle of the top bar. */
   centre?: React.ReactNode
-  corner?: React.ReactNode
+  /** The info menu in the top-right corner, behind a toggle that morphs between hamburger and close. */
+  menu?: React.ReactNode
+  menuLabel?: string
   columns: Column[]
   stickers: StickerSpec[]
-  /** `[]` hides the credits pill. */
-  credits?: Credit[]
-  creditsLabel?: string
-  /** Small print in the panel's bottom-left corner. */
-  note?: React.ReactNode
   /** Minimum height. Any definite CSS length. */
   height?: string
   /** Caps the wordmark's height so short words don't get enormous. */
@@ -83,13 +79,33 @@ const CSS =
   '.ssf-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}' +
   // top bar
   '.ssf-top{position:relative;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:clamp(10px,1.4cqw,18px) clamp(8px,1.2cqw,18px) clamp(18px,3.6cqw,56px)}' +
-  '.ssf-nav{justify-self:start;position:relative;display:grid;place-items:center;width:clamp(64px,6.6cqw,88px);height:clamp(48px,4.8cqw,60px);font-weight:800;font-size:clamp(15px,1.6cqw,20px);letter-spacing:-.02em;color:var(--ssf-ink)}' +
-  '.ssf-nav svg{position:absolute;left:-4%;top:-10%;width:72%;height:auto;color:var(--ssf-accent);transition:transform .7s cubic-bezier(.2,1.4,.3,1)}' +
-  '.ssf-nav span{position:relative;transition:transform .4s cubic-bezier(.2,1.6,.3,1)}' +
-  '.ssf-nav:hover svg{transform:rotate(72deg) scale(1.12)}' +
-  '.ssf-nav:hover span{transform:rotate(-6deg) scale(1.06)}' +
+  '.ssf-badge{justify-self:start;display:block;width:clamp(58px,6cqw,80px);rotate:-8deg;transition:transform .5s cubic-bezier(.2,1.6,.3,1)}' +
+  '.ssf-badge:hover{transform:rotate(10deg) scale(1.08)}' +
+  '.ssf-badge svg{width:100%;height:auto;filter:drop-shadow(0 1px .5px rgba(10,30,16,.25)) drop-shadow(0 4px 6px rgba(10,30,16,.15))}' +
   '.ssf-mid{display:flex;justify-content:center;min-width:0}' +
-  '.ssf-corner{justify-self:end;display:flex;align-items:center;gap:6px}' +
+  '.ssf-corner{justify-self:end;position:relative;display:flex;align-items:center}' +
+  // the toggle: three bars that fold into a cross
+  '.ssf-burger{position:relative;display:block;width:44px;height:44px;border-radius:50%;background:var(--ssf-paper);box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--ssf-ink) 22%,transparent);transition:background .25s,box-shadow .25s}' +
+  '.ssf-burger:hover{background:color-mix(in oklab,var(--ssf-ink) 6%,var(--ssf-paper))}' +
+  '.ssf-burger[aria-expanded="true"]{background:var(--ssf-ink);box-shadow:none}' +
+  '.ssf-burger i{position:absolute;left:12px;top:calc(50% - 1.1px);width:20px;height:2.2px;border-radius:2px;background:var(--ssf-ink);transition:transform .5s cubic-bezier(.2,1.3,.3,1),opacity .25s,background .25s}' +
+  '.ssf-burger i:nth-child(1){transform:translateY(-6px)}' +
+  '.ssf-burger i:nth-child(3){transform:translateY(6px)}' +
+  '.ssf-burger[aria-expanded="true"] i{background:var(--ssf-paper)}' +
+  '.ssf-burger[aria-expanded="true"] i:nth-child(1){transform:rotate(45deg)}' +
+  '.ssf-burger[aria-expanded="true"] i:nth-child(2){opacity:0;transform:scaleX(.2)}' +
+  '.ssf-burger[aria-expanded="true"] i:nth-child(3){transform:rotate(-45deg)}' +
+  // the menu under it
+  '.ssf-menu{position:absolute;right:0;top:calc(100% + 10px);z-index:20;width:max-content;max-width:min(22rem,calc(100cqw - 24px));padding:14px 16px;border-radius:18px;background:var(--ssf-paper);color:var(--ssf-ink);box-shadow:0 0 0 4px #fff,0 18px 40px rgba(10,30,16,.3);transform-origin:95% 0;animation:ssf-popin .45s cubic-bezier(.2,1.5,.3,1)}' +
+  '.ssf-mhead{font-size:15px;font-weight:800;letter-spacing:-.01em}' +
+  '.ssf-mnote{margin-top:2px;max-width:30ch;font-size:12.5px;line-height:1.45;opacity:.78}' +
+  '.ssf-msep{height:1.5px;margin:10px 0;border-radius:2px;background:color-mix(in oklab,var(--ssf-ink) 14%,transparent)}' +
+  '.ssf-mi{display:flex;align-items:center;gap:10px;width:calc(100% + 20px);min-height:44px;margin:0 -10px;padding:0 10px;border-radius:12px;font-size:14px;font-weight:600;text-align:left;transition:background .2s}' +
+  '.ssf-mi:hover{background:color-mix(in oklab,var(--ssf-ink) 7%,transparent)}' +
+  '.ssf-mi svg{width:18px;height:18px;flex:none}' +
+  '.ssf-mcred{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin-top:6px;font-size:12.5px;line-height:1.35}' +
+  '.ssf-mcred dt{font-weight:600;opacity:.74}' +
+  '.ssf-mcred dd{margin:0;font-weight:700}' +
   // panel
   '.ssf-panel{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;overflow:hidden;overflow:clip;border-radius:clamp(14px,1.8cqw,24px);background:var(--ssf-panel);color:var(--ssf-cream);transform-origin:50% 100%}' +
   '.ssf-cols{position:relative;z-index:2;display:grid;grid-template-columns:repeat(var(--ssf-n,3),minmax(0,1fr));gap:clamp(18px,2.6cqw,40px) clamp(16px,2.4cqw,36px);padding:clamp(22px,4.6cqw,64px) clamp(18px,1.8cqw,26px) clamp(16px,2.4cqw,32px)}' +
@@ -126,20 +142,7 @@ const CSS =
   '.ssf-sheen{transform:translateX(-130%);transition:transform 0s}' +
   '.ssf-st-btn:hover .ssf-sheen{transform:translateX(130%);transition:transform .9s cubic-bezier(.4,0,.2,1)}' +
   '.ssf-ring{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:2px solid var(--ssf-cream);opacity:0;pointer-events:none}' +
-  // the corners of the panel
-  '.ssf-credits{position:absolute;z-index:6;right:clamp(10px,1.2cqw,16px);bottom:clamp(10px,1.2cqw,16px)}' +
-  '.ssf-foot{position:absolute;z-index:6;left:clamp(10px,1.2cqw,16px);bottom:clamp(10px,1.2cqw,16px);max-width:min(60cqw,34rem)}' +
-  '.ssf-pill{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 .95em;border-radius:999px;background:var(--ssf-ink);color:var(--ssf-paper);font-size:clamp(12px,1cqw,14px);font-weight:600;line-height:1.25}' +
-  '.ssf-pill>span{display:inline-flex;align-items:center;gap:.45em;transition:transform .4s cubic-bezier(.2,1.6,.3,1)}' +
-  '.ssf-pill:hover>span{transform:rotate(-5deg) scale(1.06)}' +
-  '.ssf-foot .ssf-pill{cursor:default}' +
-  '.ssf-foot .ssf-pill:hover>span{transform:none}' +
-  '.ssf-pop{position:absolute;right:0;bottom:calc(100% + 10px);width:max-content;max-width:min(300px,80cqw);padding:14px 16px;border-radius:16px;background:var(--ssf-paper);color:var(--ssf-ink);box-shadow:0 0 0 4px #fff,0 18px 40px rgba(10,30,16,.35);transform-origin:90% 100%;animation:ssf-popin .45s cubic-bezier(.2,1.5,.3,1)}' +
-  '.ssf-pop li{display:flex;flex-direction:column;padding:6px 0;font-size:13px;line-height:1.3}' +
-  '.ssf-pop li+li{border-top:1.5px dashed color-mix(in oklab,var(--ssf-ink) 22%,transparent)}' +
-  '.ssf-pop b{font-size:11px;font-weight:600;opacity:.6}' +
-  '.ssf-pop strong{font-weight:800;letter-spacing:-.01em}' +
-  '@container (max-width: 760px){.ssf-cols{grid-template-columns:minmax(0,1fr)}.ssf-top{padding-bottom:18px}.ssf-stage{width:min(165%,calc(var(--ssf-wmh) * var(--ssf-ar)));max-width:none;margin-left:-6%}.ssf-foot{position:static;max-width:none;padding:0 5.5rem 12px clamp(18px,1.8cqw,26px)}}' +
+  '@container (max-width: 760px){.ssf-cols{grid-template-columns:minmax(0,1fr)}.ssf-top{padding-bottom:18px}.ssf-stage{width:min(165%,calc(var(--ssf-wmh) * var(--ssf-ar)));max-width:none;margin-left:-6%}}' +
   '@keyframes ssf-rewrite{0%{stroke-dashoffset:var(--l,120px)}100%{stroke-dashoffset:0}}' +
   '@keyframes ssf-popin{from{opacity:0;transform:translateY(10px) scale(.7) rotate(4deg)}}' +
   // the storyboard: everything above is the finished state; motion only adds the way in
@@ -148,14 +151,13 @@ const CSS =
   '.ssf-stage-in{transform:translateY(calc((1 - var(--ssf-sp,1)) * 18%))}' +
   '.ssf-st{transform:translate(calc(var(--ssf-px,0) * var(--d) * 9px),calc(var(--ssf-py,0) * var(--d) * 6px));transition:transform .7s cubic-bezier(.2,.8,.2,1)}' +
   '.ssf-st.is-drag{transition:none}' +
-  '.ssf:not(.is-in) .ssf-top>*,.ssf:not(.is-in) .ssf-tag,.ssf:not(.is-in) .ssf-line>*,.ssf:not(.is-in) .ssf-note,.ssf:not(.is-in) .ssf-pill>span{opacity:0}' +
+  '.ssf:not(.is-in) .ssf-top>*,.ssf:not(.is-in) .ssf-tag,.ssf:not(.is-in) .ssf-line>*,.ssf:not(.is-in) .ssf-note{opacity:0}' +
   '.ssf.is-in .ssf-top>*{animation:ssf-fall .8s cubic-bezier(.2,1.3,.3,1) both}' +
   '.ssf.is-in .ssf-top>:nth-child(2){animation-delay:.08s}.ssf.is-in .ssf-top>:nth-child(3){animation-delay:.16s}' +
   '.ssf.is-in .ssf-panel{animation:ssf-grow 1.1s cubic-bezier(.7,0,.2,1) both}' +
   '.ssf.is-in .ssf-tag{animation:ssf-pop .7s cubic-bezier(.2,1.7,.3,1) both;animation-delay:calc(.45s + var(--c) * .1s)}' +
   '.ssf.is-in .ssf-line>*{animation:ssf-rise .8s cubic-bezier(.2,.9,.2,1) both;animation-delay:calc(.55s + var(--c) * .1s + var(--i) * .07s)}' +
   '.ssf.is-in .ssf-note{animation:ssf-fade .7s ease both;animation-delay:calc(.85s + var(--c) * .1s)}' +
-  '.ssf.is-in .ssf-pill>span{animation:ssf-pop .6s cubic-bezier(.2,1.7,.3,1) both;animation-delay:var(--end,0s)}' +
   '.ssf .ssf-wm path{stroke-dasharray:var(--l,3000px) calc(var(--l,3000px) + 8px);stroke-dashoffset:calc(var(--l,3000px) + 4px)}' +
   '.ssf:not(.is-in) .ssf-wm path{visibility:hidden}' +
   '.ssf.is-in .ssf-wm path{animation:ssf-write var(--dur) var(--at) cubic-bezier(.55,.1,.35,1) both}' +
@@ -290,14 +292,12 @@ const reduced = () => typeof window !== 'undefined' && !!window.matchMedia?.('(p
 
 export function StickerSlap({
   wordmark,
-  nav,
+  badge,
   centre,
-  corner,
+  menu,
+  menuLabel = 'Info dan pengaturan demo',
   columns,
   stickers,
-  credits = [],
-  creditsLabel = 'tim',
-  note,
   height = '100svh',
   wordmarkMaxHeight = '50svh',
   paper = '#fbfaf7',
@@ -309,7 +309,7 @@ export function StickerSlap({
 }: StickerSlapProps) {
   const rootRef = React.useRef<HTMLElement>(null)
   const stageRef = React.useRef<HTMLDivElement>(null)
-  const popRef = React.useRef<HTMLDivElement>(null)
+  const cornerRef = React.useRef<HTMLDivElement>(null)
   const [seen, setSeen] = React.useState(false)
   const [run, setRun] = React.useState(0)
   const [open, setOpen] = React.useState(false)
@@ -350,8 +350,6 @@ export function StickerSlap({
       delay: writeAt + drawDur * Math.pow(xf, 0.92) + 0.08,
     }
   })
-  const endAt = writeAt + drawDur + word.extra.length * 0.16 + 0.5
-
   useStrokeLengths(rootRef, wordmark + run)
 
   // The storyboard plays once, the first time a fifth of it is on screen.
@@ -400,10 +398,11 @@ export function StickerSlap({
     }
   }, [])
 
+  // the menu closes on a tap outside it or Escape
   React.useEffect(() => {
     if (!open) return
     const onDown = (e: PointerEvent) => {
-      if (!popRef.current?.contains(e.target as Node)) setOpen(false)
+      if (!cornerRef.current?.contains(e.target as Node)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false)
@@ -548,34 +547,40 @@ export function StickerSlap({
       <style>{CSS}</style>
 
       <div className="ssf-top">
-        {nav ? (
-          nav.to ? (
-            <Link className="ssf-nav" to={nav.to} title={nav.title}>
-              <svg viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
-                <path d={starPath(11, 48, 30, 0, 0, 0.3, 7)} fill="currentColor" />
-              </svg>
-              <span>{nav.label}</span>
+        {badge ? (
+          badge.to ? (
+            <Link className="ssf-badge" to={badge.to} title={badge.title} aria-label={badge.title ?? badge.label}>
+              <StickerSvg kind="burst" text={badge.label} />
             </Link>
-          ) : nav.href ? (
-            <a className="ssf-nav" href={nav.href} title={nav.title}>
-              <svg viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
-                <path d={starPath(11, 48, 30, 0, 0, 0.3, 7)} fill="currentColor" />
-              </svg>
-              <span>{nav.label}</span>
+          ) : badge.href ? (
+            <a className="ssf-badge" href={badge.href} title={badge.title} aria-label={badge.title ?? badge.label}>
+              <StickerSvg kind="burst" text={badge.label} />
             </a>
           ) : (
-            <span className="ssf-nav" title={nav.title}>
-              <svg viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
-                <path d={starPath(11, 48, 30, 0, 0, 0.3, 7)} fill="currentColor" />
-              </svg>
-              <span>{nav.label}</span>
+            <span className="ssf-badge" title={badge.title} role="img" aria-label={badge.title ?? badge.label}>
+              <StickerSvg kind="burst" text={badge.label} />
             </span>
           )
         ) : (
           <span />
         )}
         <div className="ssf-mid">{centre}</div>
-        <div className="ssf-corner">{corner}</div>
+        <div className="ssf-corner" ref={cornerRef}>
+          {menu && (
+            <>
+              <button type="button" className="ssf-burger" aria-label={menuLabel} aria-expanded={open} aria-controls="ssf-menu" onClick={() => setOpen((o) => !o)}>
+                <i aria-hidden="true" />
+                <i aria-hidden="true" />
+                <i aria-hidden="true" />
+              </button>
+              {open && (
+                <div id="ssf-menu" className="ssf-menu" role="region" aria-label={menuLabel}>
+                  {menu}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="ssf-panel">
@@ -647,29 +652,6 @@ export function StickerSlap({
           </div>
         </div>
 
-        {note && (
-          <div className="ssf-foot" style={{ '--end': round(endAt) + 's' } as React.CSSProperties}>
-            {note}
-          </div>
-        )}
-
-        {credits.length > 0 && (
-          <div className="ssf-credits" ref={popRef}>
-            {open && (
-              <ul className="ssf-pop">
-                {credits.map((c, i) => (
-                  <li key={i}>
-                    <b>{c.role}</b>
-                    <strong>{c.name}</strong>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button type="button" className="ssf-pill" aria-expanded={open} onClick={() => setOpen((o) => !o)} style={{ '--end': round(endAt) + 's' } as React.CSSProperties}>
-              <span>{creditsLabel}</span>
-            </button>
-          </div>
-        )}
       </div>
     </section>
   )

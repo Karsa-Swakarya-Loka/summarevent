@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ORDER_STATUS_LABEL, ORDER_TONE, RECEIPT_STATUS_LABEL, RECEIPT_TONE } from '@/domain/labels'
 import { errorMessage, useLive } from '@/hooks/useLive'
 import { fmtDayMonth, fmtTime, rupiahPlain } from '@/lib/format'
+import { finePointer } from '@/lib/pointer'
 import { cn } from '@/lib/utils'
 
 const REASONS: Record<Exclude<ReviewDecision, 'APPROVE'>, string[]> = {
@@ -65,7 +66,7 @@ export function QueueRow({ item, active, onOpen }: { item: ReceiptQueueItem; act
 
 function PhotoControls() {
   const { zoomIn, zoomOut, resetTransform } = useControls()
-  const btn = 'flex size-10 items-center justify-center rounded-full bg-card/95 shadow ring-1 ring-border hover:bg-muted pointer-coarse:size-11'
+  const btn = 'flex size-11 items-center justify-center rounded-full bg-card/95 shadow ring-1 ring-border hover:bg-muted'
   return (
     <div className="absolute top-2 right-2 z-10 flex flex-col gap-1.5">
       <button type="button" className={btn} onClick={() => zoomIn()} aria-label="Perbesar foto">
@@ -137,7 +138,7 @@ export function ReviewPanel({
       description={`${item.order.code} · ${item.user?.phone ?? item.order.buyerPhone}`}
       actions={
         decidable ? (
-          <span className="flex flex-col items-end text-xs text-muted-foreground">
+          <span className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted-foreground sm:flex-col sm:items-end">
             Kursi ditahan sampai {fmtTime(item.order.holdExpiresAt)} WIB
             <Countdown to={item.order.holdExpiresAt} className="text-base text-foreground" />
           </span>
@@ -170,7 +171,7 @@ export function ReviewPanel({
               ))}
             </div>
           )}
-          <p className="text-xs text-muted-foreground">Cubit atau scroll untuk memperbesar, klik dua kali untuk zoom cepat.</p>
+          <p className="text-xs text-muted-foreground">{finePointer() ? 'Scroll untuk memperbesar, klik dua kali untuk zoom cepat.' : 'Cubit untuk memperbesar, ketuk dua kali untuk zoom cepat.'}</p>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
@@ -201,8 +202,8 @@ export function ReviewPanel({
           </div>
 
           <div className="rounded-xl bg-muted/60 p-3">
-            <div className="flex items-baseline justify-between gap-2 text-sm">
-              <span className="font-bold">Cek otomatis</span>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">
+              <span className="font-bold whitespace-nowrap">Cek otomatis</span>
               <span className="text-muted-foreground">
                 Total <strong className={cn('tabular-nums', total >= min ? 'text-foreground' : 'text-[#a11b1b]')}>{rupiahPlain(total)}</strong> / min {rupiahPlain(min)}
               </span>

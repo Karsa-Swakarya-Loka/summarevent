@@ -1,5 +1,5 @@
 /** Hooks shared by the panitia screens. */
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
 import { useOutletContext } from 'react-router'
 import type { AdminOutlet } from './lib'
 
@@ -25,6 +25,20 @@ export function useSize<T extends HTMLElement>(): [RefObject<T | null>, { w: num
     return () => ro.disconnect()
   }, [])
   return [ref, size]
+}
+
+/** Whether a media query matches now, following changes (a window resized past a breakpoint). */
+export function useMedia(query: string): boolean {
+  return useSyncExternalStore(
+    (on) => {
+      if (typeof matchMedia !== 'function') return () => {}
+      const m = matchMedia(query)
+      m.addEventListener('change', on)
+      return () => m.removeEventListener('change', on)
+    },
+    () => typeof matchMedia === 'function' && matchMedia(query).matches,
+    () => false,
+  )
 }
 
 const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches

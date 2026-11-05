@@ -29,3 +29,5 @@ scripts/tmp/
 e2e/out/
 .vercel
 .env*
+# public build config (hosts only, no secrets): which host is live, and where the demo links to
+!.env.production

@@ -22,9 +22,12 @@ const shot = async (page, name) => {
   await page.screenshot({ path: file })
   console.log('saved', file)
 }
+// the result, once its group lookup has settled: on a real backend searchTickets takes a moment, and only then does the
+// screen know whether to offer the rest of the order or to count down and dismiss itself
 const resultOf = async (page) => {
   const el = page.locator('section[data-result]')
   await el.waitFor({ timeout: 10_000 })
+  await page.locator('section[data-result]:not([data-group="loading"])').waitFor({ timeout: 10_000 }).catch(() => undefined)
   return el.getAttribute('data-result')
 }
 const next = async (page) => {

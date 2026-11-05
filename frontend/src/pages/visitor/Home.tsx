@@ -3,7 +3,7 @@
  * shortcuts to the ways in, highlights to swipe through, then every event with its filters. A first-time visitor is
  * sent through the onboarding first.
  */
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate } from 'react-router'
 import { Bell, CalendarDays, Hourglass, MapPin, MessageCircle, Ticket, UserRound } from 'lucide-react'
 import { api } from '@/api'
@@ -19,6 +19,7 @@ import { StageScene } from '@/components/visitor/StageScene'
 import { UserAvatar } from '@/components/visitor/UserAvatar'
 import { continuePath, eventInRange, isPendingOrder, pendingTitle, placeUnit, priceHint, wibTodayRange, wibWeekRange } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
+import { prefetchEvent, whenIdle } from '@/components/visitor/prefetch'
 import type { Tone } from '@/domain/labels'
 import type { User } from '@/domain/types'
 import { useLive, useNow } from '@/hooks/useLive'
@@ -61,6 +62,22 @@ export default function Home() {
       .filter((e) => !venue || e.venue.id === venue)
       .filter((e) => !range || eventInRange(e, range.from, range.to))
   }, [events.data, when, venue, now])
+
+  // the event pages, one by one while the phone is idle, so the first tap on a card opens a finished page
+  const slugs = (events.data ?? []).map((e) => e.event.slug).join('|')
+  useEffect(() => {
+    if (!slugs) return
+    const queue = slugs.split('|')
+    let cancel = () => {}
+    const next = () => {
+      const slug = queue.shift()
+      if (!slug) return
+      prefetchEvent(slug)
+      cancel = whenIdle(next)
+    }
+    cancel = whenIdle(next)
+    return () => cancel()
+  }, [slugs])
 
   if (!onboardingDone()) return <Navigate to="/app/mulai" replace />
 

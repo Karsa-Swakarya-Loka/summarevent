@@ -4,6 +4,7 @@ import { Home, Inbox, Ticket, UserRound } from 'lucide-react'
 import { BrandLockup } from '@/components/common/Brand'
 import { DemoMenu } from '@/components/common/DemoMenu'
 import { NotificationWatcher } from '@/components/visitor/AppSetup'
+import { prefetchPath } from '@/components/visitor/prefetch'
 import { useNavStack } from '@/lib/navStack'
 import { prefetchScreens } from '@/screens'
 import { cn } from '@/lib/utils'
@@ -32,16 +33,36 @@ export function VisitorLayout() {
   const active = NAV.findIndex(({ to, end }) => (end ? pathname.replace(/\/$/, '') === to : pathname.startsWith(to)))
 
   // the screen's entrance, worked out when the path changes; the first screen just appears
-  const [screen, setScreen] = useState({ path: pathname, motion: '' })
+  const [screen, setScreen] = useState({ path: pathname, motion: '', running: true })
   if (screen.path !== pathname) {
     const back = navType === 'POP' || !!(location.state as { back?: boolean } | null)?.back
     setScreen({
       path: pathname,
       motion: back ? 'animate-screen-pop' : TAB_ROOT.test(screen.path) && tabRoot ? 'animate-screen-fade' : 'animate-screen-push',
+      running: false,
     })
   }
+  // the entrance waits in its first pose until the new screen has been painted once: building a screen can take a
+  // moment on a slow phone, and an animation started before that would skip its first frames and look like a jolt
+  useEffect(() => {
+    if (screen.running) return
+    let inner = 0
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setScreen((s) => (s.path === screen.path ? { ...s, running: true } : s)))
+    })
+    return () => {
+      cancelAnimationFrame(outer)
+      cancelAnimationFrame(inner)
+    }
+  }, [screen.path, screen.running])
 
   useEffect(() => prefetchScreens(), [])
+
+  // a finger down on a link (or a hover, or focus) fetches what it opens, about 100 ms before the tap lands
+  const intent = (e: { target: EventTarget }) => {
+    const link = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>('a[href^="/app"]') : null
+    if (link) prefetchPath(link.getAttribute('href') ?? '')
+  }
 
   // dialogs and sheets render in a portal outside this layout: the body carries the visitor look for them too
   useEffect(() => {
@@ -59,11 +80,11 @@ export function VisitorLayout() {
   }, [pathname])
 
   return (
-    <div className="min-h-dvh overflow-x-clip bg-[#efece6] lg:bg-background" data-shell="visitor">
+    <div className="min-h-dvh overflow-x-clip bg-[#efece6] lg:bg-background" data-shell="visitor" onPointerDownCapture={intent} onMouseOverCapture={intent} onFocusCapture={intent}>
       {/* on a laptop the app is a website: one top bar with the four sections, and each screen lays itself out wide */}
       {!fullScreen && <DeskBar />}
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background shadow-sm lg:min-h-[calc(100dvh-var(--spacing-desk-bar))] lg:max-w-none lg:shadow-none">
-        <main key={pathname} className={cn('flex flex-1 flex-col', screen.motion, tabRoot && 'pb-[calc(var(--spacing-nav)+1.5rem)] lg:pb-16')}>
+        <main key={pathname} className={cn('flex flex-1 flex-col', screen.motion, !screen.running && '[animation-play-state:paused]', tabRoot && 'pb-[calc(var(--spacing-nav)+1.5rem)] lg:pb-16')}>
           <Outlet />
         </main>
         {tabRoot ? (

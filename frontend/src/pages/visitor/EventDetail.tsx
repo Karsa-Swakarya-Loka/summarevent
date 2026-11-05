@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { CalendarDays, ChevronDown, ChevronLeft, CircleCheck, Clock, DoorOpen, Gift, MapPin, Radio } from 'lucide-react'
-import { api } from '@/api'
 import type { EventDetail as EventDetailData, SessionSummary } from '@/api/contract'
 import { BackHeader } from '@/components/common/bits'
 import { DemoMenu } from '@/components/common/DemoMenu'
@@ -11,6 +10,7 @@ import { CategoryLegend } from '@/components/seatmap/SeatLegend'
 import { Button } from '@/components/ui/button'
 import { BottomBar, LoadError, PageSkeleton, SectionTitle } from '@/components/visitor/Common'
 import { placeUnit, priceHint, recallSession, rememberSession, sessionName } from '@/components/visitor/helpers'
+import { cachedEvent, loadEvent, prefetchSeatMap, whenIdle } from '@/components/visitor/prefetch'
 import { saleState } from '@/domain/rules'
 import { useLive, useNow } from '@/hooks/useLive'
 import { fmtDate, fmtRange, fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils'
 export default function EventDetail() {
   const { slug = '' } = useParams()
   const navigate = useNavigate()
-  const q = useLive(() => api.getEvent(slug), [slug])
+  const q = useLive(() => loadEvent(slug), [slug], { initial: cachedEvent(slug) })
   const [picked, setPicked] = useState<string | null>(() => recallSession(slug))
 
   if (q.loading && !q.data) return <PageSkeleton hero />
@@ -75,6 +75,10 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
     io.observe(el)
     return () => io.disconnect()
   }, [])
+
+  // the seat map of the chosen session, while the visitor reads; "Pilih kursi" then opens it at once
+  const selectedId = isReserved && selOpen.open ? selected?.id : undefined
+  useEffect(() => (selectedId ? whenIdle(() => prefetchSeatMap(selectedId)) : undefined), [selectedId])
 
   const sameDay = fmtDate(event.startAt, { day: 'numeric', month: 'numeric' }) === fmtDate(event.endAt, { day: 'numeric', month: 'numeric' })
   const dateLabel = sameDay ? fmtDate(event.startAt) : `${fmtDate(event.startAt, { day: 'numeric', month: 'long' })} – ${fmtDate(event.endAt, { day: 'numeric', month: 'long', year: 'numeric' })}`

@@ -14,13 +14,30 @@ export interface LiveState<T> {
  * http: 3 s polling) and, optionally, on an interval for changes that only time makes (a hold running out). The
  * backend's poll already covers that, so the interval runs in the demo only, and never while the page is hidden.
  */
-export function useLive<T>(fetcher: () => Promise<T>, deps: unknown[], opts: { intervalMs?: number; enabled?: boolean } = {}): LiveState<T> {
+export function useLive<T>(
+  fetcher: () => Promise<T>,
+  deps: unknown[],
+  opts: {
+    intervalMs?: number
+    enabled?: boolean
+    /**
+     * Data already at hand (prefetched): shown in the first render, and fetched again only after the screen's entrance
+     * animation, so the slide-in is not interrupted by a second render.
+     */
+    initial?: T
+    /** Keep the current data when a fresh answer says the same, so a poll that changes nothing does not re-render. */
+    same?: (a: T, b: T) => boolean
+  } = {},
+): LiveState<T> {
   const { intervalMs, enabled = true } = opts
-  const [data, setData] = useState<T | undefined>(undefined)
+  const [data, setData] = useState<T | undefined>(opts.initial)
   const [error, setError] = useState<unknown>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(opts.initial === undefined)
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher
+  const sameRef = useRef(opts.same)
+  sameRef.current = opts.same
+  const deferFirst = useRef(opts.initial !== undefined)
   const seq = useRef(0)
 
   const run = useCallback(() => {
@@ -29,7 +46,8 @@ export function useLive<T>(fetcher: () => Promise<T>, deps: unknown[], opts: { i
       .current()
       .then((d) => {
         if (id !== seq.current) return
-        setData(d)
+        const same = sameRef.current
+        setData((prev) => (prev !== undefined && same?.(prev, d) ? prev : d))
         setError(null)
       })
       .catch((e: unknown) => {
@@ -43,8 +61,15 @@ export function useLive<T>(fetcher: () => Promise<T>, deps: unknown[], opts: { i
 
   useEffect(() => {
     if (!enabled) return
-    setLoading(true)
-    run()
+    let first: ReturnType<typeof setTimeout> | null = null
+    if (deferFirst.current) {
+      // the screen's entrance lasts about 320 ms; the refresh waits until it is over
+      deferFirst.current = false
+      first = setTimeout(run, 450)
+    } else {
+      setLoading(true)
+      run()
+    }
     const unsub = api.subscribe(run)
     const hidden = () => document.visibilityState === 'hidden'
     const t = intervalMs && api.mode !== 'http' ? setInterval(() => !hidden() && run(), intervalMs) : null
@@ -56,6 +81,7 @@ export function useLive<T>(fetcher: () => Promise<T>, deps: unknown[], opts: { i
         clearInterval(t)
         document.removeEventListener('visibilitychange', onShow)
       }
+      if (first) clearTimeout(first)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, intervalMs, run, ...deps])

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DeskHead, LoadError, PhoneOnly, QtyStepper } from '@/components/visitor/Common'
+import { cachedSeatMap, loadSeatMap } from '@/components/visitor/prefetch'
 import { continuePath, isPendingOrder, pendingTitle, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen, tapSeat } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { saleState, seatLabel } from '@/domain/rules'
@@ -22,9 +23,14 @@ import { fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
 
+/** What a poll can change on screen: a seat status, a quota, or anything else the version counts. */
+const mapKey = (m: SeatMapData) => `${m.version}|${m.sessionSeats.map((s) => s.status[0]).join('')}|${m.quotas.map((q) => q.filled).join(',')}`
+const sameMap = (a: SeatMapData, b: SeatMapData) => mapKey(a) === mapKey(b)
+
 export default function SeatSelect() {
   const { slug = '', sessionId = '' } = useParams()
-  const map = useLive(() => api.getSeatMap(sessionId), [sessionId], { intervalMs: 3000 })
+  // a poll that changes nothing keeps the same data, so the map does not re-render under a finger every 3 s
+  const map = useLive(() => loadSeatMap(sessionId), [sessionId], { intervalMs: 3000, initial: cachedSeatMap(sessionId), same: sameMap })
 
   useEffect(() => {
     if (slug && sessionId) rememberSession(slug, sessionId)

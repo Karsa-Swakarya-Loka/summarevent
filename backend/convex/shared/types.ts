@@ -117,6 +117,8 @@ export interface EventItem {
   description: string
   /** Key of a generated poster theme (no external images in the prototype). */
   posterTheme: PosterTheme
+  /** The panitia's own poster colours over the theme's; the visitor's ticket carries them too. */
+  posterPalette?: PosterPalette
   venueId: string
   layoutId: string | null
   seatingMode: SeatingMode
@@ -133,6 +135,12 @@ export interface EventItem {
 }
 
 export type PosterTheme = 'stage' | 'acoustic' | 'craft' | 'expo'
+
+/** Two six-digit lowercase hex colours: the poster's background and its accent. The text colour follows the background. */
+export interface PosterPalette {
+  bg: string
+  accent: string
+}
 
 export interface Session {
   id: string

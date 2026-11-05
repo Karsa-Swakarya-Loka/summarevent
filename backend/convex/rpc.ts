@@ -11,8 +11,12 @@ import type { TableNames } from './_generated/dataModel'
 import type { Req } from './lib/auth'
 import { sweep } from './lib/core'
 import { receiptPhotoLink } from './lib/links'
+import { Refusal } from './lib/errors'
+import { hashPassword } from './lib/password'
 import { Tx } from './lib/tx'
+import { DEMO_PASSWORD } from './shared/demoAccounts'
 import { buildSeed } from './shared/seed'
+import * as account from './api/account'
 import * as admin from './api/admin'
 import * as staff from './api/staff'
 import * as visitor from './api/visitor'
@@ -51,6 +55,9 @@ export const WRITES: Record<string, Handler> = {
   requestOtp: visitor.requestOtp,
   verifyOtp: visitor.verifyOtp,
   demoLogin: visitor.demoLogin,
+  login: account.login,
+  forgotPassword: account.forgotPassword,
+  resetPassword: account.resetPassword,
   createHold: visitor.createHold,
   autoHold: visitor.autoHold,
   updateAttendees: visitor.updateAttendees,
@@ -70,6 +77,9 @@ export const WRITES: Record<string, Handler> = {
   'demo.expireHold': staff.expireHold,
   'demo.fakeBuyer': staff.fakeBuyer,
 }
+
+/** Key of a committed error answer (see Refusal); http.ts turns it into the error response. */
+export const REFUSED = '__refused'
 
 /** Fields that exist only inside the backend. */
 const INTERNAL = new Set(['pending', 'updatedAt', 'avatarStorageId', 'photoStorageId', 'unusedPhotos', 'oldPhoto'])
@@ -99,6 +109,8 @@ export const write = internalMutation({
     const tx = new Tx(ctx)
     const result = await handler(tx, req)
     await tx.flush()
+    // an error answer whose writes are kept (e.g. a failed sign-in counting towards the rate limit)
+    if (result instanceof Refusal) return JSON.stringify({ [REFUSED]: { code: result.code, message: result.message, details: result.details } })
     return toJson(result)
   },
 })
@@ -147,6 +159,9 @@ const TABLES: TableNames[] = [
   'users',
   'authTokens',
   'otps',
+  'passwords',
+  'resetTokens',
+  'emails',
   'venues',
   'tenants',
   'layouts',
@@ -173,6 +188,9 @@ async function seed(ctx: MutationCtx, now: Date) {
     for (const row of rows) await ctx.db.insert(table, JSON.parse(JSON.stringify(row)))
   }
   await put('users', db.users)
+  // panitia and petugas sign in with the demo password; the server keeps its PBKDF2 hash, not the mock's SHA-256
+  const demoHash = await hashPassword(DEMO_PASSWORD)
+  for (const u of db.users) if (u.role !== 'VISITOR') await ctx.db.insert('passwords', { userId: u.id, hash: demoHash, fails: [] })
   await put('venues', db.venues)
   await put('tenants', db.tenants)
   await put('layouts', db.layouts)

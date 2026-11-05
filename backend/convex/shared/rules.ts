@@ -9,6 +9,7 @@ import type { ReceiptInput, RuleCheck } from './contract'
 import type {
   EventRules,
   Order,
+  PosterPalette,
   Receipt,
   ReceiptRules,
   Seat,
@@ -370,4 +371,47 @@ export function profileChanges(input: ProfileFields): ProfileCheck {
     out.avatar = avatar
   }
   return { ok: true, ...out }
+}
+
+/* ------------------------------------------------------------------ panitia and petugas accounts */
+
+export const PASSWORD_MIN = 8
+export const LOGIN_MAX_FAILS = 5
+export const LOGIN_FAIL_WINDOW_MIN = 15
+export const RESET_TOKEN_MIN = 30
+
+/** A new password as typed: at least 8 characters, no leading or trailing spaces. */
+export function passwordCheck(password: string): { ok: true } | { ok: false; reason: string } {
+  if (password !== password.trim()) return { ok: false, reason: 'Kata sandi tidak boleh diawali atau diakhiri spasi.' }
+  if (password.length < PASSWORD_MIN) return { ok: false, reason: `Kata sandi minimal ${PASSWORD_MIN} karakter.` }
+  return { ok: true }
+}
+
+/* ---------------- Poster colours (AD-01) ---------------- */
+
+const HEX = /^#[0-9a-f]{6}$/
+
+/** The panitia's own poster colours: two six-digit hex colours (tidied to lowercase), and not the same one twice. */
+export function posterPaletteCheck(input: unknown): { ok: true; palette: PosterPalette } | { ok: false; reason: string } {
+  if (!input || typeof input !== 'object') return { ok: false, reason: 'Warna poster belum lengkap.' }
+  const norm = (v: unknown) => (typeof v === 'string' ? v.trim().toLowerCase() : '')
+  const bg = norm((input as Record<string, unknown>).bg)
+  const accent = norm((input as Record<string, unknown>).accent)
+  if (!HEX.test(bg) || !HEX.test(accent)) return { ok: false, reason: 'Warna poster harus kode hex 6 digit, misalnya #006426.' }
+  if (bg === accent) return { ok: false, reason: 'Warna dasar dan warna aksen harus berbeda.' }
+  return { ok: true, palette: { bg, accent } }
+}
+
+/** Relative luminance (WCAG 2) of a six-digit hex colour: 0 is black, 1 is white. */
+export function luminance(hex: string): number {
+  const ch = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * ch(1) + 0.7152 * ch(3) + 0.0722 * ch(5)
+}
+
+/** The text colour that reads better on a poster background: ink on light colours, white on dark ones. */
+export function posterInk(bg: string): '#ffffff' | '#231f20' {
+  return luminance(bg) >= 0.21 ? '#231f20' : '#ffffff'
 }

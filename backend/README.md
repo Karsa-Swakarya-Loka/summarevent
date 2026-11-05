@@ -16,6 +16,7 @@ Deployment dev saat ini: `https://good-gnu-186.convex.site/api` (project `summar
 | `convex/lib/core.ts` | Bagian bersama: hold, konfirmasi, daftar tunggu, ketersediaan, wizard event |
 | `convex/lib/tx.ts` | Unit of work: baris dibaca sebagai objek domain, diubah di tempat, lalu ditulis balik dalam transaksi yang sama |
 | `convex/shared/` | **Hasil generate** dari `frontend/src/domain`, `lib/format.ts`, `api/contract.ts`, dan `api/mock/seed.ts`. Jangan diedit; ubah file frontend-nya lalu `npm run sync-domain` |
+| `convex/api/account.ts`, `convex/mail.ts` | Masuk panitia/petugas dengan email + kata sandi, lupa sandi, undangan petugas; email lewat Resend |
 | `convex/crons.ts` | Tiap menit: pesanan lewat waktu jadi `EXPIRED`, kursi dilepas, daftar tunggu dikabari |
 
 Kenapa invarian pemesanan ganda (PRD §8) terjaga: setiap request adalah **satu** mutation Convex, dan mutation Convex
@@ -28,6 +29,8 @@ Yang berbeda dari mock, karena ini server sungguhan:
 - Login memakai token bearer acak (yang disimpan hanya hash SHA-256-nya). `X-Guest-Id` wajib berawalan `guest_`, jadi id tamu tidak bisa dipakai untuk membaca data akun.
 - Token QR dan link foto struk ditandatangani HMAC dengan `APP_SECRET` yang hanya ada di server.
 - Foto profil dan foto struk disimpan di file storage Convex. Foto struk hanya bisa dibuka lewat link bertanda tangan `/receipt-photos/:id?sig=`; SVG dikirim dengan CSP `sandbox`.
+- Kata sandi panitia dan petugas disimpan sebagai hash PBKDF2-SHA256 (100.000 iterasi, salt per akun). Link reset dan undangan hanya disimpan hash-nya, sekali pakai. Sandi baru mengeluarkan semua sesi lain akun itu.
+- Email tidak dikirim langsung dari request: request mencatat baris `emails` dan menjadwalkan `mail.send` di transaksi yang sama, jadi request yang diulang (tabrakan) tidak pernah mengirim dua kali. `Idempotency-Key` ke Resend memakai id baris itu. Backend tidak pernah mengembalikan `simulatedLink`.
 - `orderId` diisi di semua pesan yang menyangkut satu pesanan (lihat kontrak, bagian aturan notifikasi).
 
 ## Menjalankan
@@ -46,6 +49,9 @@ npx convex run rpc:ensureSeeded                               # isi data contoh 
 | `DEMO_MODE` | `false` mematikan `/demo/*` (produksi). Default menyala |
 | `ALLOWED_ORIGINS` | Origin app yang boleh memanggil API, dipisah koma. Default `*` |
 | `PUBLIC_API_URL` | Alamat publik API kalau tidak lewat `.convex.site` (misalnya di balik proxy `/api`) |
+| `RESEND_API_KEY` | Kunci API Resend untuk email lupa sandi dan undangan petugas. Tanpa ini email dicatat `SKIPPED` di tabel `emails` dan tidak dikirim |
+| `EMAIL_FROM` | Pengirim, misalnya `Summarevent <noreply@domain-terverifikasi>`. Default `onboarding@resend.dev` (Resend hanya mengizinkannya ke email pemilik akun Resend) |
+| `APP_URL` | Alamat app untuk link di email, misalnya `https://summarevent.vercel.app` → `<APP_URL>/reset?token=…` |
 | `DEBUG_ERRORS` | `true` (dev saja) menaruh pesan error asli di `details` respons 500 |
 
 ## Cek sebelum commit
@@ -53,7 +59,7 @@ npx convex run rpc:ensureSeeded                               # isi data contoh 
 ```sh
 npm run check-domain   # convex/shared sama dengan frontend/src/domain (jalan juga di CI)
 npm run typecheck
-npm test               # convex-test: hold, bayar, klaim tamu, check-in, profil, daftar tunggu
+npm test               # convex-test: hold, bayar, klaim tamu, check-in, profil, daftar tunggu, login + reset sandi, email, warna poster
 ```
 
 Uji terima terhadap deployment (mereset data demo):

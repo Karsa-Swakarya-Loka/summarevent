@@ -10,6 +10,9 @@ import { httpAction, type ActionCtx } from './_generated/server'
 import type { AuthInput } from './lib/auth'
 import { verifyReceiptPhotoSig } from './lib/crypto'
 import { HTTP_STATUS } from './lib/errors'
+import { REFUSED } from './rpc'
+
+const REFUSED_PREFIX = `{"${REFUSED}":`
 
 const PREFIX = '/api'
 const VERSION = '1.0.0'
@@ -30,6 +33,9 @@ const ROUTES: Route[] = [
   R('POST', '/auth/otp/request', 'write', 'requestOtp'),
   R('POST', '/auth/otp/verify', 'write', 'verifyOtp'),
   R('POST', '/auth/demo-login', 'write', 'demoLogin'),
+  R('POST', '/auth/login', 'write', 'login'),
+  R('POST', '/auth/password/forgot', 'write', 'forgotPassword'),
+  R('POST', '/auth/password/reset', 'write', 'resetPassword'),
 
   R('GET', '/events', 'read', 'listEvents'),
   R('GET', '/events/:slug', 'read', 'getEvent'),
@@ -278,7 +284,14 @@ const handle = httpAction(async (ctx, req) => {
 
   try {
     if (route.kind === 'read') return json(req, 200, await ctx.runQuery(internal.rpc.read, { op: route.op, req: r }))
-    if (route.kind === 'write') return json(req, 200, await withRetry(() => ctx.runMutation(internal.rpc.write, { op: route.op, req: r })))
+    if (route.kind === 'write') {
+      const out = await withRetry(() => ctx.runMutation(internal.rpc.write, { op: route.op, req: r }))
+      if (out.startsWith(REFUSED_PREFIX)) {
+        const { code, message, details } = (JSON.parse(out) as Record<string, { code: string; message: string; details?: unknown }>)[REFUSED]
+        return errorResponse(req, code, message, details)
+      }
+      return json(req, 200, out)
+    }
     switch (route.op) {
       case 'health': {
         const h = await ctx.runQuery(internal.rpc.health, {})

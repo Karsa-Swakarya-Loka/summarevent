@@ -2,7 +2,7 @@
 import type { EventDraft, EventStats, OrderRow, ReceiptQueueItem, ReviewDecision, StaffAccount } from '../shared/contract'
 import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL, TICKET_STATUS_LABEL } from '../shared/labels'
 import { fmtRange, fmtShortDate, fmtTime, isValidPhone, normalizePhone, rupiahPlain, wibDate } from '../shared/format'
-import { checkReceiptRules, resolveSession, uid } from '../shared/rules'
+import { checkReceiptRules, profileChanges, resolveSession, uid } from '../shared/rules'
 import type { Checkin, EventItem, Order, OrderStatus, Payment, Receipt, Session, SessionQuota, SessionSeat, Tenant, Ticket, TicketCategory, User, Venue } from '../shared/types'
 import { requireRole, type Req } from '../lib/auth'
 import {
@@ -33,9 +33,12 @@ import {
   summary,
   sweep,
   tenantsAll,
+  posterPaletteOf,
+  stableJson,
   validateDraft,
 } from '../lib/core'
 import { fail, must } from '../lib/errors'
+import { sendInvite } from './account'
 import type { Tx } from '../lib/tx'
 
 const admin = (tx: Tx, req: Req) => requireRole(tx, req.auth, 'ADMIN')
@@ -66,6 +69,7 @@ export async function createEvent(tx: Tx, req: Req) {
     subtitle: draft.subtitle?.trim(),
     description: (draft.description ?? '').trim(),
     posterTheme: draft.posterTheme,
+    posterPalette: posterPaletteOf(draft),
     venueId: draft.venueId,
     layoutId: null,
     seatingMode: draft.seatingMode,
@@ -103,13 +107,15 @@ export async function updateEvent(tx: Tx, req: Req) {
   const event = await eventOf(tx, eventId)
   const hasOrders = (await tx.where<Order>('orders', 'by_event', { eventId })).length > 0
   const before = await draftOf(tx, event)
-  const layoutChanged = JSON.stringify(before.layout ?? null) !== JSON.stringify(draft.layout ?? null) || before.seatingMode !== draft.seatingMode
+  // compared without key order: Convex hands request bodies over with their keys sorted
+  const layoutChanged = stableJson(before.layout ?? null) !== stableJson(draft.layout ?? null) || before.seatingMode !== draft.seatingMode
   if (layoutChanged && hasOrders) fail('LOCKED_LAYOUT', 'Denah tidak bisa diubah karena sudah ada pesanan. Ubah info, harga, atau sesi saja.')
   Object.assign(event, {
     title: draft.title.trim(),
     subtitle: draft.subtitle?.trim(),
     description: (draft.description ?? '').trim(),
     posterTheme: draft.posterTheme,
+    posterPalette: posterPaletteOf(draft),
     venueId: draft.venueId,
     seatingMode: draft.seatingMode,
     rules: { ...draft.rules },
@@ -550,13 +556,18 @@ export async function listStaff(tx: Tx, req: Req) {
 }
 
 export async function createStaff(tx: Tx, req: Req) {
-  await admin(tx, req)
+  const me = await admin(tx, req)
   const name = String(req.body?.name ?? '').trim()
   const phone = normalizePhone(String(req.body?.phone ?? ''))
-  if (name.length < 3) fail('INVALID', 'Tulis nama petugas, minimal 3 huruf.')
-  if (!isValidPhone(phone)) fail('INVALID', 'Nomor HP belum benar. Contoh: 0812 3456 7890.')
-  if ((await tx.where<User>('users', 'by_phone', { phone, role: 'STAFF' })).length) fail('DUPLICATE', 'Nomor HP ini sudah dipakai akun petugas lain.')
-  return tx.insert('users', { id: uid('stf'), role: 'STAFF', name, phone, email: null, createdAt: tx.now.toISOString(), active: true } satisfies User)
+  const checked = profileChanges({ email: String(req.body?.email ?? '') })
+  if (name.length < 3) fail('INVALID', 'Tulis nama petugas, minimal 3 huruf.', { field: 'name' })
+  if (!isValidPhone(phone)) fail('INVALID', 'Nomor HP belum benar. Contoh: 0812 3456 7890.', { field: 'phone' })
+  if (!checked.ok || !checked.email) fail('INVALID', 'Tulis email petugas, misalnya nama@contoh.id.', { field: 'email' })
+  if ((await tx.where<User>('users', 'by_phone', { phone, role: 'STAFF' })).length) fail('DUPLICATE', 'Nomor HP ini sudah dipakai akun petugas lain.', { field: 'phone' })
+  if ((await tx.where<User>('users', 'by_email', { email: checked.email })).length) fail('DUPLICATE', 'Email ini sudah dipakai akun lain.', { field: 'email' })
+  const user = await tx.insert('users', { id: uid('stf'), role: 'STAFF', name, phone, email: checked.email, createdAt: tx.now.toISOString(), active: true } satisfies User)
+  await sendInvite(tx, user, me)
+  return user
 }
 
 export async function setStaffActive(tx: Tx, req: Req) {

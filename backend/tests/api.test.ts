@@ -98,3 +98,104 @@ describe('waiting list (PV-14)', () => {
     expect(inbox.some((n: { kind: string }) => n.kind === 'WAITLIST')).toBe(true)
   })
 })
+
+describe('panitia and petugas sign-in (email + kata sandi)', () => {
+  const login = (email: string, password: string, role = 'ADMIN') => write('login', req({ body: { email, password, role } }))
+  const refused = (out: Record<string, { code: string }>) => out.__refused?.code
+  const lastEmail = () => t.run(async (ctx) => (await ctx.db.query('emails').order('desc').first())!)
+  const tokenIn = (text: string) => /\/reset\?token=([\w-]+)/.exec(text)![1]
+
+  it('signs in with the demo password, refuses a wrong one, and rate-limits after 5 tries', async () => {
+    const ok = await login(' Panitia@Summarevent.test ', 'summaba2026')
+    expect(ok.user).toMatchObject({ id: 'u_admin', role: 'ADMIN' })
+    expect(await read('admin.listStaff', req({ token: ok.token }))).toBeInstanceOf(Array)
+    // the password hash never leaves the server, and the role has to match
+    expect(JSON.stringify(ok)).not.toMatch(/pbkdf2/)
+    expect(refused(await login('panitia@summarevent.test', 'summaba2026', 'STAFF'))).toBe('BAD_LOGIN')
+    expect(refused(await login('siapa@contoh.id', 'summaba2026'))).toBe('BAD_LOGIN')
+    for (let i = 0; i < 5; i++) expect(refused(await login('panitia@summarevent.test', 'salah123'))).toBe('BAD_LOGIN')
+    // the failures were kept even though each answer was an error, so the right password now waits too
+    expect(refused(await login('panitia@summarevent.test', 'summaba2026'))).toBe('RATE_LIMIT')
+  })
+
+  it('an inactive petugas cannot sign in', async () => {
+    const adm = await login('panitia@summarevent.test', 'summaba2026')
+    await write('admin.setStaffActive', req({ token: adm.token, params: { id: 'u_staff_utara' }, body: { active: false } }))
+    expect(await code(login('pintu.utara@summarevent.test', 'summaba2026', 'STAFF'))).toBe('FORBIDDEN')
+  })
+
+  it('forgot → one-time link → new password signs in and ends other sessions', async () => {
+    const before = await login('panitia@summarevent.test', 'summaba2026')
+    expect(await write('forgotPassword', req({ body: { email: 'tidak.ada@contoh.id' } }))).toEqual({ ok: true })
+    expect(await t.run((ctx) => ctx.db.query('emails').collect())).toHaveLength(0)
+    expect(await write('forgotPassword', req({ body: { email: 'panitia@summarevent.test' } }))).toEqual({ ok: true })
+    const email = await lastEmail()
+    expect(email).toMatchObject({ to: 'panitia@summarevent.test', status: 'QUEUED' })
+    const token = tokenIn(email.text)
+    // the raw token is only in the email
+    expect(JSON.stringify(await t.run((ctx) => ctx.db.query('resetTokens').collect()))).not.toContain(token)
+
+    expect(await code(write('resetPassword', req({ body: { token, password: 'pendek' } })))).toBe('INVALID')
+    const done = await write('resetPassword', req({ body: { token, password: 'sandi-baru-panitia' } }))
+    expect(done.user.id).toBe('u_admin')
+    expect(await code(read('admin.listStaff', req({ token: before.token })))).toBe('NEED_LOGIN')
+    expect(await code(read('admin.listStaff', req({ token: done.token })))).toBe('OK')
+    expect(await code(write('resetPassword', req({ body: { token, password: 'sandi-lain-lagi' } })))).toBe('RESET_EXPIRED')
+    expect(refused(await login('panitia@summarevent.test', 'summaba2026'))).toBe('BAD_LOGIN')
+    expect((await login('panitia@summarevent.test', 'sandi-baru-panitia')).user.id).toBe('u_admin')
+  })
+
+  it('a new petugas needs an email and gets an invitation to set a password', async () => {
+    const adm = await login('panitia@summarevent.test', 'summaba2026')
+    const add = (body: object) => write('admin.createStaff', req({ token: adm.token, body }))
+    expect(await code(add({ name: 'Petugas Baru', phone: '081277770001' }))).toBe('INVALID')
+    expect(await code(add({ name: 'Petugas Baru', phone: '081277770001', email: 'desk.atrium@summarevent.test' }))).toBe('DUPLICATE')
+    const u = await add({ name: 'Petugas Baru', phone: '081277770001', email: 'Baru@Contoh.id' })
+    expect(u).toMatchObject({ role: 'STAFF', email: 'baru@contoh.id' })
+    const invite = await lastEmail()
+    expect(invite.to).toBe('baru@contoh.id')
+    const r = await write('resetPassword', req({ body: { token: tokenIn(invite.text), password: 'sandi-petugas-baru' } }))
+    expect(r.user).toMatchObject({ id: u.id, role: 'STAFF' })
+    expect((await login('baru@contoh.id', 'sandi-petugas-baru', 'STAFF')).user.id).toBe(u.id)
+  })
+
+  it('sends queued email through Resend once, keyed by the email id', async () => {
+    await write('forgotPassword', req({ body: { email: 'desk.atrium@summarevent.test' } }))
+    const email = await lastEmail()
+    await t.action(internal.mail.send, { id: email._id })
+    expect((await lastEmail()).status).toBe('SKIPPED') // no RESEND_API_KEY in tests
+
+    await t.run((ctx) => ctx.db.patch(email._id, { status: 'QUEUED' }))
+    process.env.RESEND_API_KEY = 're_test'
+    const calls: Array<{ url: string; init: RequestInit }> = []
+    const realFetch = globalThis.fetch
+    globalThis.fetch = (async (url: string, init: RequestInit) => {
+      calls.push({ url, init })
+      return new Response(JSON.stringify({ id: 'resend_1' }), { status: 200 })
+    }) as typeof fetch
+    try {
+      await t.action(internal.mail.send, { id: email._id })
+      await t.action(internal.mail.send, { id: email._id })
+    } finally {
+      globalThis.fetch = realFetch
+      delete process.env.RESEND_API_KEY
+    }
+    expect(calls).toHaveLength(1)
+    expect((calls[0].init.headers as Record<string, string>)['Idempotency-Key']).toBe(email._id)
+    expect(await lastEmail()).toMatchObject({ status: 'SENT', providerId: 'resend_1' })
+  })
+})
+
+describe('poster colours (AD-01)', () => {
+  it('keeps a valid palette, rejects a broken one, and null clears it', async () => {
+    const adm = await write('demoLogin', req({ body: { role: 'ADMIN' } }))
+    const { draft } = await read('admin.getEventDraft', req({ token: adm.token, params: { id: 'evt_akustik' } }))
+    expect(draft.posterPalette).toEqual({ bg: '#1c2f5e', accent: '#f9a61b' })
+    const save = (posterPalette: unknown) => write('admin.updateEvent', req({ token: adm.token, params: { id: 'evt_akustik' }, body: { ...draft, posterPalette } }))
+    expect(await code(save({ bg: '#123', accent: '#ffffff' }))).toBe('INVALID')
+    expect((await save({ bg: '#AA0000', accent: '#00ff00' })).posterPalette).toEqual({ bg: '#aa0000', accent: '#00ff00' })
+    expect((await save(null)).posterPalette).toBeUndefined()
+    const ev = await read('getEvent', req({ params: { slug: 'konser-akustik-sawarga' } })).catch(() => null)
+    if (ev) expect(ev.event?.posterPalette).toBeUndefined()
+  })
+})

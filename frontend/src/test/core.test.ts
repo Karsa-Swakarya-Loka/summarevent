@@ -15,7 +15,7 @@ import { posterColors } from '@/components/common/posterThemes'
 import { scrubToView } from '@/components/landing/crumple'
 import { layoutScript, stickerSpots } from '@/components/landing/script'
 import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
-import { wibDate } from '@/lib/format'
+import { csvCell, wibDate } from '@/lib/format'
 
 const api = createMockApi()
 const SESSION = 'ses_sk_16' // Sangkuriang, Sesi 2 (16.00)
@@ -400,7 +400,7 @@ describe('bonus, staff accounts, desk review, OCR (AD-12, AD-13, PT-06, PV-16)',
 
   it('PV-16: OCR text of a receipt becomes form fields', () => {
     const db = readDb()!
-    const text = `TOKO MAINAN CERIA\nSummarecon Mall Bandung (contoh)\nNo. Struk : INV713128\nTanggal : 02/11/2026\nJam : 21:40\n----------\nPuzzle kayu Rp100.000\nMobil remote Rp60.000\nLilin mainan Rp40.000\nTOTAL Rp200.000\nHatur nuhun!`
+    const text = `TOKO MAINAN CERIA\nSummarecon Mall Bandung (contoh)\nNo. Struk : INV713128\nTanggal : 02/11/2026\nJam : 21:40\n----------\nPuzzle kayu Rp100.000\nMobil remote Rp60.000\nLilin mainan Rp40.000\nTOTAL Rp200.000\nTerima kasih!`
     expect(parseReceiptText(text, db.tenants)).toEqual({ tenantId: 't_mainan', receiptNo: 'INV713128', amount: 200_000, receiptDate: '2026-11-02', receiptTime: '21:40' })
     expect(parseReceiptText('SUBTOTAL 50.000\nGrand total: 75.000', db.tenants).amount).toBe(75_000)
     expect(parseReceiptText('foto buram', db.tenants)).toEqual({})
@@ -551,8 +551,8 @@ describe('landing wordmark script', () => {
     expect(w.extra).toHaveLength(1) // the t-cross
     expect(w.width).toBeGreaterThan(100)
     expect(w.top).toBeLessThan(-10)
-    const two = layoutScript('Hayu Ngiring!')
-    expect(two.width).toBeGreaterThan(layoutScript('hayungiring!').width)
+    const two = layoutScript('Ayo Masuk!')
+    expect(two.width).toBeGreaterThan(layoutScript('ayomasuk!').width)
     expect(layoutScript('').width).toBe(0)
   })
 
@@ -586,5 +586,18 @@ describe('team slide crumple', () => {
     expect(scrubToView(-2, 5)).toEqual({ index: 0, crumple: 0 })
     expect(scrubToView(9, 5)).toEqual({ index: 4, crumple: 0 })
     expect(scrubToView(0.5, 1)).toEqual({ index: 0, crumple: 0 })
+  })
+})
+
+describe('CSV export (AD-10)', () => {
+  it('keeps a formula a visitor typed as text, and quotes what needs quoting', () => {
+    expect(csvCell('=HYPERLINK("http://x","klik")')).toBe(`"'=HYPERLINK(""http://x"",""klik"")"`)
+    expect(csvCell('+62812')).toBe("'+62812")
+    expect(csvCell('-5')).toBe("'-5")
+    expect(csvCell('@SUM(A1)')).toBe("'@SUM(A1)")
+    expect(csvCell('Rina, Kartika')).toBe('"Rina, Kartika"')
+    expect(csvCell('Rina Kartika')).toBe('Rina Kartika')
+    expect(csvCell(150000)).toBe('150000')
+    expect(csvCell(null)).toBe('')
   })
 })

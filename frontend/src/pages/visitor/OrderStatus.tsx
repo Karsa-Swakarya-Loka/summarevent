@@ -1,6 +1,6 @@
 /**
  * Order status (PV-11): one big status, what happens next, and the tickets once confirmed.
- * Live: when the panitia approves a receipt in another tab, this screen flips to "Tos siap!".
+ * Live: when the panitia approves a receipt in another tab, this screen flips to "Tiketmu siap".
  */
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
@@ -8,7 +8,7 @@ import { Ban, FlaskConical, Gift, PencilLine, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail } from '@/api/contract'
-import { BackHeader, Countdown, StatusBadge, SundaText } from '@/components/common/bits'
+import { BackHeader, Countdown, StatusBadge } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label'
 import { LoadError, PageSkeleton } from '@/components/visitor/Common'
 import { OrderSummary } from '@/components/visitor/OrderSummary'
 import { StatusHero } from '@/components/visitor/StatusHero'
-import { seatRangeLabel } from '@/components/visitor/helpers'
+import { pendingTitle, seatRangeLabel } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { PAYMENT_METHOD_LABEL, RECEIPT_STATUS_LABEL, RECEIPT_TONE, TICKET_STATUS_LABEL, TICKET_TONE, orderStatusLabel } from '@/domain/labels'
 import { CANCEL_MIN_HOURS, attendeeEditPolicy, visitorCancelPolicy } from '@/domain/rules'
@@ -68,7 +68,7 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
 
   if (order.status === 'CONFIRMED') {
     hero = (
-      <StatusHero tone="brand" art="tiket" label={label} title={<SundaText k="ready" size="xl" className="items-center [&>span:first-child]:font-poster [&>span:first-child]:text-6xl [&>span:first-child]:font-normal [&>span:first-child]:uppercase" />}>
+      <StatusHero tone="brand" art="tiket" label={label} title="Tiketmu siap">
         {tickets.length} e-ticket aktif
       </StatusHero>
     )
@@ -103,7 +103,7 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
     )
   } else if (order.status === 'AWAITING_VERIFICATION' && inReview.length) {
     hero = (
-      <StatusHero tone="warn" art="notes" label={label} title="Struk dicek panitia">
+      <StatusHero tone="warn" art="notes" label={label} title={pendingTitle(detail)}>
         <HoldLine detail={detail} what={what} />
       </StatusHero>
     )
@@ -119,7 +119,7 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
     )
   } else if (order.status === 'AWAITING_VERIFICATION' && revision.length) {
     hero = (
-      <StatusHero tone="warn" art="notes" label={RECEIPT_STATUS_LABEL.NEEDS_REVISION} title="Struk perlu diperbaiki">
+      <StatusHero tone="warn" art="notes" label={RECEIPT_STATUS_LABEL.NEEDS_REVISION} title={pendingTitle(detail)}>
         <p className="font-semibold">{revision[0].reason ?? 'Periksa lagi data struk kamu.'}</p>
         <HoldLine detail={detail} what={what} />
       </StatusHero>
@@ -133,7 +133,7 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
     const free = order.paymentMethod === 'FREE' || order.totalAmount === 0
     const receipt = order.status === 'AWAITING_VERIFICATION'
     hero = (
-      <StatusHero tone="warn" art={receipt ? 'notes' : free ? 'gift' : 'coins'} label={label} title={receipt ? 'Struk belum dikirim' : free ? 'Tinggal konfirmasi' : 'Tinggal bayar'}>
+      <StatusHero tone="warn" art={receipt ? 'notes' : free ? 'gift' : 'coins'} label={label} title={pendingTitle(detail)}>
         <HoldLine detail={detail} what={what} />
       </StatusHero>
     )
@@ -276,7 +276,7 @@ function ManageOrder({ detail }: { detail: OrderDetail }) {
           <PencilLine className="size-4" aria-hidden /> Ubah nama peserta
         </Button>
         <Button variant="outline" className="h-11 justify-start text-[#a11b1b] hover:text-[#a11b1b]" onClick={() => setMode('cancel')} disabled={!cancelPolicy.allowed}>
-          <Ban className="size-4" aria-hidden /> Batalkan tiket
+          <Ban className="size-4" aria-hidden /> Batalkan pesanan
         </Button>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
@@ -326,7 +326,7 @@ function ManageOrder({ detail }: { detail: OrderDetail }) {
       <Dialog open={mode === 'cancel'} onOpenChange={(o) => !busy && setMode(o ? 'cancel' : null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Batalkan tiket ini?</DialogTitle>
+            <DialogTitle>Batalkan pesanan ini?</DialogTitle>
             <DialogDescription>
               Semua e-ticket di pesanan {order.code} tidak berlaku lagi.
               {cancelPolicy.allowed && cancelPolicy.refund ? ` Refund ${rupiahPlain(cancelPolicy.refund)} ke metode bayar asal.` : ''}

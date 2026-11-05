@@ -49,6 +49,18 @@ function writeJson(key: string, value: unknown) {
 }
 
 const loadManifest = (sessionId: string) => readJson<OfflineManifest>(MANIFEST_KEY(sessionId))
+
+/**
+ * On sign-out: the ticket lists kept for offline check-in (names and seats of visitors) leave this phone, since a gate
+ * phone is often passed to the next petugas. Scans still waiting for signal stay, so no check-in is lost.
+ */
+export function clearOfflineManifests() {
+  try {
+    for (const key of Object.keys(localStorage)) if (key.startsWith('summarevent:offline:manifest:')) localStorage.removeItem(key)
+  } catch {
+    /* storage blocked: nothing was kept either */
+  }
+}
 export const loadQueue = (): QueuedScan[] => readJson<QueuedScan[]>(QUEUE_KEY) ?? []
 function saveQueue(q: QueuedScan[]) {
   writeJson(QUEUE_KEY, q)

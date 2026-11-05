@@ -86,7 +86,7 @@ export function CategoryLegend({
 }) {
   if (chips && onPick) {
     return (
-      <div className={cn('-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pt-0.5 pb-1 [scrollbar-width:none]', className)} role="radiogroup" aria-label="Kategori tiket">
+      <div className={cn('-mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 pt-0.5 pb-1 [scrollbar-width:none]', className)} role="radiogroup" aria-label="Kategori tiket">
         {categories.map((c) => {
           const av = availability?.find((a) => a.categoryId === c.id)
           const active = activeId === c.id

@@ -8,7 +8,7 @@ import { Link, Navigate } from 'react-router'
 import { Bell, CalendarDays, Hourglass, MapPin, MessageCircle, Ticket, UserRound } from 'lucide-react'
 import { api } from '@/api'
 import type { EventSummary } from '@/api/contract'
-import { Countdown, EmptyState, StatusBadge, SundaText } from '@/components/common/bits'
+import { Countdown, EmptyState, StatusBadge } from '@/components/common/bits'
 import { Illustration } from '@/components/common/Illustration'
 import { Poster } from '@/components/common/Poster'
 import { POSTER_THEMES } from '@/components/common/posterThemes'
@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError } from '@/components/visitor/Common'
 import { StageScene } from '@/components/visitor/StageScene'
 import { UserAvatar } from '@/components/visitor/UserAvatar'
-import { continuePath, eventInRange, isPendingOrder, priceHint, wibTodayRange, wibWeekRange } from '@/components/visitor/helpers'
+import { continuePath, eventInRange, isPendingOrder, pendingTitle, priceHint, wibTodayRange, wibWeekRange } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import type { Tone } from '@/domain/labels'
 import type { User } from '@/domain/types'
@@ -90,7 +90,7 @@ export default function Home() {
         <div className="relative flex items-center gap-3 px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
           {user && <Avatar user={user} />}
           <div className="min-w-0 flex-1">
-            <SundaText k="welcome" size="sm" className="flex-row items-baseline gap-1.5 whitespace-nowrap text-white/85 [&>span:first-child]:text-sm" />
+            <p className="text-sm text-white/85">Selamat datang</p>
             <h1 className="truncate text-xl leading-tight font-extrabold">{user ? user.name : 'Mau nonton apa?'}</h1>
           </div>
           <Link
@@ -112,7 +112,7 @@ export default function Home() {
       <ul className="relative z-10 -mt-7 flex gap-3 overflow-x-auto px-4 pt-1 pb-3 [scrollbar-width:none]" aria-label="Ringkasan">
         {pending.map((d) => (
           <li key={d.order.id} className="animate-rise">
-            <StatusCard to={continuePath(d)} tint="orange" icon={<Hourglass />} label="Selesaikan" value={<Countdown to={d.order.holdExpiresAt} className="[&_svg]:hidden" />} />
+            <StatusCard to={continuePath(d)} tint="orange" icon={<Hourglass />} label={pendingTitle(d, true)} value={<Countdown to={d.order.holdExpiresAt} className="[&_svg]:hidden" />} />
           </li>
         ))}
         <li className="animate-rise [animation-delay:60ms]">
@@ -145,7 +145,7 @@ export default function Home() {
                   art="kursi"
                   tint="bg-brand-soft"
                   title="Pilih kursi sendiri"
-                  sub="Sesi demo juri sedang berlangsung"
+                  sub="Sesi demo sedang berlangsung"
                   chip={
                     <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-bold text-[#0b6b35]">
                       <span className="size-1.5 rounded-full bg-status-valid" aria-hidden /> Live

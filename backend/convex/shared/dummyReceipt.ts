@@ -61,7 +61,7 @@ ${lines}
 <line x1="24" x2="296" y1="${190 + items.length * 26 - 8}" y2="${190 + items.length * 26 - 8}" stroke="#231f20" stroke-dasharray="4 4"/>
 <text x="24" y="${190 + items.length * 26 + 18}" font-size="17" font-weight="700">TOTAL</text>
 <text x="296" y="${190 + items.length * 26 + 18}" font-size="17" font-weight="700" text-anchor="end">${rupiahPlain(spec.amount)}</text>
-<text x="160" y="370" font-size="12" text-anchor="middle">Hatur nuhun!</text>
+<text x="160" y="370" font-size="12" text-anchor="middle">Terima kasih!</text>
 <rect x="24" y="386" width="272" height="30" rx="4" fill="#fde8dc"/>
 <text x="160" y="406" font-size="11" font-weight="700" text-anchor="middle" fill="#8a3a0c">STRUK CONTOH - BUKAN TRANSAKSI ASLI</text>
 </svg>`

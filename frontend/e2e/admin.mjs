@@ -129,6 +129,8 @@ await shot('orders-sheet', false)
 const markBtn = page.getByRole('button', { name: /Tandai lunas|Konfirmasi pendaftaran/ })
 if (await markBtn.count()) {
   await markBtn.click()
+  // tickets issued without money are hard to take back: the panel asks first
+  await page.getByRole('button', { name: /^Ya, (tandai lunas|konfirmasi)$/ }).click()
   await page.getByText(/ditandai lunas|dikonfirmasi/).first().waitFor()
   console.log('marked paid')
   await page.waitForTimeout(500)

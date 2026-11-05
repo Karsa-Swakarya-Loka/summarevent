@@ -52,7 +52,7 @@ export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps 
               onChange={(e) => update((f) => ({ ...f, description: e.target.value }))}
             />
           </Field>
-          <Field id="ev-venue" label="Venue" error={err('venueId')} hint="Kapasitas venue adalah asumsi dan bisa diubah nanti.">
+          <Field id="ev-venue" label="Venue" error={err('venueId')}>
             <Select value={form.venueId} onValueChange={(v) => update((f) => ({ ...f, venueId: v }))}>
               <SelectTrigger id="ev-venue" className="h-10 w-full bg-card" aria-invalid={!!err('venueId') || undefined}>
                 <SelectValue placeholder="Pilih venue" />

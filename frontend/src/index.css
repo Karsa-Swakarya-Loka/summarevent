@@ -300,6 +300,11 @@ body:has([data-demo-header]) [data-demo-float] {
   text-transform: uppercase;
   white-space: nowrap;
 }
+/* a long venue goes to a second line instead of being cut ("ATRIUM CI…") */
+.talon-value.talon-wrap {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .talon-chip {
   flex: none;
   padding: 0.3rem 0.6rem 0.25rem;
@@ -313,7 +318,8 @@ body:has([data-demo-header]) [data-demo-float] {
 }
 .talon-barcode {
   font-family: "Libre Barcode 128 Text", monospace;
-  font-size: 2.5rem;
+  /* a little smaller on a 360 px phone, so the code always fits the stub beside the seat */
+  font-size: clamp(2.1rem, 10.6vw, 2.5rem);
   line-height: 1;
   white-space: nowrap;
 }

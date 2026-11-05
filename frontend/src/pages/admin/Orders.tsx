@@ -21,7 +21,7 @@ import { useDebounced } from '@/components/visitor/hooks'
 import { ORDER_STATUS_LABEL, ORDER_TONE, PAYMENT_METHOD_LABEL, RECEIPT_STATUS_LABEL, RECEIPT_TONE, orderStatusLabel } from '@/domain/labels'
 import type { OrderStatus } from '@/domain/types'
 import { errorMessage, useLive } from '@/hooks/useLive'
-import { fmtDateTime, rupiahPlain } from '@/lib/format'
+import { fmtDateTime, maskPhone, rupiahPlain } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 const STATUSES = Object.keys(ORDER_STATUS_LABEL) as OrderStatus[]
@@ -83,7 +83,7 @@ export default function Orders() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Pesanan & peserta"
-        description="Cari pesanan, cek status pembayaran dan struk, lalu kelola dari panel detail."
+        description="Cari pesanan, lalu kelola dari panel detailnya."
         actions={
           <>
             <Button variant="outline" size="lg" onClick={() => void exportCsv('attendees')} disabled={eventId === 'ALL' || !!busy} title={eventId === 'ALL' ? 'Pilih satu event dulu' : undefined}>
@@ -114,7 +114,7 @@ export default function Orders() {
         </div>
       </div>
 
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]" role="group" aria-label="Filter status">
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] md:flex-wrap md:overflow-visible" role="group" aria-label="Filter status">
         <FilterChip active={status === 'ALL'} onClick={() => setQuery({ status: null })} count={all.length}>
           Semua
         </FilterChip>
@@ -159,7 +159,8 @@ export default function Orders() {
                     </TableCell>
                     <TableCell>
                       <div className="max-w-44 truncate font-medium">{r.order.buyerName}</div>
-                      <div className="text-xs text-muted-foreground tabular-nums">{r.order.buyerPhone}</div>
+                      {/* the full number is one tap away in the detail panel, not on a screen others can read over a shoulder */}
+                      <div className="text-xs text-muted-foreground tabular-nums">{maskPhone(r.order.buyerPhone)}</div>
                     </TableCell>
                     <TableCell>
                       <div className="max-w-56 truncate">{sessionLabel(r.session)}</div>
@@ -248,11 +249,15 @@ function FilterChip({ active, onClick, count, children }: { active: boolean; onC
   )
 }
 
-/** The order, its receipts and the panitia's actions, in the side panel. Shared with the dashboard's table. */
-export function OrderDetailPanel({ row }: { row: OrderRow }) {
+/**
+ * The order, its receipts and the panitia's actions, in the side panel. Shared with the dashboard's table, whose
+ * "Tandai lunas" opens it with the confirmation already up (`askPaid`).
+ */
+export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askPaid?: boolean }) {
   const { order, event, session, category, receipts } = row
   const [busy, setBusy] = useState<null | 'paid' | 'cancel'>(null)
   const [askCancel, setAskCancel] = useState(false)
+  const [askPay, setAskPay] = useState(askPaid && order.status === 'AWAITING_PAYMENT' && !order.simulated)
   const free = order.paymentMethod === 'FREE' || (order.totalAmount === 0 && category.accessMethod !== 'RECEIPT')
 
   const markPaid = async () => {
@@ -260,6 +265,7 @@ export function OrderDetailPanel({ row }: { row: OrderRow }) {
     try {
       await api.admin.markPaid(order.id)
       toast.success(free ? `Pesanan ${order.code} dikonfirmasi. E-ticket terbit.` : `Pesanan ${order.code} ditandai lunas. E-ticket terbit.`)
+      setAskPay(false)
     } catch (e) {
       toast.error(errorMessage(e))
     } finally {
@@ -378,14 +384,14 @@ export function OrderDetailPanel({ row }: { row: OrderRow }) {
 
         {order.simulated && ACTIVE.includes(order.status) && (
           <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-            Pesanan ini dibuat tombol demo “Simulasikan pembeli lain”. Kursinya lepas otomatis saat waktu tahan habis, jadi tidak perlu diproses.
+            Pesanan ini dibuat tombol demo pembeli lain. Kursinya lepas sendiri saat waktu tahan habis, jadi tidak perlu diproses.
           </p>
         )}
 
         {ACTIVE.includes(order.status) && !order.simulated && (
           <div className="flex flex-col gap-2 border-t pt-4">
             {order.status === 'AWAITING_PAYMENT' && (
-              <Button size="lg" className="h-11" onClick={() => void markPaid()} disabled={!!busy}>
+              <Button size="lg" className="h-11" onClick={() => setAskPay(true)} disabled={!!busy}>
                 {busy === 'paid' ? <LoaderCircle className="animate-spin" /> : <CircleCheck />} {free ? 'Konfirmasi pendaftaran' : 'Tandai lunas'}
               </Button>
             )}
@@ -396,6 +402,26 @@ export function OrderDetailPanel({ row }: { row: OrderRow }) {
           </div>
         )}
       </div>
+
+      {/* a ticket issued without money is hard to take back: say what happens before it does */}
+      <Dialog open={askPay} onOpenChange={(o) => busy !== 'paid' && setAskPay(o)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{free ? `Konfirmasi ${order.code}?` : `Tandai ${order.code} lunas?`}</DialogTitle>
+            <DialogDescription>
+              E-ticket untuk {seatSummary(order.items)} langsung terbit.{free ? '' : ' Pastikan pembayarannya sudah masuk.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="lg" onClick={() => setAskPay(false)} disabled={busy === 'paid'}>
+              Batal
+            </Button>
+            <Button size="lg" onClick={() => void markPaid()} disabled={busy === 'paid'}>
+              {busy === 'paid' && <LoaderCircle className="animate-spin" />} {free ? 'Ya, konfirmasi' : 'Ya, tandai lunas'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={askCancel} onOpenChange={(o) => busy !== 'cancel' && setAskCancel(o)}>
         <DialogContent className="sm:max-w-sm">

@@ -5,7 +5,7 @@
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router'
 import { CheckCheck, Clock3 } from 'lucide-react'
-import { api } from '@/api'
+import { api, ApiError } from '@/api'
 import type { AppNotification, User } from '@/domain/types'
 import { BackHeader } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
@@ -39,7 +39,7 @@ export default function Message() {
     return (
       <div>
         <BackHeader to="/app/inbox" title="Pesan" />
-        <LoadError error={notes.error ?? new Error('Pesan ini tidak ada di akunmu.')} onRetry={notes.error ? notes.reload : undefined} backTo="/app/inbox" backLabel="Kembali ke Pesan" />
+        <LoadError error={notes.error ?? new ApiError('NOT_FOUND', 'Pesan tidak ditemukan. Pastikan kamu masuk dengan nomor HP yang sama.')} onRetry={notes.error ? notes.reload : undefined} backTo="/app/inbox" backLabel="Kembali ke Pesan" />
       </div>
     )
   }

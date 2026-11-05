@@ -54,23 +54,27 @@ export function createHttpApi(baseUrl: string): Api {
     } catch {
       throw new ApiError('OFFLINE', 'Tidak terhubung ke server. Cek koneksi internet lalu coba lagi.')
     }
-    if (res.status === 401 && roleForPath(path) !== 'VISITOR') {
-      // token no longer accepted (server secret rotated, data reset elsewhere): log in again on next load
-      store(TOKEN_KEY(roleForPath(path)), null)
-      store(USER_KEY(roleForPath(path)), null)
-    }
     if (!res.ok) {
       let code = `HTTP_${res.status}`
       let message = 'Terjadi kesalahan di server.'
+      let details: unknown
       try {
         const j = (await res.json()) as { code?: string; message?: string; details?: unknown }
         code = j.code ?? code
         message = j.message ?? message
-        throw new ApiError(code, message, j.details)
-      } catch (e) {
-        if (e instanceof ApiError) throw e
-        throw new ApiError(code, message)
+        details = j.details
+      } catch {
+        /* not JSON: keep the generic message */
       }
+      // The session is no longer accepted (it ran out, or the data was reset elsewhere): sign out on this phone too, so
+      // the screens offer the way in instead of failing on every request. A wrong password elsewhere is not that.
+      const role = roleForPath(path)
+      if (res.status === 401 && token && (role !== 'VISITOR' || code === 'NEED_LOGIN')) {
+        store(TOKEN_KEY(role), null)
+        store(USER_KEY(role), null)
+        listeners.forEach((l) => l())
+      }
+      throw new ApiError(code, message, details)
     }
     if (res.status === 204) return undefined as T
     return (await res.json()) as T
@@ -78,6 +82,14 @@ export function createHttpApi(baseUrl: string): Api {
 
   const listeners = new Set<() => void>()
   let pollId: ReturnType<typeof setInterval> | null = null
+  const refreshAll = () => listeners.forEach((l) => l())
+  // a page in the background (another tab, the phone locked) skips its polls; back on screen it catches up at once
+  const hidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden'
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (!hidden() && listeners.size) refreshAll()
+    })
+  }
 
   const api: Api = {
     mode: 'http',
@@ -193,8 +205,10 @@ export function createHttpApi(baseUrl: string): Api {
 
     subscribe(listener) {
       listeners.add(listener)
-      // MVP: poll every 3 s (PRD §8); SSE can replace this later without touching the UI.
-      pollId ??= setInterval(() => listeners.forEach((l) => l()), 3000)
+      // MVP: poll every 3 s (PRD §8), only while the page is on screen; SSE can replace this later without touching the UI.
+      pollId ??= setInterval(() => {
+        if (!hidden()) refreshAll()
+      }, 3000)
       return () => {
         listeners.delete(listener)
         if (!listeners.size && pollId) {

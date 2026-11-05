@@ -110,10 +110,10 @@ export default function RolePicker() {
 
   const stickers: StickerSpec[] = [
     { node: <Illustration name="kursi" className="w-full" />, label: 'Stiker kursi', size: 12 },
-    { kind: 'burst', text: 'hayu!', label: 'Stiker "hayu!"' },
+    { kind: 'burst', text: 'ayo!', label: 'Stiker "ayo!"' },
     { node: <Illustration name="tiket" className="w-full" />, label: 'Stiker tiket', size: 12 },
     { node: <Illustration name="camera" className="w-full" />, label: 'Stiker kamera', size: 12 },
-    { kind: 'bubble', text: 'sampurasun', label: 'Stiker "sampurasun"' },
+    { kind: 'bubble', text: 'halo!', label: 'Stiker "halo!"' },
     { node: <Illustration name="coins" className="w-full" />, label: 'Stiker koin', size: 12 },
   ]
 

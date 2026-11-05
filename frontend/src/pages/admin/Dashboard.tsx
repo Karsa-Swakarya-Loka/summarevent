@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ORDER_STATUS_LABEL, ORDER_TONE, orderStatusLabel, type Tone } from '@/domain/labels'
+import { ORDER_STATUS_LABEL, ORDER_TONE, orderStatusLabel } from '@/domain/labels'
 import type { OrderStatus } from '@/domain/types'
 import { errorMessage, useLive } from '@/hooks/useLive'
 import { fmtDateTime, fmtRange, fmtShortDate, rupiahPlain } from '@/lib/format'
@@ -47,7 +47,7 @@ export default function Dashboard() {
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1 basis-full sm:basis-auto">
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Selamat datang, {firstName}</h1>
-          <LiveIndicator at={s?.generatedAt} everySec={5} className="mt-0.5" />
+          <LiveIndicator at={s?.generatedAt} className="mt-0.5" />
         </div>
         <EventSwitcher ctx={ctx} variant="pill" className="min-w-0 flex-1 sm:flex-none" />
         <Button asChild size="lg" className="h-10">
@@ -72,8 +72,8 @@ export default function Dashboard() {
 
       <section aria-label="Ringkasan angka" className="mt-4 grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatTile icon={<Users />} label="Pendaftar" value={s?.registrants} hint="akun dengan pesanan aktif" loading={loading} />
-        <StatTile icon={<Ticket />} label="Tiket terjual" value={s?.ticketsSold} hint={s ? `${s.transactions.CONFIRMED} pesanan terkonfirmasi` : undefined} loading={loading} />
-        <StatTile icon={<Wallet />} label="Pendapatan" value={s ? rupiahPlain(s.revenue) : undefined} hint="QRIS & VA (simulasi)" loading={loading} />
+        <StatTile icon={<Ticket />} label="Total tiket terjual" value={s?.ticketsSold} hint={s ? `${s.transactions.CONFIRMED} pesanan terkonfirmasi` : undefined} loading={loading} />
+        <StatTile icon={<Wallet />} label="Total pendapatan" value={s ? rupiahPlain(s.revenue) : undefined} hint="QRIS & VA (simulasi)" loading={loading} />
         <StatTile
           icon={<ReceiptText />}
           label="Struk menunggu"
@@ -122,15 +122,18 @@ function RangeTabs({ value, onChange, id }: { value: Range; onChange: (r: Range)
   )
 }
 
-/** "+14,8%" against the same number of days before; nothing when there is nothing to compare with. */
-function DeltaChip({ now, before, suffix = '' }: { now: number; before: number; suffix?: string }) {
+/** "+14% vs 7 hari sebelumnya": against the same number of days before, said out loud; nothing when there is nothing to compare with. */
+function DeltaChip({ now, before, days }: { now: number; before: number; days: Range }) {
   if (!before) return null
   const pct = Math.round(((now - before) / before) * 100)
   const tone = pct > 0 ? 'bg-brand-soft text-[#0b6b35]' : pct < 0 ? 'bg-status-invalid/10 text-[#a11b1b]' : 'bg-card text-muted-foreground ring-1 ring-foreground/[0.06]'
   return (
-    <span className={cn('rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums', tone)} title={`Dibanding ${suffix || 'periode sebelumnya'}`}>
-      {pct > 0 ? '+' : ''}
-      {pct.toLocaleString('id-ID')}%
+    <span className="inline-flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+      <span className={cn('rounded-md px-1.5 py-0.5 font-semibold tabular-nums', tone)}>
+        {pct > 0 ? '+' : ''}
+        {pct.toLocaleString('id-ID')}%
+      </span>
+      vs {days} hari sebelumnya
     </span>
   )
 }
@@ -159,12 +162,6 @@ function sumRange(daily: EventStats['daily'], days: Range, key: 'revenue' | 'tic
   return { now, before }
 }
 
-function occupancy(pct: number): { tone: Tone; label: string } {
-  if (pct >= 90) return { tone: 'invalid', label: 'Hampir penuh' }
-  if (pct >= 70) return { tone: 'warn', label: 'Mulai padat' }
-  return { tone: 'valid', label: 'Aman' }
-}
-
 /** The reference's "Recent hires": the event's sessions, four at a time, each with its seats and attendance. */
 function SessionsCard({ s, eventId, loading }: { s?: EventStats; eventId: string; loading: boolean }) {
   const [page, setPage] = useState(0)
@@ -183,13 +180,14 @@ function SessionsCard({ s, eventId, loading }: { s?: EventStats; eventId: string
         </Button>
       </div>
       {loading ? (
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-24 rounded-xl bg-track" />
           ))}
         </div>
       ) : sessions.length ? (
-        <ul className="mt-4 grid grid-cols-2 gap-3">
+        // two tiles a row only where both fit their numbers and badge; a phone stacks them
+        <ul className="mt-4 grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
           {shown.map((x) => (
             <li key={x.session.id}>
               <SessionTile s={x} eventId={eventId} />
@@ -212,8 +210,6 @@ function SessionsCard({ s, eventId, loading }: { s?: EventStats; eventId: string
 }
 
 function SessionTile({ s, eventId }: { s: SessionStats; eventId: string }) {
-  const occ = occupancy(s.occupancyPct)
-  const soldPct = s.capacity ? Math.round((s.sold / s.capacity) * 100) : 0
   return (
     <Link to={`/admin/live?event=${eventId}&session=${s.session.id}`} className="block rounded-xl bg-card p-3 shadow-[0_1px_2px_rgb(35_31_32/0.05)] transition hover:shadow-[0_6px_18px_-8px_rgb(35_31_32/0.3)] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
       <div className="flex items-center gap-2.5">
@@ -222,17 +218,19 @@ function SessionTile({ s, eventId }: { s: SessionStats; eventId: string }) {
         </span>
         <span className="min-w-0 leading-tight">
           <span className="block truncate text-sm font-semibold">{s.session.label ?? 'Sesi'}</span>
-          <span className="block truncate text-xs text-muted-foreground">{s.session.demoLive ? 'Selalu berlangsung' : fmtRange(s.session.startAt, s.session.endAt)}</span>
+          <span className="block truncate text-xs text-muted-foreground">{s.session.demoLive ? 'Berlangsung' : fmtRange(s.session.startAt, s.session.endAt)}</span>
         </span>
       </div>
       <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg bg-panel px-2.5 py-1.5 text-xs">
-        <span className="tabular-nums">
-          <span className="font-semibold">{s.sold}</span>
-          <span className="text-muted-foreground">
-            /{s.capacity} terjual · {soldPct}%
+        {/* the count over its word, so the tile never cuts "terjual" next to the badge */}
+        <span className="leading-tight tabular-nums">
+          <span className="block font-semibold">
+            {s.sold}
+            <span className="font-normal text-muted-foreground">/{s.capacity}</span>
           </span>
+          <span className="block text-muted-foreground">terjual</span>
         </span>
-        <StatusBadge tone={occ.tone}>Hadir {s.checkedIn}</StatusBadge>
+        <StatusBadge tone={s.checkedIn ? 'valid' : 'neutral'}>Hadir {s.checkedIn}</StatusBadge>
       </div>
     </Link>
   )
@@ -246,7 +244,7 @@ function RevenueCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   return (
     <Card label="Pendapatan per hari">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <Headline label={`Pendapatan ${RANGES.find((r) => r.days === range)?.label.toLowerCase()}`} value={sum.now} format={rupiahPlain} beside={<DeltaChip now={sum.now} before={sum.before} suffix={`${range} hari sebelumnya`} />} loading={loading} width="w-40" />
+        <Headline label={`Pendapatan ${RANGES.find((r) => r.days === range)?.label.toLowerCase()}`} value={sum.now} format={rupiahPlain} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} width="w-40" />
         <RangeTabs id="rev" value={range} onChange={setRange} />
       </div>
       <div className="mt-4 flex min-h-56 flex-1 flex-col">{loading ? <Skeleton className="flex-1 rounded-xl bg-track" /> : <RevenueBars rows={rows} className="flex-1" />}</div>
@@ -262,7 +260,7 @@ function TicketsCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   return (
     <Card label="Tiket terjual per hari">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <Headline label="Tiket terjual" value={sum.now} beside={<DeltaChip now={sum.now} before={sum.before} suffix={`${range} hari sebelumnya`} />} loading={loading} />
+        <Headline label={`Tiket terjual ${RANGES.find((r) => r.days === range)?.label.toLowerCase()}`} value={sum.now} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} />
         <RangeTabs id="tix" value={range} onChange={setRange} />
       </div>
       <div className="mt-4 flex min-h-48 flex-1 flex-col">{loading ? <Skeleton className="flex-1 rounded-xl bg-track" /> : <TicketsArea rows={rows} className="flex-1" />}</div>
@@ -346,6 +344,8 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
   const [category, setCategory] = useState('ALL')
   const [page, setPage] = useState(0)
   const [openId, setOpenId] = useState<string | null>(null)
+  // "Tandai lunas" on a row opens the order with its confirmation up; "Detail" just opens it
+  const [askPaid, setAskPaid] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
 
   const all = useMemo(() => (rows.data ?? []).filter((r) => !r.order.simulated).sort((a, b) => b.order.createdAt.localeCompare(a.order.createdAt)), [rows.data])
@@ -450,7 +450,10 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
               </TableHeader>
               <TableBody>
                 {slice.map((r) => (
-                  <TableRow key={r.order.id} className="cursor-pointer" onClick={() => setOpenId(r.order.id)}>
+                  <TableRow key={r.order.id} className="cursor-pointer" onClick={() => {
+                    setAskPaid(false)
+                    setOpenId(r.order.id)
+                  }}>
                     <TableCell className="pl-5">
                       <span className="flex items-center gap-2.5">
                         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-[#0b6b35]" aria-hidden>
@@ -485,10 +488,11 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
                         className="h-9 bg-card"
                         onClick={(e) => {
                           e.stopPropagation()
+                          setAskPaid(r.order.status === 'AWAITING_PAYMENT' && !r.order.simulated)
                           setOpenId(r.order.id)
                         }}
                       >
-                        {r.order.status === 'AWAITING_PAYMENT' ? 'Tandai lunas' : 'Detail'}
+                        {r.order.status === 'AWAITING_PAYMENT' && !r.order.simulated ? 'Tandai lunas' : 'Detail'}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -499,7 +503,10 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
           <ul className="flex flex-col divide-y md:hidden" aria-label="Pesanan terbaru">
             {slice.map((r) => (
               <li key={r.order.id}>
-                <button type="button" onClick={() => setOpenId(r.order.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-muted">
+                <button type="button" onClick={() => {
+                    setAskPaid(false)
+                    setOpenId(r.order.id)
+                  }} className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-muted">
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-[#0b6b35]" aria-hidden>
                     {r.order.buyerName[0]}
                   </span>
@@ -543,7 +550,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
       )}
 
       <Sheet open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-md">{open ? <OrderDetailPanel row={open} /> : <SheetTitle className="sr-only">Detail pesanan</SheetTitle>}</SheetContent>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-md">{open ? <OrderDetailPanel key={open.order.id} row={open} askPaid={askPaid} /> : <SheetTitle className="sr-only">Detail pesanan</SheetTitle>}</SheetContent>
       </Sheet>
     </section>
   )

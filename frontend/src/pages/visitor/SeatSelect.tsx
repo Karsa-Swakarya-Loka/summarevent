@@ -4,7 +4,7 @@ import { BellRing, ChevronRight, FlaskConical, Gift, Hourglass, LoaderCircle, Tr
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { CategoryAvailability, SeatMapData } from '@/api/contract'
-import { BackHeader, Countdown, SundaLabel } from '@/components/common/bits'
+import { BackHeader, Countdown } from '@/components/common/bits'
 import { DoubleBookingButton } from '@/components/common/DoubleBookingInfo'
 import { SeatMap } from '@/components/seatmap/SeatMap'
 import { CategoryLegend, StatusLegend } from '@/components/seatmap/SeatLegend'
@@ -13,9 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError, QtyStepper } from '@/components/visitor/Common'
-import { continuePath, isPendingOrder, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen } from '@/components/visitor/helpers'
+import { continuePath, isPendingOrder, pendingTitle, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
-import { ORDER_STATUS_LABEL } from '@/domain/labels'
 import { saleState, seatLabel } from '@/domain/rules'
 import type { Seat, SeatStatus, TicketCategory } from '@/domain/types'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
@@ -124,7 +123,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
     [categories, data.quotas, data.sessionSeats],
   )
   const catAvail = category ? availability.find((a) => a.categoryId === category.id) : undefined
-  // PV-14: a sold-out category offers the waiting list instead of "Hayu ngiring"
+  // PV-14: a sold-out category offers the waiting list instead of the order button
   const soldOut = !!category && !!catAvail && catAvail.total > 0 && catAvail.available === 0
   const waitingCount = category ? (data.waitlist.find((w) => w.categoryId === category.id)?.waiting ?? 0) : 0
   const bonusLeft = category ? (data.bonus.find((b) => b.categoryId === category.id)?.left ?? 0) : 0
@@ -204,7 +203,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
       toast.info(
         qty >= max
           ? `Maksimal ${max} kursi per pesanan. Ketuk kursi pilihanmu dulu untuk melepasnya.`
-          : `Kamu sudah memilih ${qty} kursi untuk ${qty} orang. Tambah “Jumlah orang” dulu, atau ketuk kursi pilihanmu untuk melepasnya.`,
+          : `Sudah ${qty} kursi untuk ${qty} orang. Tambah jumlah orang dulu, atau ketuk kursi pilihanmu untuk melepasnya.`,
       )
       return
     }
@@ -288,8 +287,8 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
   }
 
   /**
-   * Demo for judges on one device: the simulated buyer presses "Hayu ngiring" for your first
-   * seat a split second before you do, so the real conflict path (message + nearest seats) shows.
+   * Demo for judges on one device: the simulated buyer orders your first seat a split second
+   * before you do, so the real conflict path (message + nearest seats) shows.
    */
   const raceDemo = async () => {
     if (!category || !selected.length) return
@@ -297,7 +296,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
     holdingRef.current = true
     try {
       const res = await api.demo.fakeBuyer(sessionId, category.id, selected.slice(0, 1))
-      toast(`Pembeli lain (simulasi) menekan Hayu ngiring untuk ${naturalSeats(res.seatLabels)} sepersekian detik lebih dulu.`)
+      toast(`Pembeli lain (simulasi) memesan ${naturalSeats(res.seatLabels)} sepersekian detik lebih dulu.`)
     } catch (e) {
       holdingRef.current = false
       toast.error(errorMessage(e))
@@ -343,6 +342,8 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
   const total = category ? category.price * count : 0
   const totalText = !category ? '' : category.accessMethod === 'FREE' ? 'Gratis' : rupiahPlain(total)
   const holdMin = category?.accessMethod === 'RECEIPT' ? rules.receiptHoldMin : rules.paymentHoldMin
+  // what the hold is for, so "ditahan" is not read as already held
+  const holdFor = category?.accessMethod === 'RECEIPT' ? 'kirim struk' : category?.accessMethod === 'FREE' ? 'konfirmasi' : 'bayar'
   const summary = soldOut && category
     ? `${category.name} habis`
     : !category
@@ -365,7 +366,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
       : isGeneral
         ? `Tanpa nomor kursi · ditahan ${holdMin} menit`
         : count
-          ? `Ditahan ${holdMin} menit`
+          ? `Ditahan ${holdMin} menit untuk ${holdFor}`
           : 'Ketuk kursi di denah'
   const generalShort = isGeneral && catAvail && !soldOut ? catAvail.available < qty : false
   const canHold = !!category && !closedReason && !pending && (isGeneral ? !generalShort && qty >= 1 : selected.length > 0) && busy !== 'hold'
@@ -391,7 +392,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
             <span className="min-w-0 flex-1 text-sm">
               <span className="block font-bold">Kamu masih punya pesanan di sesi ini</span>
               <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                {ORDER_STATUS_LABEL[pending.order.status]} · <Countdown to={pending.order.holdExpiresAt} className="text-xs" />
+                {pendingTitle(pending)} · <Countdown to={pending.order.holdExpiresAt} className="text-xs" />
               </span>
             </span>
             <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
@@ -446,7 +447,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
                     className="inline-flex h-11 min-w-0 items-center gap-1.5 rounded-full border border-dashed border-ink/30 bg-card px-3 text-xs font-semibold shadow-xs hover:bg-muted disabled:opacity-60"
                   >
                     {busy === 'fake' ? <LoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden /> : <FlaskConical className="size-4 shrink-0" aria-hidden />}
-                    Simulasikan pembeli lain
+                    Uji pembeli lain
                   </button>
                 )
               }
@@ -531,7 +532,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
           ) : (
             <Button className="h-14 flex-1 gap-2 text-base" disabled={!canHold} onClick={() => void hold()}>
               {busy === 'hold' && <LoaderCircle className="size-5 animate-spin" aria-hidden />}
-              <SundaLabel k="join" />
+              {isGeneral ? `Pesan ${qty} tiket` : selected.length ? `Pesan ${selected.length} kursi` : 'Pesan kursi'}
             </Button>
           )}
         </div>

@@ -118,7 +118,8 @@ const CSS =
   '.ssf-notch button{position:relative;z-index:1;flex:1 1 0;min-height:44px;min-width:7.5rem;padding:0 18px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;color:var(--ssf-ink);transition:color .3s}' +
   '.ssf-notch button[aria-selected="true"]{color:var(--ssf-paper)}' +
   '.ssf-notch-pill{position:absolute;z-index:0;top:5px;bottom:6px;left:5px;width:calc((100% - 12px) / 2);border-radius:999px;background:var(--ssf-ink);transition:transform .5s cubic-bezier(.2,1.2,.3,1)}' +
-  '.ssf-slides{position:relative;z-index:2;flex:1 1 0;min-height:300px;display:grid;grid-auto-flow:column;grid-auto-columns:100%;padding-top:64px;transition:transform .65s cubic-bezier(.2,.9,.2,1)}' +
+  // the stickers stand up off the wordmark, so the slides end a little above it: nothing they hold sits under a sticker
+  '.ssf-slides{position:relative;z-index:2;flex:1 1 0;min-height:300px;display:grid;grid-auto-flow:column;grid-auto-columns:100%;padding-top:64px;padding-bottom:clamp(20px,4.6svh,44px);transition:transform .65s cubic-bezier(.2,.9,.2,1)}' +
   '.ssf-slide{min-width:0;min-height:0;height:100%}' +
   // the wordmark stage
   '.ssf-stage{position:relative;z-index:1;margin-top:auto;width:min(100%,calc(var(--ssf-wmh) * var(--ssf-ar)));align-self:center;padding:0 clamp(6px,.8cqw,12px)}' +
@@ -208,7 +209,7 @@ const stickerArt = (kind: StickerKind, text?: string): { shape: React.ReactNode;
           <>
             <path d={BURST} fill="#f26f22" />
             <path d={starPath(13, 44, 33, 60, 60, 0.2, 4)} fill="#f9a61b" />
-            <ScriptText text={text ?? 'hayu!'} cx={60} cy={58} w={62} color="#231f20" stroke={3.4} />
+            <ScriptText text={text ?? 'ayo!'} cx={60} cy={58} w={62} color="#231f20" stroke={3.4} />
           </>
         ),
       }

@@ -69,7 +69,7 @@ await page.waitForTimeout(800)
 await shot(page, '02-scanner')
 
 // 3. Demo tools: sample ticket → VALID
-await page.getByRole('button', { name: /Alat bantu demo/ }).click()
+await page.getByRole('button', { name: /Alat demo/ }).click()
 await shot(page, '03-scanner-demo-open')
 await page.getByRole('button', { name: 'Ambil tiket contoh' }).click()
 const sample = await resultOf(page)
@@ -135,7 +135,7 @@ await page.getByLabel('Kode tiket, kode pesanan, nomor HP, atau nama').fill('zzq
 await page.getByText(/Tidak ada tiket/).waitFor()
 await shot(page, '12-search-empty')
 
-// 9b. Rina's own phone after the gate: her tickets are used and Pass Saya says "Hatur nuhun!" (PRD §1)
+// 9b. Rina's own phone after the gate: her tickets are used and Pass Saya thanks her for coming
 await page.goto(BASE + '/', { waitUntil: 'networkidle' })
 await toPoster(page, 'Pengunjung')
 await page.getByRole('button', { name: /masuk cepat sebagai Rina/ }).click()
@@ -143,14 +143,14 @@ await page.waitForURL(/\/app\/pass/)
 const thanks = page.getByRole('region', { name: 'Sudah check-in' })
 const thanked = await thanks.waitFor({ timeout: 8000 }).then(() => true, () => false)
 console.log('visitor thanks:', thanked ? (await thanks.innerText()).replace(/\s+/g, ' ') : 'missing')
-check(thanked && (await thanks.getByText('Hatur nuhun!').count()) > 0 && (await thanks.getByText('Terima kasih').count()) > 0, 'Pass Saya Rina tidak menampilkan "Hatur nuhun!" + "Terima kasih" setelah check-in')
+check(thanked && (await thanks.getByText('Terima kasih sudah datang').count()) > 0, 'Pass Saya Rina tidak menampilkan "Terima kasih sudah datang" setelah check-in')
 await shot(page, '12b-visitor-thanks')
 
 // 10. Session not open yet → OUTSIDE_WINDOW
 await page.goto(BASE + '/staff/scan/ses_sk_13', { waitUntil: 'networkidle' })
 await page.waitForTimeout(800)
 const demoBtn = page.getByRole('button', { name: 'Ambil tiket contoh' })
-if (!(await demoBtn.count())) await page.getByRole('button', { name: /Alat bantu demo/ }).click()
+if (!(await demoBtn.count())) await page.getByRole('button', { name: /Alat demo/ }).click()
 await page.getByRole('button', { name: 'Ambil tiket contoh' }).click()
 const early = await resultOf(page)
 console.log('ses_sk_13 →', early)

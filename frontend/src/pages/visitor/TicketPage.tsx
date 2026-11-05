@@ -1,11 +1,11 @@
 /**
- * One e-ticket on its own screen (PV-10): the black Talón ticket, its QR one tap away, its stub to pull, and the other
- * tickets of the same order one swipe of the arrows away.
+ * One e-ticket on its own screen (PV-10): the black Talón ticket, its QR one tap away, and the other tickets of the same
+ * order one tap of the arrows away.
  */
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { ChevronLeft, ChevronRight, Maximize2, Sun } from 'lucide-react'
-import { api } from '@/api'
+import { ChevronLeft, ChevronRight, Maximize2, ShieldAlert, Sun } from 'lucide-react'
+import { api, ApiError } from '@/api'
 import { BackHeader } from '@/components/common/bits'
 import { QrCode } from '@/components/common/QrCode'
 import { Button } from '@/components/ui/button'
@@ -28,7 +28,7 @@ export default function TicketPage() {
   if (tickets.loading && !tickets.data) return <PageSkeleton hero />
   if (!tickets.data) return <LoadError error={tickets.error} onRetry={tickets.reload} backTo="/app/pass" backLabel="Kembali ke Pass Saya" />
   const item = tickets.data.find((it) => it.ticket.id === ticketId)
-  if (!item) return <LoadError error={new Error('E-ticket ini tidak ada di akunmu.')} backTo="/app/pass" backLabel="Kembali ke Pass Saya" />
+  if (!item) return <LoadError error={new ApiError('NOT_FOUND', 'E-ticket tidak ditemukan. Pastikan kamu masuk dengan nomor HP pemesan.')} backTo="/app/pass" backLabel="Kembali ke Pass Saya" />
 
   const id = item.ticket.id
   const active = item.ticket.status === 'ACTIVE'
@@ -70,7 +70,9 @@ export default function TicketPage() {
             <Button className="mt-6 h-14 w-full max-w-[24rem] gap-2 text-base" onClick={() => setZoom(true)} aria-label={`Perbesar QR tiket ${item.ticket.code}`}>
               <Maximize2 className="size-5" /> Perbesar QR
             </Button>
-            <p className="mt-3 text-sm text-muted-foreground">Tarik talonnya ke bawah</p>
+            <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
+              <ShieldAlert className="size-4 shrink-0" aria-hidden /> Jangan unggah foto QR ini ke media sosial.
+            </p>
           </>
         )}
       </div>

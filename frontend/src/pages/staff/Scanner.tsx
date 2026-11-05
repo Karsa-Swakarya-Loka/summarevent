@@ -149,7 +149,7 @@ export default function Scanner() {
       {/* Camera or fallback */}
       <div className="relative min-h-0 flex-1">
         {problem ? (
-          <CameraFallback problem={problem} sessionId={sessionId} onRetry={retryCamera} onSubmit={run} pending={checkin.pending} />
+          <CameraFallback problem={problem} onRetry={retryCamera} onSubmit={run} pending={checkin.pending} />
         ) : (
           <CameraView key={cameraKey} onToken={onCameraToken} onProblem={onProblem} />
         )}
@@ -283,13 +283,11 @@ function DarkShell({ children, onPointerDown }: { children: ReactNode; onPointer
 
 function CameraFallback({
   problem,
-  sessionId,
   onRetry,
   onSubmit,
   pending,
 }: {
   problem: CameraProblem
-  sessionId: string
   onRetry: () => void
   onSubmit: (token: string) => void
   pending: boolean
@@ -304,22 +302,12 @@ function CameraFallback({
           <p className="mt-2 text-base text-white/80">{text.body}</p>
         </div>
         <PasteForm onSubmit={onSubmit} pending={pending} className="w-full text-left" />
-        <div className="grid w-full grid-cols-2 gap-3">
-          {problem !== 'insecure-context' && problem !== 'unsupported' && (
-            <button type="button" onClick={onRetry} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-white/12 text-lg font-bold ring-1 ring-white/25">
-              <RotateCcw className="size-5" aria-hidden /> Coba lagi
-            </button>
-          )}
-          <Link
-            to={`/staff/search/${sessionId}`}
-            className={cn(
-              'flex h-14 items-center justify-center gap-2 rounded-2xl bg-white text-lg font-bold text-ink',
-              (problem === 'insecure-context' || problem === 'unsupported') && 'col-span-2',
-            )}
-          >
-            <Search className="size-5" aria-hidden /> Cari manual
-          </Link>
-        </div>
+        {/* Cari manual is in the bar below, on every state of this screen */}
+        {problem !== 'insecure-context' && problem !== 'unsupported' && (
+          <button type="button" onClick={onRetry} className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white/12 text-lg font-bold ring-1 ring-white/25">
+            <RotateCcw className="size-5" aria-hidden /> Coba lagi
+          </button>
+        )}
       </div>
     </div>
   )
@@ -435,16 +423,14 @@ function BottomBar({
           <Search className="size-5" aria-hidden /> Cari manual
         </Link>
         <button type="button" onClick={toggle} aria-expanded={open} aria-controls="demo-tools" className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-white/12 text-lg font-bold ring-1 ring-white/25">
-          <FlaskConical className="size-5" aria-hidden /> Alat bantu demo
+          <FlaskConical className="size-5" aria-hidden /> Alat demo
           <ChevronDown className={cn('size-5', open && 'rotate-180')} aria-hidden />
         </button>
       </div>
 
       {open && (
-        <section id="demo-tools" aria-label="Alat bantu demo" className="mt-3 rounded-2xl bg-white/5 p-3 ring-1 ring-white/15">
-          <p className="text-sm text-white/80">
-            Untuk juri tanpa HP kedua: tiket dari data demo diperiksa lewat alur check-in yang sama dengan kamera.
-          </p>
+        <section id="demo-tools" aria-label="Alat demo" className="mt-3 rounded-2xl bg-white/5 p-3 ring-1 ring-white/15">
+          <p className="text-sm text-white/80">Tanpa HP kedua: tiket contoh diperiksa lewat alur check-in yang sama dengan kamera.</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button type="button" className={tool} disabled={disabled} onClick={() => void demo('session')}>
               <Shuffle className="size-5 shrink-0" aria-hidden /> Ambil tiket contoh

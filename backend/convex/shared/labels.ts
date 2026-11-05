@@ -115,16 +115,6 @@ export const CHECKIN_TONE: Record<CheckinResult, Tone> = {
   OUTSIDE_WINDOW: 'warn',
 }
 
-/** Sundanese microcopy with the Indonesian meaning (PRD §1). Checked by a native speaker before submit. */
-export const SUNDA = {
-  welcome: { su: 'Wilujeng sumping!', id: 'Selamat datang' },
-  join: { su: 'Hayu ngiring', id: 'Ayo ikut' },
-  ready: { su: 'Tos siap!', id: 'Sudah siap' },
-  enter: { su: 'Mangga lebet', id: 'Silakan masuk' },
-  invalid: { su: 'Punten, tiket teu valid', id: 'Maaf, tiket tidak valid' },
-  thanks: { su: 'Hatur nuhun!', id: 'Terima kasih' },
-} as const
-
 /**
  * Category colours offered in the admin wizard: tuned to sit with the Summarecon green, orange and yellow, and none of
  * them a status colour.

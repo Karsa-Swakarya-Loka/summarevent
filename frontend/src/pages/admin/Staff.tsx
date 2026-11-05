@@ -8,13 +8,12 @@ import { toast } from 'sonner'
 import { api, ApiError } from '@/api'
 import type { StaffAccount } from '@/api/contract'
 import { Field, ListSkeleton, LoadError, PageHeader, SectionCard } from '@/components/admin/AdminUi'
-import { fmtClock } from '@/components/admin/lib'
 import { EmptyState, StatusBadge } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { errorMessage, useLive } from '@/hooks/useLive'
 import { profileChanges } from '@/domain/rules'
-import { fmtShortDate, isValidPhone, normalizePhone } from '@/lib/format'
+import { fmtShortDate, fmtTime, isValidPhone, normalizePhone } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 export default function Staff() {
@@ -67,7 +66,7 @@ export default function Staff() {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <PageHeader title="Petugas" description="Akun untuk scan QR di pintu masuk dan verifikasi struk di desk. Setiap scan tercatat atas nama petugasnya." />
+      <PageHeader title="Petugas" description="Akun untuk scan QR di pintu dan cek struk di desk. Setiap scan tercatat atas nama petugasnya." />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <SectionCard title={`${list.length} akun petugas`} description={staff.data ? `${active} aktif` : undefined}>
           {staff.error && !staff.data ? (
@@ -99,7 +98,7 @@ export default function Staff() {
                         <StatusBadge tone={s.active ? 'valid' : 'neutral'}>{s.active ? 'Aktif' : 'Nonaktif'}</StatusBadge>
                       </span>
                       <span className="block text-xs text-muted-foreground tabular-nums">
-                        {s.phone} · {s.scans} tiket dipindai{s.lastScanAt ? ` · scan terakhir ${fmtShortDate(s.lastScanAt)} ${fmtClock(s.lastScanAt)}` : ''}
+                        {s.phone} · {s.scans} tiket dipindai{s.lastScanAt ? ` · scan terakhir ${fmtShortDate(s.lastScanAt)} ${fmtTime(s.lastScanAt)}` : ''}
                       </span>
                     </span>
                     <Button variant="outline" size="lg" onClick={() => void toggle(s)} disabled={busy === s.id}>
@@ -112,7 +111,7 @@ export default function Staff() {
           )}
         </SectionCard>
 
-        <SectionCard title="Tambah petugas" description="Petugas masuk dengan email dan kata sandi; undangan untuk membuat kata sandi dikirim ke emailnya.">
+        <SectionCard title="Tambah petugas" description="Undangan untuk membuat kata sandi dikirim ke email petugas.">
           <form onSubmit={(e) => void add(e)} className="flex flex-col gap-3" noValidate>
             <Field id="staff-name" label="Nama" error={error?.name}>
               <Input id="staff-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Petugas Pintu Selatan" className="h-10" aria-invalid={!!error?.name} />

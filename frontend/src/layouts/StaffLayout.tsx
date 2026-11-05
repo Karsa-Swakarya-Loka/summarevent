@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router'
-import { api } from '@/api'
-import { DemoMenu } from '@/components/common/DemoMenu'
+import { useAccount } from '@/hooks/useLive'
 import { onboardingDone } from '@/lib/intro'
 import { useNavStack } from '@/lib/navStack'
 
@@ -11,7 +10,7 @@ import { useNavStack } from '@/lib/navStack'
  * this device) or the sign-in, and back to the page afterwards.
  */
 export function StaffLayout() {
-  const [user] = useState(() => api.currentUser('STAFF'))
+  const user = useAccount('STAFF')
   const { pathname, search } = useLocation()
   useNavStack()
   const scanning = pathname.startsWith('/staff/scan/')
@@ -32,7 +31,6 @@ export function StaffLayout() {
       <div className="mx-auto min-h-dvh w-full max-w-md bg-background">
         <Outlet />
       </div>
-      {!scanning && <DemoMenu className="bottom-4 left-4" />}
     </div>
   )
 }

@@ -2,7 +2,7 @@
  * Checkout (PV-06 … PV-10) in two steps: masuk, then bayar, kirim struk or konfirmasi gratis. The slip on top says what
  * is being ordered, the hold countdown rides in the app bar, and the step's one action waits at the bottom of the screen.
  */
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { Check, Copy, FlaskConical, Landmark, LoaderCircle, QrCode, UserRound } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
@@ -22,7 +22,7 @@ import { StatusHero } from '@/components/visitor/StatusHero'
 import { seatRangeLabel } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import type { AccessMethod, OrderItem, User } from '@/domain/types'
-import { errorMessage, useLive, useNow } from '@/hooks/useLive'
+import { errorMessage, useLive } from '@/hooks/useLive'
 import { maskPhone, rupiahPlain } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -55,10 +55,27 @@ type MethodKey = PaymentRequest['method']
 const TITLE: Record<AccessMethod, string> = { PAID: 'Pembayaran', RECEIPT: 'Tukar struk', FREE: 'Pendaftaran' }
 const LAST_STEP: Record<AccessMethod, string> = { PAID: 'Bayar', RECEIPT: 'Kirim struk', FREE: 'Konfirmasi' }
 
+/**
+ * True once `iso` has passed. It wakes the screen once at that moment instead of every second, so the form (and the QR
+ * on it) is not drawn again sixty times a minute on the visitor's phone; the countdown in the app bar ticks on its own.
+ */
+function usePassed(iso: string): boolean {
+  const at = new Date(iso).getTime()
+  // the moment last seen as passed; a later hold (a new order on the same screen) starts unpassed again
+  const [passedAt, setPassedAt] = useState(() => (at <= Date.now() ? at : null))
+  useEffect(() => {
+    const left = at - Date.now()
+    // browsers cap a timer near 24.8 days; a hold is minutes, so this is only a guard
+    const t = window.setTimeout(() => setPassedAt(at), Math.max(0, Math.min(left + 50, 2 ** 31 - 1)))
+    return () => window.clearTimeout(t)
+  }, [at])
+  return passedAt === at
+}
+
 function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: User | null; onLogin: () => void }) {
   const navigate = useNavigate()
-  const now = useNow(1000)
   const { order, event, session, category } = detail
+  const holdPassed = usePassed(order.holdExpiresAt)
   const access = category.accessMethod
   const seatPath = `/app/e/${event.slug}/s/${session.id}`
   const statusPath = `/app/orders/${order.id}`
@@ -73,7 +90,7 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
   const payKey = useRef<string | null>(null)
 
   const pending = order.status === 'AWAITING_PAYMENT' || order.status === 'AWAITING_VERIFICATION'
-  const expired = order.status === 'EXPIRED' || (pending && new Date(order.holdExpiresAt).getTime() <= now.getTime())
+  const expired = order.status === 'EXPIRED' || (pending && holdPassed)
   const receiptsInReview = order.status === 'AWAITING_VERIFICATION' && detail.receipts.some((r) => r.status === 'PENDING')
 
   if (!expired && (!pending || receiptsInReview)) return <Navigate to={statusPath} replace />
@@ -146,7 +163,7 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
     setBusy('expire')
     try {
       await api.demo.expireHold(order.id)
-      toast('Waktu tahan habis (simulasi).', { description: `${what} kembali tersedia.` })
+      toast('Waktu tahan habis (simulasi).')
     } catch (e) {
       toast.error(errorMessage(e))
     } finally {
@@ -389,7 +406,7 @@ function QrisBox({ detail }: { detail: OrderDetail }) {
       </div>
       <div className="min-w-0">
         <SimTag />
-        <p className="mt-2 leading-snug font-bold">Pindai pakai e-wallet atau m-banking</p>
+        <p className="mt-2 leading-snug font-bold">Pindai dengan e‑wallet atau m‑banking</p>
         <p className="mt-1 text-xs text-muted-foreground">Summarevent · SUMMABA</p>
       </div>
     </div>

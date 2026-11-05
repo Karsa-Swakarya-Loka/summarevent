@@ -116,7 +116,7 @@ const cards = [
     tone: 'yellow',
     kicker: 'E-ticket',
     title: 'Satu QR untuk <em>tiap</em> kursi',
-    sub: 'Tiket hitam dengan talon yang bisa disobek, tersimpan di Pass Saya.',
+    sub: 'Tiket hitam per kursi, tersimpan di Pass Saya. Talonnya robek saat dipindai.',
     sticker: { name: 'tiket', style: 'left:-16px;top:650px;transform:rotate(-10deg)' },
     alt: 'Satu QR untuk tiap kursi: e-ticket hitam kursi G5 dengan QR dan talon, di dalam HP',
     shot: () =>
@@ -143,7 +143,7 @@ const cards = [
         // the sample ticket is picked at random; a seat number reads better on a poster than "Tanpa nomor kursi"
         for (let i = 0; i < 8; i++) {
           const sample = page.getByRole('button', { name: 'Ambil tiket contoh' })
-          if (!(await sample.isVisible())) await page.getByRole('button', { name: /Alat bantu demo/ }).click()
+          if (!(await sample.isVisible())) await page.getByRole('button', { name: /Alat demo/ }).click()
           await sample.click()
           const result = page.locator('section[data-result]')
           await result.waitFor()

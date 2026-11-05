@@ -34,6 +34,7 @@ export const TEAM: TeamMember[] = [
     role: 'user testing & UX',
     ink: '#ff8fb3',
     icon: 'smiley',
+    photo: '/tim/shelvia.webp',
   },
   {
     name: 'Awwal',

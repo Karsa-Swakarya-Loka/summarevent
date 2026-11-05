@@ -69,7 +69,7 @@ import type {
   User,
   WaitlistEntry,
 } from '@/domain/types'
-import { fmtRange, fmtShortDate, fmtTime, isValidPhone, normalizePhone, rupiahPlain, wibDate } from '@/lib/format'
+import { csvCell, fmtRange, fmtShortDate, fmtTime, isValidPhone, normalizePhone, rupiahPlain, wibDate } from '@/lib/format'
 import {
   clearClientSessions,
   clearDb,
@@ -415,7 +415,7 @@ async function confirmOrder(db: Db, order: Order, method: PaymentMethod, now: Da
     kind: 'ORDER_CONFIRMED',
     orderId: order.id,
     title: 'Pesanan terkonfirmasi',
-    body: `Tos siap! Tiket ${event.title} (${when}), ${where}, sudah aktif. Tunjukkan QR di Pass Saya saat masuk.`,
+    body: `Tiket ${event.title} (${when}), ${where}, sudah aktif. Tunjukkan QR di Pass Saya saat masuk.`,
     createdAt: now.toISOString(),
     scheduledFor: null,
   })
@@ -435,7 +435,7 @@ async function confirmOrder(db: Db, order: Order, method: PaymentMethod, now: Da
       userId: order.userId,
       channel: 'WA',
       kind: 'REMINDER',
-      title: 'Pengingat H-1 (terjadwal)',
+      title: 'Pengingat H-1',
       orderId: order.id,
       body: `Besok ${fmtTime(session.startAt)} WIB: ${event.title} di ${venueOf(db, event.venueId).name}. Check-in dibuka ${event.rules.checkinOpenMin} menit sebelum mulai.`,
       createdAt: now.toISOString(),
@@ -571,11 +571,6 @@ function assertHoldActive(order: Order, now: Date) {
   if (order.status === 'EXPIRED' || new Date(order.holdExpiresAt) <= now) {
     throw new ApiError('HOLD_EXPIRED', 'Waktu habis, kursi sudah dilepas. Silakan pesan ulang.')
   }
-}
-
-function csvCell(v: unknown): string {
-  const s = v == null ? '' : String(v)
-  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
 function slugify(s: string): string {

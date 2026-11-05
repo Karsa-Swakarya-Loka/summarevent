@@ -82,3 +82,15 @@ export function normalizePhone(input: string): string {
 export function isValidPhone(p: string): boolean {
   return /^08\d{8,11}$/.test(p)
 }
+
+/**
+ * One CSV cell. Quoted when it holds a quote, comma, semicolon or line break. A text that starts like a formula
+ * (= + - @, a tab or a carriage return) gets an apostrophe in front, so a name a visitor typed such as `=HYPERLINK(…)`
+ * stays text when the panitia opens the file in Excel or Google Sheets (CSV injection). Numbers stay numbers.
+ */
+export function csvCell(v: unknown): string {
+  if (typeof v === 'number') return String(v)
+  let s = v == null ? '' : String(v)
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`
+  return /[",;\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}

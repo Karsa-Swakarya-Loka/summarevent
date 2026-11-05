@@ -10,7 +10,8 @@ import { BrandAppIcon } from '@/components/common/Brand'
 import { DemoMenu } from '@/components/common/DemoMenu'
 import { Poster } from '@/components/common/Poster'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { useLive } from '@/hooks/useLive'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { useAccount, useLive } from '@/hooks/useLive'
 import { onboardingDone } from '@/lib/intro'
 import { cn } from '@/lib/utils'
 
@@ -42,7 +43,7 @@ export function AdminLayout() {
   const open = openOn === pathname
   const setOpen = (v: boolean | ((o: boolean) => boolean)) => setOpenOn((typeof v === 'function' ? v(open) : v) ? pathname : null)
   const [palette, setPalette] = useState(false)
-  const [user] = useState(() => api.currentUser('ADMIN'))
+  const user = useAccount('ADMIN')
 
   // pages load only once signed in, so the backend never sees a request without a token
   const pending = useLive(() => api.admin.listReceipts('PENDING').then((r) => r.length), [], { enabled: !!user })
@@ -97,7 +98,6 @@ export function AdminLayout() {
     api.logout('ADMIN')
     navigate('/')
   }
-  const firstName = user.name.replace(/\s*\(demo\)\s*$/i, '').split(' ')[0]
   const crumbs = crumbsFor(pathname)
 
   const sidebar = (
@@ -107,7 +107,7 @@ export function AdminLayout() {
       <button type="button" onClick={() => setPalette(true)} className="flex h-11 items-center gap-2.5 rounded-xl bg-panel px-3 text-left text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground">
         <Search className="size-4 shrink-0" aria-hidden />
         <span className="flex-1">Cari cepat</span>
-        <kbd className="rounded-md bg-card px-1.5 py-0.5 font-sans text-[0.68rem] font-semibold text-muted-foreground ring-1 ring-foreground/10">⌘K</kbd>
+        <kbd className="rounded-md bg-card px-1.5 py-0.5 font-sans text-[0.68rem] font-semibold text-muted-foreground ring-1 ring-foreground/10 pointer-coarse:hidden">⌘K</kbd>
       </button>
 
       <nav className="flex flex-col gap-0.5" aria-label="Menu panitia">
@@ -132,6 +132,8 @@ export function AdminLayout() {
       </nav>
 
       <div className="mt-auto flex flex-col gap-2">
+        {/* the demo shortcuts sit in the sidebar (the drawer on a phone), never floating over a table or a form */}
+        <DemoMenu variant="row" />
         <button type="button" onClick={signOut} className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition hover:bg-panel hover:text-foreground">
           <LogOut className="size-[1.125rem]" aria-hidden /> Keluar
         </button>
@@ -151,7 +153,7 @@ export function AdminLayout() {
         <button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-panel" onClick={() => setOpen((v) => !v)} aria-label={open ? 'Tutup menu' : 'Buka menu'} aria-expanded={open}>
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
-        <Breadcrumb crumbs={crumbs} firstName={firstName} compact />
+        <Breadcrumb crumbs={crumbs} compact />
         <button type="button" onClick={() => setPalette(true)} className="ml-auto flex size-11 items-center justify-center rounded-xl hover:bg-panel" aria-label="Cari cepat">
           <Search className="size-5" />
         </button>
@@ -161,15 +163,16 @@ export function AdminLayout() {
         </Link>
       </header>
       {open && (
-        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-label="Menu panitia">
+        // under the bar, so its X stays in sight and closes the drawer where it opened it
+        <div className="fixed inset-x-0 top-14 bottom-0 z-40 lg:hidden" role="dialog" aria-label="Menu panitia">
           <button type="button" className="absolute inset-0 bg-ink/40" onClick={() => setOpen(false)} aria-label="Tutup menu" />
-          <div className="absolute inset-y-3 left-3 w-[18rem] max-w-[calc(100%-1.5rem)] animate-slide-in rounded-2xl bg-card shadow-2xl [--slide-from:-24px]">{sidebar}</div>
+          <div className="absolute inset-y-3 left-3 w-[18rem] max-w-[calc(100%-1.5rem)] animate-slide-in overflow-y-auto rounded-2xl bg-card shadow-2xl [--slide-from:-24px]">{sidebar}</div>
         </div>
       )}
 
       <div className="min-w-0 lg:flex lg:flex-col">
         <div className="hidden items-center gap-3 px-1 pt-1 pb-4 lg:flex">
-          <Breadcrumb crumbs={crumbs} firstName={firstName} event={summary} />
+          <Breadcrumb crumbs={crumbs} event={summary} />
           <Link
             to="/admin/receipts"
             className="relative ml-auto flex size-10 items-center justify-center rounded-xl bg-card ring-1 ring-foreground/10 transition hover:bg-panel"
@@ -180,12 +183,14 @@ export function AdminLayout() {
           </Link>
         </div>
         <main className="min-w-0 p-4 pb-24 lg:p-0 lg:pb-16">
-          <Outlet context={ctx} />
+          {/* tooltips are a panitia thing (desktop icon buttons), so their provider lives here, not on a visitor's phone */}
+          <TooltipProvider>
+            <Outlet context={ctx} />
+          </TooltipProvider>
         </main>
       </div>
 
       <CommandPalette open={palette} onOpenChange={setPalette} />
-      <DemoMenu className="right-4 bottom-4" />
     </div>
   )
 }
@@ -200,8 +205,8 @@ function Badge({ n }: { n: number }) {
 
 const Sep = () => <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
 
-/** "Pentas Musikal … › Tim › Dashboard": the event in view, the person, the page, as the reference's team › user › page. */
-function Breadcrumb({ crumbs, firstName, event, compact = false }: { crumbs: Array<{ label: string; to?: string }>; firstName: string; event?: EventSummary; compact?: boolean }) {
+/** "Pentas Musikal … › Pesanan & peserta": the event in view, then the page. */
+function Breadcrumb({ crumbs, event, compact = false }: { crumbs: Array<{ label: string; to?: string }>; event?: EventSummary; compact?: boolean }) {
   return (
     <nav aria-label="Lokasi halaman" className="min-w-0">
       <ol className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
@@ -219,13 +224,6 @@ function Breadcrumb({ crumbs, firstName, event, compact = false }: { crumbs: Arr
                   Summarevent
                 </>
               )}
-            </li>
-            <Sep />
-            <li className="flex items-center gap-1.5">
-              <span className="grid size-5 place-items-center rounded-full bg-brand-yellow text-[0.6rem] font-bold text-ink" aria-hidden>
-                {firstName[0]}
-              </span>
-              {firstName}
             </li>
           </>
         )}

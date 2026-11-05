@@ -39,13 +39,14 @@ Semua pola ada di `scripts/check-no-ai.sh` dan contohnya di `scripts/test-check-
 
 - **Frontend** (`frontend/`): Haikal. **Backend** (Convex, di akun Bintang): Bintang. Jangan mengerjakan bagian orang lain tanpa diminta. Butuh sesuatu dari sisi lain? Tulis kebutuhannya (endpoint, field, env) dan serahkan ke pemiliknya.
 - Batas keduanya adalah kontrak API: [`docs/API-CONTRACT.md`](docs/API-CONTRACT.md) dan `frontend/src/api/contract.ts`. Mengubah kontrak berarti mengubah keduanya dalam satu PR yang disetujui frontend dan backend.
+- Shelvia (user testing), Said (QA), dan Awwal (demo dan pitch) menguji dengan [`docs/PANDUAN-TES.md`](docs/PANDUAN-TES.md). Mengganti nama tombol, akun demo, atau data contoh yang disebut di sana berarti memperbarui panduan itu di PR yang sama.
 
 ## 3. Frontend
 
 - Layar hanya bicara lewat `api` (`src/api/index.ts`), tidak pernah langsung ke storage atau `fetch`.
 - Aturan bisnis yang murni ada di `src/domain/rules.ts`, alur per endpoint di `src/api/mock/adapter.ts`. Aturan baru masuk ke sana dulu, lengkap dengan unit test, baru dipakai layar.
 - Satu kosakata status untuk semua layar: `src/domain/labels.ts`. Jangan menulis label status sendiri.
-- Teks UI berbahasa Indonesia. Microcopy Sunda selalu disertai artinya (`SundaText`).
+- Teks UI berbahasa Indonesia, tanpa bahasa daerah, supaya semua pengunjung paham. Tulis singkat dan langsung ke inti.
 - Target sentuh minimal 44 px, status tidak dibedakan warna saja, dan tampilan dicek di HP 360 px sampai desktop.
 - Tidak ada kode, aset, atau dependency yang tidak dipakai. `npx knip` di `frontend/` membantu menemukannya.
 

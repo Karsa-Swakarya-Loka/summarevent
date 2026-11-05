@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
 import { CircleAlert, Minus, Plus, RefreshCw } from 'lucide-react'
-import { apiMode, DEMO_URL } from '@/api'
+import { ApiError, apiMode, DEMO_URL } from '@/api'
 import { EmptyState } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -74,18 +74,28 @@ export function PageSkeleton({ hero = false }: { hero?: boolean }) {
   )
 }
 
+/**
+ * A screen that could not show its data. Something that does not exist (a wrong link, a ticket of another account) says
+ * so and offers the way back only: trying again would not change it. Anything else can be tried again.
+ */
 export function LoadError({ error, onRetry, backTo = '/app', backLabel = 'Kembali ke Beranda' }: { error: unknown; onRetry?: () => void; backTo?: string; backLabel?: string }) {
   const { pathname } = useLocation()
   // no "back to Beranda" on Beranda itself
   const showBack = pathname.replace(/\/+$/, '') !== backTo.replace(/\/+$/, '')
+  const missing = error instanceof ApiError && error.code === 'NOT_FOUND'
+  // "E-ticket tidak ditemukan. Masuk dengan …": the first sentence is the title, the rest what to do
+  const msg = errorMessage(error)
+  const cut = msg.indexOf('. ')
+  const head = (cut < 0 ? msg : msg.slice(0, cut)).replace(/\.$/, '')
+  const tail = cut < 0 ? '' : msg.slice(cut + 2)
   return (
     <div className="p-4">
       <EmptyState
         icon={<CircleAlert />}
-        title="Data belum bisa dimuat"
+        title={missing ? head : 'Data belum bisa dimuat'}
         action={
           <div className="flex flex-wrap justify-center gap-2">
-            {onRetry && (
+            {onRetry && !missing && (
               <Button variant="outline" className="h-11" onClick={onRetry}>
                 <RefreshCw /> Coba lagi
               </Button>
@@ -104,7 +114,7 @@ export function LoadError({ error, onRetry, backTo = '/app', backLabel = 'Kembal
           </div>
         }
       >
-        {errorMessage(error)}
+        {missing ? tail || 'Link-nya mungkin salah atau sudah tidak berlaku.' : msg}
       </EmptyState>
     </div>
   )

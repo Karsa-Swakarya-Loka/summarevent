@@ -132,7 +132,7 @@ export default function Events() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Event"
-        description="Buat dan kelola event, kategori tiket, denah kursi, dan sesi. Draft belum terlihat oleh pengunjung."
+        description="Kategori, denah, dan sesi tiap event. Draft belum terlihat pengunjung."
         actions={
           <Button size="lg" className="h-11 px-4 text-base" onClick={() => navigate('/admin/events/new')}>
             <CalendarPlus /> Buat event

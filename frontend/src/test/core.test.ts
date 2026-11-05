@@ -12,6 +12,7 @@ import { parseReceiptText } from '@/domain/ocr'
 import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, passwordCheck, posterInk, posterPaletteCheck, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
 import type { EventDraft } from '@/api/contract'
 import { posterColors } from '@/components/common/posterThemes'
+import { layoutScript, stickerSpots } from '@/components/landing/script'
 import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
 import { wibDate } from '@/lib/format'
 
@@ -521,5 +522,34 @@ describe('poster colours (AD-01)', () => {
     await expect(api.admin.createEvent({ ...draft, posterPalette: { bg: 'biru', accent: '#f9a61b' } })).rejects.toMatchObject({ code: 'INVALID', details: { field: 'posterPalette' } })
     const seeded = (await api.admin.listEvents()).find((e) => e.event.id === 'evt_akustik')
     expect(seeded?.event.posterPalette).toEqual({ bg: '#1c2f5e', accent: '#f9a61b' })
+  })
+})
+
+describe('landing wordmark script', () => {
+  it('chains the letters into one stroke, lifts the pen for dots and crosses, and spaces unknown characters', () => {
+    const w = layoutScript('summarevent')
+    expect(w.boxes).toHaveLength(11)
+    expect(w.main.startsWith('M0 -1')).toBe(true)
+    expect(w.main.match(/M/g)).toHaveLength(3) // r and v lift the pen, so the letter after each starts a new stroke
+    expect(w.extra).toHaveLength(1) // the t-cross
+    expect(w.width).toBeGreaterThan(100)
+    expect(w.top).toBeLessThan(-10)
+    const two = layoutScript('Hayu Ngiring!')
+    expect(two.width).toBeGreaterThan(layoutScript('hayungiring!').width)
+    expect(layoutScript('').width).toBe(0)
+  })
+
+  it('spreads the stickers along the word, above the stroke, the same way every time', () => {
+    const w = layoutScript('summarevent')
+    const a = stickerSpots(w, 6, 3)
+    const b = stickerSpots(w, 6, 3)
+    expect(a).toEqual(b)
+    expect(a).toHaveLength(6)
+    for (let i = 1; i < a.length; i++) expect(a[i].x).toBeGreaterThan(a[i - 1].x)
+    for (const s of a) {
+      expect(s.y).toBeLessThanOrEqual(-4)
+      expect(s.y).toBeGreaterThanOrEqual(w.top - 4)
+    }
+    expect(stickerSpots(w, 0)).toEqual([])
   })
 })

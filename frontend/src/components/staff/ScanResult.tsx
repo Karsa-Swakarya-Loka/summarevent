@@ -221,7 +221,7 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
   }
 
   return (
-    <section className={cn('fixed inset-0 z-50 overflow-y-auto', SURFACE[kind])} aria-label="Hasil check-in" data-result={res.result}>
+    <section className={cn('fixed inset-0 z-50 overflow-y-auto', SURFACE[kind])} aria-label="Hasil check-in" data-result={res.result} data-group={group.phase}>
       <div className="mx-auto flex min-h-full w-full max-w-md flex-col px-5 pt-[max(env(safe-area-inset-top),20px)] pb-[max(env(safe-area-inset-bottom),20px)]">
         <div role="alert" aria-live="assertive" aria-atomic="true">
           <div className="flex items-center gap-3">

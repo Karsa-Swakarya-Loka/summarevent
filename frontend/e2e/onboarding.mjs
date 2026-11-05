@@ -16,7 +16,8 @@ const check = (ok, msg) => {
   if (!ok) errors.push(msg)
 }
 const watch = (page, tag) => {
-  page.on('console', (m) => m.type() === 'error' && errors.push(`[${tag}] console: ${m.text()}`))
+  // a 4xx the flow provokes on purpose (the wrong password → 401 BAD_LOGIN) is the backend doing its job
+  page.on('console', (m) => m.type() === 'error' && !/Failed to load resource: the server responded with a status of 4\d\d/.test(m.text()) && errors.push(`[${tag}] console: ${m.text()}`))
   page.on('pageerror', (e) => errors.push(`[${tag}] pageerror: ${e.message}`))
 }
 const shot = (page, name) => page.screenshot({ path: path.join(OUT, `${name}.png`) })

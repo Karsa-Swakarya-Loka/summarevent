@@ -35,5 +35,7 @@ Data di backend di-reset (`POST /demo/reset`) sebelum tiap suite, dan suite `off
 satu request bisa memakan setengah detik lebih, jadi suite menunggu elemen atau kondisinya, bukan jeda tetap; satu
 suite yang dijalankan sendiri (tanpa `run-all`) perlu reset data dulu, karena suite sebelumnya mengubah database bersama.
 
+Host live produksi (`summarevent-live.vercel.app`) adalah deployment yang sama dengan versi demo: `vercel.json` meneruskan `/api/*` di host itu ke Convex, dan `.env.production` menyebut host itu di `VITE_LIVE_HOSTS`, jadi `BASE=https://summarevent-live.vercel.app API_URL=https://good-gnu-186.convex.site/api npm run e2e` menguji produksi live.
+
 Variabel: `BASE` (alamat app, default `http://localhost:5173`), `API_URL` (backend), `E2E_OUT` (folder screenshot,
 default `e2e/out/`, tidak masuk git), `CHROME_PATH` (lokasi Chrome kalau bukan bawaan macOS).

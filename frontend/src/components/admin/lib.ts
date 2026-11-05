@@ -8,6 +8,7 @@ import type { EventStats, EventSummary, ReceiptQueueItem } from '@/api/contract'
 import type { Tone } from '@/domain/labels'
 import type { EventItem, OrderItem, SeatStatus } from '@/domain/types'
 import { fmtDayMonth, fmtShortDate, wibDate, wibTime } from '@/lib/format'
+import { excelCsv } from './csv'
 
 /** The panitia menu: the sidebar, the breadcrumb and the command palette read it. */
 export const ADMIN_NAV = [
@@ -54,10 +55,10 @@ export function publicEventUrl(slug: string): string {
   return `${window.location.origin}/app/e/${slug}`
 }
 
-/** Download a CSV from the API with a UTF-8 BOM so Excel shows "Rp", names, etc. correctly. */
+/** Download a CSV from the API with a UTF-8 BOM so Excel shows names and dashes correctly, made Excel-safe by csv.ts. */
 export async function downloadEventCsv(eventId: string, type: 'attendees' | 'transactions'): Promise<{ filename: string; rows: number }> {
   const { filename, csv } = await api.admin.exportCsv(eventId, type)
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob(['\ufeff' + excelCsv(csv)], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

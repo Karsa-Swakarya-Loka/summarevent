@@ -27,6 +27,7 @@ export const TEAM: TeamMember[] = [
     role: 'backend',
     ink: '#fedc01',
     icon: 'star',
+    photo: '/tim/bintang.webp',
   },
   {
     name: 'Shelvia',
@@ -39,11 +40,13 @@ export const TEAM: TeamMember[] = [
     role: 'product & pitch',
     ink: '#fbf3e4',
     icon: 'bolt',
+    photo: '/tim/awwal.webp',
   },
   {
     name: 'Said',
     role: 'system QA',
     ink: '#8fd0f5',
     icon: 'moon',
+    photo: '/tim/said.webp',
   },
 ]

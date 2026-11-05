@@ -75,7 +75,8 @@ export function BackHeader({ to, title, right, demo = true }: { to: string; titl
   return (
     <div
       className={cn(
-        'sticky top-0 z-20 flex min-h-14 items-center gap-1 bg-background/85 px-1.5 pt-[env(safe-area-inset-top)] backdrop-blur-xl transition-shadow duration-200',
+        // in the visitor app on a laptop it sits under the shell's top bar, which already carries the Demo menu (staff screens keep theirs)
+        'sticky top-0 z-20 flex min-h-14 items-center gap-1 bg-background/85 px-1.5 pt-[env(safe-area-inset-top)] backdrop-blur-xl transition-shadow duration-200 lg:in-data-[shell=visitor]:top-(--spacing-desk-bar)',
         scrolled && 'shadow-[0_1px_0_rgb(0_0_0/0.08)]',
       )}
     >
@@ -84,7 +85,7 @@ export function BackHeader({ to, title, right, demo = true }: { to: string; titl
       </button>
       <div className="min-w-0 flex-1 truncate font-semibold">{title}</div>
       {right}
-      {demo && <DemoMenu variant="bar" />}
+      {demo && <DemoMenu variant="bar" className="lg:in-data-[shell=visitor]:hidden" />}
     </div>
   )
 }

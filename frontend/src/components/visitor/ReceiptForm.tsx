@@ -274,7 +274,7 @@ export function ReceiptForm({
         <section aria-labelledby={`${uid}-meter`} className="relative animate-rise overflow-hidden rounded-[1.4rem] bg-[#ffe7a3] p-4">
           <div className="seat-dots pointer-events-none absolute inset-0 text-ink/[0.07]" aria-hidden />
           <div className="relative">
-            <div className="flex items-baseline justify-between gap-2 text-[0.66rem] font-bold tracking-[0.18em] text-ink/70 uppercase">
+            <div className="flex items-baseline justify-between gap-2 text-xs font-semibold text-ink/70">
               <h2 id={`${uid}-meter`}>Total struk</h2>
               <span>Min {rupiahPlain(rules.minSpend)}</span>
             </div>
@@ -303,7 +303,7 @@ export function ReceiptForm({
 
         {/* no SUMMABA receipt at hand: a filled sample, or a sample photo for the automatic reading */}
         <div className="rounded-2xl border border-dashed border-ink/25 p-1.5">
-          <p className="flex items-center gap-1.5 px-1.5 pt-1 pb-1.5 text-[0.66rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">
+          <p className="flex items-center gap-1.5 px-1.5 pt-1 pb-1.5 text-xs font-semibold text-muted-foreground">
             <FlaskConical className="size-3.5" aria-hidden /> Demo · tanpa struk asli
           </p>
           <div className="grid grid-cols-2 gap-1.5">
@@ -332,7 +332,7 @@ export function ReceiptForm({
             return (
               <li key={d.key} className="animate-rise rounded-[1.4rem] bg-card p-3 shadow-xs">
                 <div className="mb-2 flex min-h-11 items-center justify-between pl-1">
-                  <p className="text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">Struk {i + 1}</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Struk {i + 1}</p>
                   {drafts.length > 1 && (
                     <Button type="button" variant="ghost" className="h-11 text-muted-foreground" onClick={() => setDrafts((ds) => ds.filter((x) => x.key !== d.key))} aria-label={`Hapus struk ${i + 1}`}>
                       <Trash2 /> Hapus
@@ -495,7 +495,7 @@ export function ReceiptForm({
       <BottomBar className="lg:rounded-[1.4rem] lg:bg-card lg:p-4 lg:pl-5 lg:shadow-xs">
         <div className="flex items-center gap-3">
           <p className="min-w-0 flex-1 leading-tight">
-            <span className="block text-[0.66rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">Syarat</span>
+            <span className="block text-xs font-semibold text-muted-foreground">Syarat</span>
             <span className="font-bold tabular-nums">{checks.length ? `${passed}/${allChecks.length} terpenuhi` : '…'}</span>
           </p>
           <Button type="button" className="h-14 shrink-0 px-6 text-base" disabled={!allOk || busy || disabled} onClick={() => void submit()}>

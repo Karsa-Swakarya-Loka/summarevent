@@ -53,11 +53,11 @@ export default function Profile() {
 
         <dl className="grid animate-rise grid-cols-2 gap-3 [animation-delay:60ms]">
           <div className="rounded-[1.4rem] bg-card p-4 shadow-xs">
-            <dt className="text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">Tiket aktif</dt>
+            <dt className="text-xs font-semibold text-muted-foreground">Tiket aktif</dt>
             <dd className="mt-1 font-poster text-[2.4rem] leading-none tabular-nums">{active}</dd>
           </div>
           <div className="rounded-[1.4rem] bg-card p-4 shadow-xs">
-            <dt className="text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">Pesanan</dt>
+            <dt className="text-xs font-semibold text-muted-foreground">Pesanan</dt>
             <dd className="mt-1 font-poster text-[2.4rem] leading-none tabular-nums">{placed}</dd>
           </div>
         </dl>

@@ -518,7 +518,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
             Sisa kuota {category?.name} tinggal {catAvail?.available}. Kurangi jumlah orang.
           </p>
         )}
-        {category?.bonusDesc && !soldOut && bonusLeft > 0 && (
+        {category?.bonusDesc && !soldOut && !conflict && bonusLeft > 0 && (
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
             <Gift className="size-4 shrink-0" aria-hidden /> Bonus {category.bonusDesc} untuk {category.bonusFirstN} tiket pertama · sisa {bonusLeft}
           </p>

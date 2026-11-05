@@ -167,7 +167,7 @@ export default function MyPass() {
 
             {history.length > 0 && (
               <section aria-labelledby="history-title" className="space-y-3">
-                <h2 id="history-title" className="px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
+                <h2 id="history-title" className="px-1 text-sm font-semibold text-muted-foreground">
                   Riwayat
                 </h2>
                 <ul className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
@@ -191,7 +191,7 @@ function MiniTicket({ item, now }: { item: PassItem; now: Date }) {
   const { ticket, event, session, category } = item
   const time = timing(item, now)
   const active = ticket.status === 'ACTIVE' && !time.ended
-  const day = session.demoLive ? 'Hari ini' : fmtDate(session.startAt, { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '')
+  const day = session.demoLive ? 'Hari ini' : fmtDate(session.startAt, { day: 'numeric', month: 'short' })
   const note = ticket.status === 'USED' && ticket.usedAt ? `Masuk ${fmtTime(ticket.usedAt)}` : ticket.status === 'ACTIVE' ? time.text : TICKET_STATUS_LABEL[ticket.status]
   return (
     <article aria-label={`E-ticket ${ticket.seatLabel ? `kursi ${ticket.seatLabel}` : category.name}`}>
@@ -204,7 +204,7 @@ function MiniTicket({ item, now }: { item: PassItem; now: Date }) {
         </span>
         <i className="talon-grain" aria-hidden />
         <span className="relative flex min-w-0 flex-1 flex-col justify-between gap-2.5 pt-9 pr-3 pb-3.5 pl-4">
-          <span className="talon-label truncate">
+          <span className="talon-label line-clamp-2">
             {category.name} · {day} · {fmtTime(session.startAt)}
           </span>
           <span className="line-clamp-2 font-poster text-[1.6rem] leading-[0.92] uppercase">{event.title}</span>

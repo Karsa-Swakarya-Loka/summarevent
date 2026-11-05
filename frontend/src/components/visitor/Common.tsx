@@ -204,11 +204,11 @@ export function SectionTitle({ children, className, right }: { children: ReactNo
   )
 }
 
-/** A section's name as a small tracked label, the way a printed ticket names its fields. */
+/** A section's name as a small muted heading above its card. */
 export function SectionLabel({ id, children, right }: { id?: string; children: ReactNode; right?: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-2 px-1">
-      <h2 id={id} className="text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
+      <h2 id={id} className="text-sm font-semibold text-muted-foreground">
         {children}
       </h2>
       {right}
@@ -219,6 +219,6 @@ export function SectionLabel({ id, children, right }: { id?: string; children: R
 /** Simulation tag – every fake channel/payment is labelled as such. */
 export function SimTag({ className }: { className?: string }) {
   return (
-    <span className={cn('inline-flex items-center rounded-full bg-ink px-2 py-0.5 text-[0.62rem] font-bold tracking-wide text-white uppercase', className)}>Simulasi</span>
+    <span className={cn('inline-flex items-center rounded-full bg-ink px-2 py-0.5 text-[0.68rem] font-semibold text-white', className)}>Simulasi</span>
   )
 }

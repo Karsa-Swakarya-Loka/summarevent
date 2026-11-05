@@ -141,7 +141,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
       {/* the page itself rides up over the poster like a sheet; on a laptop: the event on the left, booking on the right */}
       <div className="relative -mt-7 flex-1 space-y-6 rounded-t-[1.75rem] bg-background px-4 pt-6 pb-6 lg:contents lg:space-y-0">
         <header className="lg:col-start-1 lg:row-start-2">
-          <p className="text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{POSTER_THEMES[event.posterTheme].label}</p>
+          <p className="text-sm font-semibold text-muted-foreground">{POSTER_THEMES[event.posterTheme].label}</p>
           <h1 className="mt-1.5 font-poster text-[2.6rem] leading-[0.92] text-balance uppercase lg:text-[3.5rem]">{event.title}</h1>
           {event.subtitle && <p className="mt-1 text-muted-foreground">{event.subtitle}</p>}
           <ul className="mt-4 divide-y overflow-hidden rounded-[1.4rem] bg-card text-sm shadow-xs lg:mt-6 lg:grid lg:grid-cols-2 lg:divide-x lg:divide-y-0">

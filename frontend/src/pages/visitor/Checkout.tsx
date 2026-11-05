@@ -201,7 +201,7 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
   const footer = (
     <div className="space-y-1 pt-1">
       <div className="flex items-center gap-2 rounded-2xl border border-dashed border-ink/25 p-1.5 pl-3">
-        <span className="flex flex-1 items-center gap-1.5 text-[0.66rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">
+        <span className="flex flex-1 items-center gap-1.5 text-xs font-semibold text-muted-foreground">
           <FlaskConical className="size-3.5" aria-hidden /> Demo
         </span>
         {user && access === 'PAID' && (
@@ -344,7 +344,7 @@ function Progress({ step, last }: { step: 1 | 2; last: string }) {
                 style={{ transform: `scaleX(${done ? 1 : now ? 0.4 : 0})` }}
               />
             </span>
-            <span className={cn('mt-1.5 flex items-center gap-1 text-[0.66rem] font-bold tracking-[0.16em] uppercase', done || now ? 'text-ink' : 'text-muted-foreground')}>
+            <span className={cn('mt-1.5 flex items-center gap-1 text-xs font-semibold', done || now ? 'text-ink' : 'text-muted-foreground')}>
               {done ? <Check className="size-3.5 animate-pop" aria-hidden /> : <span aria-hidden>{n}</span>}
               {title}
               {done && <span className="sr-only">(selesai)</span>}
@@ -451,7 +451,7 @@ function VaBox({ phone }: { phone: string }) {
   return (
     <div className="rounded-[1.4rem] bg-card p-4 shadow-xs">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[0.66rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">Nomor VA · Bank Simulasi</span>
+        <span className="text-xs font-semibold text-muted-foreground">Nomor VA · Bank Simulasi</span>
         <SimTag />
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">

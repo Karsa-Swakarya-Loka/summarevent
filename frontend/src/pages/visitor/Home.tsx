@@ -399,7 +399,7 @@ function SpotCard({ e, now }: { e: EventSummary; now: Date }) {
       <DateTile iso={e.event.startAt} className="absolute top-3 left-3" />
       <span className="absolute top-3 right-3 rounded-full bg-white px-3 py-1.5 text-xs font-extrabold text-ink shadow-md">{priceHint(e.categories)}</span>
       <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-        <p className="truncate text-[0.66rem] font-bold tracking-[0.18em] text-white/80 uppercase">
+        <p className="truncate text-xs font-semibold text-white/80">
           {POSTER_THEMES[e.event.posterTheme].label}
           {av ? ` · ${av.label}` : ''}
         </p>
@@ -423,7 +423,7 @@ function EventCard({ e, now, today = false }: { e: EventSummary; now: Date; toda
         <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} image={e.event.posterImage} title={e.event.title} bare className="absolute inset-0 transition-transform duration-500 ease-(--ease-soft) group-hover:scale-105" />
       </div>
       <div className="min-w-0 flex-1 py-0.5">
-        <p className="text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{POSTER_THEMES[e.event.posterTheme].label}</p>
+        <p className="text-xs font-semibold text-muted-foreground">{POSTER_THEMES[e.event.posterTheme].label}</p>
         <h3 className="mt-0.5 leading-snug font-bold text-balance">{e.event.title}</h3>
         <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
           <CalendarDays className="size-3.5 shrink-0" aria-hidden /> {dateLabelOf(e, today)}

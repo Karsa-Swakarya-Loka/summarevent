@@ -130,7 +130,7 @@ export default function RolePicker() {
         centre={
           <>
             <CoBrand tone="dark" className="max-sm:hidden" />
-            <BrandLockup className="h-7 sm:hidden" />
+            <BrandLockup className="h-6 min-[400px]:h-7 sm:hidden" />
           </>
         }
         menu={

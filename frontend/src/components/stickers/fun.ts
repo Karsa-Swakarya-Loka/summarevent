@@ -1,4 +1,6 @@
-// fun-isometric kit by Kelvin Adithya (skills.klvn.dev/fun-isometric), MIT License, copied unchanged.
+// fun-isometric kit by Kelvin Adithya (skills.klvn.dev/fun-isometric), MIT License. Changed for phones: stickers paint at
+// most 30 times a second at no more than 2x resolution, and hold still while a finger is down or the page is scrolling,
+// so a swipe or a scroll never waits for a sticker's paint.
 // fun-isometric runtime: slab stickers drawn on canvas, keyed exactly like lottie-web plays After Effects keys.
 
 export type Vec = readonly [number, number]
@@ -640,7 +642,7 @@ export function popBounce(t: number) {
 
 // Lays the entrance over a scene and paints it at the canvas's css size and device resolution
 function present(canvas: HTMLCanvasElement, icon: Icon, sc: Scene, e: number, palette: Palette, css: number) {
-  const dpr = Math.min(3, window.devicePixelRatio || 1)
+  const dpr = Math.min(2, window.devicePixelRatio || 1)
   const px = Math.max(1, Math.round(css * dpr))
   if (canvas.width !== px || canvas.height !== px) canvas.width = canvas.height = px
   const ctx = canvas.getContext('2d')
@@ -675,6 +677,24 @@ export type Player = { stop: () => void; replay: () => void; set: (next: PlayOpt
 type Live = { canvas: HTMLCanvasElement; icon: Icon; o: PlayOptions; pal: Palette; start?: number; seen: number; shown: boolean; css: number; key: string; stop: () => void }
 const live = new Set<Live>()
 let [raf, last] = [0, 0]
+// paint budget: 30 paints a second is smooth for these slow loops and halves the main-thread cost on a phone
+const PAINT_MS = 1000 / 30
+let lastPaint = 0
+// while someone is dragging or the page scrolls, the stickers wait, so the gesture gets every frame
+let pointerDown = 0
+let scrolledAt = 0
+let listening = false
+function listen() {
+  if (listening || typeof window === 'undefined') return
+  listening = true
+  const opts = { capture: true, passive: true } as const
+  window.addEventListener('pointerdown', () => (pointerDown += 1), opts)
+  const up = () => (pointerDown = Math.max(0, pointerDown - 1))
+  window.addEventListener('pointerup', up, opts)
+  window.addEventListener('pointercancel', up, opts)
+  window.addEventListener('scroll', () => (scrolledAt = performance.now()), opts)
+}
+const busy = (now: number) => pointerDown > 0 || now - scrolledAt < 180
 let reduce: MediaQueryList | null | undefined
 const still = () => {
   if (reduce === undefined) reduce = typeof matchMedia === 'undefined' ? null : matchMedia('(prefers-reduced-motion: reduce)')
@@ -693,8 +713,16 @@ function tick(now: number) {
   const dt = last ? Math.min(100, now - last) : 0
   last = now
   if (!clock.paused) clock.frame += (dt / 1000) * FPS * clock.speed
+  if (busy(now) || now - lastPaint < PAINT_MS) {
+    raf = live.size ? requestAnimationFrame(tick) : 0
+    return
+  }
+  lastPaint = now
+  // a page opening with many stickers paints them two at a time, so their first frames never pile into one long task
+  let fresh = 0
   for (const l of live) {
     if (!l.shown) continue
+    if (!l.key && !l.seen && ++fresh > 2) continue
     try {
       if (!l.seen) l.seen = now
       if (l.o.loop === false && l.start === undefined) l.start = clock.frame
@@ -726,6 +754,7 @@ export function play(canvas: HTMLCanvasElement, icon: Icon, opts: PlayOptions = 
   io?.observe(canvas)
   ro?.observe(canvas)
   live.add(l)
+  listen()
   if (!raf) (last = 0), (raf = requestAnimationFrame(tick))
   return {
     stop,

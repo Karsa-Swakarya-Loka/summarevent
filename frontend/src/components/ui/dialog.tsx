@@ -5,6 +5,7 @@ import { cn } from "cn"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { Button } from "@/components/ui/button"
+import { finePointer } from "@/lib/pointer"
 import { XIcon } from "lucide-react"
 
 function Dialog({
@@ -51,6 +52,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onOpenAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
@@ -80,6 +82,13 @@ function DialogContent({
           className
         )}
         {...props}
+        onOpenAutoFocus={(e) => {
+          onOpenAutoFocus?.(e)
+          if (e.defaultPrevented || finePointer()) return
+          // on touch, focusing the first field would open the keyboard before the person chose to type
+          e.preventDefault()
+          sheet.current?.focus({ preventScroll: true })
+        }}
       >
         <span
           aria-hidden

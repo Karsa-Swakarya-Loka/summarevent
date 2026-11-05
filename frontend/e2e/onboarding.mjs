@@ -5,6 +5,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { chromium } from 'playwright-core'
+import { toPoster } from './skip-intro.mjs'
 
 const BASE = process.env.BASE || 'http://localhost:5173'
 const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'onboarding')
@@ -153,6 +154,8 @@ const staff = await staffCtx.newPage()
 watch(staff, 'staff')
 await staff.goto(BASE + '/', { waitUntil: 'networkidle' })
 await staff.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
+// the petugas poster sits elsewhere in the fan: bring it to the centre, then press its action
+await toPoster(staff, 'Petugas')
 await staff.getByRole('button', { name: /Masuk sebagai petugas/ }).click()
 await staff.locator('#splash').waitFor({ timeout: 3000 })
 check(await roleNamed(staff, 'Petugas'), 'splash petugas tidak menyebut perannya')

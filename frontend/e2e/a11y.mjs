@@ -4,7 +4,7 @@
 // Env: BASE (default http://localhost:5173), CHROME_PATH (installed Chrome).
 import { createRequire } from 'node:module'
 import { chromium } from 'playwright-core'
-import { signIn, skipIntro } from './skip-intro.mjs'
+import { signIn, skipIntro, toPoster } from './skip-intro.mjs'
 
 const BASE = process.env.BASE || 'http://localhost:5173'
 const AXE = createRequire(import.meta.url).resolve('axe-core/axe.min.js')
@@ -74,12 +74,14 @@ const rinaAfterCheckin = async (page) => {
   await page.locator('li[data-ticket]').getByRole('button', { name: 'Check-in', exact: true }).first().click()
   await page.locator('section[data-result]').waitFor()
   await page.goto(BASE + '/', { waitUntil: 'networkidle' })
+  await toPoster(page, 'Rina, persona')
   await page.getByRole('button', { name: /masuk cepat sebagai Rina/ }).click()
   await page.getByRole('region', { name: 'Sudah check-in' }).waitFor()
 }
 
 // Rina's Pass Saya, then her first e-ticket on its own screen (the black ticket)
 const rinaPass = async (page) => {
+  await toPoster(page, 'Rina, persona')
   await page.getByRole('button', { name: /masuk cepat sebagai Rina/ }).click()
   await page.locator('article[aria-label^="E-ticket"]').first().waitFor()
 }

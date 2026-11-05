@@ -34,8 +34,7 @@ export type StickerSpec = {
   rotate?: number
 }
 
-export type Line = { label: React.ReactNode; name?: string; onClick?: () => void; to?: string; href?: string; disabled?: boolean }
-export type Column = { tag: string; lines: Line[]; note?: React.ReactNode }
+export type Notch = { tabs: [string, string]; value: 0 | 1; onChange: (i: 0 | 1) => void; label: string }
 
 export interface StickerSlapProps {
   /** The giant script wordmark. Letters a–z, `!` and `.`; anything else is a space. */
@@ -47,7 +46,10 @@ export interface StickerSlapProps {
   /** The info menu in the top-right corner, behind a toggle that morphs between hamburger and close. */
   menu?: React.ReactNode
   menuLabel?: string
-  columns: Column[]
+  /** Two tabs on a notch cut into the panel's top edge, switching what sits above the wordmark. */
+  notch?: Notch
+  /** The upper part of the panel. */
+  children?: React.ReactNode
   stickers: StickerSpec[]
   /** Minimum height. Any definite CSS length. */
   height?: string
@@ -73,7 +75,7 @@ const CSS =
   ':where(.ssf) *,:where(.ssf) *::before,:where(.ssf) *::after{box-sizing:border-box}' +
   ':where(.ssf) button{appearance:none;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer}' +
   ':where(.ssf) a{color:inherit;text-decoration:none}' +
-  ':where(.ssf) ul,:where(.ssf) p,:where(.ssf) h2{margin:0;padding:0;list-style:none;font:inherit}' +
+  ':where(.ssf-top,.ssf-menu) :is(ul,p,h2,dl,dd){margin:0;padding:0;list-style:none;font:inherit}' +
   '.ssf svg{display:block;max-width:none;overflow:visible}' +
   '.ssf :focus-visible{outline:2.5px solid var(--ssf-accent);outline-offset:3px;border-radius:6px}' +
   '.ssf-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}' +
@@ -108,20 +110,16 @@ const CSS =
   '.ssf-mcred dd{margin:0;font-weight:700}' +
   // panel
   '.ssf-panel{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;overflow:hidden;overflow:clip;border-radius:clamp(14px,1.8cqw,24px);background:var(--ssf-panel);color:var(--ssf-cream);transform-origin:50% 100%}' +
-  '.ssf-cols{position:relative;z-index:2;display:grid;grid-template-columns:repeat(var(--ssf-n,3),minmax(0,1fr));gap:clamp(18px,2.6cqw,40px) clamp(16px,2.4cqw,36px);padding:clamp(22px,4.6cqw,64px) clamp(18px,1.8cqw,26px) clamp(16px,2.4cqw,32px)}' +
-  '.ssf-col{display:flex;flex-direction:column;align-items:flex-start;min-width:0}' +
-  '.ssf-tag{display:inline-block;margin-bottom:clamp(10px,1.3cqw,18px);padding:.28em .72em .32em;border-radius:999px;background:var(--ssf-cream);color:var(--ssf-ink);font-size:clamp(12px,1.05cqw,14px);font-weight:700;line-height:1.2;letter-spacing:-.005em}' +
-  '.ssf-big{font-size:clamp(19px,2.1cqw,30px);font-weight:800;line-height:1.16;letter-spacing:-.022em}' +
-  '.ssf-line{display:block;overflow:hidden;overflow:clip;padding:0 .08em .06em;margin:0 -.08em -.06em}' +
-  '.ssf-line>*{display:inline-flex;align-items:center;min-height:44px}' +
-  '.ssf-big a,.ssf-big button{position:relative;text-align:left;transition:color .2s}' +
-  '.ssf-big button:disabled{cursor:progress;opacity:.7}' +
-  '.ssf-big a::after,.ssf-big button::after{content:"";position:absolute;left:0;right:0;bottom:.5em;height:.09em;border-radius:1em;background:currentColor;transform:scaleX(0);transform-origin:100% 50%;transition:transform .45s cubic-bezier(.6,0,.2,1)}' +
-  '.ssf-big a:hover::after,.ssf-big button:hover::after,.ssf-big a:focus-visible::after,.ssf-big button:focus-visible::after{transform:scaleX(1);transform-origin:0 50%}' +
-  '.ssf-big .ssf-dim{font-weight:600;opacity:.78}' +
-  '.ssf-ast{display:inline-block;margin-left:.1em;transition:transform .6s cubic-bezier(.2,1.6,.3,1)}' +
-  '.ssf-big button:hover .ssf-ast,.ssf-big a:hover .ssf-ast{transform:rotate(180deg) scale(1.2)}' +
-  '.ssf-note{margin-top:clamp(8px,1cqw,14px);max-width:34ch;font-size:clamp(12px,.95cqw,14px);line-height:1.45;opacity:.86}' +
+  // the notch: two tabs on a tongue of paper hanging from the frame into the panel, with a pill that slides
+  '.ssf-notch{position:absolute;z-index:5;left:50%;top:0;translate:-50% 0;display:flex;gap:2px;padding:5px 5px 6px;border-radius:0 0 24px 24px;background:var(--ssf-paper)}' +
+  '.ssf-notch::before,.ssf-notch::after{content:"";position:absolute;top:0;width:24px;height:24px}' +
+  '.ssf-notch::before{right:100%;background:radial-gradient(circle at 0 100%,transparent 23.5px,var(--ssf-paper) 24px)}' +
+  '.ssf-notch::after{left:100%;background:radial-gradient(circle at 100% 100%,transparent 23.5px,var(--ssf-paper) 24px)}' +
+  '.ssf-notch button{position:relative;z-index:1;flex:1 1 0;min-height:44px;min-width:7.5rem;padding:0 18px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;color:var(--ssf-ink);transition:color .3s}' +
+  '.ssf-notch button[aria-selected="true"]{color:var(--ssf-paper)}' +
+  '.ssf-notch-pill{position:absolute;z-index:0;top:5px;bottom:6px;left:5px;width:calc((100% - 12px) / 2);border-radius:999px;background:var(--ssf-ink);transition:transform .5s cubic-bezier(.2,1.2,.3,1)}' +
+  '.ssf-slides{position:relative;z-index:2;display:grid;grid-auto-flow:column;grid-auto-columns:100%;padding-top:72px;transition:transform .65s cubic-bezier(.2,.9,.2,1)}' +
+  '.ssf-slide{min-width:0}' +
   // the wordmark stage
   '.ssf-stage{position:relative;z-index:1;margin-top:auto;width:min(100%,calc(var(--ssf-wmh) * var(--ssf-ar)));align-self:center;padding:0 clamp(6px,.8cqw,12px)}' +
   '.ssf-stage-in{position:relative;container-type:inline-size}' +
@@ -142,7 +140,7 @@ const CSS =
   '.ssf-sheen{transform:translateX(-130%);transition:transform 0s}' +
   '.ssf-st-btn:hover .ssf-sheen{transform:translateX(130%);transition:transform .9s cubic-bezier(.4,0,.2,1)}' +
   '.ssf-ring{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:2px solid var(--ssf-cream);opacity:0;pointer-events:none}' +
-  '@container (max-width: 760px){.ssf-cols{grid-template-columns:minmax(0,1fr)}.ssf-top{padding-bottom:18px}.ssf-stage{width:min(165%,calc(var(--ssf-wmh) * var(--ssf-ar)));max-width:none;margin-left:-6%}}' +
+  '@container (max-width: 760px){.ssf-top{padding-bottom:18px}.ssf-slides{padding-top:66px}.ssf-stage{width:min(165%,calc(var(--ssf-wmh) * var(--ssf-ar)));max-width:none;margin-left:-6%}}' +
   '@keyframes ssf-rewrite{0%{stroke-dashoffset:var(--l,120px)}100%{stroke-dashoffset:0}}' +
   '@keyframes ssf-popin{from{opacity:0;transform:translateY(10px) scale(.7) rotate(4deg)}}' +
   // the storyboard: everything above is the finished state; motion only adds the way in
@@ -151,13 +149,11 @@ const CSS =
   '.ssf-stage-in{transform:translateY(calc((1 - var(--ssf-sp,1)) * 18%))}' +
   '.ssf-st{transform:translate(calc(var(--ssf-px,0) * var(--d) * 9px),calc(var(--ssf-py,0) * var(--d) * 6px));transition:transform .7s cubic-bezier(.2,.8,.2,1)}' +
   '.ssf-st.is-drag{transition:none}' +
-  '.ssf:not(.is-in) .ssf-top>*,.ssf:not(.is-in) .ssf-tag,.ssf:not(.is-in) .ssf-line>*,.ssf:not(.is-in) .ssf-note{opacity:0}' +
+  '.ssf:not(.is-in) .ssf-top>*,.ssf:not(.is-in) .ssf-slides{opacity:0}' +
   '.ssf.is-in .ssf-top>*{animation:ssf-fall .8s cubic-bezier(.2,1.3,.3,1) both}' +
   '.ssf.is-in .ssf-top>:nth-child(2){animation-delay:.08s}.ssf.is-in .ssf-top>:nth-child(3){animation-delay:.16s}' +
   '.ssf.is-in .ssf-panel{animation:ssf-grow 1.1s cubic-bezier(.7,0,.2,1) both}' +
-  '.ssf.is-in .ssf-tag{animation:ssf-pop .7s cubic-bezier(.2,1.7,.3,1) both;animation-delay:calc(.45s + var(--c) * .1s)}' +
-  '.ssf.is-in .ssf-line>*{animation:ssf-rise .8s cubic-bezier(.2,.9,.2,1) both;animation-delay:calc(.55s + var(--c) * .1s + var(--i) * .07s)}' +
-  '.ssf.is-in .ssf-note{animation:ssf-fade .7s ease both;animation-delay:calc(.85s + var(--c) * .1s)}' +
+  '.ssf.is-in .ssf-slides{animation:ssf-fade .9s ease both;animation-delay:.5s}' +
   '.ssf .ssf-wm path{stroke-dasharray:var(--l,3000px) calc(var(--l,3000px) + 8px);stroke-dashoffset:calc(var(--l,3000px) + 4px)}' +
   '.ssf:not(.is-in) .ssf-wm path{visibility:hidden}' +
   '.ssf.is-in .ssf-wm path{animation:ssf-write var(--dur) var(--at) cubic-bezier(.55,.1,.35,1) both}' +
@@ -169,8 +165,6 @@ const CSS =
   '@keyframes ssf-write{0%{stroke-dashoffset:calc(var(--l,3000px) + 4px);visibility:visible}100%{stroke-dashoffset:0;visibility:visible}}' +
   '@keyframes ssf-fall{from{opacity:0;transform:translateY(-14px) rotate(-6deg)}}' +
   '@keyframes ssf-grow{0%{clip-path:inset(30% 12% 0 12% round 80px);transform:translateY(40px)}100%{clip-path:inset(0 0 0 0 round 0);transform:none}}' +
-  '@keyframes ssf-pop{0%{opacity:0;transform:scale(.4) rotate(-12deg)}100%{opacity:1;transform:none}}' +
-  '@keyframes ssf-rise{from{opacity:1;transform:translateY(110%)}to{opacity:1;transform:none}}' +
   '@keyframes ssf-fade{from{opacity:0;transform:translateY(8px)}}' +
   '@keyframes ssf-slap{0%{opacity:0;transform:scale(2.1) rotate(24deg) translateY(-30%);filter:blur(1.5px)}55%{opacity:1;transform:scale(.9) rotate(-3deg);filter:none}78%{transform:scale(1.05) rotate(1deg)}100%{opacity:1;transform:none}}' +
   '@keyframes ssf-ring{0%{opacity:0;transform:scale(.3)}40%{opacity:.75}100%{opacity:0;transform:scale(1)}}'
@@ -296,7 +290,8 @@ export function StickerSlap({
   centre,
   menu,
   menuLabel = 'Info dan pengaturan demo',
-  columns,
+  notch,
+  children,
   stickers,
   height = '100svh',
   wordmarkMaxHeight = '50svh',
@@ -520,28 +515,6 @@ export function StickerSlap({
     rootRef.current?.style.setProperty('--ssf-py', '0')
   }
 
-  const line = (l: Line) => {
-    if (l.to)
-      return (
-        <Link to={l.to} aria-label={l.name}>
-          {l.label}
-        </Link>
-      )
-    if (l.href)
-      return (
-        <a href={l.href} aria-label={l.name} target={/^https?:/.test(l.href) ? '_blank' : undefined} rel={/^https?:/.test(l.href) ? 'noopener noreferrer' : undefined}>
-          {l.label}
-        </a>
-      )
-    if (l.onClick)
-      return (
-        <button type="button" onClick={l.onClick} disabled={l.disabled} aria-label={l.name}>
-          {l.label}
-        </button>
-      )
-    return <span className="ssf-dim">{l.label}</span>
-  }
-
   return (
     <section ref={rootRef} className={'ssf' + (seen ? ' is-in' : '') + (className ? ' ' + className : '')} style={style} onPointerMove={onPointer} onPointerLeave={onLeave}>
       <style>{CSS}</style>
@@ -584,23 +557,17 @@ export function StickerSlap({
       </div>
 
       <div className="ssf-panel">
-        {columns.length > 0 && (
-          <div className="ssf-cols" style={{ '--ssf-n': columns.length } as React.CSSProperties}>
-            {columns.map((c, k) => (
-              <div className="ssf-col" key={k} style={{ '--c': k } as React.CSSProperties}>
-                <h2 className="ssf-tag">{c.tag}</h2>
-                <ul className="ssf-big">
-                  {c.lines.map((l, i) => (
-                    <li key={i} className="ssf-line" style={{ '--i': i } as React.CSSProperties}>
-                      {line(l)}
-                    </li>
-                  ))}
-                </ul>
-                {c.note && <p className="ssf-note">{c.note}</p>}
-              </div>
+        {notch && (
+          <div className="ssf-notch" role="tablist" aria-label={notch.label}>
+            <span className="ssf-notch-pill" style={{ transform: `translateX(${notch.value * 100}%)` }} aria-hidden="true" />
+            {notch.tabs.map((t, i) => (
+              <button key={t} type="button" role="tab" aria-selected={notch.value === i} onClick={() => notch.onChange(i as 0 | 1)}>
+                {t}
+              </button>
             ))}
           </div>
         )}
+        {children}
 
         <div className="ssf-stage">
           <div className="ssf-stage-in" ref={stageRef} style={{ marginBottom: round(-((vbH - cutH) / vbW) * 100) + '%' }}>

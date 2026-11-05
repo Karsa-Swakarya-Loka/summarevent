@@ -28,7 +28,7 @@ export default function Profile() {
   const value = (text: string, muted = false) => <span className={`max-w-[55%] truncate text-right text-sm ${muted ? 'text-muted-foreground' : ''}`}>{text}</span>
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-2xl lg:px-4">
       <BackHeader to="/app/akun" title="Profil" />
       <div className="space-y-7 px-4 pt-3 pb-10">
         <header className="flex animate-rise flex-col items-center text-center">

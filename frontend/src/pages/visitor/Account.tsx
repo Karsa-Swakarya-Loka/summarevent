@@ -23,6 +23,11 @@ import type { User } from '@/domain/types'
 import { errorMessage, useLive } from '@/hooks/useLive'
 import { maskPhone } from '@/lib/format'
 import { setOnboardingDone } from '@/lib/intro'
+import { cn } from '@/lib/utils'
+
+/** On a laptop: who it is on a card on the left that stays put, the groups in a column on the right. */
+const PAGE = 'space-y-7 px-4 pt-[max(2.25rem,env(safe-area-inset-top))] pb-6 lg:mx-auto lg:grid lg:w-full lg:max-w-5xl lg:grid-cols-[19rem_minmax(0,1fr)] lg:items-start lg:gap-10 lg:space-y-0 lg:px-8 lg:pt-12'
+const ID_CARD = 'lg:sticky lg:top-[calc(var(--spacing-desk-bar)+3rem)] lg:rounded-[1.75rem] lg:bg-card lg:px-6 lg:py-8 lg:shadow-xs'
 
 export default function Account() {
   const { user, refresh } = useVisitor()
@@ -60,8 +65,8 @@ function SignedOut({ onLogin }: { onLogin: () => void }) {
     }
   }
   return (
-    <div className="space-y-7 px-4 pt-[max(2.25rem,env(safe-area-inset-top))] pb-6">
-      <header className="flex animate-rise flex-col items-center text-center">
+    <div className={PAGE}>
+      <header className={cn('flex animate-rise flex-col items-center text-center', ID_CARD)}>
         <span className="relative grid size-28 place-items-center overflow-hidden rounded-full bg-brand-soft shadow-md ring-4 ring-white">
           <span className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
           <Illustration name="tiket" className="relative w-24" />
@@ -78,20 +83,22 @@ function SignedOut({ onLogin }: { onLogin: () => void }) {
         </div>
       </header>
 
-      <SettingsGroup id="try-title" title="Coba dulu">
-        <SettingsRow
-          icon={<UserRound />}
-          tint="bg-brand-soft text-[#0b6b35]"
-          title="Masuk sebagai Rina (akun contoh)"
-          sub="Akun contoh yang sudah punya tiket"
-          onClick={() => !busy && void loginAsPersona()}
-        />
-      </SettingsGroup>
+      <div className="space-y-7 lg:min-w-0">
+        <SettingsGroup id="try-title" title="Coba dulu">
+          <SettingsRow
+            icon={<UserRound />}
+            tint="bg-brand-soft text-[#0b6b35]"
+            title="Masuk sebagai Rina (akun contoh)"
+            sub="Akun contoh yang sudah punya tiket"
+            onClick={() => !busy && void loginAsPersona()}
+          />
+        </SettingsGroup>
 
-      <SettingsGroup id="pref-title" title="Preferensi">
-        <AppSetupRows />
-        <IntroRow />
-      </SettingsGroup>
+        <SettingsGroup id="pref-title" title="Preferensi">
+          <AppSetupRows />
+          <IntroRow />
+        </SettingsGroup>
+      </div>
     </div>
   )
 }
@@ -112,8 +119,8 @@ function SignedIn({ user, onChange }: { user: User; onChange: () => void }) {
   const list = (orders.data ?? []).filter((d) => !d.order.simulated)
 
   return (
-    <div className="space-y-7 px-4 pt-[max(2.25rem,env(safe-area-inset-top))] pb-6">
-      <header className="flex animate-rise flex-col items-center text-center">
+    <div className={PAGE}>
+      <header className={cn('flex animate-rise flex-col items-center text-center', ID_CARD)}>
         {/* the avatar and name open the profile, like a phone's settings */}
         <Link to="/app/akun/profil" className="flex flex-col items-center rounded-3xl px-4 pt-1 pb-2 transition active:scale-[0.98]">
           <UserAvatar user={user} className="size-24 text-4xl shadow-md ring-4 ring-white" />
@@ -128,104 +135,106 @@ function SignedIn({ user, onChange }: { user: User; onChange: () => void }) {
         </Button>
       </header>
 
-      {!!waitlist.data?.length && (
-        <SettingsGroup id="wl-title" title="Daftar tunggu">
-          {waitlist.data.map((w) => (
-            <SettingsRow
-              key={w.id}
-              icon={<Hourglass />}
-              tint="bg-[#fff1e2] text-[#b4480b]"
-              title={<span className="block truncate">{w.event.title}</span>}
-              sub={
-                <>
-                  <span className="block truncate">
-                    {sessionWhen(w.session)} · {w.category.name} · {w.qty} orang
-                  </span>
-                  <span className="mt-1 block font-semibold">
-                    {w.status === 'NOTIFIED' ? (
-                      <Link to={`/app/e/${w.event.slug}/s/${w.sessionId}?c=${w.categoryId}`} className="text-foreground underline underline-offset-2">
-                        Ada tempat lepas, pesan sekarang
-                      </Link>
-                    ) : (
-                      <span className="text-[#7a5600]">Menunggu, urutan ke-{w.position}</span>
-                    )}
-                  </span>
-                </>
-              }
-              right={
-                w.status === 'WAITING' ? (
-                  <Button variant="ghost" className="h-11 shrink-0 text-muted-foreground" onClick={() => void leave(w.id)}>
-                    Keluar antrean
-                  </Button>
-                ) : null
-              }
-            />
-          ))}
-        </SettingsGroup>
-      )}
-
-      {orders.loading && !orders.data ? (
-        <div className="space-y-2" role="status" aria-busy="true" aria-label="Memuat pesanan">
-          {[0, 1].map((i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-2xl" />
-          ))}
-        </div>
-      ) : orders.error && !orders.data ? (
-        <LoadError error={orders.error} onRetry={orders.reload} />
-      ) : !list.length ? (
-        <EmptyState
-          icon={<Illustration name="kursi" className="w-28" />}
-          title="Belum ada pesanan"
-          action={
-            <Button asChild className="h-11">
-              <Link to="/app">Cari event</Link>
-            </Button>
-          }
-        />
-      ) : (
-        <SettingsGroup id="orders-title" title="Pesanan">
-          {list.map((d) => {
-            const seats = d.order.items.map((i) => i.seatLabel).filter((x): x is string => !!x)
-            return (
+      <div className="space-y-7 lg:min-w-0">
+        {!!waitlist.data?.length && (
+          <SettingsGroup id="wl-title" title="Daftar tunggu">
+            {waitlist.data.map((w) => (
               <SettingsRow
-                key={d.order.id}
-                to={continuePath(d)}
-                icon={<Ticket />}
-                tint="bg-ink/[0.06] text-ink"
-                title={<span className="block truncate">{d.event.title}</span>}
+                key={w.id}
+                icon={<Hourglass />}
+                tint="bg-[#fff1e2] text-[#b4480b]"
+                title={<span className="block truncate">{w.event.title}</span>}
                 sub={
                   <>
                     <span className="block truncate">
-                      {sessionWhen(d.session)} · {d.category.name} · {seats.length ? seatRangeLabel(seats) : `${d.order.qty} orang`}
+                      {sessionWhen(w.session)} · {w.category.name} · {w.qty} orang
                     </span>
-                    <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <StatusBadge tone={ORDER_TONE[d.order.status]}>{orderStatusLabel(d.order.status, d.order.paymentMethod, d.order.totalAmount)}</StatusBadge>
-                      <span className="font-mono text-[0.7rem] whitespace-nowrap">{d.order.code}</span>
+                    <span className="mt-1 block font-semibold">
+                      {w.status === 'NOTIFIED' ? (
+                        <Link to={`/app/e/${w.event.slug}/s/${w.sessionId}?c=${w.categoryId}`} className="text-foreground underline underline-offset-2">
+                          Ada tempat lepas, pesan sekarang
+                        </Link>
+                      ) : (
+                        <span className="text-[#7a5600]">Menunggu, urutan ke-{w.position}</span>
+                      )}
                     </span>
                   </>
                 }
+                right={
+                  w.status === 'WAITING' ? (
+                    <Button variant="ghost" className="h-11 shrink-0 text-muted-foreground" onClick={() => void leave(w.id)}>
+                      Keluar antrean
+                    </Button>
+                  ) : null
+                }
               />
-            )
-          })}
+            ))}
+          </SettingsGroup>
+        )}
+
+        {orders.loading && !orders.data ? (
+          <div className="space-y-2" role="status" aria-busy="true" aria-label="Memuat pesanan">
+            {[0, 1].map((i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+            ))}
+          </div>
+        ) : orders.error && !orders.data ? (
+          <LoadError error={orders.error} onRetry={orders.reload} />
+        ) : !list.length ? (
+          <EmptyState
+            icon={<Illustration name="kursi" className="w-28" />}
+            title="Belum ada pesanan"
+            action={
+              <Button asChild className="h-11">
+                <Link to="/app">Cari event</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <SettingsGroup id="orders-title" title="Pesanan">
+            {list.map((d) => {
+              const seats = d.order.items.map((i) => i.seatLabel).filter((x): x is string => !!x)
+              return (
+                <SettingsRow
+                  key={d.order.id}
+                  to={continuePath(d)}
+                  icon={<Ticket />}
+                  tint="bg-ink/[0.06] text-ink"
+                  title={<span className="block truncate">{d.event.title}</span>}
+                  sub={
+                    <>
+                      <span className="block truncate">
+                        {sessionWhen(d.session)} · {d.category.name} · {seats.length ? seatRangeLabel(seats) : `${d.order.qty} orang`}
+                      </span>
+                      <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <StatusBadge tone={ORDER_TONE[d.order.status]}>{orderStatusLabel(d.order.status, d.order.paymentMethod, d.order.totalAmount)}</StatusBadge>
+                        <span className="font-mono text-[0.7rem] whitespace-nowrap">{d.order.code}</span>
+                      </span>
+                    </>
+                  }
+                />
+              )
+            })}
+          </SettingsGroup>
+        )}
+
+        <EditProfileSheet user={user} open={edit} onOpenChange={setEdit} onSaved={onChange} />
+
+        <SettingsGroup id="pref-title" title="Preferensi">
+          <AppSetupRows />
+          <IntroRow />
+          <SettingsRow
+            danger
+            icon={<LogOut />}
+            title="Keluar dari akun"
+            onClick={() => {
+              api.logout('VISITOR')
+              onChange()
+              toast('Kamu sudah keluar.')
+            }}
+          />
         </SettingsGroup>
-      )}
-
-      <EditProfileSheet user={user} open={edit} onOpenChange={setEdit} onSaved={onChange} />
-
-      <SettingsGroup id="pref-title" title="Preferensi">
-        <AppSetupRows />
-        <IntroRow />
-        <SettingsRow
-          danger
-          icon={<LogOut />}
-          title="Keluar dari akun"
-          onClick={() => {
-            api.logout('VISITOR')
-            onChange()
-            toast('Kamu sudah keluar.')
-          }}
-        />
-      </SettingsGroup>
+      </div>
     </div>
   )
 }

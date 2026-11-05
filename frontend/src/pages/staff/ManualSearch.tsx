@@ -5,14 +5,13 @@ import { api, type TicketSearchRow } from '@/api'
 import { BackHeader, EmptyState, StatusBadge, Swatch } from '@/components/common/bits'
 import { Illustration } from '@/components/common/Illustration'
 import { ScanResult } from '@/components/staff/ScanResult'
-import { unlockAudio } from '@/components/staff/beep'
 import { sessionName, useStaffSession } from '@/components/staff/session'
 import { useCheckin } from '@/components/staff/useCheckin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CHECKIN_RESULT_LABEL, TICKET_STATUS_LABEL, TICKET_TONE } from '@/domain/labels'
 import { errorMessage, useLive } from '@/hooks/useLive'
-import { fmtShortDate, fmtTime, maskPhone } from '@/lib/format'
+import { fmtShortDate, fmtTime, maskPhone, wibDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 function useDebounced<T>(value: T, ms: number): T {
@@ -51,7 +50,7 @@ export default function ManualSearch() {
   const session = ctx.session
 
   return (
-    <div className="pb-24" onPointerDown={unlockAudio}>
+    <div className="pb-24">
       <BackHeader
         to="/staff"
         title={session && ctx.event ? <span className="block truncate text-sm text-muted-foreground">{ctx.event.title} · {sessionName(session)}</span> : undefined}
@@ -71,9 +70,9 @@ export default function ManualSearch() {
       ) : (
         <div className="px-4 pt-1">
           <h1 className="font-poster text-[2.4rem] leading-[0.95] uppercase">Cari tiket manual</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Kalau QR tidak terbaca.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Untuk QR yang tidak terbaca atau HP pengunjung yang mati.</p>
           <form role="search" onSubmit={(e) => e.preventDefault()} className="mt-4">
-            <label htmlFor="ticket-q" className="block px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
+            <label htmlFor="ticket-q" className="block px-1 text-sm font-semibold">
               Kode tiket, kode pesanan, nomor HP, atau nama
             </label>
             <div className="relative mt-2">
@@ -134,10 +133,12 @@ export default function ManualSearch() {
                 {errorMessage(search.error)}
               </EmptyState>
             ) : rows.length === 0 && !stale ? (
-              <Note title={`Tidak ada tiket untuk “${term}”`}>Cek ejaan nama, coba 4 digit terakhir nomor HP, atau minta kode pesanan dari WA/email pengunjung. Pesanan yang belum terkonfirmasi belum punya tiket.</Note>
+              <Note title="Tiket tidak ditemukan">
+                Tidak ada tiket yang cocok dengan “{term}”. Cek ejaan nama, coba 4 digit terakhir nomor HP, atau minta kode pesanan dari WA/email pengunjung. Pesanan yang belum terkonfirmasi belum punya tiket.
+              </Note>
             ) : (
               <>
-                <p className="mb-2 px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{stale ? 'Mencari…' : `${rows.length} tiket ditemukan${rows.length >= 30 ? ' · 30 teratas, perjelas pencarian' : ''}`}</p>
+                <p className="mb-2 px-1 text-sm font-semibold text-muted-foreground">{stale ? 'Mencari…' : `${rows.length} tiket ditemukan${rows.length >= 30 ? ' · 30 teratas, perjelas pencarian' : ''}`}</p>
                 <ul className="space-y-3">
                   {rows.map((row) => (
                     <TicketRow key={row.ticket.id} row={row} sessionId={sessionId} disabled={checkin.pending} onCheckin={() => void checkin.submit(row.ticket.qrToken)} />
@@ -184,7 +185,7 @@ function TicketRow({ row, sessionId, disabled, onCheckin }: { row: TicketSearchR
     <li className="overflow-hidden rounded-[1.4rem] bg-card shadow-xs" data-ticket={ticket.code}>
       <div className="flex items-stretch">
         <div className="flex w-[5.5rem] shrink-0 flex-col items-center justify-center border-r border-dashed border-ink/15 bg-muted/60 px-2 py-3 text-center">
-          <span className="text-[0.62rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">{ticket.seatLabel ? 'Kursi' : 'Area'}</span>
+          <span className="text-xs font-semibold text-muted-foreground">{ticket.seatLabel ? 'Kursi' : 'Area'}</span>
           <span className={cn('mt-0.5 font-poster leading-none', ticket.seatLabel ? 'text-[2rem]' : 'text-base leading-tight uppercase')}>{ticket.seatLabel ?? category.name}</span>
         </div>
         <div className="min-w-0 flex-1 p-3.5">
@@ -197,11 +198,16 @@ function TicketRow({ row, sessionId, disabled, onCheckin }: { row: TicketSearchR
             <Swatch color={category.color} />
             <span className="truncate">{ticket.seatLabel ? category.name : `${order.qty} tiket di pesanan`}</span>
           </p>
-          <p className="truncate text-sm text-muted-foreground">
-            {sessionName(session)} · {fmtShortDate(session.startAt)} {fmtTime(session.startAt)}
-          </p>
-          <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
-            {ticket.code} · {order.code} · {maskPhone(order.buyerPhone)}
+          {ticket.status === 'USED' && ticket.usedAt && <p className="text-sm font-semibold">Masuk {wibDate(new Date(ticket.usedAt)) === wibDate() ? 'jam' : fmtShortDate(ticket.usedAt)} {fmtTime(ticket.usedAt)}</p>}
+          {otherSession && (
+            <p className="text-sm text-muted-foreground">
+              {sessionName(session)} · {fmtShortDate(session.startAt)} {fmtTime(session.startAt)}
+            </p>
+          )}
+          <p className="mt-1 flex flex-wrap gap-x-2 font-mono text-xs text-muted-foreground">
+            <span>{ticket.code}</span>
+            <span>{order.code}</span>
+            <span>{maskPhone(order.buyerPhone)}</span>
           </p>
         </div>
       </div>

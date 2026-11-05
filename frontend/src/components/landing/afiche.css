@@ -1,17 +1,14 @@
 /*
  * Afiche: a fan of tall posters, adapted from «Afiche» by Moxen (moxen.cl/recursos, licence in docs/lisensi/moxen-afiche.txt).
- * Each poster is a composition of shapes, a sticker and one huge word, set in the Summarecon colours and in Anton. The
- * measures use cqw (the poster is its own container), so a poster reads the same at any size. Only transform and
- * opacity animate; Afiche.tsx drives them with springs.
+ * Three posters, one per role, each in one colour that reads against the green panel: cream, ink, amber. Shapes, a
+ * sticker at rest and one huge word in Anton. The measures use cqw (the poster is its own container), so a poster
+ * reads the same at any size. Only transform and opacity animate; Afiche.tsx drives them with springs.
  */
 .af-escena {
   --af-cream: #fbf3e4;
   --af-ink: #231f20;
   --af-green: #006426;
-  --af-deep: #004a1c;
-  --af-orange: #f26f22;
   --af-amber: #f9a61b;
-  --af-yellow: #fedc01;
   --af-shadow: 10, 30, 16;
   --af-curve: cubic-bezier(0.22, 1, 0.36, 1);
   --af-w: 300px;
@@ -41,8 +38,8 @@
   isolation: isolate;
   will-change: transform;
   cursor: pointer;
-  background: var(--fondo, var(--af-cream));
-  color: var(--tinta, var(--af-ink));
+  background: var(--fondo);
+  color: var(--tinta);
   font-family: var(--font-sans);
   box-shadow:
     0 1px 0 rgb(255 255 255 / 0.4) inset,
@@ -87,7 +84,8 @@
 .af-pie {
   display: flex;
   flex-direction: column;
-  gap: 3cqw;
+  align-items: flex-start;
+  gap: 2.5cqw;
   font-size: max(4cqw, 12px);
   line-height: 1.2;
 }
@@ -113,8 +111,8 @@
   padding: 0 1.1em;
   border: 0;
   border-radius: 999px;
-  background: var(--cta-bg, var(--af-ink));
-  color: var(--cta-fg, var(--af-cream));
+  background: var(--cta-bg);
+  color: var(--cta-fg);
   font: 700 max(4.6cqw, 13px) / 1.1 var(--font-sans);
   letter-spacing: -0.01em;
   cursor: pointer;
@@ -127,15 +125,29 @@
   cursor: progress;
   opacity: 0.7;
 }
-.af-cta:focus-visible {
-  outline: 3px solid var(--af-yellow);
+.af-cta:focus-visible,
+.af-link:focus-visible {
+  outline: 3px solid var(--af-amber);
   outline-offset: 3px;
 }
-.af-sub {
-  font-family: var(--font-sans);
-  font-size: 7cqw;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+/* a second, quieter way in under the action (the visitor persona) */
+.af-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -1cqw 0 -3cqw;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 600 max(3.8cqw, 12px) / 1.2 var(--font-sans);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+  opacity: 0.85;
+}
+.af-link:hover {
+  opacity: 1;
 }
 .af-stiker {
   pointer-events: none;
@@ -144,204 +156,68 @@
   width: 100%;
 }
 
-/* 1 · green: the stage, the sun and the word along the bottom */
-.af-verde {
-  --fondo: var(--af-green);
-  --tinta: var(--af-cream);
-  --cta-bg: var(--af-cream);
-  --cta-fg: var(--af-ink);
+/* 1 · cream: the sun, the chair, the word in green along the bottom */
+.af-crema {
+  --fondo: var(--af-cream);
+  --tinta: var(--af-ink);
+  --cta-bg: var(--af-ink);
+  --cta-fg: var(--af-cream);
 }
-.af-verde::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 56%;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(transparent, rgb(0 74 28 / 0.85));
-}
-.af-verde .af-sol {
-  right: 9cqw;
-  top: 14cqw;
+.af-crema .af-sol {
+  right: 8cqw;
+  top: 15cqw;
   width: 30cqw;
   height: 30cqw;
   border-radius: 50%;
   background: var(--af-amber);
 }
-.af-verde .af-stiker {
-  left: 4cqw;
-  top: 18cqw;
-  width: 52cqw;
-  rotate: -8deg;
+.af-crema .af-stiker {
+  left: 2cqw;
+  top: 10cqw;
+  width: 54cqw;
+  rotate: -6deg;
 }
-.af-verde > * {
-  z-index: 1;
-}
-.af-verde .af-arriba {
+.af-crema .af-arriba {
   left: 7cqw;
   right: 7cqw;
   top: 6cqw;
 }
-.af-verde .af-palabra {
+.af-crema .af-palabra {
   left: 5cqw;
-  bottom: 40cqw;
+  bottom: 54cqw;
   font-size: 41cqw;
-  color: var(--af-cream);
+  color: var(--af-green);
 }
-.af-verde .af-pie {
+.af-crema .af-pie {
   left: 7cqw;
   right: 7cqw;
   bottom: 6cqw;
 }
 
-/* 2 · ink: orange word on black, the ticket below */
+/* 2 · ink: the word in cream on black, arches in amber and cream, the notes */
 .af-negro {
   --fondo: var(--af-ink);
   --tinta: var(--af-cream);
-  --cta-bg: var(--af-orange);
+  --cta-bg: var(--af-cream);
   --cta-fg: var(--af-ink);
-}
-.af-negro .af-palabra {
-  left: 5cqw;
-  top: 4cqw;
-  font-size: 46cqw;
-  color: var(--af-orange);
-}
-.af-negro .af-sub {
-  left: 8cqw;
-  top: 46cqw;
-  color: var(--af-cream);
-}
-.af-negro .af-stiker {
-  right: -4cqw;
-  top: 44cqw;
-  width: 70cqw;
-  rotate: 10deg;
-  opacity: 0.95;
 }
 .af-negro .af-arriba {
   left: 7cqw;
   right: 7cqw;
   top: 6cqw;
-  color: rgb(251 243 228 / 0.7);
-  z-index: 2;
+  opacity: 0.75;
 }
-.af-negro .af-pie {
-  z-index: 2;
-  left: 7cqw;
-  right: 7cqw;
-  bottom: 6cqw;
-}
-
-/* 3 · cream: the word standing up, the sticker in an arch */
-.af-crema {
-  --fondo: var(--af-cream);
-  --tinta: var(--af-ink);
-}
-.af-crema .af-vertical {
+.af-negro .af-palabra {
   left: 5cqw;
-  top: 8cqw;
-  font-size: 40cqw;
-  color: var(--af-green);
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  line-height: 0.9;
-}
-.af-crema .af-arco {
-  left: 40cqw;
-  right: 6cqw;
-  top: 18cqw;
-  bottom: 40cqw;
-  border-radius: 40cqw 40cqw 2cqw 2cqw;
-  overflow: hidden;
-  background: var(--af-green);
-}
-.af-crema .af-arco .af-stiker {
-  position: absolute;
-  left: 50%;
-  top: 56%;
-  width: 92%;
-  translate: -50% -50%;
-}
-.af-crema .af-arriba {
-  left: 40cqw;
-  right: 6cqw;
-  top: 6cqw;
-}
-.af-crema .af-pie {
-  left: 7cqw;
-  right: 6cqw;
-  bottom: 6cqw;
-}
-
-/* 4 · rhythm: half circles that repeat, the camera on top */
-.af-ritmo {
-  --fondo: var(--af-green);
-  --tinta: var(--af-cream);
-  --cta-bg: var(--af-yellow);
-  --cta-fg: var(--af-ink);
-}
-.af-ritmo .af-palabra {
-  left: 6cqw;
-  top: 6cqw;
-  font-size: 46cqw;
+  top: 13cqw;
+  font-size: 42cqw;
   color: var(--af-cream);
 }
-.af-medios {
-  left: 0;
-  right: 0;
-  top: 50cqw;
-  bottom: 40cqw;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-}
-.af-medios i {
-  background: var(--af-orange);
-  border-radius: 100cqw 100cqw 0 0;
-  margin: 0 5cqw;
-  align-self: end;
-  height: 100%;
-}
-.af-medios i:nth-child(2n) {
-  background: var(--af-ink);
-  border-radius: 0 0 100cqw 100cqw;
-  align-self: start;
-}
-.af-medios i:nth-child(3n) {
-  background: var(--af-cream);
-}
-.af-ritmo .af-stiker {
-  right: 2cqw;
-  top: 36cqw;
-  width: 44cqw;
-  rotate: -6deg;
-  z-index: 2;
-}
-.af-ritmo .af-pie {
-  left: 7cqw;
-  right: 7cqw;
-  bottom: 6cqw;
-  z-index: 2;
-}
-
-/* 5 · orange: concentric arches and the word, for the seat race */
-.af-naranja {
-  --fondo: var(--af-orange);
-  --tinta: var(--af-ink);
-}
-.af-naranja .af-arriba {
-  left: 7cqw;
-  right: 7cqw;
-  top: 6cqw;
-}
 .af-arcos {
-  left: 12cqw;
-  right: 12cqw;
-  top: 14cqw;
-  bottom: 54cqw;
+  left: 10cqw;
+  right: 10cqw;
+  top: 52cqw;
+  bottom: 42cqw;
 }
 .af-arcos i {
   position: absolute;
@@ -352,30 +228,84 @@
 }
 .af-arcos i:nth-child(1) {
   top: 0;
-  background: var(--af-ink);
+  background: var(--af-amber);
 }
 .af-arcos i:nth-child(2) {
-  top: 16cqw;
+  top: 14cqw;
   left: 12cqw;
   right: 12cqw;
   background: var(--af-cream);
 }
 .af-arcos i:nth-child(3) {
-  top: 32cqw;
+  top: 28cqw;
   left: 24cqw;
   right: 24cqw;
-  background: var(--af-green);
+  background: var(--af-ink);
 }
-.af-naranja .af-palabra {
-  left: 5cqw;
-  bottom: 36cqw;
-  font-size: 38cqw;
-  color: var(--af-ink);
+.af-negro .af-stiker {
+  right: -2cqw;
+  top: 44cqw;
+  width: 46cqw;
+  rotate: 8deg;
 }
-.af-naranja .af-pie {
+.af-negro .af-pie {
+  z-index: 2;
   left: 7cqw;
   right: 7cqw;
   bottom: 6cqw;
+}
+
+/* 3 · amber: the word in ink, half circles that repeat, the camera */
+.af-ambar {
+  --fondo: var(--af-amber);
+  --tinta: var(--af-ink);
+  --cta-bg: var(--af-ink);
+  --cta-fg: var(--af-cream);
+}
+.af-ambar .af-arriba {
+  left: 7cqw;
+  right: 7cqw;
+  top: 6cqw;
+}
+.af-ambar .af-palabra {
+  left: 6cqw;
+  top: 13cqw;
+  font-size: 46cqw;
+  color: var(--af-ink);
+}
+.af-medios {
+  left: 0;
+  right: 0;
+  top: 54cqw;
+  bottom: 42cqw;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+.af-medios i {
+  background: var(--af-ink);
+  border-radius: 100cqw 100cqw 0 0;
+  margin: 0 5cqw;
+  align-self: end;
+  height: 100%;
+}
+.af-medios i:nth-child(2n) {
+  background: var(--af-cream);
+  border-radius: 0 0 100cqw 100cqw;
+  align-self: start;
+}
+.af-ambar .af-stiker {
+  right: 3cqw;
+  top: 40cqw;
+  width: 44cqw;
+  rotate: -6deg;
+  z-index: 2;
+}
+.af-ambar .af-pie {
+  left: 7cqw;
+  right: 7cqw;
+  bottom: 6cqw;
+  z-index: 2;
 }
 
 /* opening a poster: the letters climb in one by one, then the lines */
@@ -384,8 +314,7 @@
   animation-delay: calc(var(--i) * 55ms + 120ms);
 }
 .af-cartel.af-abierto .af-pie,
-.af-cartel.af-abierto .af-arriba,
-.af-cartel.af-abierto .af-sub {
+.af-cartel.af-abierto .af-arriba {
   animation: af-sube 0.8s var(--af-curve) both;
   animation-delay: 0.35s;
 }
@@ -466,7 +395,7 @@
   }
 }
 .af-flecha:focus-visible {
-  outline: 3px solid var(--af-yellow);
+  outline: 3px solid var(--af-amber);
   outline-offset: 3px;
 }
 .af-pista {
@@ -486,11 +415,16 @@
     display: none;
   }
 }
+/* a small poster keeps its word, its action and the second way in; the numbered line goes */
+@container (max-width: 240px) {
+  .af-pie em {
+    display: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .af-cartel.af-abierto .af-palabra span,
   .af-cartel.af-abierto .af-pie,
-  .af-cartel.af-abierto .af-arriba,
-  .af-cartel.af-abierto .af-sub {
+  .af-cartel.af-abierto .af-arriba {
     animation: none;
   }
   .af-flecha,

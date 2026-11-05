@@ -64,7 +64,7 @@ export default function RolePicker() {
   const posters: PosterSpec[] = [
     {
       key: 'visitor',
-      variant: 'verde',
+      variant: 'crema',
       word: 'Kursi',
       title: 'Pengunjung',
       note: 'Pilih kursi di denah, bayar atau tukar struk, dapat e-ticket QR',
@@ -74,67 +74,39 @@ export default function RolePicker() {
           <b>01</b>Pilih kursimu sendiri.
         </>
       ),
-      art: <Illustration name="kursi" className="w-full" />,
+      art: <Illustration name="kursi" className="w-full" still />,
       action: { label: 'Masuk sebagai pengunjung', onClick: () => void enter('VISITOR'), disabled: off },
-    },
-    {
-      key: 'rina',
-      variant: 'negro',
-      word: 'Pass',
-      sub: 'Saya · Rina',
-      title: 'Rina, persona',
-      note: 'Sudah punya tiket: langsung ke Pass Saya dengan QR-nya',
-      top: ['Persona', '02'],
-      foot: (
-        <>
-          <b>02</b>Tiket sudah di tangan.
-        </>
-      ),
-      art: <Illustration name="tiket" className="w-full" />,
-      action: { label: 'masuk cepat sebagai Rina', name: 'atau masuk cepat sebagai Rina (persona)', onClick: () => void enter('VISITOR_RINA'), disabled: off },
+      secondary: { label: 'masuk cepat sebagai Rina', name: 'atau masuk cepat sebagai Rina (persona)', onClick: () => void enter('VISITOR_RINA'), disabled: off },
     },
     {
       key: 'admin',
-      variant: 'crema',
+      variant: 'negro',
       word: 'Event',
       title: 'Panitia',
       note: 'Dashboard, event, denah, struk, dan kehadiran',
-      top: ['Panitia', '03'],
+      top: ['Panitia', '02'],
       foot: (
         <>
-          <b>03</b>Atur, lalu pantau.
+          <b>02</b>Atur, lalu pantau.
         </>
       ),
-      art: <Illustration name="notes" className="w-full" />,
+      art: <Illustration name="notes" className="w-full" still />,
       action: { label: 'Masuk sebagai panitia', onClick: () => void enter('ADMIN'), disabled: off },
     },
     {
       key: 'staff',
-      variant: 'ritmo',
+      variant: 'ambar',
       word: 'Scan',
       title: 'Petugas',
       note: 'Scan QR di pintu: valid, sudah dipakai, atau tidak valid',
+      top: ['Petugas', '03'],
       foot: (
         <>
-          <b>04</b>Valid dalam sedetik.
+          <b>03</b>Valid dalam sedetik.
         </>
       ),
-      art: <Illustration name="camera" className="w-full" />,
+      art: <Illustration name="camera" className="w-full" still />,
       action: { label: 'Masuk sebagai petugas', onClick: () => void enter('STAFF'), disabled: off },
-    },
-    {
-      key: 'race',
-      variant: 'naranja',
-      word: 'Rebut',
-      title: live ? 'Versi demo' : 'Rebutan kursi',
-      note: live ? 'Data per browser, tanpa server' : 'Dua HP memilih kursi yang sama: hanya satu yang berhasil',
-      top: ['Dua HP', '05'],
-      foot: (
-        <>
-          <b>05</b>Satu kursi, satu pemesan.
-        </>
-      ),
-      action: other ? { label: other.label, href: other.href } : { label: 'Coba di denah', onClick: () => void enter('VISITOR'), disabled: off },
     },
   ]
 
@@ -196,12 +168,12 @@ export default function RolePicker() {
       >
         <div className="ssf-slides" style={{ transform: `translateX(${-tab * 100}%)` }}>
           <section className="ssf-slide" aria-label="Pilih peran" inert={tab !== 0}>
-            <div className="h-[clamp(440px,60svh,600px)] max-sm:h-[520px]">
+            <div className="h-full">
               <Afiche posters={posters} label="Kipas poster: satu untuk tiap cara masuk; geser untuk mengocok, klik untuk membuka" />
             </div>
           </section>
           <section className="ssf-slide" aria-label="Tim" inert={tab !== 1}>
-            <div className="mx-auto flex h-[clamp(440px,60svh,600px)] max-w-3xl flex-col justify-center px-6 text-[#fbf3e4] max-sm:h-[520px]">
+            <div className="mx-auto flex h-full max-w-3xl flex-col justify-center px-6 text-[#fbf3e4]">
               <p className="text-[0.7rem] font-bold tracking-[0.18em] uppercase opacity-75">Tim Summarevent</p>
               <h2 className="mt-2 font-poster text-[clamp(2.4rem,6vw,4.5rem)] leading-[0.95] uppercase">Lima orang, satu pass</h2>
               <ul className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2">

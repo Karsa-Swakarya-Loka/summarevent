@@ -1,4 +1,6 @@
 // Loaded on demand by <Illustration>, so the sticker kit stays out of the main bundle.
+import { useEffect, useRef } from 'react'
+import { paint } from './fun'
 import { Sticker } from './Sticker'
 import { SUMMA, camera, coins, gift, kursi, mailbox, notes, padlock, search, tiket } from './icons'
 
@@ -23,7 +25,25 @@ const OFF_CENTRE: Record<ArtName, [number, number]> = {
   camera: [-4, 13],
 }
 
-export default function Art({ name, loop, enter }: { name: ArtName; loop?: boolean; enter?: number }) {
+export default function Art({ name, loop, enter, still }: { name: ArtName; loop?: boolean; enter?: number; still?: boolean }) {
   const [x, y] = OFF_CENTRE[name]
-  return <Sticker icon={ART[name]} palette={SUMMA} loop={loop} enter={enter} style={{ transform: `translate(${-x / 5}%, ${-y / 5}%)` }} />
+  const style = { transform: `translate(${-x / 5}%, ${-y / 5}%)` }
+  if (still) return <Still name={name} style={style} />
+  return <Sticker icon={ART[name]} palette={SUMMA} loop={loop} enter={enter} style={style} />
+}
+
+/** The drawing at rest, painted once (and again when its box changes size): no motion at all. */
+function Still({ name, style }: { name: ArtName; style: React.CSSProperties }) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const icon = ART[name]
+    const go = () => paint(el, icon, icon.still ?? 0, 1, SUMMA)
+    go()
+    const ro = new ResizeObserver(go)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [name])
+  return <canvas ref={ref} className="block aspect-square w-full" style={style} />
 }

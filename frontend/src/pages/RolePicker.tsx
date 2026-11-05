@@ -7,21 +7,19 @@ import { BrandLockup, CoBrand } from '@/components/common/Brand'
 import { Illustration } from '@/components/common/Illustration'
 import { Afiche, type PosterSpec } from '@/components/landing/Afiche'
 import { StickerSlap, type StickerSpec } from '@/components/landing/StickerSlap'
+import { TEAM } from '@/components/landing/team'
+import { TeamSlide } from '@/components/landing/TeamSlide'
 
-const TEAM = [
-  ['frontend', 'Haikal'],
-  ['backend', 'Bintang'],
-  ['user testing & UX', 'Shelvia'],
-  ['product & pitch', 'Awwal'],
-  ['system QA', 'Said'],
+const CREDITS = [
+  ...TEAM.map((m) => [m.role, m.name]),
   ['stiker', 'fun-isometric, digambar dalam kode'],
   ['e-ticket & poster', 'Talón dan Afiche oleh Moxen'],
-] as const
+  ['poster tim', 'Crumple Changelog oleh Kedhareswer'],
+]
 
 /**
  * DM-01: one link, three roles, so judges can try every side of the system. The page is the Sticker Slap landing;
- * on the green panel a notch switches between the fan of posters (one per way in: pengunjung, Rina, panitia,
- * petugas, the seat race) and the team. The wordmark writes itself along the bottom with our stickers slapped on it.
+ * on the green panel a notch switches between the fan of posters (one per role) and the team's crumpling posters. The wordmark writes itself along the bottom with our stickers slapped on it.
  * Each role opens with its splash, its onboarding the first time, and its sign-in; Rina is the visitor shortcut.
  */
 export default function RolePicker() {
@@ -154,7 +152,7 @@ export default function RolePicker() {
             <div className="ssf-msep" />
             <p className="ssf-mhead">Tim Summarevent</p>
             <dl className="ssf-mcred">
-              {TEAM.map(([role, name]) => (
+              {CREDITS.map(([role, name]) => (
                 <div key={role} className="contents">
                   <dt>{role}</dt>
                   <dd>{name}</dd>
@@ -173,19 +171,7 @@ export default function RolePicker() {
             </div>
           </section>
           <section className="ssf-slide" aria-label="Tim" inert={tab !== 1}>
-            <div className="mx-auto flex h-full max-w-3xl flex-col justify-center px-6 text-[#fbf3e4]">
-              <p className="text-[0.7rem] font-bold tracking-[0.18em] uppercase opacity-75">Tim Summarevent</p>
-              <h2 className="mt-2 font-poster text-[clamp(2.4rem,6vw,4.5rem)] leading-[0.95] uppercase">Lima orang, satu pass</h2>
-              <ul className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-                {TEAM.slice(0, 5).map(([role, name]) => (
-                  <li key={role} className="flex items-baseline justify-between gap-4 border-b border-white/15 pb-2">
-                    <span className="text-lg font-bold">{name}</span>
-                    <span className="text-sm opacity-80">{role}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-5 text-sm opacity-80">Bandung Build Challenge 2026 · Summarecon Mall Bandung</p>
-            </div>
+            <TeamSlide open={tab === 1} />
           </section>
         </div>
       </StickerSlap>

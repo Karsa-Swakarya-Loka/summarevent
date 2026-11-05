@@ -12,6 +12,7 @@ import { parseReceiptText } from '@/domain/ocr'
 import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, passwordCheck, posterInk, posterPaletteCheck, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
 import type { EventDraft } from '@/api/contract'
 import { posterColors } from '@/components/common/posterThemes'
+import { scrubToView } from '@/components/landing/crumple'
 import { layoutScript, stickerSpots } from '@/components/landing/script'
 import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
 import { wibDate } from '@/lib/format'
@@ -567,5 +568,23 @@ describe('landing wordmark script', () => {
       expect(s.y).toBeGreaterThanOrEqual(w.top - 4)
     }
     expect(stickerSpots(w, 0)).toEqual([])
+  })
+})
+
+describe('team slide crumple', () => {
+  it('shows each poster flat on its own mark', () => {
+    for (let p = 0; p < 5; p++) expect(scrubToView(p, 5)).toEqual({ index: p, crumple: 0 })
+  })
+
+  it('crumples the current poster up to the middle of a gap, then unfolds the next', () => {
+    expect(scrubToView(0.25, 5)).toEqual({ index: 0, crumple: 0.5 })
+    expect(scrubToView(0.75, 5)).toEqual({ index: 1, crumple: 0.5 })
+    expect(scrubToView(3.5, 5)).toEqual({ index: 4, crumple: 1 })
+  })
+
+  it('stays inside the team when the knob overshoots', () => {
+    expect(scrubToView(-2, 5)).toEqual({ index: 0, crumple: 0 })
+    expect(scrubToView(9, 5)).toEqual({ index: 4, crumple: 0 })
+    expect(scrubToView(0.5, 1)).toEqual({ index: 0, crumple: 0 })
   })
 })

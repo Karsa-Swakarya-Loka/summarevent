@@ -1,0 +1,334 @@
+/*
+ * The team slide on the green panel. The poster is the loud thing; everything around it stays quiet, set in the same
+ * Anton + Plus Jakarta Sans as the legend on the fan of posters. Phone: poster, legend, ruler in one column.
+ * Wide: title, poster, legend + ruler side by side, so the poster gets the panel's whole height.
+ */
+.cc-root {
+  --cc-fg: #fbf3e4;
+  --cc-ink: #231f20;
+  --cc-amber: #f9a61b;
+  /* .ssf-slides' top padding: the canvas reaches up behind the notch, so the paper ball falls from there */
+  --cc-up: 64px;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  height: calc(100% + var(--cc-up));
+  margin-top: calc(var(--cc-up) * -1);
+  padding-top: var(--cc-up);
+  overflow: hidden;
+  color: var(--cc-fg);
+  container-type: inline-size;
+  -webkit-tap-highlight-color: transparent;
+}
+.cc-gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  z-index: 0;
+}
+.cc-fallback {
+  position: absolute;
+  display: none;
+  max-width: none;
+  object-fit: cover;
+  box-shadow: 14px 22px 40px rgb(10 30 16 / 0.45);
+  transition: opacity 0.45s ease;
+}
+.cc-wrap {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* the title is for screen readers until there is room for it */
+.cc-head {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.cc-title {
+  margin: 0;
+  font-family: var(--font-poster);
+  font-weight: 400;
+  font-size: clamp(44px, 5.6cqi, 88px);
+  line-height: 0.98;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.cc-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.04em;
+}
+.cc-line-in {
+  display: block;
+  will-change: transform;
+}
+.cc-by {
+  margin: 12px 0 0;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.cc-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.cc-hit {
+  position: absolute;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+  border-radius: 2px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.cc-hit:focus-visible {
+  outline: 3px solid var(--cc-amber);
+  outline-offset: 6px;
+}
+
+.cc-side {
+  flex: none;
+  display: grid;
+  /* the dot on top of the knob reaches into this gap */
+  gap: 14px;
+  /* the stickers on the wordmark reach up to here */
+  padding: 0 10px 12px;
+}
+.cc-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cc-meta {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  display: grid;
+  gap: 2px;
+}
+.cc-meta p {
+  margin: 0;
+}
+.cc-name {
+  font-family: var(--font-poster);
+  font-size: clamp(22px, 3.6vh, 30px);
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.cc-role {
+  font-size: clamp(14px, 2vh, 16px);
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.cc-round {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  background: var(--cc-fg);
+  color: var(--cc-ink);
+  box-shadow: 0 14px 24px -12px rgb(10 30 16 / 0.8);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cc-round svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cc-round:active {
+  transform: scale(0.92);
+}
+@media (hover: hover) {
+  .cc-round:hover {
+    transform: scale(1.1);
+  }
+}
+.cc-round:focus-visible {
+  outline: 3px solid var(--cc-amber);
+  outline-offset: 3px;
+}
+
+/* the ruler: drag the knob and the poster crumples under your hand */
+.cc-rail {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.cc-play {
+  margin-top: 6px;
+}
+.cc-track {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 68px;
+  margin: 0 18px 0 24px;
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+}
+.cc-track:active {
+  cursor: grabbing;
+}
+/* the ring goes on the knob, not around the whole ruler (.ssf rings every focused element) */
+.cc-root .cc-track:focus-visible {
+  outline: none;
+}
+.cc-track:focus-visible .cc-knob {
+  outline: 3px solid var(--cc-amber);
+  outline-offset: 3px;
+}
+.cc-ticks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.cc-tick {
+  display: block;
+  flex: none;
+  width: 1px;
+  height: 40px;
+  background: var(--cc-fg);
+  transform-origin: 50% 100%;
+  transform: scaleY(0.25);
+  opacity: 0.3;
+}
+.cc-knob {
+  position: absolute;
+  left: 0;
+  bottom: 16px;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--cc-fg);
+  background: rgb(0 100 38 / 0.6);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+.cc-knob::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 1.5px;
+  height: 14px;
+  margin-left: -0.75px;
+  background: var(--cc-fg);
+}
+.cc-knob::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 12px);
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--cc-fg);
+}
+.cc-labels {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16px;
+  pointer-events: none;
+}
+.cc-labels span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.cc-labels span[data-on='true'] {
+  font-weight: 800;
+}
+
+@container (min-width: 900px) {
+  .cc-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 0 20px;
+    padding: 0 clamp(28px, 4.5cqi, 72px) 8px;
+  }
+  .cc-head {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+  .cc-stage {
+    height: 100%;
+  }
+  .cc-side {
+    justify-self: end;
+    width: min(100%, 360px);
+    gap: 18px;
+    padding: 0;
+  }
+  .cc-legend,
+  .cc-rail {
+    min-width: 0;
+  }
+  .cc-legend {
+    display: grid;
+    grid-template-columns: 44px 44px minmax(0, 1fr);
+    gap: 14px 10px;
+  }
+  .cc-meta {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: left;
+    gap: 6px;
+  }
+  .cc-name {
+    font-size: clamp(38px, 4cqi, 56px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-round,
+  .cc-fallback {
+    transition: none;
+  }
+}

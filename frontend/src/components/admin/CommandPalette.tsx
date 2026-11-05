@@ -2,7 +2,6 @@
  * ⌘K for the panitia: type to jump to a page or to find an order by its code, buyer, phone or seat. Pages come from
  * the sidebar's menu; orders are looked up through `api.admin.listOrders` once the query settles.
  */
-import { finePointer } from '@/lib/pointer'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { CornerDownLeft, Search } from 'lucide-react'
@@ -13,6 +12,7 @@ import { useDebounced } from '@/components/visitor/hooks'
 import { ORDER_STATUS_LABEL } from '@/domain/labels'
 import { useLive } from '@/hooks/useLive'
 import { rupiahPlain } from '@/lib/format'
+import { finePointer } from '@/lib/pointer'
 import { cn } from '@/lib/utils'
 import { ADMIN_NAV, seatSummary } from './lib'
 
@@ -27,7 +27,16 @@ type Hit = {
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="top-[12vh] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-lg" showCloseButton={false}>
+      <DialogContent
+        className="top-[12vh] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-lg"
+        showCloseButton={false}
+        // Radix focuses the search box on open; on touch that opens the keyboard before the person chose to type
+        onOpenAutoFocus={(e) => {
+          if (finePointer()) return
+          e.preventDefault()
+          ;(e.currentTarget as HTMLElement).focus()
+        }}
+      >
         <DialogTitle className="sr-only">Cari cepat</DialogTitle>
         <DialogDescription className="sr-only">Lompat ke halaman panitia atau cari pesanan.</DialogDescription>
         {/* a fresh search each time it opens */}
@@ -109,7 +118,7 @@ function Palette({ close }: { close: () => void }) {
           if (!items.length) return null
           return (
             <li key={group} role="presentation">
-              <p className="px-2 pt-2 pb-1 text-[0.66rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">{group}</p>
+              <p className="px-2 pt-2 pb-1 text-xs font-medium text-muted-foreground">{group}</p>
               <ul role="group" aria-label={group}>
                 {items.map((h) => {
                   const i = hits.indexOf(h)
@@ -121,7 +130,7 @@ function Palette({ close }: { close: () => void }) {
                       aria-selected={i === current}
                       onMouseEnter={() => setActive(i)}
                       onClick={() => go(h)}
-                      className={cn('flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm', i === current ? 'bg-muted' : '')}
+                      className={cn('flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm pointer-coarse:min-h-11', i === current ? 'bg-muted' : '')}
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium">{h.title}</span>

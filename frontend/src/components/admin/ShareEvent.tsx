@@ -7,6 +7,7 @@ import type { EventItem } from '@/domain/types'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { finePointer } from '@/lib/pointer'
 import { cn } from '@/lib/utils'
 import { downloadDataUrl, publicEventUrl } from './lib'
 
@@ -93,18 +94,18 @@ export function ShareEventPanel({ event, className }: { event: Pick<EventItem, '
             Link publik event
           </label>
           <div className="flex gap-2">
-            <Input id={`share-url-${event.slug}`} readOnly value={url} className="h-10 min-w-0 font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
-            <Button variant="outline" size="icon-lg" className="size-10" onClick={() => void copy()} aria-label="Salin link">
+            <Input id={`share-url-${event.slug}`} readOnly value={url} className="h-11 min-w-0 font-mono text-xs sm:h-10" onFocus={(e) => e.currentTarget.select()} />
+            <Button variant="outline" size="icon-lg" className="size-11 sm:size-10" onClick={() => void copy()} aria-label="Salin link">
               {copied ? <Check className="text-status-valid" /> : <Copy />}
             </Button>
           </div>
           {event.status === 'DRAFT' && <p className="text-xs font-medium text-[#7a5600]">Event masih draft: link baru bisa dibuka pengunjung setelah dipublikasikan.</p>}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="lg" className="h-10" onClick={download}>
+          <Button size="lg" className="h-11 sm:h-10" onClick={download}>
             <Download /> Unduh QR (PNG)
           </Button>
-          <Button variant="outline" size="lg" className="h-10" asChild>
+          <Button variant="outline" size="lg" className="h-11 sm:h-10" asChild>
             <a href={url} target="_blank" rel="noreferrer">
               <ExternalLink /> Buka halaman
             </a>
@@ -119,7 +120,15 @@ export function ShareEventPanel({ event, className }: { event: Pick<EventItem, '
 export function ShareEventDialog({ event, open, onOpenChange }: { event: Pick<EventItem, 'slug' | 'title' | 'status'> | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent
+        className="sm:max-w-xl"
+        // the first field is the link: focusing it on a phone selects it and can open the keyboard, so touch starts on the dialog itself
+        onOpenAutoFocus={(e) => {
+          if (finePointer()) return
+          e.preventDefault()
+          ;(e.currentTarget as HTMLElement).focus()
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Link & QR poster</DialogTitle>
           <DialogDescription className="line-clamp-2">{event?.title}</DialogDescription>

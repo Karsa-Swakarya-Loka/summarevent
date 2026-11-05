@@ -4,13 +4,13 @@
  * picking a session opens its live seat map. The tree follows the WAI-ARIA tree pattern: arrows move, Right opens a
  * branch, Left closes it, Enter picks, and the search box above narrows the events.
  */
-import { finePointer } from '@/lib/pointer'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { CalendarPlus, Check, ChevronDown, ChevronRight, ChevronsUpDown, Play, Rows3, Search } from 'lucide-react'
 import type { EventSummary } from '@/api/contract'
 import { Poster } from '@/components/common/Poster'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { finePointer } from '@/lib/pointer'
 import { cn } from '@/lib/utils'
 import { eventDateLabel, eventDisplayStatus, EVENT_STATUS_LABEL, sessionLabel, sessionSold, type AdminOutlet } from './lib'
 
@@ -45,7 +45,17 @@ export function EventSwitcher({ ctx, variant, className }: { ctx: AdminOutlet; v
           </button>
         )}
       </PopoverTrigger>
-      <PopoverContent align={variant === 'card' ? 'start' : 'end'} side={variant === 'card' ? 'top' : 'bottom'} className="w-[min(92vw,22rem)] p-0">
+      <PopoverContent
+        align={variant === 'card' ? 'start' : 'end'}
+        side={variant === 'card' ? 'top' : 'bottom'}
+        className="w-[min(92vw,22rem)] p-0"
+        // Radix focuses the first field on open, which is the search box: on touch that pops the keyboard over the tree
+        onOpenAutoFocus={(e) => {
+          if (finePointer()) return
+          e.preventDefault()
+          ;(e.currentTarget as HTMLElement).focus()
+        }}
+      >
         {open && (
           <EventTree
             list={ctx.list}
@@ -188,7 +198,7 @@ function EventTree({ list, eventId, onPick, onSession }: { list: EventSummary[];
                     ev.stopPropagation()
                     if (e.sessions.length) toggle(id)
                   }}
-                  className={cn('grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition', e.sessions.length ? 'hover:bg-card hover:text-foreground' : 'opacity-0')}
+                  className={cn('grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition pointer-coarse:-my-1 pointer-coarse:size-11', e.sessions.length ? 'hover:bg-card hover:text-foreground' : 'opacity-0')}
                 >
                   <ChevronRight className={cn('size-4 transition-transform', open && 'rotate-90')} aria-hidden />
                 </span>

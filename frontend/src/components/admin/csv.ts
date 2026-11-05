@@ -1,7 +1,7 @@
 /**
- * Makes an exported CSV open cleanly in Excel, whichever backend wrote it: phone numbers keep their leading 0, a cell
- * that starts like a formula (=, +, -, @) is shown as text instead of being run, and lines end in CRLF. The data is
- * otherwise left as the API sent it.
+ * Makes an exported CSV open cleanly in Excel, whichever backend wrote it: numbers in a phone column (header "No HP")
+ * keep their leading 0, a cell that starts like a formula (=, +, -, @) is shown as text instead of being run, and lines
+ * end in CRLF. Plain numbers, negative ones too, and every other cell are left as the API sent them.
  */
 
 /** RFC 4180: commas between cells, quotes around cells that hold a comma, quote or line break, "" for a quote. */
@@ -34,18 +34,20 @@ export function parseCsv(text: string): string[][] {
 }
 
 const PHONE = /^0\d{9,13}$/
+const PHONE_HEADER = /\b(hp|telepon|phone)\b/i
+const NUMBER = /^[+-]?\d+([.,]\d+)?$/
 const FORMULA = /^[=+\-@\t\r]/
 
-/** One cell, safe for Excel: "081234567890" → "0812-3456-7890", "=SUM(…)" → "'=SUM(…)". */
-export function excelCell(value: string): string {
+/** One cell, safe for Excel: a phone "081234567890" → "0812-3456-7890", "=SUM(…)" → "'=SUM(…)", "-50000" stays a number. */
+export function excelCell(value: string, { phone = false } = {}): string {
   let v = value
-  if (PHONE.test(v)) v = `${v.slice(0, 4)}-${v.slice(4, 8)}-${v.slice(8)}`
-  else if (FORMULA.test(v)) v = `'${v}`
+  if (phone && PHONE.test(v)) v = `${v.slice(0, 4)}-${v.slice(4, 8)}-${v.slice(8)}`
+  else if (FORMULA.test(v) && !NUMBER.test(v)) v = `'${v}`
   return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
 }
 
 export function excelCsv(csv: string): string {
-  return parseCsv(csv)
-    .map((r) => r.map(excelCell).join(','))
-    .join('\r\n')
+  const [header = [], ...rows] = parseCsv(csv)
+  const phones = new Set(header.flatMap((h, i) => (PHONE_HEADER.test(h) ? [i] : [])))
+  return [header.map((h) => excelCell(h)), ...rows.map((r) => r.map((c, i) => excelCell(c, { phone: phones.has(i) })))].map((r) => r.join(',')).join('\r\n')
 }

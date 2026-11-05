@@ -3,7 +3,7 @@
  * (docs/API-CONTRACT.md "Auth": /auth/login, /auth/password/forgot, /auth/password/reset). Rules and messages follow
  * the mock (frontend/src/api/mock/adapter.ts); the server keeps PBKDF2 hashes and only the hash of a reset token.
  */
-import { LOGIN_FAIL_WINDOW_MIN, LOGIN_MAX_FAILS, passwordCheck, RESET_TOKEN_MIN } from '../shared/rules'
+import { FORGOT_MIN_INTERVAL_SEC, LOGIN_FAIL_WINDOW_MIN, LOGIN_MAX_FAILS, passwordCheck, RESET_TOKEN_MIN } from '../shared/rules'
 import type { User } from '../shared/types'
 import { issueToken, type Req } from '../lib/auth'
 import { newToken, sha256Hex } from '../lib/crypto'
@@ -13,8 +13,6 @@ import type { Tx } from '../lib/tx'
 import { appUrl, queueEmail } from '../mail'
 
 const INVITE_HOURS = 24
-/** A second forgot-password email for the same account within this time is not sent (no inbox flooding). */
-const FORGOT_COOLDOWN_MS = 60_000
 
 const normEmail = (raw: unknown) => String(raw ?? '').trim().toLowerCase()
 
@@ -89,7 +87,7 @@ export async function forgotPassword(tx: Tx, req: Req) {
     .query('resetTokens')
     .withIndex('by_user', (q) => q.eq('userId', user.id))
     .collect()
-  if (recent.some((t) => t.purpose === 'RESET' && tx.now.getTime() - new Date(t.createdAt).getTime() < FORGOT_COOLDOWN_MS)) return { ok: true }
+  if (recent.some((t) => t.purpose === 'RESET' && tx.now.getTime() - new Date(t.createdAt).getTime() < FORGOT_MIN_INTERVAL_SEC * 1000)) return { ok: true }
   const link = await newResetLink(tx, user, 'RESET')
   await queueEmail(
     tx.mctx,

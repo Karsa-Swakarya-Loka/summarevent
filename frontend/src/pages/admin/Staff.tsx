@@ -66,8 +66,8 @@ export default function Staff() {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <PageHeader title="Petugas" description="Akun untuk scan QR di pintu dan cek struk di desk. Setiap scan tercatat atas nama petugasnya." />
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <PageHeader title="Petugas" description="Akun untuk scan QR di pintu masuk dan verifikasi struk di desk. Setiap scan tercatat atas nama petugasnya." />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <SectionCard title={`${list.length} akun petugas`} description={staff.data ? `${active} aktif` : undefined}>
           {staff.error && !staff.data ? (
             <LoadError error={staff.error} onRetry={staff.reload} />
@@ -114,13 +114,13 @@ export default function Staff() {
         <SectionCard title="Tambah petugas" description="Undangan untuk membuat kata sandi dikirim ke email petugas.">
           <form onSubmit={(e) => void add(e)} className="flex flex-col gap-3" noValidate>
             <Field id="staff-name" label="Nama" error={error?.name}>
-              <Input id="staff-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Petugas Pintu Selatan" className="h-10" aria-invalid={!!error?.name} />
+              <Input id="staff-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. Petugas Pintu Selatan" className="h-11 sm:h-10" aria-invalid={!!error?.name} />
             </Field>
             <Field id="staff-phone" label="Nomor HP" error={error?.phone}>
-              <Input id="staff-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0812 3456 7890" className="h-10" aria-invalid={!!error?.phone} />
+              <Input id="staff-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0812 3456 7890" className="h-11 sm:h-10" aria-invalid={!!error?.phone} />
             </Field>
             <Field id="staff-email" label="Email" error={error?.email}>
-              <Input id="staff-email" type="email" inputMode="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@contoh.id" className="h-10" aria-invalid={!!error?.email} />
+              <Input id="staff-email" type="email" inputMode="email" autoCapitalize="none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@contoh.id" className="h-11 sm:h-10" aria-invalid={!!error?.email} />
             </Field>
             <Button type="submit" size="lg" className="h-11" disabled={busy === 'add'}>
               {busy === 'add' ? <LoaderCircle className="animate-spin" /> : <UserPlus />} Tambah petugas

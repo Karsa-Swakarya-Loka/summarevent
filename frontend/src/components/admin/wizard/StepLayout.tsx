@@ -272,12 +272,12 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
 
         <SectionCard
           title="Pratinjau denah"
-          description="Persis seperti yang dilihat pengunjung. Klik kursi untuk mengubahnya."
+          description="Persis seperti yang dilihat pengunjung. Pilih kursi untuk menandainya."
           className="min-w-0"
         >
           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
             <span className="text-sm font-semibold" id="seat-mode-label">
-              Klik kursi untuk:
+              Pilih kursi untuk:
             </span>
             <div role="radiogroup" aria-labelledby="seat-mode-label" className="inline-grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
               {(
@@ -294,7 +294,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                   disabled={locked}
                   onClick={() => setMode(o.v)}
                   className={cn(
-                    'flex min-h-9 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-semibold transition [&_svg]:size-4 disabled:opacity-60',
+                    'flex min-h-9 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-semibold transition pointer-coarse:min-h-11 [&_svg]:size-4 disabled:opacity-60',
                     mode === o.v ? 'bg-card shadow-sm ring-1 ring-border' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
@@ -338,7 +338,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                 <span className="flex-1">{SEAT_STATUS_LABEL.BLOCKED}</span>
                 <span className="font-semibold tabular-nums">{L.blocked.length}</span>
                 {L.blocked.length > 0 && !locked && (
-                  <button type="button" className="text-xs font-semibold text-brand hover:underline" onClick={() => setLayout((l) => ({ ...l, blocked: [] }))}>
+                  <button type="button" className="-my-2 min-h-9 px-1 text-xs font-semibold text-brand hover:underline pointer-coarse:min-h-11" onClick={() => setLayout((l) => ({ ...l, blocked: [] }))}>
                     Kosongkan
                   </button>
                 )}
@@ -350,7 +350,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                 <span className="flex-1">{PRIORITY_SEAT_LABEL}</span>
                 <span className="font-semibold tabular-nums">{L.priority.length}</span>
                 {L.priority.length > 0 && !locked && (
-                  <button type="button" className="text-xs font-semibold text-brand hover:underline" onClick={() => setLayout((l) => ({ ...l, priority: [] }))}>
+                  <button type="button" className="-my-2 min-h-9 px-1 text-xs font-semibold text-brand hover:underline pointer-coarse:min-h-11" onClick={() => setLayout((l) => ({ ...l, priority: [] }))}>
                     Kosongkan
                   </button>
                 )}

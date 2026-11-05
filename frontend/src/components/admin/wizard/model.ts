@@ -279,7 +279,7 @@ export function validate(form: WizardForm, venues: Venue[]): Issue[] {
     }
     if (c.accessMethod === 'RECEIPT') {
       const rr = c.receiptRules
-      if (!rr || !(Number.isFinite(rr.minSpend) && rr.minSpend >= 1000)) add('kategori', f('minSpend'), 'Isi minimal belanja (mis. Rp300.000) atau klik "Pakai preset umum mal".')
+      if (!rr || !(Number.isFinite(rr.minSpend) && rr.minSpend >= 1000)) add('kategori', f('minSpend'), 'Isi minimal belanja (mis. Rp300.000) atau pakai tombol "Pakai preset umum mal".')
       if (rr && !intIn(rr.maxReceiptsCombined, 1, 10)) add('kategori', f('maxReceipts'), 'Isi 1–10 struk yang boleh digabung.')
       if (rr && !/^\d{2}:\d{2}$/.test(rr.cutoffTime)) add('kategori', f('cutoff'), 'Isi jam batas struk, misalnya 22:00.')
     }

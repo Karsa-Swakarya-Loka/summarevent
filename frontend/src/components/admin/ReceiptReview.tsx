@@ -319,7 +319,7 @@ export function ReviewPanel({
                     type="button"
                     aria-pressed={reason === x}
                     onClick={() => setReason(x)}
-                    className={cn('min-h-9 rounded-full border px-3 text-sm font-medium', reason === x ? 'border-brand bg-brand-soft text-brand' : 'bg-card hover:border-foreground/30')}
+                    className={cn('min-h-9 rounded-full border px-3 text-sm font-medium pointer-coarse:min-h-11', reason === x ? 'border-brand bg-brand-soft text-brand' : 'bg-card hover:border-foreground/30')}
                   >
                     {x}
                   </button>

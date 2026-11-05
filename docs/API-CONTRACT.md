@@ -2,7 +2,7 @@
 
 Frontend jalan penuh dengan **mock di browser** (`frontend/src/api/mock`) dan juga dengan backend lewat
 `frontend/src/api/http.ts`, tanpa mengubah satu layar pun. Dokumen ini kontrak di antara keduanya. Backend apa pun
-(saat ini sedang dibangun di Convex oleh tim backend) cukup menyediakan endpoint di bawah, lalu frontend di-build
+(saat ini Convex, dikelola tim backend dan dipakai versi live) cukup menyediakan endpoint di bawah, lalu frontend di-build
 dengan `VITE_API_URL` yang menunjuk ke prefix-nya: `VITE_API_URL=https://api.contoh.id/api` berarti
 `GET https://api.contoh.id/api/events`.
 
@@ -81,7 +81,7 @@ login, bukan error), lalu klien mengirim ulang dengan `name`.
 | GET | `/admin/receipts?status=PENDING\|ALL\|…` | `ReceiptQueueItem[]` — satu item per pesanan (set struk digabung) + hasil cek aturan |
 | PATCH | `/admin/receipts/:id` | `{ decision: 'APPROVE'\|'NEEDS_REVISION'\|'REJECT', reason? }` — berlaku untuk seluruh set struk pesanan. Revisi/tolak wajib `reason`. |
 | GET | `/admin/events/:id/stats` | `EventStats` (polling 5 detik). Termasuk `daily` (30 hari terakhir WIB, urut dari yang terlama: `{ date, tickets, revenue, orders }` dari pesanan terkonfirmasi hari itu, tanpa pembeli simulasi) dan `checkinsByHour` (7 hari × 24 jam, Senin = 0, jumlah check-in VALID) untuk grafik dashboard. |
-| GET | `/admin/events/:id/export?type=attendees\|transactions` | `{ filename, csv }` |
+| GET | `/admin/events/:id/export?type=attendees\|transactions` | `{ filename, csv }`, dengan sel yang aman dibuka di Excel (lihat Aturan) |
 | GET | `/admin/venues` · `/admin/tenants` | Data referensi |
 | GET | `/admin/staff` | `StaffAccount[]` (akun petugas + jumlah scan VALID + scan terakhir), AD-13 |
 | POST | `/admin/staff` | `{ name, phone, email }` → `User` role STAFF. Email wajib dan dibuat huruf kecil; petugas lalu mendapat email undangan untuk membuat sandi (alur reset yang sama, link berlaku 24 jam). Nomor atau email ganda → `409 DUPLICATE` dengan `details.field`. |
@@ -132,6 +132,7 @@ kode yang memanggilnya:
 - **Daftar tunggu (PV-14)**: entri `{ id, userId, sessionId, categoryId, qty, status: WAITING|NOTIFIED|LEFT, createdAt, notifiedAt }`. Setiap kali tempat lepas (hold kedaluwarsa, pesanan batal, struk ditolak), kabari orang terdepan yang jumlahnya muat lewat WA (simulasi), tanpa menahan tempat.
 - **Akun petugas (AD-13)**: user punya `active` (default true); check-in dari akun nonaktif ditolak.
 - **OCR struk (PV-16)** berjalan di browser (tesseract.js); backend tidak perlu endpoint khusus.
+- **Sel CSV export**: angka ditulis apa adanya. Teks yang diawali `=`, `+`, `-`, `@`, tab, atau CR diberi `'` di depannya supaya tidak dijalankan sebagai rumus di Excel atau Sheets, lalu sel yang berisi koma, titik koma, kutip, atau baris baru diapit kutip dengan kutip di dalamnya digandakan. Acuannya `csvCell` di `frontend/src/lib/format.ts`.
 - **Warna poster (AD-01)**: `event.posterPalette?: { bg, accent }` (dua warna hex 6 digit huruf kecil, harus berbeda) menimpa warna tema `posterTheme`; warna teks dihitung dari `bg` (`posterInk` di `domain/rules.ts`, dipakai poster dan e-ticket pengunjung). `EventDraft.posterPalette: null` atau tidak dikirim berarti memakai warna tema. Salah → `400 INVALID` dengan `details.field: 'posterPalette'` (validasinya `posterPaletteCheck` di `domain/rules.ts`). Seed: event `evt_akustik` memakai `{ bg: '#1c2f5e', accent: '#f9a61b' }`.
 
 ## Kode error

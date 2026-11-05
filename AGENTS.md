@@ -39,6 +39,7 @@ Semua pola ada di `scripts/check-no-ai.sh` dan contohnya di `scripts/test-check-
 
 - **Frontend** (`frontend/`): Haikal. **Backend** (Convex, di akun Bintang): Bintang. Jangan mengerjakan bagian orang lain tanpa diminta. Butuh sesuatu dari sisi lain? Tulis kebutuhannya (endpoint, field, env) dan serahkan ke pemiliknya.
 - Batas keduanya adalah kontrak API: [`docs/API-CONTRACT.md`](docs/API-CONTRACT.md) dan `frontend/src/api/contract.ts`. Mengubah kontrak berarti mengubah keduanya dalam satu PR yang disetujui frontend dan backend.
+- Shelvia (user testing), Said (QA), dan Awwal (demo dan pitch) menguji dengan [`docs/PANDUAN-TES.md`](docs/PANDUAN-TES.md). Mengganti nama tombol, akun demo, atau data contoh yang disebut di sana berarti memperbarui panduan itu di PR yang sama.
 
 ## 3. Frontend
 

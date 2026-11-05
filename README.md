@@ -25,7 +25,7 @@ Semuanya berakhir di satu e-ticket QR, dibuka dari satu link, tanpa memasang apl
 
 > [!NOTE]
 > **Prototype untuk Bandung Build Challenge 2026**, tema *Event Ticketing System* dengan fokus pemilihan kursi.
-> Versi demo jalan penuh di browser dengan data contoh, jadi tiap juri punya datanya sendiri. Pembayaran, OTP, WhatsApp, dan email disimulasikan. Backend bersama sedang dibangun di Convex.
+> Versi demo jalan penuh di browser dengan data contoh, jadi tiap juri punya datanya sendiri. Versi live di [summarevent-live.vercel.app](https://summarevent-live.vercel.app) memakai backend bersama di Convex untuk uji dua HP. Pembayaran, OTP, WhatsApp, dan email disimulasikan di keduanya.
 
 <p align="center">
   <img src="docs/gambar/promo-1-denah.webp" width="24%" alt="Pilih kursimu sendiri: denah Sangkuriang diperbesar ke kategori Reguler dengan dua kursi terpilih, di dalam HP" />
@@ -72,9 +72,19 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 2. Pilih **Reguler**, ketuk **Pilihkan 2 kursi berdampingan**, lalu **Pesan 2 kursi**. Kursinya ditahan 10 menit.
 3. Masuk dengan nomor HP apa saja (kode OTP tampil di layar), lalu tekan **Bayar Rp100.000** (simulasi). Ketuk **Lihat e-ticket**.
 4. Kembali ke denah dan tekan **Uji rebutan kursi**: pembeli simulasi menang sepersekian detik lebih dulu, dan kamu ditawari kursi terdekat.
-5. Lewat tombol **Demo**, pindah langsung ke **Panitia** (verifikasi struk, peta kursi live, unduh CSV) dan **Petugas** (*Sesi Demo Juri* → **Mulai scan** → **Ambil tiket contoh**). Dari halaman awal, keduanya melewati splash, pengenalan, dan login email: tekan **Isi otomatis** untuk akun demonya.
+5. Lewat tombol **Demo**, pindah langsung ke **Panitia** (verifikasi struk, peta kursi live, unduh CSV) dan **Petugas** (*Sesi Demo Juri* → **Mulai scan** → **Alat demo** → **Ambil tiket contoh**). Dari halaman awal, keduanya melewati splash, pengenalan, dan login email: tekan **Isi otomatis** untuk akun demonya.
 
-**Reset data demo** di halaman awal mengembalikan semua data contoh.
+**Reset data demo** di menu halaman awal mengembalikan semua data contoh. Di versi live, reset menghapus data bersama, jadi kabari tim dulu.
+
+## Panduan tes tim
+
+[`docs/PANDUAN-TES.md`](docs/PANDUAN-TES.md) berisi alamat, akun, dan data contoh untuk tes, lalu langkah tes sesuai tanggung jawab tiap orang:
+
+| Siapa | Bagian | Isinya |
+| --- | --- | --- |
+| Shelvia | [User testing dan UX](docs/PANDUAN-TES.md#shelvia-user-testing-dan-ux) | Skrip sesi, 14 tugas untuk pengunjung, panitia, dan petugas, apa yang dicatat, dan cara melapor temuan |
+| Said | [QA sistem](docs/PANDUAN-TES.md#said-qa-sistem) | Tes otomatis ke versi demo dan live, cek manual tiap aturan, dan format laporan bug |
+| Awwal | [Demo dan pitch](docs/PANDUAN-TES.md#awwal-demo-dan-pitch) | Link untuk juri, alur demo lima menit, angka untuk slide, dan catatan untuk deck |
 
 ## Cara kerja
 
@@ -140,9 +150,10 @@ summarevent/
 │   │   ├── hooks/, lib/    # data live, format, PWA
 │   │   └── test/           # unit test Vitest
 │   ├── e2e/                # suite end-to-end dan aksesibilitas (playwright-core + Chrome)
-│   ├── public/             # ikon PWA, manifest, service worker, gambar pratinjau link
-│   └── scripts/            # screenshot cepat, gambar promo README, gambar pratinjau link
-├── docs/                   # kontrak API, diagram arsitektur, brand kit, gambar README, lisensi pihak ketiga
+│   ├── public/             # ikon PWA, manifest, service worker, gambar pratinjau link, foto tim
+│   └── scripts/            # screenshot cepat, gambar promo README, gambar pratinjau link, potong foto tim
+├── backend/                # backend Convex untuk versi live (tim backend), mengikuti kontrak API
+├── docs/                   # panduan tes tim, kontrak API, diagram arsitektur, brand kit, gambar README, lisensi
 ├── scripts/                # cek atribusi AI beserta tesnya
 ├── .githooks/              # commit-msg dan pre-push
 └── AGENTS.md               # aturan kerja untuk manusia dan AI agent
@@ -163,6 +174,11 @@ Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. T
 
 - **Data contoh saja.** Nama, nomor HP, tenant, pesanan, dan struk di demo semuanya fiktif, dan struk contoh bertanda "STRUK CONTOH". Tidak ada data kartu atau rekening yang diminta.
 - **Tanpa server di versi demo.** Semua data tinggal di browser pengunjung dan hilang lewat **Reset data demo**.
+- **Versi live untuk uji, bukan data asli.** Kode OTP dan akun demo masih tampil di layar, jadi siapa pun bisa masuk dengan nomor HP mana pun. Pakai nama dan nomor contoh. Sebelum dipakai sungguhan, OTP harus dikirim lewat WhatsApp atau SMS dan login demo dimatikan.
+- **Tiket.** Tiap QR bertanda tangan, jadi QR palsu ditolak saat scan. Layar tiket mengingatkan agar foto QR tidak diunggah ke media sosial.
+- **Foto.** Foto struk dan foto profil digambar ulang di browser sebelum dikirim, jadi data lokasi di dalam foto ikut terbuang.
+- **Data pengunjung di sisi panitia.** Nomor HP di daftar pesanan disamarkan. Di CSV versi demo, isi yang diawali `=`, `+`, `-`, atau `@` diberi tanda petik di depannya supaya tidak dijalankan sebagai rumus di Excel atau Sheets. Backend menyusul dengan aturan yang sama.
+- **HP petugas.** Data untuk scan offline menyimpan sidik SHA-256 tiap QR, bukan QR-nya, dan dihapus saat petugas keluar.
 - **Header keamanan.** Halaman tidak bisa dibingkai situs lain, jenis berkas tidak ditebak browser, dan hanya kamera (untuk scanner petugas) yang boleh dipakai.
 - **Tanpa pelacak.** Tidak ada cookie pelacak atau analitik pihak ketiga.
 
@@ -170,7 +186,7 @@ Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. T
 
 | Bagian | Di mana | Catatan |
 | --- | --- | --- |
-| Frontend | Vercel, folder `frontend/` | `vercel deploy --prod` dari `frontend/`. Tanpa variabel build, hasilnya versi demo. Dipakai sampai ada domain sendiri. |
+| Frontend | Vercel, folder `frontend/` | `vercel deploy --prod` dari `frontend/`. Satu deployment melayani dua host: [summarevent.vercel.app](https://summarevent.vercel.app) memakai mock di browser, dan [summarevent-live.vercel.app](https://summarevent-live.vercel.app) memakai backend lewat `/api` miliknya, yang diteruskan `vercel.json` ke Convex. Host live disebut di `VITE_LIVE_HOSTS` di `.env.production`. |
 | Backend | Convex, dikelola tim backend | Di [`backend/`](backend/README.md), mengikuti [kontrak API](docs/API-CONTRACT.md). Frontend cukup di-build dengan `VITE_API_URL` yang menunjuk ke `https://<deployment>.convex.site/api`. |
 | Diagram arsitektur | GitHub Pages dari `main` `/docs` | [karsa-swakarya-loka.github.io/summarevent/arsitektur.html](https://karsa-swakarya-loka.github.io/summarevent/arsitektur.html) |
 
@@ -178,6 +194,7 @@ Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. T
 
 | Dokumen | Isi |
 | --- | --- |
+| [Panduan tes tim](docs/PANDUAN-TES.md) | Akun dan data contoh, lalu langkah tes untuk user testing (Shelvia), QA sistem (Said), serta demo dan pitch (Awwal) |
 | [Kontrak API](docs/API-CONTRACT.md) | Endpoint, bentuk data, aturan yang wajib sama dengan mock, kode error, dan uji terima backend |
 | [Diagram arsitektur](https://karsa-swakarya-loka.github.io/summarevent/arsitektur.html) | Peta sistem interaktif yang menaut ke baris kode. Sumbernya [`docs/arsitektur.archify.json`](docs/arsitektur.archify.json) |
 | [Uji end-to-end](frontend/e2e/README.md) | Isi tiap suite, cara menjalankan, dan mode uji terima backend |

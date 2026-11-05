@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import './afiche.css'
 
-export type PosterVariant = 'verde' | 'negro' | 'crema' | 'ritmo' | 'naranja'
+export type PosterVariant = 'crema' | 'negro' | 'ambar'
 
 export interface PosterSpec {
   key: string
@@ -28,14 +28,16 @@ export interface PosterSpec {
   top?: [string, string]
   /** A short line, with an optional number set big. */
   foot: ReactNode
-  /** The second line under the word (ink poster). */
-  sub?: string
   /** A sticker or any art placed by the variant. */
   art?: ReactNode
   action: { label: ReactNode; name?: string; onClick?: () => void; href?: string; disabled?: boolean }
+  /** A quieter second way in, under the action. */
+  secondary?: { label: ReactNode; name?: string; onClick: () => void; disabled?: boolean }
 }
 
 const lim = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
+/** The legend's height: the posters sit centred in the room above it. */
+const LEG = 76
 const mod = (v: number, n: number) => ((v % n) + n) % n
 type Spring = { x: number; v: number; meta: number; k: number; c: number }
 const spring = (x: number, k: number, c: number): Spring => ({ x, v: 0, meta: x, k, c })
@@ -76,8 +78,10 @@ function mount(scene: HTMLElement, o: Options) {
   function measure() {
     W = scene.clientWidth
     H = scene.clientHeight
-    // the width of a poster: scaled from the design, or on a narrow screen whatever the width and height allow
-    const w = W < 700 ? Math.min(W * 0.62, H * 0.46) : 345 * lim(Math.min(W / 1280, H / 700), 0.55, 1.05)
+    // the width of a poster: from the design width, but never taller than the room above the legend (with space to lift)
+    // on a short screen the lift room shrinks with the posters, so they stay readable
+    const lift = W < 700 ? 56 : H < 460 ? 44 : 100
+    const w = Math.min(W < 700 ? W * 0.62 : 345 * lim(W / 1280, 0.55, 1.05), (H - LEG - lift) / 1.4)
     kk = w / 345
     scene.style.setProperty('--af-w', Math.round(w) + 'px')
   }
@@ -94,7 +98,7 @@ function mount(scene: HTMLElement, o: Options) {
       const b = base[j]
       const p = P[j]
       let x = b.x * kk
-      let y = b.y * kk - 26 * kk
+      let y = b.y * kk - LEG / 2
       let r = b.r
       let sc = 1
       const op = 1 - lim((Math.abs(b.d) - 2.05) * 4, 0, 1)
@@ -102,7 +106,7 @@ function mount(scene: HTMLElement, o: Options) {
       let veil = 0
       if (open >= 0) {
         if (j === open) {
-          y = -46 * kk
+          y = -LEG / 2 - 24 * kk
           r = 0
           sc = W < 700 ? 1.12 : 1.16
           z = 300
@@ -145,7 +149,7 @@ function mount(scene: HTMLElement, o: Options) {
       const b = rest(j)
       if (Math.abs(b.d) > 2.05) continue
       const cx = W / 2 + b.x * kk
-      const cy = H / 2 + b.y * kk - 26 * kk
+      const cy = H / 2 + b.y * kk - LEG / 2
       const dx = px - cx
       const dy = py - cy
       const cs = Math.cos(-b.r)
@@ -357,19 +361,19 @@ export function Afiche({ posters, label, className }: { posters: PosterSpec[]; l
       <div className="af-abanico" role="group" aria-label={label}>
         {posters.map((p, i) => (
           <article key={p.key} className={'af-cartel af-' + p.variant} data-titulo={p.title} data-nota={p.note} aria-label={`Poster ${i + 1} dari ${posters.length}: ${p.title}`}>
-            {p.variant === 'verde' && <i className="af-sol" aria-hidden />}
-            {p.variant === 'ritmo' && (
-              <div className="af-medios" aria-hidden>
-                <i />
-                <i />
-                <i />
+            {p.variant === 'crema' && <i className="af-sol" aria-hidden />}
+            {p.variant === 'negro' && (
+              <div className="af-arcos" aria-hidden>
                 <i />
                 <i />
                 <i />
               </div>
             )}
-            {p.variant === 'naranja' && (
-              <div className="af-arcos" aria-hidden>
+            {p.variant === 'ambar' && (
+              <div className="af-medios" aria-hidden>
+                <i />
+                <i />
+                <i />
                 <i />
                 <i />
                 <i />
@@ -381,30 +385,14 @@ export function Afiche({ posters, label, className }: { posters: PosterSpec[]; l
                 <span>{p.top[1]}</span>
               </p>
             )}
-            {p.variant === 'crema' ? (
-              <>
-                <h2 className={'af-palabra af-vertical'} aria-label={p.word}>
-                  {[...p.word].map((ch, k) => (
-                    <span key={k} aria-hidden style={{ '--i': k } as React.CSSProperties}>
-                      {ch}
-                    </span>
-                  ))}
-                </h2>
-                <div className="af-arco">{p.art && <div className="af-stiker">{p.art}</div>}</div>
-              </>
-            ) : (
-              <>
-                <h2 className="af-palabra" aria-label={p.word}>
-                  {[...p.word].map((ch, k) => (
-                    <span key={k} aria-hidden style={{ '--i': k } as React.CSSProperties}>
-                      {ch}
-                    </span>
-                  ))}
-                </h2>
-                {p.sub && <p className="af-sub">{p.sub}</p>}
-                {p.art && <div className="af-stiker">{p.art}</div>}
-              </>
-            )}
+            <h2 className="af-palabra" aria-label={p.word}>
+              {[...p.word].map((ch, k) => (
+                <span key={k} aria-hidden style={{ '--i': k } as React.CSSProperties}>
+                  {ch}
+                </span>
+              ))}
+            </h2>
+            {p.art && <div className="af-stiker">{p.art}</div>}
             <div className="af-pie">
               <em>{p.foot}</em>
               {p.action.href ? (
@@ -414,6 +402,11 @@ export function Afiche({ posters, label, className }: { posters: PosterSpec[]; l
               ) : (
                 <button type="button" className="af-cta" onClick={p.action.onClick} disabled={p.action.disabled} aria-label={p.action.name}>
                   {p.action.label}
+                </button>
+              )}
+              {p.secondary && (
+                <button type="button" className="af-link" onClick={p.secondary.onClick} disabled={p.secondary.disabled} aria-label={p.secondary.name}>
+                  {p.secondary.label}
                 </button>
               )}
             </div>

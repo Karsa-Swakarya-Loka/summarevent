@@ -80,7 +80,7 @@ const CSS =
   '.ssf :focus-visible{outline:2.5px solid var(--ssf-accent);outline-offset:3px;border-radius:6px}' +
   '.ssf-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}' +
   // top bar
-  '.ssf-top{position:relative;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:clamp(10px,1.4cqw,18px) clamp(8px,1.2cqw,18px) clamp(18px,3.6cqw,56px)}' +
+  '.ssf-top{position:relative;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:clamp(10px,1.2cqw,16px) clamp(8px,1.2cqw,18px) clamp(14px,2cqw,28px)}' +
   '.ssf-badge{justify-self:start;display:block;width:clamp(58px,6cqw,80px);rotate:-8deg;transition:transform .5s cubic-bezier(.2,1.6,.3,1)}' +
   '.ssf-badge:hover{transform:rotate(10deg) scale(1.08)}' +
   '.ssf-badge svg{width:100%;height:auto;filter:drop-shadow(0 1px .5px rgba(10,30,16,.25)) drop-shadow(0 4px 6px rgba(10,30,16,.15))}' +
@@ -118,8 +118,8 @@ const CSS =
   '.ssf-notch button{position:relative;z-index:1;flex:1 1 0;min-height:44px;min-width:7.5rem;padding:0 18px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;color:var(--ssf-ink);transition:color .3s}' +
   '.ssf-notch button[aria-selected="true"]{color:var(--ssf-paper)}' +
   '.ssf-notch-pill{position:absolute;z-index:0;top:5px;bottom:6px;left:5px;width:calc((100% - 12px) / 2);border-radius:999px;background:var(--ssf-ink);transition:transform .5s cubic-bezier(.2,1.2,.3,1)}' +
-  '.ssf-slides{position:relative;z-index:2;display:grid;grid-auto-flow:column;grid-auto-columns:100%;padding-top:72px;transition:transform .65s cubic-bezier(.2,.9,.2,1)}' +
-  '.ssf-slide{min-width:0}' +
+  '.ssf-slides{position:relative;z-index:2;flex:1 1 0;min-height:300px;display:grid;grid-auto-flow:column;grid-auto-columns:100%;padding-top:64px;transition:transform .65s cubic-bezier(.2,.9,.2,1)}' +
+  '.ssf-slide{min-width:0;min-height:0;height:100%}' +
   // the wordmark stage
   '.ssf-stage{position:relative;z-index:1;margin-top:auto;width:min(100%,calc(var(--ssf-wmh) * var(--ssf-ar)));align-self:center;padding:0 clamp(6px,.8cqw,12px)}' +
   '.ssf-stage-in{position:relative;container-type:inline-size}' +
@@ -140,7 +140,7 @@ const CSS =
   '.ssf-sheen{transform:translateX(-130%);transition:transform 0s}' +
   '.ssf-st-btn:hover .ssf-sheen{transform:translateX(130%);transition:transform .9s cubic-bezier(.4,0,.2,1)}' +
   '.ssf-ring{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:2px solid var(--ssf-cream);opacity:0;pointer-events:none}' +
-  '@container (max-width: 760px){.ssf-top{padding-bottom:18px}.ssf-slides{padding-top:66px}.ssf-stage{width:min(165%,calc(var(--ssf-wmh) * var(--ssf-ar)));max-width:none;margin-left:-6%}}' +
+  '@container (max-width: 760px){.ssf-top{padding-bottom:14px}.ssf-slides{padding-top:60px;min-height:260px}.ssf-stage{width:min(165%,calc(var(--ssf-wmh) * var(--ssf-ar)));max-width:none;margin-left:-6%}}' +
   '@keyframes ssf-rewrite{0%{stroke-dashoffset:var(--l,120px)}100%{stroke-dashoffset:0}}' +
   '@keyframes ssf-popin{from{opacity:0;transform:translateY(10px) scale(.7) rotate(4deg)}}' +
   // the storyboard: everything above is the finished state; motion only adds the way in
@@ -294,7 +294,7 @@ export function StickerSlap({
   children,
   stickers,
   height = '100svh',
-  wordmarkMaxHeight = '50svh',
+  wordmarkMaxHeight = 'clamp(140px, 30svh, 340px)',
   paper = '#fbfaf7',
   panel = '#006426',
   ink = '#231f20',

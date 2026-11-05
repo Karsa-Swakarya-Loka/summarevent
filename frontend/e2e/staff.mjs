@@ -137,7 +137,7 @@ await shot(page, '12-search-empty')
 
 // 9b. Rina's own phone after the gate: her tickets are used and Pass Saya says "Hatur nuhun!" (PRD §1)
 await page.goto(BASE + '/', { waitUntil: 'networkidle' })
-await toPoster(page, 'Rina, persona')
+await toPoster(page, 'Pengunjung')
 await page.getByRole('button', { name: /masuk cepat sebagai Rina/ }).click()
 await page.waitForURL(/\/app\/pass/)
 const thanks = page.getByRole('region', { name: 'Sudah check-in' })

@@ -38,6 +38,8 @@ export interface ResetToken {
   token: string
   userId: string
   expiresAt: string
+  /** when it was issued; a request within FORGOT_MIN_INTERVAL_SEC of it sends nothing new */
+  createdAt?: string
 }
 
 export interface Db {

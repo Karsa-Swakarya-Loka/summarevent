@@ -76,7 +76,7 @@ export default function MyPass() {
   }
 
   return (
-    <div>
+    <div className="lg:mx-auto lg:w-full lg:max-w-6xl lg:px-4">
       <TabHeader title="Pass Saya" />
 
       <div className="space-y-6 px-4 pt-1 pb-6">
@@ -97,7 +97,7 @@ export default function MyPass() {
         ))}
 
         {tickets.loading && !tickets.data ? (
-          <div className="space-y-3" role="status" aria-busy="true" aria-label="Memuat tiket">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0" role="status" aria-busy="true" aria-label="Memuat tiket">
             <Skeleton className="h-32 w-full rounded-[1.1rem]" />
             <Skeleton className="h-32 w-full rounded-[1.1rem]" />
           </div>
@@ -135,7 +135,7 @@ export default function MyPass() {
             {checkedIn.map((g) => (
               <div key={g.orderId} className="space-y-3">
                 <ThanksCard items={g.items} />
-                <ul className="space-y-3">
+                <ul className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
                   {g.items.map((it) => (
                     <li key={it.ticket.id}>
                       <MiniTicket item={it} now={now} />
@@ -146,7 +146,7 @@ export default function MyPass() {
             ))}
 
             {current.length > 0 ? (
-              <ul className="space-y-3" aria-label="E-ticket aktif">
+              <ul className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0" aria-label="E-ticket aktif">
                 {current.map((it, i) => (
                   <li key={it.ticket.id} className="animate-rise" style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}>
                     <MiniTicket item={it} now={now} />
@@ -170,7 +170,7 @@ export default function MyPass() {
                 <h2 id="history-title" className="px-1 text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
                   Riwayat
                 </h2>
-                <ul className="space-y-3">
+                <ul className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
                   {history.map((it) => (
                     <li key={it.ticket.id}>
                       <MiniTicket item={it} now={now} />

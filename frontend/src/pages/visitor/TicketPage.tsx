@@ -95,7 +95,7 @@ function TicketScreen({ ticketId }: { ticketId: string }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-6xl lg:px-4">
       <BackHeader to="/app/pass" title={item.ticket.seatLabel ? `Kursi ${item.ticket.seatLabel}` : item.category.name} />
       <div className="flex flex-1 flex-col items-center pt-3 pb-10">
         {/* every ticket of the order in one row that snaps per ticket; only the one opened plays its issuing, a used one

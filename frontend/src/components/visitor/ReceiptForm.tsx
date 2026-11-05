@@ -262,7 +262,7 @@ export function ReceiptForm({
 
   return (
     <>
-      <div className="flex-1 space-y-5 px-4 pb-8">
+      <div className="flex-1 space-y-5 px-4 pb-8 lg:px-0">
         {revision.length > 0 && (
           <div role="alert" className="animate-rise rounded-[1.4rem] bg-[#ffe7a3] p-4 text-sm">
             <p className="font-bold">Panitia minta struk diperbaiki</p>
@@ -492,7 +492,7 @@ export function ReceiptForm({
         {children}
       </div>
 
-      <BottomBar>
+      <BottomBar className="lg:rounded-[1.4rem] lg:bg-card lg:p-4 lg:pl-5 lg:shadow-xs">
         <div className="flex items-center gap-3">
           <p className="min-w-0 flex-1 leading-tight">
             <span className="block text-[0.66rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">Syarat</span>

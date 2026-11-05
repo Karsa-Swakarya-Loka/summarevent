@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { LoadError, PageSkeleton } from '@/components/visitor/Common'
+import { DeskHead, LoadError, PageSkeleton, PhoneOnly } from '@/components/visitor/Common'
 import { OrderSummary } from '@/components/visitor/OrderSummary'
 import { StatusHero } from '@/components/visitor/StatusHero'
 import { pendingTitle, seatRangeLabel } from '@/components/visitor/helpers'
@@ -51,16 +51,22 @@ export default function OrderStatus() {
 
   if (q.loading && !q.data) {
     return (
-      <div>
-        <BackHeader to="/app/pass" title="Status pesanan" />
+      <div className="lg:mx-auto lg:w-full lg:max-w-6xl lg:px-8">
+        <PhoneOnly>
+          <BackHeader to="/app/pass" title="Status pesanan" />
+        </PhoneOnly>
+        <DeskHead to="/app/pass" title="Status pesanan" />
         <PageSkeleton />
       </div>
     )
   }
   if (!q.data) {
     return (
-      <div>
-        <BackHeader to="/app/pass" title="Status pesanan" />
+      <div className="lg:mx-auto lg:w-full lg:max-w-6xl lg:px-8">
+        <PhoneOnly>
+          <BackHeader to="/app/pass" title="Status pesanan" />
+        </PhoneOnly>
+        <DeskHead to="/app/pass" title="Status pesanan" />
         <LoadError error={q.error} onRetry={q.reload} backTo="/app/pass" backLabel="Ke Pass Saya" />
       </div>
     )
@@ -191,12 +197,19 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
   }
 
   return (
-    <div>
-      <BackHeader to="/app/pass" title="Status pesanan" right={<span className="font-mono text-xs text-muted-foreground">{order.code}</span>} />
-      <div className="space-y-4 p-4 pb-10">
-        {hero}
-        {after}
-        <OrderSummary detail={detail} />
+    <div className="lg:mx-auto lg:w-full lg:max-w-6xl lg:px-8 lg:pb-20">
+      <PhoneOnly>
+        <BackHeader to="/app/pass" title="Status pesanan" right={<span className="font-mono text-xs text-muted-foreground">{order.code}</span>} />
+      </PhoneOnly>
+      <DeskHead to="/app/pass" title="Status pesanan" right={<span className="font-mono text-sm text-muted-foreground">{order.code}</span>} />
+      {/* on a laptop: the status and what to do on the left, the order summary on the right */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-x-12">
+        <div className="space-y-4 p-4 pb-10 lg:p-0">
+          {hero}
+          {after}
+          <OrderSummary detail={detail} className="lg:hidden" />
+        </div>
+        <OrderSummary detail={detail} className="hidden lg:sticky lg:top-[calc(var(--spacing-desk-bar)+1.5rem)] lg:block" />
       </div>
     </div>
   )

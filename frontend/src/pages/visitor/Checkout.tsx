@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { BottomBar, LoadError, PageSkeleton, SectionLabel, SimTag } from '@/components/visitor/Common'
+import { BottomBar, DeskHead, LoadError, PageSkeleton, PhoneOnly, SectionLabel, SimTag } from '@/components/visitor/Common'
 import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { OrderSummary } from '@/components/visitor/OrderSummary'
 import { ReceiptForm } from '@/components/visitor/ReceiptForm'
@@ -33,16 +33,22 @@ export default function Checkout() {
 
   if (q.loading && !q.data) {
     return (
-      <div>
-        <BackHeader to="/app" title="Pesanan" />
+      <div className="lg:mx-auto lg:w-full lg:max-w-6xl lg:px-8">
+        <PhoneOnly>
+          <BackHeader to="/app" title="Pesanan" />
+        </PhoneOnly>
+        <DeskHead to="/app" title="Pesanan" />
         <PageSkeleton />
       </div>
     )
   }
   if (!q.data) {
     return (
-      <div>
-        <BackHeader to="/app" title="Pesanan" />
+      <div className="lg:mx-auto lg:w-full lg:max-w-6xl lg:px-8">
+        <PhoneOnly>
+          <BackHeader to="/app" title="Pesanan" />
+        </PhoneOnly>
+        <DeskHead to="/app" title="Pesanan" />
         <LoadError error={q.error} onRetry={q.reload} />
       </div>
     )
@@ -97,9 +103,12 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
 
   if (expired) {
     return (
-      <div>
-        <BackHeader to={`/app/e/${event.slug}`} title="Pesanan" />
-        <div className="space-y-4 p-4 pb-10">
+      <div className="lg:mx-auto lg:w-full lg:max-w-3xl lg:px-8">
+        <PhoneOnly>
+          <BackHeader to={`/app/e/${event.slug}`} title="Pesanan" />
+        </PhoneOnly>
+        <DeskHead to={`/app/e/${event.slug}`} title="Pesanan" />
+        <div className="space-y-4 p-4 pb-10 lg:px-0">
           <StatusHero tone="ink" art="kursi" label={seats.length ? 'Kursi dilepas' : 'Tempat dilepas'} title="Waktu tahan habis">
             <p>{what} kembali tersedia.</p>
           </StatusHero>
@@ -210,11 +219,38 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
     </div>
   )
 
-  return (
-    <div className="flex flex-1 flex-col">
-      <BackHeader to={seatPath} title={TITLE[access]} right={<HoldPill to={order.holdExpiresAt} label={seats.length ? 'Kursi ditahan' : 'Tempat ditahan'} />} />
+  const hold = <HoldPill to={order.holdExpiresAt} label={seats.length ? 'Kursi ditahan' : 'Tempat ditahan'} />
+  // the step's one action: in the phone's bottom bar, on a laptop under the order summary on the right
+  const action =
+    user && access === 'PAID' ? (
+      <>
+        {error}
+        <Button className="h-14 w-full gap-2 text-base" onClick={() => void pay('SUCCESS')} disabled={!!busy}>
+          {busy === 'pay-ok' && <LoaderCircle className="size-5 animate-spin" aria-hidden />}
+          Bayar {rupiahPlain(order.totalAmount)}
+          <SimTag className="bg-white text-ink" />
+        </Button>
+      </>
+    ) : user && access === 'FREE' ? (
+      <>
+        {error}
+        <Button className="h-14 w-full text-base" onClick={() => void confirmFree()} disabled={!!busy}>
+          {busy === 'free' ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Check className="size-5" aria-hidden />}
+          Konfirmasi pendaftaran
+        </Button>
+      </>
+    ) : null
 
-      <div className="space-y-5 px-4 pt-1 pb-5">
+  return (
+    // on a laptop: the steps on the left, the order summary and the action on the right
+    <div className="flex flex-1 flex-col lg:mx-auto lg:grid lg:w-full lg:max-w-6xl lg:flex-none lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-x-12 lg:px-8 lg:pb-20">
+      <PhoneOnly>
+        <BackHeader to={seatPath} title={TITLE[access]} right={hold} />
+      </PhoneOnly>
+      <DeskHead to={seatPath} title={TITLE[access]} right={hold} className="lg:col-span-2" />
+
+      <div className="contents lg:col-start-1 lg:block lg:min-w-0">
+      <div className="space-y-5 px-4 pt-1 pb-5 lg:px-0 lg:pt-0">
         <div className="space-y-3">
           <Progress step={user ? 2 : 1} last={LAST_STEP[access]} />
           {user && (
@@ -227,7 +263,7 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
           )}
         </div>
 
-        <OrderSummary detail={detail} />
+        <OrderSummary detail={detail} className="lg:hidden" />
 
         {user ? (
           <AttendeeNames items={order.items} names={shownNames} onChange={(id, name) => setNames({ ...shownNames, [id]: name })} />
@@ -248,7 +284,7 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
         </ReceiptForm>
       ) : (
         <>
-          <div className="flex-1 space-y-5 px-4 pb-8">
+          <div className="flex-1 space-y-5 px-4 pb-8 lg:px-0">
             {user && access === 'PAID' && (
               <section aria-labelledby="pay-title" className="animate-rise space-y-2.5">
                 <SectionLabel id="pay-title">Bayar pakai</SectionLabel>
@@ -261,27 +297,15 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
             {footer}
           </div>
 
-          {user && access === 'PAID' && (
-            <BottomBar>
-              {error}
-              <Button className="h-14 w-full gap-2 text-base" onClick={() => void pay('SUCCESS')} disabled={!!busy}>
-                {busy === 'pay-ok' && <LoaderCircle className="size-5 animate-spin" aria-hidden />}
-                Bayar {rupiahPlain(order.totalAmount)}
-                <SimTag className="bg-white text-ink" />
-              </Button>
-            </BottomBar>
-          )}
-          {user && access === 'FREE' && (
-            <BottomBar>
-              {error}
-              <Button className="h-14 w-full text-base" onClick={() => void confirmFree()} disabled={!!busy}>
-                {busy === 'free' ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Check className="size-5" aria-hidden />}
-                Konfirmasi pendaftaran
-              </Button>
-            </BottomBar>
-          )}
+          {action && <BottomBar className="lg:hidden">{action}</BottomBar>}
         </>
       )}
+      </div>
+
+      <aside className="hidden space-y-4 lg:sticky lg:top-[calc(var(--spacing-desk-bar)+1.5rem)] lg:col-start-2 lg:block">
+        <OrderSummary detail={detail} />
+        {action}
+      </aside>
 
       <Dialog open={askCancel} onOpenChange={(o) => busy !== 'cancel' && setAskCancel(o)}>
         <DialogContent className="sm:max-w-sm">

@@ -15,6 +15,9 @@ import { useAccount, useLive } from '@/hooks/useLive'
 import { onboardingDone } from '@/lib/intro'
 import { cn } from '@/lib/utils'
 
+/** The shortcut as this keyboard prints it: ⌘K on a Mac, Ctrl K elsewhere (the judges' laptops are mostly Windows). */
+const SHORTCUT = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K'
+
 /** The page's name in the breadcrumb, from the nav; deeper pages add their own last crumb. */
 function crumbsFor(pathname: string): Array<{ label: string; to?: string }> {
   const item = [...ADMIN_NAV].sort((a, b) => b.to.length - a.to.length).find((n) => (n.end ? pathname === n.to : pathname.startsWith(n.to)))
@@ -107,7 +110,7 @@ export function AdminLayout() {
       <button type="button" onClick={() => setPalette(true)} className="flex h-11 items-center gap-2.5 rounded-xl bg-panel px-3 text-left text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground">
         <Search className="size-4 shrink-0" aria-hidden />
         <span className="flex-1">Cari cepat</span>
-        <kbd className="rounded-md bg-card px-1.5 py-0.5 font-sans text-[0.68rem] font-semibold text-muted-foreground ring-1 ring-foreground/10 pointer-coarse:hidden">⌘K</kbd>
+        <kbd className="rounded-md bg-card px-1.5 py-0.5 font-sans text-[0.68rem] font-semibold text-muted-foreground ring-1 ring-foreground/10 pointer-coarse:hidden">{SHORTCUT}</kbd>
       </button>
 
       <nav className="flex flex-col gap-0.5" aria-label="Menu panitia">
@@ -171,7 +174,8 @@ export function AdminLayout() {
       )}
 
       <div className="min-w-0 lg:flex lg:flex-col">
-        <div className="hidden items-center gap-3 px-1 pt-1 pb-4 lg:flex">
+        {/* as wide as the pages (max-w-7xl), so on a wide screen the breadcrumb starts where the page does */}
+        <div className="mx-auto hidden w-full max-w-7xl items-center gap-3 px-1 pt-1 pb-4 lg:flex">
           <Breadcrumb crumbs={crumbs} event={summary} />
           <Link
             to="/admin/receipts"

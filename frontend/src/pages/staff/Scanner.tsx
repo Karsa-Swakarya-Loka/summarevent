@@ -6,17 +6,15 @@ import { api } from '@/api'
 import { CameraView } from '@/components/staff/CameraView'
 import { cameraPrecheck, type CameraProblem } from '@/components/staff/camera'
 import { ScanResult } from '@/components/staff/ScanResult'
-import { unlockAudio } from '@/components/staff/beep'
 import { fetchEventTickets, loadDemoToolsOpen, pickRandom, saveDemoToolsOpen, tamperToken } from '@/components/staff/demoTickets'
 import { loadQueue, offlineCapable, QUEUE_EVENT, refreshManifest, syncQueue, type SyncConflict } from '@/components/staff/offline'
+import { gateScan, type Seen } from '@/components/staff/scanGate'
 import { sessionName, sessionWindow, useStaffSession } from '@/components/staff/session'
 import { useCheckin } from '@/components/staff/useCheckin'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
 import { fmtDateTime, fmtRange } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-/** Same QR is ignored while its result is on screen and for this long after. */
-const SAME_TOKEN_MS = 3000
 const VALID_AUTO_DISMISS_MS = 3500
 
 const PROBLEM_TEXT: Record<CameraProblem, { title: string; body: string }> = {
@@ -26,7 +24,7 @@ const PROBLEM_TEXT: Record<CameraProblem, { title: string; body: string }> = {
   },
   'permission-denied': {
     title: 'Izin kamera ditolak',
-    body: 'Izinkan akses kamera untuk situs ini di pengaturan browser, lalu ketuk Coba lagi. Sementara itu, tempel kode QR atau cari tiket manual.',
+    body: 'Ketuk ikon gembok atau pengaturan di samping alamat situs, izinkan Kamera, lalu ketuk Coba lagi. Sementara itu, tiket bisa dicari manual.',
   },
   'no-camera': { title: 'Kamera tidak ditemukan', body: 'Perangkat ini tidak punya kamera yang bisa dipakai. Tempel kode QR atau cari tiket manual.' },
   'in-use': { title: 'Kamera sedang dipakai aplikasi lain', body: 'Tutup aplikasi lain yang memakai kamera, lalu ketuk Coba lagi.' },
@@ -49,7 +47,7 @@ export default function Scanner() {
   const [problem, setProblem] = useState<CameraProblem | null>(() => cameraPrecheck())
   const [cameraKey, setCameraKey] = useState(0)
 
-  const last = useRef<{ token: string; at: number } | null>(null)
+  const last = useRef<Seen | null>(null)
   const showing = useRef(false)
   const { submit, busy, current } = checkin
   useEffect(() => {
@@ -59,24 +57,32 @@ export default function Scanner() {
   const run = useCallback(
     (token: string) => {
       last.current = { token: token.trim(), at: Date.now() }
-      void submit(token)
+      // the result is up from the moment it resolves, before React has re-rendered
+      void submit(token).then((res) => {
+        if (res) showing.current = true
+      })
     },
     [submit],
   )
 
-  // PT-04 anti double scan: one at a time, nothing while a result is shown, same QR muted for 3 s.
+  // PT-04 anti double scan: one at a time, nothing while a result is shown, and a QR that stays in front of the
+  // camera counts once (scanGate.ts).
   const onCameraToken = useCallback(
     (raw: string) => {
-      const token = raw.trim()
-      if (!token || showing.current || busy.current) return
-      const prev = last.current
-      if (prev && prev.token === token && Date.now() - prev.at < SAME_TOKEN_MS) return
-      run(token)
+      const gate = gateScan(last.current, raw, Date.now(), showing.current || busy.current)
+      last.current = gate.seen
+      if (gate.accept) run(raw)
     },
     [run, busy],
   )
 
-  const onProblem = useCallback((kind: CameraProblem) => setProblem(kind), [])
+  // after Coba lagi the same panel comes back within a blink, so say that the retry did run
+  const retried = useRef(false)
+  const onProblem = useCallback((kind: CameraProblem) => {
+    if (retried.current) toast.error(`Masih gagal: ${(PROBLEM_TEXT[kind] ?? PROBLEM_TEXT.unknown).title}.`)
+    retried.current = false
+    setProblem(kind)
+  }, [])
 
   const dismiss = () => {
     if (checkin.current) last.current = { token: checkin.current.token, at: Date.now() }
@@ -84,6 +90,7 @@ export default function Scanner() {
   }
 
   const retryCamera = () => {
+    retried.current = true
     setProblem(cameraPrecheck())
     setCameraKey((k) => k + 1)
   }
@@ -108,7 +115,7 @@ export default function Scanner() {
   }
 
   return (
-    <DarkShell onPointerDown={unlockAudio}>
+    <DarkShell>
       {/* Top bar: back, event + session, live counter */}
       <header className="flex shrink-0 items-center gap-2 bg-[#111] px-2 pt-[max(env(safe-area-inset-top),8px)] pb-2">
         <Link to="/staff" className="flex size-14 shrink-0 items-center justify-center rounded-full hover:bg-white/10" aria-label="Kembali ke pilih sesi">
@@ -125,7 +132,7 @@ export default function Scanner() {
         <div
           className="shrink-0 rounded-xl bg-white/12 px-3 py-1 text-right"
           aria-live="polite"
-          aria-label={counter.data ? `Hadir ${counter.data.checkedIn} dari ${counter.data.capacity}` : 'Jumlah hadir'}
+          aria-label={counter.data ? `Hadir ${counter.data.checkedIn} dari ${counter.data.capacity} tiket` : 'Jumlah hadir'}
         >
           <div className="text-xs font-semibold text-white/80">Hadir</div>
           <div className="text-xl leading-tight font-black tabular-nums" data-testid="attendance">
@@ -273,9 +280,9 @@ function OfflineBar({ sessionId }: { sessionId: string }) {
   )
 }
 
-function DarkShell({ children, onPointerDown }: { children: ReactNode; onPointerDown?: () => void }) {
+function DarkShell({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed inset-0 z-30 bg-[#0b0b0c] text-white" onPointerDown={onPointerDown}>
+    <div className="fixed inset-0 z-30 bg-[#0b0b0c] text-white">
       <main className="mx-auto flex h-dvh w-full max-w-md flex-col">{children}</main>
     </div>
   )
@@ -301,13 +308,13 @@ function CameraFallback({
           <h2 className="text-2xl font-bold">{text.title}</h2>
           <p className="mt-2 text-base text-white/80">{text.body}</p>
         </div>
-        <PasteForm onSubmit={onSubmit} pending={pending} className="w-full text-left" />
-        {/* Cari manual is in the bar below, on every state of this screen */}
         {problem !== 'insecure-context' && problem !== 'unsupported' && (
-          <button type="button" onClick={onRetry} className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white/12 text-lg font-bold ring-1 ring-white/25">
+          <button type="button" onClick={onRetry} className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white text-lg font-bold text-ink">
             <RotateCcw className="size-5" aria-hidden /> Coba lagi
           </button>
         )}
+        <PasteForm onSubmit={onSubmit} pending={pending} className="w-full text-left" />
+        {/* Cari manual is in the bar below, on every state of this screen */}
       </div>
     </div>
   )
@@ -413,7 +420,7 @@ function BottomBar({
     }
   }
 
-  const tool = 'flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-white/12 px-3 text-base leading-tight font-bold ring-1 ring-white/25 disabled:opacity-45'
+  const tool = 'flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white/12 px-3 py-1.5 text-base leading-tight font-bold ring-1 ring-white/25 disabled:opacity-45'
   const disabled = busy || pending || !eventId
 
   return (

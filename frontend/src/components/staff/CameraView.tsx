@@ -126,7 +126,7 @@ export function CameraView({ onToken, onProblem }: { onToken: (token: string) =>
           <span className="absolute -bottom-1 -left-1 size-12 rounded-bl-3xl border-b-[6px] border-l-[6px] border-white" />
           <span className="absolute -right-1 -bottom-1 size-12 rounded-br-3xl border-r-[6px] border-b-[6px] border-white" />
         </div>
-        <p className="relative rounded-full bg-black/60 px-4 py-1.5 text-center text-lg font-semibold text-white">
+        <p className="relative shrink-0 rounded-full bg-black/60 px-4 py-1.5 text-center text-lg font-semibold text-white">
           {live ? 'Arahkan QR e-ticket ke kotak' : 'Menyalakan kamera…'}
         </p>
       </div>

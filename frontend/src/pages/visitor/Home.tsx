@@ -117,7 +117,7 @@ export default function Home() {
         ))}
         <li className="animate-rise [animation-delay:60ms]">
           {user ? (
-            <StatusCard to="/app/pass" tint="green" icon={<Ticket />} label="Tiket aktif" value={`${activeTickets} e-ticket`} />
+            <StatusCard to="/app/pass" tint="green" icon={<Ticket />} label="Tiket aktif" value={`${activeTickets} e‑ticket`} />
           ) : (
             <StatusCard to="/app/masuk" tint="green" icon={<UserRound />} label="Belum masuk" value="Masuk" />
           )}
@@ -250,7 +250,7 @@ function StatusCard({ to, onClick, tint, icon, label, value }: { to?: string; on
       </span>
       <span className="min-w-0 text-left">
         <span className="block text-xs text-muted-foreground">{label}</span>
-        <span className="block truncate font-bold tabular-nums">{value}</span>
+        <span className="line-clamp-2 block leading-tight font-bold tabular-nums">{value}</span>
       </span>
     </>
   )
@@ -280,7 +280,7 @@ function QuickRow({ to, art, tint, title, sub, chip }: { to: string; art: ArtNam
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-bold">{title}</span>
-          <span className="block truncate text-sm text-muted-foreground">{sub}</span>
+          <span className="line-clamp-2 block text-sm leading-snug text-muted-foreground">{sub}</span>
         </span>
         {chip}
       </Link>
@@ -365,7 +365,7 @@ function SpotCard({ e, now }: { e: EventSummary; now: Date }) {
   return (
     <Link
       to={`/app/e/${e.event.slug}`}
-      className="group relative block h-60 overflow-hidden rounded-[1.6rem] shadow-md shadow-ink/10 transition-transform duration-200 active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="group relative block h-64 overflow-hidden rounded-[1.6rem] shadow-md shadow-ink/10 transition-transform duration-200 active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} title={e.event.title} bare className="absolute inset-0 transition-transform duration-700 ease-(--ease-soft) group-hover:scale-[1.04]" />
       <div className="absolute inset-0 bg-linear-to-t from-ink/90 via-ink/25 to-transparent" aria-hidden />
@@ -376,7 +376,7 @@ function SpotCard({ e, now }: { e: EventSummary; now: Date }) {
           {POSTER_THEMES[e.event.posterTheme].label}
           {av ? ` · ${av.label}` : ''}
         </p>
-        <h3 className="mt-1 line-clamp-2 font-poster text-[1.6rem] leading-[0.95] text-balance uppercase">{e.event.title}</h3>
+        <h3 className="mt-1 line-clamp-3 font-poster text-[1.5rem] leading-[0.95] text-balance uppercase">{e.event.title}</h3>
         <p className="mt-1.5 flex items-center gap-1.5 text-xs text-white/85">
           <MapPin className="size-3.5 shrink-0" aria-hidden /> {e.venue.name}
         </p>

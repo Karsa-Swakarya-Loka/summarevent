@@ -153,20 +153,24 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
         <div className={cn('mt-5 rounded-3xl px-4 py-4 text-center', PANEL.valid)}>
           {seat ? (
             <>
-              <div className="text-xl font-bold uppercase tracking-wider">Kursi</div>
+              <div className="text-2xl font-bold">Kursi</div>
               <div className="text-[clamp(88px,30vw,140px)] font-black leading-[0.95] tracking-tight tabular-nums" data-testid="seat-label">
                 {seat}
               </div>
             </>
           ) : (
-            <div className="py-3 text-4xl font-black leading-tight" data-testid="seat-label">
-              Tanpa nomor kursi
-            </div>
+            <>
+              <div className="text-2xl font-bold">Area</div>
+              <div className="text-[clamp(2.75rem,14vw,4.5rem)] leading-none font-black break-words" data-testid="seat-label">
+                {res.category?.name ?? 'Bebas'}
+              </div>
+              <div className="mt-2 text-xl font-bold">Tanpa nomor kursi</div>
+            </>
           )}
         </div>
         {name && <div className="mt-5 text-3xl font-extrabold leading-tight break-words">{name}</div>}
         <div className="mt-2 text-xl font-bold leading-snug">
-          {[res.category?.name, res.session && sessionName(res.session)].filter(Boolean).join(' · ')}
+          {[seat && res.category?.name, res.session && sessionName(res.session)].filter(Boolean).join(' · ')}
         </div>
         {ticket?.bonus && (
           <div className="mt-4 flex items-center gap-2 rounded-2xl bg-white/95 px-4 py-3 text-lg font-extrabold text-[#0b6b35]" data-testid="bonus">
@@ -218,7 +222,7 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
 
   return (
     <section className={cn('fixed inset-0 z-50 overflow-y-auto', SURFACE[kind])} aria-label="Hasil check-in" data-result={res.result} data-group={group.phase}>
-      <div className="mx-auto flex min-h-full w-full max-w-md flex-col px-5 pt-[max(env(safe-area-inset-top),20px)] pb-[max(env(safe-area-inset-bottom),20px)]">
+      <div className="mx-auto flex min-h-full w-full max-w-md flex-col px-5 pt-[max(env(safe-area-inset-top),20px)]">
         <div role="alert" aria-live="assertive" aria-atomic="true">
           <div className="flex items-center gap-3">
             <Icon className="size-16 shrink-0" strokeWidth={2.5} aria-hidden />
@@ -232,7 +236,8 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
           {body}
         </div>
 
-        <div className="mt-auto flex flex-col gap-3 pt-6">
+        {/* the next step stays in reach when a group or a bonus makes the result taller than the phone */}
+        <div className={cn('sticky bottom-0 mt-auto -mx-5 flex flex-col gap-3 px-5 pt-6 pb-[max(env(safe-area-inset-bottom),20px)]', SURFACE[kind])}>
           {group.phase === 'offer' && (
             <button
               type="button"
@@ -255,7 +260,7 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
               Memasukkan tiket {Math.min(group.done.length + 1, group.rows.length)} dari {group.rows.length}…
             </div>
           )}
-          {group.phase === 'done' && <GroupSummary done={group.done} />}
+          {group.phase === 'done' && <GroupSummary first={seat} done={group.done} />}
 
           <button
             ref={nextRef}
@@ -280,7 +285,7 @@ function TicketFacts({ res, kind, showSessionTime = false }: { res: CheckinRespo
   return (
     <div className={cn('mt-5 flex items-center gap-4 rounded-3xl px-4 py-3', PANEL[kind])}>
       <div className="shrink-0 text-center">
-        <div className="text-base font-bold uppercase tracking-wider">Kursi</div>
+        <div className="text-lg font-bold">Kursi</div>
         <div className="text-5xl font-black leading-none tabular-nums">{t.seatLabel ?? '–'}</div>
       </div>
       <div className="min-w-0 flex-1">
@@ -299,12 +304,18 @@ function TicketFacts({ res, kind, showSessionTime = false }: { res: CheckinRespo
   )
 }
 
-function GroupSummary({ done }: { done: GroupItem[] }) {
+function GroupSummary({ first, done }: { first: string | null; done: GroupItem[] }) {
   const admitted = 1 + done.filter((d) => d.res?.result === 'VALID').length
   return (
     <div className={cn('rounded-2xl px-4 py-3', PANEL.valid)} aria-live="polite">
-      <div className="text-3xl font-black">Total {admitted} orang masuk</div>
+      <div className="text-2xl font-black">Total {admitted} orang masuk</div>
       <ul className="mt-2 space-y-1">
+        <li className="flex items-center gap-2 text-xl font-bold">
+          <CircleCheck className="size-6 shrink-0" aria-hidden />
+          <span>
+            {first ?? 'Tanpa nomor kursi'} – {CHECKIN_RESULT_LABEL.VALID}
+          </span>
+        </li>
         {done.map(({ row, res, error }) => {
           const result = res?.result
           const ItemIcon = result ? ICON[result] : OctagonX

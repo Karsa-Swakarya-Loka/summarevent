@@ -1,14 +1,19 @@
 /**
  * Scan feedback sounds (PT-03 "bunyi") generated with WebAudio – no audio files, works offline.
- *   valid   → one high beep
- *   warn    → one mid beep
- *   invalid → two low beeps
- * Plus a short vibration on phones that support it.
+ *   valid         → one short high beep, one short buzz
+ *   warn          → one mid beep (sesi lain, di luar jam check-in)
+ *   used          → two quick low beeps, two buzzes (sudah digunakan)
+ *   invalid       → one long low buzz tone, one long buzz (tidak valid)
+ * Sudah digunakan and Tidak valid share the red screen, so they never share a sound: a petugas looking away from the
+ * phone still knows which one it was.
  */
 import { CHECKIN_TONE } from '@/domain/labels'
 import type { CheckinResult } from '@/domain/types'
 
+/** Screen colour of a result: green, yellow or red. */
 export type BeepKind = 'valid' | 'warn' | 'invalid'
+/** Sound and vibration of a result: one per result shown on a red screen. */
+export type Sound = BeepKind | 'used'
 
 interface Pattern {
   wave: OscillatorType
@@ -16,17 +21,18 @@ interface Pattern {
   vibrate: number[]
 }
 
-const PATTERNS: Record<BeepKind, Pattern> = {
+const PATTERNS: Record<Sound, Pattern> = {
   valid: { wave: 'sine', tones: [{ freq: 1568, at: 0, dur: 0.18 }], vibrate: [70] },
   warn: { wave: 'triangle', tones: [{ freq: 740, at: 0, dur: 0.3 }], vibrate: [140] },
-  invalid: {
+  used: {
     wave: 'square',
     tones: [
-      { freq: 300, at: 0, dur: 0.2 },
-      { freq: 300, at: 0.3, dur: 0.2 },
+      { freq: 440, at: 0, dur: 0.14 },
+      { freq: 440, at: 0.22, dur: 0.14 },
     ],
-    vibrate: [180, 100, 180],
+    vibrate: [120, 80, 120],
   },
+  invalid: { wave: 'square', tones: [{ freq: 200, at: 0, dur: 0.6 }], vibrate: [450] },
 }
 
 let ctx: AudioContext | null = null
@@ -49,8 +55,8 @@ export function unlockAudio(): void {
   audio()
 }
 
-export function beep(kind: BeepKind): void {
-  const p = PATTERNS[kind]
+export function beep(sound: Sound): void {
+  const p = PATTERNS[sound]
   try {
     if ('vibrate' in navigator) navigator.vibrate(p.vibrate)
   } catch {
@@ -85,6 +91,10 @@ export function kindOf(result: CheckinResult): BeepKind {
   return tone === 'valid' ? 'valid' : tone === 'warn' ? 'warn' : 'invalid'
 }
 
+export function soundOf(result: CheckinResult): Sound {
+  return result === 'ALREADY_USED' ? 'used' : kindOf(result)
+}
+
 export function beepFor(result: CheckinResult): void {
-  beep(kindOf(result))
+  beep(soundOf(result))
 }

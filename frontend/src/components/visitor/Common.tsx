@@ -43,7 +43,7 @@ export function TabHeader({ title, subtitle, right }: { title: string; subtitle?
     <>
       <div
         className={cn(
-          'sticky top-0 z-20 flex min-h-14 items-center justify-center bg-background/85 px-16 pt-[env(safe-area-inset-top)] backdrop-blur-xl transition-shadow duration-200',
+          'sticky top-0 z-20 flex min-h-14 items-center justify-center bg-background/85 lg:top-(--spacing-desk-bar) px-16 pt-[env(safe-area-inset-top)] backdrop-blur-xl transition-shadow duration-200',
           under && 'shadow-[0_1px_0_rgb(0_0_0/0.08)]',
         )}
       >

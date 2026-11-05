@@ -82,7 +82,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="sticky top-0 z-30 h-0">
+      <div className="sticky top-0 z-30 h-0 lg:top-(--spacing-desk-bar)">
         <div
           className={cn(
             'flex min-h-14 items-center gap-1 px-1.5 pt-[env(safe-area-inset-top)] transition-[background-color,box-shadow] duration-200',

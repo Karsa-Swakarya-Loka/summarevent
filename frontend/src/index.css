@@ -148,6 +148,8 @@
 /* Top edge of the visitor's floating navigation, measured from the bottom of the screen. */
 @theme {
   --spacing-nav: calc(max(0.75rem, env(safe-area-inset-bottom)) + 4.25rem);
+  /* height of the laptop top bar of the visitor app (lg and up) */
+  --spacing-desk-bar: 4rem;
 }
 
 /*
@@ -234,7 +236,8 @@ img { -webkit-touch-callout: none; }
   border-color: #231f20;
 }
 /* the Demo button moves into the app bar on screens that have one, so the floating pill never covers the page */
-body:has([data-demo-header]) [data-demo-float] {
+/* (the laptop top bar's copy does not count: it is hidden below lg, where the floating pill stays) */
+body:has([data-demo-header]:not([data-desk-bar] *)) [data-demo-float] {
   display: none;
 }
 

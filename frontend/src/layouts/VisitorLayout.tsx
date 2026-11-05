@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, ScrollRestoration, useLocation, useNavigationType } from 'react-router'
 import { Home, Inbox, Ticket, UserRound } from 'lucide-react'
+import { BrandLockup } from '@/components/common/Brand'
 import { DemoMenu } from '@/components/common/DemoMenu'
 import { NotificationWatcher } from '@/components/visitor/AppSetup'
 import { useNavStack } from '@/lib/navStack'
@@ -58,14 +59,16 @@ export function VisitorLayout() {
   }, [pathname])
 
   return (
-    <div className="min-h-dvh overflow-x-clip bg-[#efece6]" data-shell="visitor">
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background shadow-sm">
-        <main key={pathname} className={cn('flex flex-1 flex-col', screen.motion, tabRoot && 'pb-[calc(var(--spacing-nav)+1.5rem)]')}>
+    <div className="min-h-dvh overflow-x-clip bg-[#efece6] lg:bg-background" data-shell="visitor">
+      {/* on a laptop the app is a website: one top bar with the four sections, and each screen lays itself out wide */}
+      {!fullScreen && <DeskBar />}
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background shadow-sm lg:min-h-[calc(100dvh-var(--spacing-desk-bar))] lg:max-w-none lg:shadow-none">
+        <main key={pathname} className={cn('flex flex-1 flex-col', screen.motion, tabRoot && 'pb-[calc(var(--spacing-nav)+1.5rem)] lg:pb-16')}>
           <Outlet />
         </main>
         {tabRoot ? (
           // the Demo button docks beside the navigation instead of floating over the page
-          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md gap-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] *:pointer-events-auto">
+          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md gap-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] *:pointer-events-auto lg:hidden">
             <DemoMenu variant="docked" />
             <nav className="relative flex-1 rounded-[1.75rem] bg-ink/95 p-1.5 shadow-xl shadow-ink/25 backdrop-blur" aria-label="Navigasi utama">
               {active >= 0 && (
@@ -97,11 +100,49 @@ export function VisitorLayout() {
             </nav>
           </div>
         ) : (
-          !fullScreen && <DemoMenu className="bottom-4 left-4" />
+          !fullScreen && <DemoMenu className="bottom-4 left-4 lg:hidden" />
         )}
         <NotificationWatcher />
       </div>
       <ScrollRestoration />
     </div>
+  )
+}
+
+/** Laptop top bar: brand, the four sections, the demo menu. Hidden below lg, where the floating tab bar does this job. */
+function DeskBar() {
+  const { pathname } = useLocation()
+  return (
+    <header data-desk-bar className="sticky top-0 z-40 hidden h-(--spacing-desk-bar) border-b border-ink/8 bg-background/90 backdrop-blur-xl lg:block">
+      <div className="mx-auto flex h-full w-full max-w-6xl items-center gap-8 px-8">
+        <NavLink to="/app" aria-label="Summarevent, Beranda" className="shrink-0">
+          <BrandLockup className="h-7" />
+        </NavLink>
+        <nav aria-label="Navigasi utama" className="flex-1">
+          <ul className="flex items-center gap-1">
+            {NAV.map(({ to, label, icon: Icon, end }) => {
+              const on = end ? pathname.replace(/\/$/, '') === to : pathname.startsWith(to)
+              return (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    end={end}
+                    aria-current={on ? 'page' : undefined}
+                    className={cn(
+                      'flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition',
+                      on ? 'bg-ink text-white' : 'text-ink/70 hover:bg-ink/5 hover:text-ink',
+                    )}
+                  >
+                    <Icon className="size-4" aria-hidden />
+                    {label}
+                  </NavLink>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+        <DemoMenu variant="bar" />
+      </div>
+    </header>
   )
 }

@@ -429,9 +429,6 @@ export function Afiche({ posters, label, className }: { posters: PosterSpec[]; l
           </svg>
         </button>
       </div>
-      <p className="af-pista" aria-hidden>
-        Arahkan kursor · geser untuk mengocok · klik untuk membuka
-      </p>
     </div>
   )
 }

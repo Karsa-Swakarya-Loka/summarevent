@@ -215,6 +215,24 @@ export const canDecide = (it: ReceiptQueueItem) => it.order.status === 'AWAITING
 /** "1,2jt" / "450rb" / "0": one word, for a narrow axis. */
 export const axisRupiah = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })}jt` : n >= 1_000 ? `${Math.round(n / 1_000)}rb` : String(n))
 
+/**
+ * A chart axis with round ticks: the step is 1, 2, 2.5 or 5 × 10ⁿ (no 2.5 for counts), about `parts` steps up to the
+ * largest value, so the labels read 0 · 200rb · 400rb · 600rb and never 167rb or 333rb.
+ */
+export function niceScale(max: number, { integer = false, parts = 3, floor = 0 } = {}): { top: number; ticks: number[] } {
+  const target = Math.max(max, floor)
+  if (target <= 0) return { top: 1, ticks: [0] }
+  const raw = target / parts
+  const p = 10 ** Math.floor(Math.log10(raw))
+  const u = raw / p
+  const units = integer ? [1, 2, 5, 10] : [1, 2, 2.5, 5, 10]
+  let step = (units.find((x) => u <= x) ?? 10) * p
+  if (integer) step = Math.max(1, Math.round(step))
+  const top = Math.ceil(target / step) * step
+  const ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => Math.round(i * step * 100) / 100)
+  return { top, ticks }
+}
+
 export type Range = 7 | 14 | 30
 export const RANGES: Array<{ days: Range; label: string }> = [
   { days: 7, label: '7 hari' },
@@ -224,7 +242,8 @@ export const RANGES: Array<{ days: Range; label: string }> = [
 
 /**
  * The last `days` of the series, each with a short label for the axis: a day ("3 Nov") for a week or two, and for a
- * month the days grouped by week ("6–12 Okt"), so the bars stay wide as in the reference.
+ * month the days grouped by week ("6–12 Okt"), counted back from today so the latest bar is a full week; only the
+ * oldest group may be shorter, and its label says which days it holds.
  */
 export function lastDays(daily: EventStats['daily'], days: Range) {
   const rows = daily.slice(-days)
@@ -236,8 +255,8 @@ export function lastDays(daily: EventStats['daily'], days: Range) {
     revenue: number
     orders: number
   }> = []
-  for (let i = 0; i < rows.length; i += 7) {
-    const chunk = rows.slice(i, i + 7)
+  for (let i = rows.length % 7 || 7, start = 0; start < rows.length; start = i, i += 7) {
+    const chunk = rows.slice(start, i)
     const first = chunk[0]
     const last = chunk[chunk.length - 1]
     weeks.push({

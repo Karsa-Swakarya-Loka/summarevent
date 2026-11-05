@@ -1,31 +1,16 @@
 /**
  * The dashboard's charts, drawn without a chart library so they match the reference to the pixel: money per day as
- * bars on full-height tracks, tickets per day as a smooth area, and check-ins as a weekday × hour heatmap. Hovering a
+ * bars on full-height tracks, tickets per day as a smooth line over a flat tint, and check-ins as a weekday × hour heatmap. Hovering a
  * bar outlines it and shows its day; hovering a point on the area or a cell on the heatmap does the same. The series
  * come from `lastDays` in lib.ts and `checkinsByHour` of EventStats.
  */
-import { useId, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { rupiahPlain } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useSize } from './hooks'
-import { axisRupiah, type lastDays } from './lib'
+import { axisRupiah, niceScale, type lastDays } from './lib'
 
 type Row = ReturnType<typeof lastDays>[number]
-
-/**
- * The axis: three gridlines a round step apart (1, 1.5, 2, 2.5, 3, 4, 5, 6 or 8 × 10ⁿ) that clear the largest value,
- * so every label reads as a round number ("150rb", "300rb", "450rb"; "8", "16", "24"), never "333rb" or "13".
- */
-function axisTicks(max: number, integer = false): number[] {
-  const raw = Math.max(max, 0) / 3
-  let step = 1
-  if (raw > 0) {
-    const p = 10 ** Math.floor(Math.log10(raw))
-    step = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].map((m) => m * p).find((x) => x >= raw) ?? 10 * p
-  }
-  if (integer) step = Math.max(1, Math.ceil(step))
-  return [step * 3, step * 2, step, 0]
-}
 
 function Tip({ children, side }: { children: React.ReactNode; side: 'left' | 'right' }) {
   return (
@@ -37,8 +22,7 @@ function Tip({ children, side }: { children: React.ReactNode; side: 'left' | 'ri
 
 /** Money per day: a bar on a full-height track for every day, as the reference's "Earned so far". */
 export function RevenueBars({ rows, className }: { rows: Row[]; className?: string }) {
-  const ticks = axisTicks(Math.max(0, ...rows.map((r) => r.revenue)))
-  const top = ticks[0]
+  const { top, ticks } = niceScale(Math.max(0, ...rows.map((r) => r.revenue)), { floor: 100_000 })
   const [hover, setHover] = useState<number | null>(null)
   const many = rows.length > 7
   const summary = rows
@@ -127,11 +111,9 @@ function curve(pts: Array<[number, number]>): string {
 /** Tickets per day as a soft area, the reference's "Revenue" curve, drawn to the box it is given. */
 export function TicketsArea({ rows, className }: { rows: Row[]; className?: string }) {
   const [box, size] = useSize<HTMLDivElement>()
-  const gradient = useId()
   const [hover, setHover] = useState<number | null>(null)
-  // whole tickets, at least three on the axis, so one ticket does not fill the whole chart
-  const ticks = axisTicks(Math.max(0, ...rows.map((r) => r.tickets)), true)
-  const top = ticks[0]
+  // at least four on the axis, so one ticket does not fill the whole chart
+  const { top, ticks } = niceScale(Math.max(0, ...rows.map((r) => r.tickets)), { integer: true, floor: 4 })
   const pad = { l: 30, r: 10, t: 12, b: 26 }
   const w = size.w
   const h = size.h
@@ -166,12 +148,6 @@ export function TicketsArea({ rows, className }: { rows: Row[]; className?: stri
     >
       {w > 0 && h > 0 && (
         <svg width={w} height={h} className="absolute inset-0 overflow-visible" aria-hidden>
-          <defs>
-            <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.26" />
-              <stop offset="100%" stopColor="var(--brand)" stopOpacity="0.02" />
-            </linearGradient>
-          </defs>
           {ticks.map((t) => (
             <text key={t} x={pad.l - 8} y={pad.t + (1 - t / top) * (h - pad.t - pad.b)} textAnchor="end" dominantBaseline="middle" className="fill-muted-foreground text-[0.7rem] tabular-nums">
               {t}
@@ -182,7 +158,7 @@ export function TicketsArea({ rows, className }: { rows: Row[]; className?: stri
               {r.day}
             </text>
           ))}
-          {pts.length > 1 && <path d={area} fill={`url(#${gradient})`} />}
+          {pts.length > 1 && <path d={area} fill="var(--brand)" fillOpacity="0.1" />}
           <path d={line} fill="none" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           {hover != null && pts[hover] && (
             <>

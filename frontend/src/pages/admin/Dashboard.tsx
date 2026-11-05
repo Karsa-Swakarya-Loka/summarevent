@@ -6,7 +6,7 @@
  */
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { ArrowLeft, ArrowRight, Download, FileSpreadsheet, Plus, ReceiptText, Rows3, Ticket, Users, Wallet } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Download, Plus, Rows3 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { EventStats, SessionStats } from '@/api/contract'
@@ -14,7 +14,7 @@ import { LiveIndicator, LoadError } from '@/components/admin/AdminUi'
 import { CheckinHeatmap, RevenueBars, TicketsArea, type HeatCell } from '@/components/admin/dashboardCharts'
 import { EventSwitcher } from '@/components/admin/EventSwitcher'
 import { useAdminEvent, useCountUp } from '@/components/admin/hooks'
-import { RANGES, downloadEventCsv, lastDays, seatSummary, sessionLabel, type Range } from '@/components/admin/lib'
+import { RANGES, downloadEventCsv, lastDays, seatSummary, sessionLabel, sessionShort, type Range } from '@/components/admin/lib'
 import { StatusBadge, Swatch } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -50,7 +50,7 @@ export default function Dashboard() {
           <LiveIndicator at={s?.generatedAt} className="mt-0.5" />
         </div>
         <EventSwitcher ctx={ctx} variant="pill" className="min-w-0 flex-1 sm:flex-none" />
-        <Button asChild size="lg" className="h-10">
+        <Button asChild size="lg" className="h-11 sm:h-10">
           <Link to="/admin/events/new">
             <Plus /> Buat event
           </Link>
@@ -71,14 +71,13 @@ export default function Dashboard() {
       </div>
 
       <section aria-label="Ringkasan angka" className="mt-4 grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatTile icon={<Users />} label="Pendaftar" value={s?.registrants} hint="akun dengan pesanan aktif" loading={loading} />
-        <StatTile icon={<Ticket />} label="Total tiket terjual" value={s?.ticketsSold} hint={s ? `${s.transactions.CONFIRMED} pesanan terkonfirmasi` : undefined} loading={loading} />
-        <StatTile icon={<Wallet />} label="Total pendapatan" value={s ? rupiahPlain(s.revenue) : undefined} hint="QRIS & VA (simulasi)" loading={loading} />
+        <StatTile label="Pendaftar" value={s?.registrants} hint="Akun dengan pesanan aktif" loading={loading} />
+        <StatTile label="Total tiket terjual" value={s?.ticketsSold} hint={s ? `Semua sesi, ${s.transactions.CONFIRMED} pesanan terkonfirmasi` : undefined} loading={loading} />
+        <StatTile label="Total pendapatan" value={s ? rupiahPlain(s.revenue) : undefined} hint="QRIS dan VA (simulasi)" loading={loading} />
         <StatTile
-          icon={<ReceiptText />}
           label="Struk menunggu"
           value={s?.receiptsPending}
-          hint={s && s.receiptsPending > 0 ? 'perlu diverifikasi' : 'antrean kosong'}
+          hint={s && s.receiptsPending > 0 ? 'Buka antrean verifikasi' : 'Antrean kosong'}
           tone={s && s.receiptsPending > 0 ? 'warn' : 'default'}
           to="/admin/receipts"
           loading={loading}
@@ -197,19 +196,22 @@ function SessionsCard({ s, eventId, loading }: { s?: EventStats; eventId: string
       ) : (
         <p className="mt-4 rounded-xl border border-dashed border-foreground/15 p-6 text-center text-sm text-muted-foreground">Event ini belum punya sesi.</p>
       )}
-      <div className="mt-auto grid grid-cols-2 gap-3 pt-3">
-        <Button variant="outline" className="h-10 border-transparent bg-card shadow-[0_1px_2px_rgb(35_31_32/0.06)]" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={at === 0}>
-          <ArrowLeft /> Sebelumnya
-        </Button>
-        <Button variant="outline" className="h-10 border-transparent bg-card shadow-[0_1px_2px_rgb(35_31_32/0.06)]" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))} disabled={at >= pages - 1}>
-          Berikutnya <ArrowRight />
-        </Button>
-      </div>
+      {pages > 1 && (
+        <div className="mt-auto grid grid-cols-2 gap-3 pt-3">
+          <Button variant="outline" className="h-11 border-transparent bg-card shadow-[0_1px_2px_rgb(35_31_32/0.06)]" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={at === 0} aria-label="Sesi sebelumnya">
+            <ArrowLeft /> Sebelumnya
+          </Button>
+          <Button variant="outline" className="h-11 border-transparent bg-card shadow-[0_1px_2px_rgb(35_31_32/0.06)]" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))} disabled={at >= pages - 1} aria-label="Sesi berikutnya">
+            Berikutnya <ArrowRight />
+          </Button>
+        </div>
+      )}
     </Card>
   )
 }
 
 function SessionTile({ s, eventId }: { s: SessionStats; eventId: string }) {
+  const soldPct = s.capacity ? Math.round((s.sold / s.capacity) * 100) : 0
   return (
     <Link to={`/admin/live?event=${eventId}&session=${s.session.id}`} className="block rounded-xl bg-card p-3 shadow-[0_1px_2px_rgb(35_31_32/0.05)] transition hover:shadow-[0_6px_18px_-8px_rgb(35_31_32/0.3)] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
       <div className="flex items-center gap-2.5">
@@ -217,20 +219,21 @@ function SessionTile({ s, eventId }: { s: SessionStats; eventId: string }) {
           {s.session.demoLive ? '▶' : fmtShortDate(s.session.startAt).split(',')[0].slice(0, 3)}
         </span>
         <span className="min-w-0 leading-tight">
-          <span className="block truncate text-sm font-semibold">{s.session.label ?? 'Sesi'}</span>
-          <span className="block truncate text-xs text-muted-foreground">{s.session.demoLive ? 'Berlangsung' : fmtRange(s.session.startAt, s.session.endAt)}</span>
+          <span className="block truncate text-sm font-semibold">{sessionShort(s.session)}</span>
+          <span className="block truncate text-xs text-muted-foreground">{s.session.demoLive ? 'Selalu berlangsung' : fmtRange(s.session.startAt, s.session.endAt)}</span>
         </span>
       </div>
-      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg bg-panel px-2.5 py-1.5 text-xs">
-        {/* the count over its word, so the tile never cuts "terjual" next to the badge */}
-        <span className="leading-tight tabular-nums">
-          <span className="block font-semibold">
-            {s.sold}
-            <span className="font-normal text-muted-foreground">/{s.capacity}</span>
-          </span>
-          <span className="block text-muted-foreground">terjual</span>
+      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-track" role="img" aria-label={`${soldPct}% terjual`}>
+        <div className="h-full rounded-full bg-brand" style={{ width: `${soldPct}%` }} />
+      </div>
+      <div className="mt-1.5 flex items-center justify-between gap-2 text-xs">
+        <span className="tabular-nums">
+          <span className="font-semibold">{s.sold}</span>
+          <span className="text-muted-foreground">/{s.capacity} terjual</span>
         </span>
-        <StatusBadge tone={s.checkedIn ? 'valid' : 'neutral'}>Hadir {s.checkedIn}</StatusBadge>
+        <span className="shrink-0 tabular-nums text-muted-foreground">
+          Hadir <span className="font-semibold text-foreground">{s.checkedIn}</span>
+        </span>
       </div>
     </Link>
   )
@@ -244,7 +247,7 @@ function RevenueCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   return (
     <Card label="Pendapatan per hari">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <Headline label={`Pendapatan ${RANGES.find((r) => r.days === range)?.label} terakhir`} value={sum.now} format={rupiahPlain} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} width="w-40" />
+        <Headline label={`Pendapatan ${range} hari terakhir`} value={sum.now} format={rupiahPlain} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} width="w-40" />
         <RangeTabs id="rev" value={range} onChange={setRange} />
       </div>
       <div className="mt-4 flex min-h-56 flex-1 flex-col">{loading ? <Skeleton className="flex-1 rounded-xl bg-track" /> : <RevenueBars rows={rows} className="flex-1" />}</div>
@@ -260,7 +263,7 @@ function TicketsCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   return (
     <Card label="Tiket terjual per hari">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <Headline label={`Tiket terjual ${RANGES.find((r) => r.days === range)?.label} terakhir`} value={sum.now} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} />
+        <Headline label={`Tiket terjual ${range} hari terakhir`} value={sum.now} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} />
         <RangeTabs id="tix" value={range} onChange={setRange} />
       </div>
       <div className="mt-4 flex min-h-48 flex-1 flex-col">{loading ? <Skeleton className="flex-1 rounded-xl bg-track" /> : <TicketsArea rows={rows} className="flex-1" />}</div>
@@ -311,16 +314,13 @@ function AttendanceCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   )
 }
 
-/** The reference's metric tiles: an icon on a white square, the label, the number. */
-function StatTile({ icon, label, value, hint, tone = 'default', to, loading }: { icon: ReactNode; label: string; value?: ReactNode; hint?: string; tone?: 'default' | 'warn'; to?: string; loading: boolean }) {
+/** The metric tiles: the label, the number, and one line on what it counts. */
+function StatTile({ label, value, hint, tone = 'default', to, loading }: { label: string; value?: ReactNode; hint?: string; tone?: 'default' | 'warn'; to?: string; loading: boolean }) {
   const body = (
     <>
-      <span className={cn('grid size-10 place-items-center rounded-xl shadow-[0_1px_2px_rgb(35_31_32/0.06)] [&_svg]:size-[1.125rem]', tone === 'warn' ? 'bg-brand-yellow text-ink' : 'bg-card text-foreground')} aria-hidden>
-        {icon}
-      </span>
-      <span className="mt-4 block text-sm text-muted-foreground">{label}</span>
-      {loading ? <Skeleton className="mt-1 h-8 w-20 bg-track" /> : <span className="block truncate text-xl font-semibold tabular-nums sm:text-2xl">{value}</span>}
-      {hint && <span className="mt-0.5 block truncate text-xs text-muted-foreground">{hint}</span>}
+      <span className="block text-sm text-muted-foreground">{label}</span>
+      {loading ? <Skeleton className="mt-1 h-8 w-20 bg-track" /> : <span className="mt-1 block truncate text-xl font-semibold tabular-nums sm:text-2xl">{value}</span>}
+      {hint && <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>}
     </>
   )
   const cls = cn('block min-w-0 rounded-[1.25rem] bg-panel p-4 sm:p-5', tone === 'warn' && 'ring-2 ring-brand-yellow', to && 'transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none')
@@ -370,14 +370,25 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
 
   return (
     <section aria-label="Pesanan terbaru" className="mt-4 overflow-hidden rounded-[1.25rem] bg-card ring-1 ring-foreground/[0.07]">
-      <div className="flex flex-wrap items-center gap-3 p-4 sm:p-5">
-        <div className="min-w-0 flex-1 basis-full md:basis-auto">
-          <p className="text-sm text-muted-foreground">Pesanan</p>
-          <p className="truncate text-base font-semibold">
-            {rows.data ? `${shown.length} pesanan` : 'Memuat…'}
-            {eventTitle && <span className="font-normal text-muted-foreground"> · {eventTitle}</span>}
-          </p>
+      <div className="flex flex-col gap-3 p-4 sm:p-5">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+            <p className="text-sm text-muted-foreground">Pesanan terbaru</p>
+            <p className="truncate text-base font-semibold">
+              {rows.data ? `${shown.length} pesanan` : 'Memuat…'}
+              {eventTitle && <span className="font-normal text-muted-foreground"> · {eventTitle}</span>}
+            </p>
+          </div>
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+            <Button variant="outline" className="h-11 bg-card sm:h-10" onClick={() => void exportCsv('attendees')} disabled={!eventId || !!busy} aria-label="Unduh data peserta">
+              <Download /> Data peserta
+            </Button>
+            <Button variant="outline" className="h-11 bg-card sm:h-10" onClick={() => void exportCsv('transactions')} disabled={!eventId || !!busy} aria-label="Unduh laporan transaksi">
+              <Download /> Laporan transaksi
+            </Button>
+          </div>
         </div>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
         <Select
           value={status}
           onValueChange={(v) => {
@@ -385,7 +396,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
             setPage(0)
           }}
         >
-          <SelectTrigger className="w-auto bg-card data-[size=default]:h-10" aria-label="Filter status">
+          <SelectTrigger className="w-full min-w-0 bg-card data-[size=default]:h-11 sm:w-auto sm:data-[size=default]:h-10" aria-label="Filter status">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -404,7 +415,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
             setPage(0)
           }}
         >
-          <SelectTrigger className="w-auto bg-card data-[size=default]:h-10" aria-label="Filter kategori">
+          <SelectTrigger className="w-full min-w-0 bg-card data-[size=default]:h-11 sm:w-auto sm:data-[size=default]:h-10" aria-label="Filter kategori">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -416,14 +427,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
             ))}
           </SelectContent>
         </Select>
-        <Button variant="outline" size="lg" className="h-10 bg-card max-sm:h-11 max-sm:px-3" onClick={() => void exportCsv('attendees')} disabled={!eventId || !!busy} aria-label="Unduh data peserta">
-          <Download /> <span className="max-sm:hidden">Unduh data peserta</span>
-          <span className="sm:hidden">Peserta</span>
-        </Button>
-        <Button variant="outline" size="lg" className="h-10 bg-card max-sm:h-11 max-sm:px-3" onClick={() => void exportCsv('transactions')} disabled={!eventId || !!busy} aria-label="Unduh laporan transaksi">
-          <FileSpreadsheet /> <span className="max-sm:hidden">Unduh laporan transaksi</span>
-          <span className="sm:hidden">Transaksi</span>
-        </Button>
+        </div>
       </div>
 
       {rows.error && !rows.data ? (
@@ -435,10 +439,25 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
           ))}
         </div>
       ) : !slice.length ? (
-        <p className="px-5 pb-6 text-sm text-muted-foreground">Tidak ada pesanan di filter ini.</p>
+        <div className="flex flex-col items-start gap-3 border-t px-4 py-6 text-sm text-muted-foreground sm:px-5">
+          {all.length ? 'Tidak ada pesanan yang cocok dengan filter ini.' : 'Belum ada pesanan untuk event ini.'}
+          {all.length > 0 && (
+            <Button
+              variant="outline"
+              className="h-11 bg-card sm:h-10"
+              onClick={() => {
+                setStatus('ALL')
+                setCategory('ALL')
+                setPage(0)
+              }}
+            >
+              Hapus filter
+            </Button>
+          )}
+        </div>
       ) : (
         <>
-          <div className="hidden md:block">
+          <div className="hidden xl:block">
             <Table>
               <TableHeader>
                 <TableRow className="bg-panel hover:bg-panel">
@@ -471,7 +490,9 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
                       <span className="flex items-center gap-1.5">
                         <Swatch color={r.category.color} />
                         <span className="font-semibold tabular-nums">{seatSummary(r.order.items)}</span>
-                        <span className="max-w-32 truncate text-xs text-muted-foreground">· {sessionLabel(r.session)}</span>
+                        <span className="max-w-40 truncate text-xs text-muted-foreground" title={sessionLabel(r.session)}>
+                          · {sessionShort(r.session)}
+                        </span>
                       </span>
                     </TableCell>
                     <TableCell>
@@ -479,8 +500,8 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtDateTime(r.order.createdAt)}</TableCell>
                     <TableCell className="text-right">
-                      <span className="rounded-md bg-panel px-2 py-1 text-xs font-semibold tabular-nums">
-                        {r.order.totalAmount ? rupiahPlain(r.order.totalAmount) : r.category.accessMethod === 'RECEIPT' ? 'Struk' : 'Gratis'}
+                      <span className={cn('tabular-nums', r.order.totalAmount ? 'font-semibold' : 'text-muted-foreground')}>
+                        {r.order.totalAmount ? rupiahPlain(r.order.totalAmount) : r.category.accessMethod === 'RECEIPT' ? 'Tukar struk' : 'Gratis'}
                       </span>
                     </TableCell>
                     <TableCell className="pr-5 text-right">
@@ -502,29 +523,34 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
               </TableBody>
             </Table>
           </div>
-          <ul className="flex flex-col divide-y md:hidden" aria-label="Pesanan terbaru">
+          <ul className="flex flex-col divide-y xl:hidden" aria-label="Pesanan terbaru">
             {slice.map((r) => (
               <li key={r.order.id}>
                 <button type="button" onClick={() => {
                     setAskPaid(false)
                     setOpenId(r.order.id)
-                  }} className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-muted">
+                  }} className="flex w-full items-start gap-3 px-4 py-3 text-left transition active:bg-muted">
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-[#0b6b35]" aria-hidden>
                     {r.order.buyerName[0]}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{r.order.buyerName}</span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {seatSummary(r.order.items)} · {r.category.name} · {r.order.totalAmount ? rupiahPlain(r.order.totalAmount) : r.category.accessMethod === 'RECEIPT' ? 'Struk' : 'Gratis'}
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="min-w-0 truncate text-sm font-medium">{r.order.buyerName}</span>
+                      <span className="shrink-0 text-sm font-semibold tabular-nums">{r.order.totalAmount ? rupiahPlain(r.order.totalAmount) : r.category.accessMethod === 'RECEIPT' ? 'Tukar struk' : 'Gratis'}</span>
                     </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {seatSummary(r.order.items)} · {r.category.name} · {sessionShort(r.session)}
+                    </span>
+                    <StatusBadge tone={ORDER_TONE[r.order.status]} className="mt-1.5">
+                      {orderStatusLabel(r.order.status, r.order.paymentMethod, r.order.totalAmount)}
+                    </StatusBadge>
                   </span>
-                  <StatusBadge tone={ORDER_TONE[r.order.status]}>{orderStatusLabel(r.order.status, r.order.paymentMethod, r.order.totalAmount)}</StatusBadge>
                 </button>
               </li>
             ))}
           </ul>
           <nav className="flex items-center justify-between gap-3 border-t px-4 py-3 sm:px-5" aria-label="Halaman pesanan">
-            <Button variant="outline" size="sm" className="h-9 bg-card" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={at === 0} aria-label="Halaman sebelumnya">
+            <Button variant="outline" size="sm" className="h-9 bg-card pointer-coarse:h-11 pointer-coarse:min-w-11" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={at === 0} aria-label="Halaman sebelumnya">
               <ArrowLeft /> <span className="max-sm:sr-only">Sebelumnya</span>
             </Button>
             <ol className="flex items-center gap-1 text-sm">
@@ -544,7 +570,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
                   </li>
                 ))}
             </ol>
-            <Button variant="outline" size="sm" className="h-9 bg-card" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))} disabled={at >= pages - 1} aria-label="Halaman berikutnya">
+            <Button variant="outline" size="sm" className="h-9 bg-card pointer-coarse:h-11 pointer-coarse:min-w-11" onClick={() => setPage((p) => Math.min(pages - 1, p + 1))} disabled={at >= pages - 1} aria-label="Halaman berikutnya">
               <span className="max-sm:sr-only">Berikutnya</span> <ArrowRight />
             </Button>
           </nav>

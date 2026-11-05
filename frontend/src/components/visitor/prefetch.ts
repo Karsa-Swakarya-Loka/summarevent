@@ -12,9 +12,9 @@ interface Entry<T> {
   data: T
 }
 
-/** An event page barely changes; a seat map is only used while it is under 20 s old, then fetched again. */
+/** An event page barely changes; a seat map is only used while it is under 10 s old, then fetched again. */
 const EVENT_FRESH_MS = 60_000
-const MAP_FRESH_MS = 20_000
+const MAP_FRESH_MS = 10_000
 
 const events = new Map<string, Entry<EventDetail>>()
 const maps = new Map<string, Entry<SeatMapData>>()
@@ -50,6 +50,14 @@ function once(key: string, cached: unknown, load: () => Promise<unknown>) {
   load()
     .catch(() => undefined)
     .finally(() => inflight.delete(key))
+}
+
+/**
+ * Forget a session's seat map when its screen closes: what the visitor does next (hold, pay, cancel) changes it, so the
+ * next visit starts from a fresh answer instead of the one kept from before.
+ */
+export function forgetSeatMap(sessionId: string) {
+  maps.delete(sessionId)
 }
 
 export function prefetchEvent(slug: string) {

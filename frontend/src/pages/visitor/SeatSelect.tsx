@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DeskHead, LoadError, PhoneOnly, QtyStepper } from '@/components/visitor/Common'
-import { cachedSeatMap, loadSeatMap } from '@/components/visitor/prefetch'
+import { cachedSeatMap, forgetSeatMap, loadSeatMap } from '@/components/visitor/prefetch'
 import { continuePath, isPendingOrder, pendingTitle, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen, tapSeat } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { saleState, seatLabel } from '@/domain/rules'
@@ -35,6 +35,7 @@ export default function SeatSelect() {
   useEffect(() => {
     if (slug && sessionId) rememberSession(slug, sessionId)
   }, [slug, sessionId])
+  useEffect(() => () => forgetSeatMap(sessionId), [sessionId])
 
   if (map.loading && !map.data) {
     return (

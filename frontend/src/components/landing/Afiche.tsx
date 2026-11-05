@@ -38,6 +38,12 @@ export interface PosterSpec {
 const lim = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 /** The legend's height: the posters sit centred in the room above it. */
 const LEG = 76
+/** How much a hovered poster grows. */
+const HOVER_GROW = 1.07
+/** The air kept under the scene's top edge, in poster widths. */
+const AIR = 0.03
+/** Narrower than this the action crowds the poster's word, so on a short screen the rise gives way first. */
+const READABLE = 200
 const mod = (v: number, n: number) => ((v % n) + n) % n
 type Spring = { x: number; v: number; meta: number; k: number; c: number }
 const spring = (x: number, k: number, c: number): Spring => ({ x, v: 0, meta: x, k, c })
@@ -63,6 +69,8 @@ function mount(scene: HTMLElement, o: Options) {
   const cards = Array.from(scene.querySelectorAll<HTMLElement>('.af-cartel'))
   const N = cards.length
   let kk = 1
+  let rise = 0
+  let openGrow = 1
   let W = 0
   let H = 0
   const P = cards.map(() => ({ x: spring(0, o.muelle[0], o.muelle[1]), y: spring(0, o.muelle[0], o.muelle[1]), r: spring(0, o.muelle[0], o.muelle[1]), s: spring(1, o.muelle[0] * 1.2, o.muelle[1]), a: spring(1, 150, 20), v: spring(0, 120, 20) }))
@@ -78,11 +86,16 @@ function mount(scene: HTMLElement, o: Options) {
   function measure() {
     W = scene.clientWidth
     H = scene.clientHeight
-    // the width of a poster: from the design width, but never taller than the room above the legend (with space to lift)
-    // on a short screen the lift room shrinks with the posters, so they stay readable
-    const lift = W < 700 ? 56 : H < 460 ? 44 : 100
-    const w = Math.min(W < 700 ? W * 0.62 : 345 * lim(W / 1280, 0.55, 1.05), (H - LEG - lift) / 1.4)
+    // The scene's top edge, just under the notch, cuts whatever passes it. A hovered poster reaches above its resting
+    // centre by half its grown height, the corner a turned poster swings up, the air, and its rise.
+    const room = (H - LEG) / 2
+    const body = 0.7 * HOVER_GROW + 0.02 + AIR
+    const withRise = room / (body + o.sube / 345)
+    // from the design width, as long as the poster keeps its full rise; on a short screen it stays readable and rises less
+    const w = Math.min(W < 700 ? W * 0.62 : 345 * lim(W / 1280, 0.55, 1.05), Math.max(withRise, Math.min(READABLE, room / body)))
     kk = w / 345
+    rise = Math.min(o.sube * kk, room - body * w)
+    openGrow = Math.min(W < 700 ? 1.12 : 1.16, (room / w - AIR) / 0.7)
     scene.style.setProperty('--af-w', Math.round(w) + 'px')
   }
   const dist = (j: number) => mod(j - s + N / 2, N) - N / 2
@@ -106,9 +119,9 @@ function mount(scene: HTMLElement, o: Options) {
       let veil = 0
       if (open >= 0) {
         if (j === open) {
-          y = -LEG / 2 - 24 * kk
+          y = -LEG / 2
           r = 0
-          sc = W < 700 ? 1.12 : 1.16
+          sc = openGrow
           z = 300
           x = 0
         } else {
@@ -120,9 +133,9 @@ function mount(scene: HTMLElement, o: Options) {
         }
       } else if (hover >= 0 && !drag) {
         if (j === hover) {
-          y -= o.sube * kk
+          y -= rise
           r *= 0.35
-          sc = 1.07
+          sc = HOVER_GROW
           z = 200
         } else {
           const e = b.d - base[hover].d
@@ -347,7 +360,7 @@ export function Afiche({ posters, label, className }: { posters: PosterSpec[]; l
   useEffect(() => {
     const el = scene.current
     if (!el) return
-    const f = mount(el, { paso: 150, giro: 0.12, radio: 900, sube: 70, muelle: [190, 21], onCentre: setCentre, onFocusCard: () => undefined })
+    const f = mount(el, { paso: 150, giro: 0.12, radio: 900, sube: 40, muelle: [190, 21], onCentre: setCentre, onFocusCard: () => undefined })
     fan.current = f
     return () => {
       f.destroy()

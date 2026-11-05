@@ -184,7 +184,8 @@
 }
 .af-crema .af-palabra {
   left: 5cqw;
-  bottom: 54cqw;
+  /* the action and the second way in keep their pixel height, so on a small poster the word stays clear of them */
+  bottom: max(54cqw, 99px);
   font-size: 41cqw;
   color: var(--af-green);
 }

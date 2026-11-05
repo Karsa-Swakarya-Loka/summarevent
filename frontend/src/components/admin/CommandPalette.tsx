@@ -66,7 +66,7 @@ function Palette({ close }: { close: () => void }) {
     key: r.order.id,
     group: 'Pesanan',
     title: `${r.order.code} · ${r.order.buyerName}`,
-    sub: `${r.event.title} · ${seatSummary(r.order.items)} · ${ORDER_STATUS_LABEL[r.order.status]} · ${rupiahPlain(r.order.totalAmount)}`,
+    sub: `${r.event.title} · ${seatSummary(r.order.items)} · ${ORDER_STATUS_LABEL[r.order.status]} · ${r.order.totalAmount ? rupiahPlain(r.order.totalAmount) : r.category.accessMethod === 'RECEIPT' ? 'Tukar struk' : 'Gratis'}`,
     to: `/admin/orders?event=${r.event.id}&q=${encodeURIComponent(r.order.code)}`,
   }))
   const hits = [...pages, ...rows]

@@ -378,6 +378,8 @@ export const PASSWORD_MIN = 8
 export const LOGIN_MAX_FAILS = 5
 export const LOGIN_FAIL_WINDOW_MIN = 15
 export const RESET_TOKEN_MIN = 30
+/** A second reset request for the same account within this many seconds sends nothing new (the inbox is not flooded). */
+export const FORGOT_MIN_INTERVAL_SEC = 60
 
 /** A new password as typed: at least 8 characters, no leading or trailing spaces. */
 export function passwordCheck(password: string): { ok: true } | { ok: false; reason: string } {

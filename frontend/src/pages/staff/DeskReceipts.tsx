@@ -11,6 +11,7 @@ import { BackHeader, EmptyState } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { errorMessage, useLive } from '@/hooks/useLive'
+import { useBack } from '@/lib/navStack'
 
 export default function DeskReceipts() {
   const [params, setParams] = useSearchParams()
@@ -37,9 +38,12 @@ export default function DeskReceipts() {
       { replace },
     )
 
+  const toList = useBack(listUrl)
   const next = (doneId: string) => {
     const rest = items.filter((i) => i.order.id !== doneId)
-    open(rest[0]?.order.id ?? null, true)
+    // the last one decided: back to the queue entry instead of stacking a second copy of it
+    if (rest[0]) open(rest[0].order.id, true)
+    else toList()
   }
 
   return (

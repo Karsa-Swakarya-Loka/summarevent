@@ -177,7 +177,7 @@ Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. T
 - **Versi live untuk uji, bukan data asli.** Kode OTP dan akun demo masih tampil di layar, jadi siapa pun bisa masuk dengan nomor HP mana pun. Pakai nama dan nomor contoh. Sebelum dipakai sungguhan, OTP harus dikirim lewat WhatsApp atau SMS dan login demo dimatikan.
 - **Tiket.** Tiap QR bertanda tangan, jadi QR palsu ditolak saat scan. Layar tiket mengingatkan agar foto QR tidak diunggah ke media sosial.
 - **Foto.** Foto struk dan foto profil digambar ulang di browser sebelum dikirim, jadi data lokasi di dalam foto ikut terbuang.
-- **Data pengunjung di sisi panitia.** Nomor HP di daftar pesanan disamarkan. Di CSV versi demo, isi yang diawali `=`, `+`, `-`, atau `@` diberi tanda petik di depannya supaya tidak dijalankan sebagai rumus di Excel atau Sheets. Backend menyusul dengan aturan yang sama.
+- **Data pengunjung di sisi panitia.** Nomor HP di daftar pesanan disamarkan. Di CSV, isi yang diawali `=`, `+`, `-`, atau `@` diberi tanda petik di depannya supaya tidak dijalankan sebagai rumus di Excel atau Sheets.
 - **HP petugas.** Data untuk scan offline menyimpan sidik SHA-256 tiap QR, bukan QR-nya, dan dihapus saat petugas keluar.
 - **Header keamanan.** Halaman tidak bisa dibingkai situs lain, jenis berkas tidak ditebak browser, dan hanya kamera (untuk scanner petugas) yang boleh dipakai.
 - **Tanpa pelacak.** Tidak ada cookie pelacak atau analitik pihak ketiga.

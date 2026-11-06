@@ -153,7 +153,7 @@ BASE=https://summarevent-live.vercel.app API_URL=https://good-gnu-186.convex.sit
 | Rombongan | Valid untuk pesanan dua kursi | Tawaran **Masukkan juga 1 tiket lain** berhasil |
 | Offline | Versi live, HP petugas mode pesawat saat scan, lalu online lagi | Scan tetap jalan, antrean terkirim. Tiket yang lebih dulu masuk lewat pintu lain muncul sebagai konflik. |
 | Panitia | Tolak atau minta revisi struk tanpa alasan, **Tandai lunas** | Alasan wajib. Tandai lunas meminta konfirmasi dulu. |
-| CSV | Versi demo: di status pesanan, **Ubah nama peserta** jadi `=1+1`. Lalu panitia **Unduh data peserta** dan buka di Excel atau Sheets. | Tampil sebagai teks berawalan tanda petik, bukan angka 2. Di versi live, pengaman ini masih menunggu backend. |
+| CSV | Di status pesanan, **Ubah nama peserta** jadi `=1+1`. Lalu panitia **Unduh data peserta** dan buka di Excel atau Sheets. | Tampil sebagai teks berawalan tanda petik, bukan angka 2 |
 | Akses | Buka `/admin` dan `/staff` tanpa masuk. Masuk dengan sandi salah. Coba lupa sandi untuk email yang tidak ada. | Diarahkan ke halaman masuk. Pesan salahnya sama untuk email dan sandi. Lupa sandi tidak memberi tahu email itu terdaftar atau tidak. |
 | Petugas nonaktif | Panitia → Petugas → **Nonaktifkan**, lalu petugas itu masuk | Ditolak |
 | Tampilan | Semua layar di HP 360 px dan laptop | Tidak bisa digeser ke samping, tidak ada tombol yang tertutup atau terpotong |

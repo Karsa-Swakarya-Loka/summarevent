@@ -106,7 +106,13 @@ export default function Onboarding({ role }: { role: IntroRole }) {
     <div className="flex min-h-dvh justify-center bg-background" data-shell="intro">
       <div className="flex w-full max-w-md flex-col">
         <header className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))]">
-          <BrandAppIcon className="size-10 rounded-xl" />
+          <div className="flex items-center gap-1">
+            {/* back to where the pengenalan was opened from (the landing), or the landing itself */}
+            <Button variant="ghost" className="-ml-2.5 size-11 rounded-full" aria-label="Kembali" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>
+              <ArrowLeft className="size-5" />
+            </Button>
+            <BrandAppIcon className="size-10 rounded-xl" />
+          </div>
           <Button variant="ghost" className="h-11 px-4 text-base text-muted-foreground" onClick={() => finish(role === 'visitor' ? '/app' : signIn)}>
             Lewati
           </Button>

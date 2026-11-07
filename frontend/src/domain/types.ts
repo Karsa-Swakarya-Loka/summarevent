@@ -48,6 +48,8 @@ export interface SeatLayout {
   seatsPerRow: number
   /** Seat number after which the aisle sits (e.g. 7 → aisle between 7 and 8). */
   aisleAfter: number | null
+  /** Rows bend around the stage, the ends of each row closer to it than the middle. Absent: straight rows. */
+  curved?: boolean
 }
 
 export interface Seat {

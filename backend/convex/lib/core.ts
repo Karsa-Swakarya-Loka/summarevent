@@ -519,6 +519,7 @@ export async function draftOf(tx: Tx, event: EventItem): Promise<EventDraft> {
       rows: layout.rows,
       seatsPerRow: layout.seatsPerRow,
       aisleAfter: layout.aisleAfter,
+      ...(layout.curved ? { curved: true } : {}),
       rowCategories,
       blockedSeatLabels: seats.filter((s) => event.seatAssignments[s.id]?.blocked).map(seatLabel),
       prioritySeatLabels: seats.filter((s) => s.isPriority).map(seatLabel),
@@ -557,6 +558,8 @@ export async function applyLayout(tx: Tx, event: EventItem, draft: EventDraft, c
     rows: spec.rows,
     seatsPerRow: spec.seatsPerRow,
     aisleAfter: spec.aisleAfter,
+    // only when set, so a deployment whose schema predates curved rows still takes straight layouts
+    ...(spec.curved ? { curved: true } : {}),
   }
   const seats = buildSeats(layout, spec.prioritySeatLabels)
   await tx.insert('layouts', layout)

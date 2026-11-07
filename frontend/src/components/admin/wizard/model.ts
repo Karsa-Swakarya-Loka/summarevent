@@ -49,6 +49,8 @@ export interface LayoutForm {
   rows: number
   seatsPerRow: number
   aisleAfter: number | null
+  /** Rows bend around the stage. */
+  curved?: boolean
   ranges: RangeForm[]
   blocked: string[]
   priority: string[]
@@ -201,7 +203,7 @@ export function rowCategoryKeys(layout: LayoutForm): Array<string | null> {
 export function previewSeats(layout: LayoutForm): Seat[] {
   if (!(layout.rows > 0 && layout.seatsPerRow > 0)) return []
   return buildSeats(
-    { id: 'preview', venueId: '', name: 'preview', rows: Math.min(layout.rows, 30), seatsPerRow: Math.min(layout.seatsPerRow, 40), aisleAfter: layout.aisleAfter },
+    { id: 'preview', venueId: '', name: 'preview', rows: Math.min(layout.rows, 30), seatsPerRow: Math.min(layout.seatsPerRow, 40), aisleAfter: layout.aisleAfter, curved: layout.curved },
     layout.priority,
   )
 }
@@ -459,6 +461,7 @@ export function toDraft(form: WizardForm): EventDraft {
       rows: L.rows,
       seatsPerRow: L.seatsPerRow,
       aisleAfter: L.aisleAfter,
+      ...(L.curved ? { curved: true } : {}),
       rowCategories,
       blockedSeatLabels: norm(L.blocked),
       prioritySeatLabels: norm(L.priority),
@@ -510,6 +513,7 @@ export function fromDraft(draft: EventDraft): { form: WizardForm; categoryKeys: 
         rows: L.rows,
         seatsPerRow: L.seatsPerRow,
         aisleAfter: L.aisleAfter,
+        curved: L.curved ?? false,
         ranges: L.rowCategories
           .filter((rc) => categories[rc.categoryIndex])
           .map((rc) => ({ key: key('r'), catKey: categories[rc.categoryIndex].key, from: rowIndex(rc.fromRow), to: rowIndex(rc.toRow) })),

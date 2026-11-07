@@ -77,6 +77,9 @@ await lastRow.click()
 if ((await lastRow.getAttribute('aria-pressed')) !== 'true') errors.push('tombol baris tidak menutup barisnya')
 await lastRow.click()
 if ((await lastRow.getAttribute('aria-pressed')) !== 'false') errors.push('tombol baris tidak membuka barisnya lagi')
+// curved rows: the visitor part below picks and holds seats on this curved map
+await page.getByRole('switch', { name: 'Baris melengkung' }).click()
+await page.waitForTimeout(300)
 await shot('3-denah')
 await next()
 // sessions

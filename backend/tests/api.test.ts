@@ -196,6 +196,23 @@ describe('panitia and petugas sign-in (email + kata sandi)', () => {
   })
 })
 
+describe('curved rows', () => {
+  it('keeps a curved layout through save and edit, and the seats follow the curve', async () => {
+    const adm = await write('demoLogin', req({ body: { role: 'ADMIN' } }))
+    const { draft } = await read('admin.getEventDraft', req({ token: adm.token, params: { id: 'evt_sangkuriang' } }))
+    const { sessions: _s, ...rest } = draft
+    const body = { ...rest, title: 'Denah Lengkung', layout: { ...draft.layout, curved: true }, sessions: [{ startAt: '2026-12-01T06:00:00.000Z', endAt: '2026-12-01T07:00:00.000Z' }] }
+    const created = await write('admin.createEvent', req({ token: adm.token, body }))
+    const again = await read('admin.getEventDraft', req({ token: adm.token, params: { id: created.id ?? created.event?.id } }))
+    expect(again.draft.layout.curved).toBe(true)
+    const map = await read('getSeatMap', req({ params: { id: again.draft.sessions[0].id } }))
+    const a1 = map.seats.find((x: { row: string; number: number }) => x.row === 'A' && x.number === 1)
+    const mid = map.seats.find((x: { row: string; number: number }) => x.row === 'A' && x.number === Math.ceil(again.draft.layout.seatsPerRow / 2))
+    expect(a1.y).toBe(0)
+    expect(mid.y).toBeGreaterThan(0)
+  })
+})
+
 describe('poster colours (AD-01)', () => {
   it('keeps a valid palette, rejects a broken one, and null clears it', async () => {
     const adm = await write('demoLogin', req({ body: { role: 'ADMIN' } }))

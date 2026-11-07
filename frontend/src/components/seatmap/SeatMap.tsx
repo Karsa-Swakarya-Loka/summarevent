@@ -157,7 +157,9 @@ export function SeatMap({
     // columns without any seat = aisles; row letters are repeated there so a zoomed-in view keeps its bearings
     const used = new Set(seats.map((s) => s.x))
     const aisles = Array.from({ length: maxX + 1 }, (_, x) => x).filter((x) => x > 0 && x < maxX && !used.has(x))
-    return { width, height, maxX, rows, aisles }
+    // on curved rows a row's height changes along it: a letter in an aisle sits level with the seat beside it
+    const yAt = new Map(seats.map((s) => [`${s.row}:${s.x}`, s.y]))
+    return { width, height, maxX, rows, aisles, yAt }
   }, [seats])
 
   if (!layout || !seats.length) return null
@@ -211,7 +213,7 @@ export function SeatMap({
                 {geo.rows.map((r) => [
                   rowText(`l-${r.row}`, PAD_X - 14, r.y, r.row, '#6b6560'),
                   rowText(`r-${r.row}`, PAD_X + (geo.maxX + 1) * SEAT_UNIT + 8, r.y, r.row, '#6b6560'),
-                  ...geo.aisles.map((ax) => rowText(`a${ax}-${r.row}`, PAD_X + ax * SEAT_UNIT + SEAT / 2, r.y, r.row, '#a8a29e')),
+                  ...geo.aisles.map((ax) => rowText(`a${ax}-${r.row}`, PAD_X + ax * SEAT_UNIT + SEAT / 2, geo.yAt.get(`${r.row}:${ax - 1}`) ?? r.y, r.row, '#a8a29e')),
                 ])}
               </g>
 

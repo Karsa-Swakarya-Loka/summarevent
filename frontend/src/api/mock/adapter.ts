@@ -609,6 +609,7 @@ function draftOf(db: Db, event: EventItem): EventDraft {
       rows: layout.rows,
       seatsPerRow: layout.seatsPerRow,
       aisleAfter: layout.aisleAfter,
+      ...(layout.curved ? { curved: true } : {}),
       rowCategories,
       blockedSeatLabels: seats.filter((s) => event.seatAssignments[s.id]?.blocked).map(seatLabel),
       prioritySeatLabels: seats.filter((s) => s.isPriority).map(seatLabel),
@@ -649,6 +650,8 @@ function applyLayout(db: Db, event: EventItem, draft: EventDraft, categoryIds: s
     rows: spec.rows,
     seatsPerRow: spec.seatsPerRow,
     aisleAfter: spec.aisleAfter,
+    // only when set, so a deployment whose schema predates curved rows still takes straight layouts
+    ...(spec.curved ? { curved: true } : {}),
   }
   const seats = buildSeats(layout, spec.prioritySeatLabels)
   db.layouts.push(layout)

@@ -93,7 +93,7 @@ export default defineSchema({
   venues: defineTable({ id: str, name: str, capacity: num }).index('by_key', ['id']),
   tenants: defineTable({ id: str, name: str, category: str }).index('by_key', ['id']),
 
-  layouts: defineTable({ id: str, venueId: str, name: str, rows: num, seatsPerRow: num, aisleAfter: nul(num) }).index('by_key', ['id']),
+  layouts: defineTable({ id: str, venueId: str, name: str, rows: num, seatsPerRow: num, aisleAfter: nul(num), curved: v.optional(v.boolean()) }).index('by_key', ['id']),
   seats: defineTable({ id: str, layoutId: str, row: str, number: num, x: num, y: num, isPriority: bool })
     .index('by_key', ['id'])
     .index('by_layout', ['layoutId']),

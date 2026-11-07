@@ -297,6 +297,28 @@ describe('seat suggestions', () => {
   })
 })
 
+describe('curved rows', () => {
+  const layout: SeatLayout = { id: 'C', venueId: 'v', name: 'C', rows: 3, seatsPerRow: 8, aisleAfter: 4, curved: true }
+  const seats = buildSeats(layout)
+  const y = (label: string) => seats.find((s) => `${s.row}${s.number}` === label)!.y
+
+  it('bends every row the same way: the ends level with the row, the middle further back, both sides alike', () => {
+    expect(y('A1')).toBe(0)
+    expect(y('A8')).toBe(0)
+    expect(y('A4')).toBeGreaterThan(0)
+    expect(y('A4')).toBe(y('A5'))
+    expect(y('B4') - y('A4')).toBe(1)
+    // straight layouts are untouched
+    expect(buildSeats({ ...layout, curved: false }).every((s) => Number.isInteger(s.y))).toBe(true)
+  })
+
+  it('still suggests the front row near the middle, not the ends that sit closer to the stage', () => {
+    const views = seats.map((seat) => ({ seat, status: 'AVAILABLE' as const, categoryId: 'c' }))
+    const labels = suggestSeats(views, 'c', 2, layout).seatIds.map((id) => id.split(':')[1])
+    expect(labels).toEqual(['A3', 'A4'])
+  })
+})
+
 describe('order changes and waiting list (PV-12, PV-13, PV-14)', () => {
   async function confirmedOrder(user: string, seats: string[]) {
     asVisitor(user)

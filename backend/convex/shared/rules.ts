@@ -48,6 +48,11 @@ export function seatLabel(seat: Pick<Seat, 'row' | 'number'>): string {
 /** Build the seats of a theatre-style layout. x/y are in seat units; the aisle adds one empty column. */
 export function buildSeats(layout: SeatLayout, priorityLabels: string[] = []): Seat[] {
   const seats: Seat[] = []
+  // curved rows: every row bends the same way, its middle up to `depth` seat units further back than its two ends, so
+  // rows never overlap and a seat keeps its neighbours
+  const maxX = layout.seatsPerRow - 1 + (layout.aisleAfter != null && layout.aisleAfter < layout.seatsPerRow ? 1 : 0)
+  const centre = maxX / 2
+  const depth = layout.curved && centre > 0 ? Math.min(1.5, maxX / 8) : 0
   for (let r = 0; r < layout.rows; r++) {
     const row = rowLetter(r)
     for (let n = 1; n <= layout.seatsPerRow; n++) {
@@ -59,7 +64,7 @@ export function buildSeats(layout: SeatLayout, priorityLabels: string[] = []): S
         row,
         number: n,
         x: n - 1 + aisleShift,
-        y: r,
+        y: depth ? Math.round((r + depth * (1 - ((n - 1 + aisleShift - centre) / centre) ** 2)) * 100) / 100 : r,
         isPriority: priorityLabels.includes(label),
       })
     }
@@ -161,9 +166,10 @@ export function suggestSeats(
         const block = r.slice(i, i + qty)
         const cx = (block[0].x + block[block.length - 1].x) / 2
         const cy = block[0].y
+        // closer to the stage means an earlier row, not a smaller y: on curved rows the ends sit higher than the middle
         const score = near
           ? Math.hypot(cx - near.x, (cy - near.y) * 1.5)
-          : cy * 100 + Math.abs(cx - centreX)
+          : rowIndex(block[0].row) * 100 + Math.abs(cx - centreX)
         if (!best || score < best.score) best = { ids: block.map((s) => s.id), score }
       }
     }
@@ -174,7 +180,7 @@ export function suggestSeats(
   const scored = candidates
     .map((v) => ({
       id: v.seat.id,
-      score: near ? Math.hypot(v.seat.x - near.x, v.seat.y - near.y) : v.seat.y * 100 + Math.abs(v.seat.x - centreX),
+      score: near ? Math.hypot(v.seat.x - near.x, v.seat.y - near.y) : rowIndex(v.seat.row) * 100 + Math.abs(v.seat.x - centreX),
     }))
     .sort((a, b) => a.score - b.score)
   return { seatIds: scored.slice(0, qty).map((s) => s.id), adjacent: false }

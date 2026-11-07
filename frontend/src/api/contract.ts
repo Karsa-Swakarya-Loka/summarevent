@@ -192,6 +192,8 @@ export interface EventDraft {
     rows: number
     seatsPerRow: number
     aisleAfter: number | null
+    /** Rows bend around the stage; absent or false: straight rows. */
+    curved?: boolean
     /** Row letter ranges per category, e.g. { categoryIndex: 0, fromRow: 'A', toRow: 'B' }. */
     rowCategories: Array<{ categoryIndex: number; fromRow: string; toRow: string }>
     blockedSeatLabels: string[]

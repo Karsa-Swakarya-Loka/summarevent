@@ -174,6 +174,14 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                   <NumberInput id="lay-aisle" min={1} max={Math.max(1, L.seatsPerRow - 1)} value={L.aisleAfter} disabled={locked} invalid={!!err('layout.aisleAfter')} onChange={(n) => setLayout((l) => ({ ...l, aisleAfter: n }))} />
                 </Field>
               )}
+              <ToggleRow
+                id="lay-curved"
+                checked={!!L.curved}
+                disabled={locked}
+                onChange={(v) => setLayout((l) => ({ ...l, curved: v }))}
+                title="Baris melengkung"
+                description="Baris mengikuti panggung: kursi di ujung baris lebih dekat ke panggung, seperti di teater."
+              />
               {/* sell part of the venue: the back seats close first, and every one of them can still be opened by hand */}
               <div
                 onFocus={() => {

@@ -39,12 +39,8 @@ export default function DeskReceipts() {
     )
 
   const toList = useBack(listUrl)
-  const next = (doneId: string) => {
-    const rest = items.filter((i) => i.order.id !== doneId)
-    // the last one decided: back to the queue entry instead of stacking a second copy of it
-    if (rest[0]) open(rest[0].order.id, true)
-    else toList()
-  }
+  // the desk serves the visitor standing at it: after a decision, back to the queue to pick the next one
+  const next = () => toList()
 
   return (
     <div className="pb-24">

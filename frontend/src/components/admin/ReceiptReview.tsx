@@ -53,7 +53,7 @@ export function QueueRow({ item, active, onOpen }: { item: ReceiptQueueItem; act
           <span className="font-bold tabular-nums">{rupiahPlain(total)}</span>
           <span className="text-xs text-muted-foreground"> · {item.siblings.length} struk</span>
         </span>
-        {canDecide(item) ? <Countdown to={item.order.holdExpiresAt} className="text-xs text-muted-foreground" /> : <span className="text-xs text-muted-foreground">{fmtTime(item.receipt.createdAt)}</span>}
+        {canDecide(item) ? <span className="text-xs text-muted-foreground">Ditahan <Countdown to={item.order.holdExpiresAt} /></span> : <span className="text-xs text-muted-foreground">{fmtTime(item.receipt.createdAt)}</span>}
       </div>
       {(failing || dup) && (
         <div className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-[#a11b1b]">
@@ -282,10 +282,10 @@ export function ReviewPanel({
             ))}
           </ul>
           <DialogFooter className="gap-2">
-            <Button variant="outline" size="lg" onClick={() => setAsk('NEEDS_REVISION')} disabled={!!busy}>
+            <Button size="lg" onClick={() => setAsk('NEEDS_REVISION')} disabled={!!busy}>
               Minta revisi saja
             </Button>
-            <Button size="lg" onClick={() => void decide('APPROVE')} disabled={!!busy}>
+            <Button variant="outline" size="lg" onClick={() => void decide('APPROVE')} disabled={!!busy}>
               {busy === 'APPROVE' && <LoaderCircle className="animate-spin" />} Tetap setujui
             </Button>
           </DialogFooter>

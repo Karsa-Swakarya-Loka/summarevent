@@ -57,7 +57,7 @@ const next = async () => {
 }
 const paste = async (token) => {
   await page.locator('#paste-qr').fill(token)
-  await page.getByRole('button', { name: 'Periksa' }).click()
+  await page.getByRole('button', { name: 'Check-in', exact: true }).click()
 }
 
 await signIn(page, 'STAFF', BASE)

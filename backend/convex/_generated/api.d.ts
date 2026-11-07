@@ -17,6 +17,7 @@ import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_core from "../lib/core.js";
 import type * as lib_crypto from "../lib/crypto.js";
+import type * as lib_demo from "../lib/demo.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_links from "../lib/links.js";
 import type * as lib_password from "../lib/password.js";
@@ -49,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/core": typeof lib_core;
   "lib/crypto": typeof lib_crypto;
+  "lib/demo": typeof lib_demo;
   "lib/errors": typeof lib_errors;
   "lib/links": typeof lib_links;
   "lib/password": typeof lib_password;

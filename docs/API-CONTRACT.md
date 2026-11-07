@@ -20,18 +20,25 @@ dengan `VITE_API_URL` yang menunjuk ke prefix-nya: `VITE_API_URL=https://api.con
 
 | Method | Path | Body | Balikan |
 | --- | --- | --- | --- |
-| POST | `/auth/otp/request` | `{ phone }` | `{ simulatedCode, expiresAt }` — kode ditampilkan di layar (simulasi). Rate limit 3×/menit/nomor → `429 RATE_LIMIT`. |
-| POST | `/auth/otp/verify` | `{ phone, code, name? }` | `{ user, isNew, token }`. Nomor baru tanpa `name` → `200 { needName: true, message }`. Pesanan tamu (hold sebelum login) diklaim ke user ini. |
-| POST | `/auth/demo-login` | `{ role: 'ADMIN' \| 'STAFF' \| 'VISITOR', user_id? }` | `{ user, token }` — akun demo untuk juri. `user_id` memilih akun petugas tertentu; akun nonaktif → `403 FORBIDDEN`. |
-| POST | `/auth/login` | `{ email, password, role: 'ADMIN' \| 'STAFF' }` | `{ user, token }` — masuk panitia dan petugas. Email dibandingkan huruf kecil. Email atau sandi salah → `401 BAD_LOGIN` "Email atau kata sandi salah." (sengaja tidak menyebut mana yang salah). Akun nonaktif → `403 FORBIDDEN`. 5× gagal dalam 15 menit → `429 RATE_LIMIT`. Akun demo tetap memakai sandi `summaba2026` (disimpan sebagai hash), jadi tombol Isi otomatis tetap jalan. |
+| POST | `/auth/otp/request` | `{ phone }` | `{ simulatedCode, expiresAt }` — kode ditampilkan di layar (simulasi). `simulatedCode` hanya ada di deployment demo; di luar itu kode dikirim lewat SMS/WA dan balikannya `{ expiresAt }`. Rate limit 3×/menit/nomor → `429 RATE_LIMIT`. |
+| POST | `/auth/otp/verify` | `{ phone, code, name? }` | `{ user, isNew, token }`. Nomor baru tanpa `name` → `200 { needName: true, message }`. Pesanan tamu (hold sebelum login) diklaim ke user ini. Kode salah → `400 BAD_OTP`; setelah 5× salah kodenya hangus dan harus minta kode baru. |
+| POST | `/auth/demo-login` | `{ role: 'ADMIN' \| 'STAFF' \| 'VISITOR', user_id? }` | `{ user, token }` — akun demo untuk juri, hanya di deployment demo (`DEMO_MODE=true`, selain itu `403 FORBIDDEN`). `user_id` hanya untuk STAFF, memilih akun petugas tertentu; VISITOR selalu persona Rina. Akun nonaktif → `403 FORBIDDEN`. |
+| POST | `/auth/login` | `{ email, password, role: 'ADMIN' \| 'STAFF' }` | `{ user, token }` — masuk panitia dan petugas. Email dibandingkan huruf kecil. Email atau sandi salah → `401 BAD_LOGIN` "Email atau kata sandi salah." (sengaja tidak menyebut mana yang salah). Akun nonaktif → `403 FORBIDDEN`. 5× gagal dalam 15 menit → `429 RATE_LIMIT`. Di deployment demo, akun demo memakai sandi `summaba2026` (disimpan sebagai hash), jadi tombol Isi otomatis tetap jalan. Di luar demo akun contoh tidak punya sandi. Hitungan gagal dicatat per email, termasuk email yang tidak terdaftar, jadi `429` tidak membocorkan email mana yang ada. |
+| POST | `/auth/logout` | — | `{ ok: true }` — token yang dikirim tidak berlaku lagi. Jawabannya sama walau tokennya sudah tidak ada. |
 | POST | `/auth/password/forgot` | `{ email }` | Selalu `200 { ok: true }`, supaya tidak bisa dipakai mengecek email terdaftar. Kalau emailnya ada (panitia atau petugas), Resend mengirim link `<app>/reset?token=…` yang berlaku 30 menit dan sekali pakai (satu halaman untuk kedua role, rolenya dibaca dari token). Permintaan ulang untuk akun yang sama dalam 1 menit (`FORGOT_MIN_INTERVAL_SEC`) tetap `{ ok: true }` tanpa link baru. Versi demo menambah `simulatedLink` dan menampilkannya di layar. |
 | POST | `/auth/password/reset` | `{ token, password }` | `{ user, token }` — langsung masuk sebagai role akun itu. Sandi minimal 8 karakter, tanpa spasi di awal atau akhir (`passwordCheck` di `domain/rules.ts`) → kalau tidak, `400 INVALID` dengan `details.field: 'password'`. Token kedaluwarsa atau sudah dipakai → `400 RESET_EXPIRED`. Akun nonaktif → `403 FORBIDDEN`. Sandi baru mengeluarkan semua sesi lain akun itu (token lama tidak berlaku lagi). |
 
 Token dikirim sebagai `Authorization: Bearer <token>`. Path `/admin/*` butuh role ADMIN, `/staff/*` butuh STAFF
-(tanpa token yang cocok → `401 NEED_LOGIN`).
+(tanpa token yang cocok → `401 NEED_LOGIN`). Token berlaku 12 jam untuk panitia dan petugas, 30 hari untuk pengunjung,
+lalu `401 NEED_LOGIN`. Petugas yang dinonaktifkan langsung keluar dari semua HP-nya (`403 FORBIDDEN` untuk token lain
+yang tersisa).
+
+Tahan kursi, OTP, login, lupa sandi, dan kirim struk dibatasi per alamat klien (header `x-forwarded-for`) dalam jendela
+10 menit → `429 RATE_LIMIT`. Batasnya longgar supaya satu keluarga di Wi-Fi mal tetap bisa memesan.
 
 Setiap request juga membawa header `X-Guest-Id: guest_…` (id acak per browser). Itulah identitas pengunjung yang
-belum login, supaya kursi bisa ditahan dulu lalu pesanannya diklaim saat verifikasi OTP.
+belum login, supaya kursi bisa ditahan dulu lalu pesanannya diklaim saat verifikasi OTP. Tanpa header yang sah (dan
+tanpa login), tahan kursi dan akses pesanan ditolak `400 BAD_REQUEST`.
 
 Nomor baru yang belum mengirim `name` di `/auth/otp/verify` mendapat `200 { needName: true, message }` (langkah kedua
 login, bukan error), lalu klien mengirim ulang dengan `name`.
@@ -58,7 +65,7 @@ login, bukan error), lalu klien mengirim ulang dengan `name`.
 | DELETE | `/waitlist/:id` | Keluar dari daftar tunggu |
 | GET | `/me/waitlist` | `WaitlistItem[]` (+ event, sesi, kategori) |
 | PATCH | `/me` | Body `{ name?, email?, avatar? }` → `User` (PV-06, edit profil pengunjung). Hanya untuk user login (`401 NEED_LOGIN`). Nama dirapikan (spasi berlebih jadi satu) dan wajib 2–60 karakter. Email dibuat huruf kecil, `""` atau `null` menghapusnya, dan formatnya dicek. `avatar` adalah foto profil sebagai data URL JPEG, PNG, atau WebP, paling besar 300 KB (frontend sudah memotongnya persegi 320 px); simpan di storage dan kembalikan alamatnya sebagai `user.avatarUrl`, sedangkan `null` menghapus foto. Salah isi → `400 INVALID` dengan `details.field` (`name`, `email`, atau `avatar`). Email yang sudah dipakai akun lain → `409 DUPLICATE`. Nomor HP adalah login, jadi tidak bisa diubah di sini. Mengganti nama tidak mengubah nama di tiket yang sudah terbit (itu lewat `PATCH /orders/:id`). Aturan: `profileChanges` di `domain/rules.ts`. |
-| GET | `/receipt-photos/:id?sig=` | Foto struk yang diunggah (disimpan terpisah dari data pesanan). Hanya bisa dibuka lewat link bertanda tangan HMAC yang ada di `receipt.photoUrl`. |
+| GET | `/receipt-photos/:id?exp=&sig=` | Foto struk yang diunggah (disimpan terpisah dari data pesanan). Hanya bisa dibuka lewat link bertanda tangan HMAC yang ada di `receipt.photoUrl`, berlaku 30 hari sejak struk dikirim. Foto harus JPEG, PNG, atau WebP sungguhan (isinya dicek, bukan hanya namanya), paling besar 3 MB per foto dan 12 MB per kiriman; SVG hanya diterima di deployment demo untuk struk contoh. |
 | GET | `/health` | `{ ok, database, version, demo }` |
 
 `HoldResult`:
@@ -92,14 +99,14 @@ login, bukan error), lalu klien mengirim ulang dengan `name`.
 | Method | Path | Fungsi |
 | --- | --- | --- |
 | GET | `/staff/accounts` | `StaffAccount[]` aktif, untuk pengganti akun petugas di layar demo |
-| POST | `/staff/checkins` | Body `{ qr_token, session_id }` → `CheckinResponse` dengan `result` ∈ `VALID`, `ALREADY_USED` (+`firstScan`), `INVALID`, `WRONG_SESSION`, `OUTSIDE_WINDOW` |
+| POST | `/staff/checkins` | Body `{ qr_token, session_id }` (QR yang dipindai) atau `{ ticket_id, session_id }` (tiket yang dipilih dari cari manual atau rombongan) → `CheckinResponse` dengan `result` ∈ `VALID`, `ALREADY_USED` (+`firstScan`), `INVALID`, `WRONG_SESSION`, `OUTSIDE_WINDOW`. Di luar deployment demo, `ticket.qrToken` di jawaban petugas (check-in dan `/staff/tickets`) dikosongkan: token QR hanya dilihat pemilik tiketnya. |
 | GET | `/staff/tickets?q=&event_id=` | Cari manual (kode tiket, kode pesanan, HP, nama) |
 | GET | `/staff/sessions/:id/checkins` | `{ checkedIn, capacity, recent[] }` |
 | GET | `/staff/sessions/:id/offline-manifest` | Bekal scan offline (PT-07): `OfflineManifest { sessionId, generatedAt, event, session, categories, tickets[] }`. Tiap tiket berisi `tokenHash` (SHA-256 hex dari token QR; tokennya sendiri tidak pernah dikirim), `ticket` tanpa `qrToken`, `order { id, code, buyerName }`, dan `session`. Isinya semua tiket event, supaya tiket sesi lain tetap terbaca `WRONG_SESSION`. Scan yang tertahan offline dikirim belakangan lewat `POST /staff/checkins` biasa, dan hasil dari server yang berlaku. |
 | GET | `/staff/receipts?event_id=` | Antrean struk menunggu untuk dicek di desk (PT-06), bentuk sama dengan `/admin/receipts` |
 | PATCH | `/staff/receipts/:id` | Sama dengan `/admin/receipts/:id`, tapi `reviewedBy` = petugas yang login |
 
-## Demo (matikan di produksi)
+## Demo (hanya di deployment dengan `DEMO_MODE=true`)
 
 | Method | Path | Fungsi |
 | --- | --- | --- |

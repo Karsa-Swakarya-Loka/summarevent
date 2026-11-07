@@ -122,7 +122,7 @@ const cards = [
     shot: () =>
       capture('tiket', async (page) => {
         await page.goto(BASE + '/', { waitUntil: 'networkidle' })
-        await page.getByRole('button', { name: /masuk cepat sebagai Rina/ }).click()
+        await page.getByRole('button', { name: /sebagai Rina/ }).click()
         await page.locator('article[aria-label^="E-ticket"] a').first().click()
         await page.getByRole('button', { name: /Perbesar QR/ }).waitFor()
         await page.waitForTimeout(2600) // the QR assembles, then reads valid

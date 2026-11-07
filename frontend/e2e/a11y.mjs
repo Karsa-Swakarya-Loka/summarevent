@@ -75,14 +75,14 @@ const rinaAfterCheckin = async (page) => {
   await page.locator('section[data-result]').waitFor()
   await page.goto(BASE + '/', { waitUntil: 'networkidle' })
   await toPoster(page, 'Pengunjung')
-  await page.getByRole('button', { name: /masuk cepat sebagai Rina/ }).click()
+  await page.getByRole('button', { name: /sebagai Rina/ }).click()
   await page.getByRole('region', { name: 'Sudah check-in' }).waitFor()
 }
 
 // Rina's Pass Saya, then her first e-ticket on its own screen (the black ticket)
 const rinaPass = async (page) => {
   await toPoster(page, 'Pengunjung')
-  await page.getByRole('button', { name: /masuk cepat sebagai Rina/ }).click()
+  await page.getByRole('button', { name: /sebagai Rina/ }).click()
   await page.locator('article[aria-label^="E-ticket"]').first().waitFor()
 }
 const rinaTicket = async (page) => {

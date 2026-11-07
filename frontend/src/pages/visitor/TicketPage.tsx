@@ -73,6 +73,9 @@ export default function TicketPage() {
             <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
               <ShieldAlert className="size-4 shrink-0" aria-hidden /> Jangan unggah foto QR ini ke media sosial.
             </p>
+            <Button asChild variant="outline" className="mt-4 h-12 w-full max-w-[24rem]">
+              <Link to={`/app/orders/${item.order.id}`}>Kelola pesanan: ubah nama atau batalkan</Link>
+            </Button>
           </>
         )}
       </div>

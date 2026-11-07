@@ -82,7 +82,7 @@ function SignedOut({ onLogin }: { onLogin: () => void }) {
         <SettingsRow
           icon={<UserRound />}
           tint="bg-brand-soft text-[#0b6b35]"
-          title="Masuk sebagai Rina"
+          title="Masuk sebagai Rina (akun contoh)"
           sub="Akun contoh yang sudah punya tiket"
           onClick={() => !busy && void loginAsPersona()}
         />
@@ -155,7 +155,7 @@ function SignedIn({ user, onChange }: { user: User; onChange: () => void }) {
               right={
                 w.status === 'WAITING' ? (
                   <Button variant="ghost" className="h-11 shrink-0 text-muted-foreground" onClick={() => void leave(w.id)}>
-                    Keluar
+                    Keluar antrean
                   </Button>
                 ) : null
               }

@@ -353,20 +353,24 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
       : count
         ? `${count} kursi · ${seatRangeLabel(labels)} · ${category.name}`
         : 'Belum ada kursi dipilih'
-  const subline = soldOut && !closedReason
+  const subline = pending
+    ? pending.order.status === 'AWAITING_VERIFICATION'
+      ? 'Pesan lagi setelah struk selesai dicek.'
+      : 'Selesaikan pesanan ini dulu sebelum memesan lagi.'
+    : soldOut && !closedReason
     ? myEntry
       ? `Urutan ke-${myEntry.position} di daftar tunggu · ${myEntry.qty} orang`
       : waitingCount
         ? `${waitingCount} orang menunggu · kabar lewat WA`
         : 'Kabar lewat WA kalau ada yang lepas'
     : !category
-    ? 'Ketuk kategori, atau langsung ketuk kursi.'
+    ? 'Ketuk kategori untuk memperbesar denah.'
     : closedReason
       ? closedReason
       : isGeneral
-        ? `Tanpa nomor kursi · ditahan ${holdMin} menit`
+        ? `Tanpa nomor kursi · setelah pesan, ditahan ${holdMin} menit`
         : count
-          ? `Ditahan ${holdMin} menit untuk ${holdFor}`
+          ? `Setelah pesan, ditahan ${holdMin} menit untuk ${holdFor}`
           : 'Ketuk kursi di denah'
   const generalShort = isGeneral && catAvail && !soldOut ? catAvail.available < qty : false
   const canHold = !!category && !closedReason && !pending && (isGeneral ? !generalShort && qty >= 1 : selected.length > 0) && busy !== 'hold'
@@ -499,7 +503,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         )}
         {category?.bonusDesc && !soldOut && bonusLeft > 0 && (
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
-            <Gift className="size-4 shrink-0" aria-hidden /> Bonus {category.bonusDesc} untuk tiket pertama · sisa {bonusLeft}
+            <Gift className="size-4 shrink-0" aria-hidden /> Bonus {category.bonusDesc} untuk {category.bonusFirstN} tiket pertama · sisa {bonusLeft}
           </p>
         )}
         <div className="flex items-end justify-between gap-3" aria-live="polite">
@@ -515,7 +519,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         <div className="mt-3 flex items-stretch gap-2">
           {pending ? (
             <Button asChild className="h-14 flex-1 text-base">
-              <Link to={continuePath(pending)}>Lanjutkan pesananmu</Link>
+              <Link to={continuePath(pending)}>{pending.order.status === 'AWAITING_VERIFICATION' ? 'Lihat pesananmu' : 'Lanjutkan pesananmu'}</Link>
             </Button>
           ) : soldOut && !closedReason ? (
             myEntry ? (

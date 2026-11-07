@@ -57,7 +57,7 @@ export function HoldPill({ to, label }: { to: string; label: string }) {
   return (
     <span className={cn('inline-flex h-9 shrink-0 items-center rounded-full px-3 shadow-sm transition-colors duration-300', urgent ? 'bg-status-invalid' : 'bg-ink')}>
       <span className="sr-only">{label}: </span>
-      <Countdown to={to} className="text-sm text-white [&_svg]:size-3.5" />
+      <Countdown to={to} prefix="Sisa" className="text-sm text-white [&_svg]:size-3.5" />
     </span>
   )
 }

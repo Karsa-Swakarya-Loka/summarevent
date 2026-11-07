@@ -284,6 +284,8 @@ export function TalonTicket({
   onTorn?: () => void
 }) {
   const { ticket, event, venue, session, category } = item
+  // the name the visitor typed for this seat, else the buyer's: checkout and "Ubah nama peserta" promise it shows here
+  const holder = ticket.attendeeName || item.order.buyerName
   const used = ticket.status === 'USED'
   const seat = splitSeat(ticket.seatLabel)
   const body = useRef<HTMLElement>(null)
@@ -516,7 +518,7 @@ export function TalonTicket({
         <i className="talon-grain" aria-hidden />
         <div className="relative flex items-center justify-between gap-3">
           <p className="talon-label truncate">E-ticket · {category.name}</p>
-          <span className="talon-chip">{used ? 'Sudah dipakai' : 'SUMMABA'}</span>
+          <span className="talon-chip">{used ? 'Sudah digunakan' : 'SUMMABA'}</span>
         </div>
         <h2 className={cn('relative mt-3 font-poster leading-[0.9] text-balance uppercase', titleSize(event.title))}>{event.title}</h2>
         <dl className="relative mt-5 grid grid-cols-[auto_auto_1fr] gap-x-5 border-t border-white/14 pt-4">
@@ -538,10 +540,18 @@ export function TalonTicket({
           <div className={cn('shrink-0 rounded-[0.9rem] bg-[#f4f1ea] p-1.5 transition-opacity', used && 'opacity-40')}>
             <canvas ref={canvas} className="block size-[8.25rem]" aria-hidden />
           </div>
-          <p className={cn('talon-label flex items-center gap-1.5 transition-colors', valid && !used && 'text-[#2fb36d]')} aria-live="polite">
-            {valid && !used && <Check className="size-4" strokeWidth={3} aria-hidden />}
-            {used ? `Masuk ${ticket.usedAt ? fmtTime(ticket.usedAt) : ''}` : stage === 'issuing' ? 'Menerbitkan…' : stage === 'reading' ? 'Membaca…' : 'Siap dipindai'}
-          </p>
+          <div className="min-w-0">
+            {holder && (
+              <div className="mb-3">
+                <p className="talon-label">Atas nama</p>
+                <p className="talon-value talon-wrap line-clamp-2">{holder}</p>
+              </div>
+            )}
+            <p className={cn('talon-label flex items-center gap-1.5 transition-colors', valid && !used && 'text-[#2fb36d]')} aria-live="polite">
+              {valid && !used && <Check className="size-4" strokeWidth={3} aria-hidden />}
+              {used ? `Masuk ${ticket.usedAt ? fmtTime(ticket.usedAt) : ''}` : stage === 'issuing' ? 'Menerbitkan…' : stage === 'reading' ? 'Membaca…' : 'Siap dipindai'}
+            </p>
+          </div>
         </div>
       </section>
 

@@ -92,12 +92,11 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
           <div className="mt-4 rounded-2xl border border-dashed border-ink/25 p-4 text-sm">
             <p className="font-semibold">Akun contoh yang sudah punya tiket</p>
             <Button variant="outline" className="mt-3 h-11 w-full" onClick={() => void loginAsPersona()} disabled={demoBusy}>
-              Masuk sebagai Rina
+              Masuk sebagai Rina (akun contoh)
             </Button>
           </div>
         )}
 
-        <p className="mt-8 text-center text-xs text-muted-foreground">Kami hanya meminta nama dan nomor HP.</p>
       </main>
     </div>
   )

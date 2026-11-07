@@ -9,6 +9,7 @@ import { Afiche, type PosterSpec } from '@/components/landing/Afiche'
 import { StickerSlap, type StickerSpec } from '@/components/landing/StickerSlap'
 import { TEAM } from '@/components/landing/team'
 import { TeamSlide } from '@/components/landing/TeamSlide'
+import { setOnboardingDone } from '@/lib/intro'
 
 const CREDITS = [
   ...TEAM.map((m) => [m.role, m.name]),
@@ -43,7 +44,11 @@ export default function RolePicker() {
   const enter = async (role: 'VISITOR' | 'VISITOR_RINA' | 'ADMIN' | 'STAFF') => {
     setBusy(role)
     try {
-      if (role === 'VISITOR_RINA') await api.demoLogin('VISITOR')
+      if (role === 'VISITOR_RINA') {
+        await api.demoLogin('VISITOR')
+        // the sample account is the shortcut past the intro, so Beranda must not send her back to it
+        setOnboardingDone(true, 'visitor')
+      }
       navigate(role === 'ADMIN' ? '/admin' : role === 'STAFF' ? '/staff' : role === 'VISITOR_RINA' ? '/app/pass' : '/app')
     } finally {
       setBusy(null)

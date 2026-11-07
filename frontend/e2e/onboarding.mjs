@@ -170,6 +170,22 @@ await staff.getByText('Halo,').first().waitFor()
 console.log('petugas: splash, onboarding skipped, sign-in, home')
 await staffCtx.close()
 
+// 5b. The sample account from the role picker skips the visitor intro: Pass Saya first, then Beranda, never the intro
+const rinaCtx = await browser.newContext(phone)
+const rina = await rinaCtx.newPage()
+watch(rina, 'rina')
+await rina.goto(BASE + '/', { waitUntil: 'networkidle' })
+await rina.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
+await rina.getByRole('button', { name: /sebagai Rina/ }).click()
+await rina.waitForURL(/\/app\/pass/)
+await rina.locator('#splash').waitFor({ state: 'detached', timeout: 6000 }).catch(() => {})
+await rina.getByRole('link', { name: 'Beranda' }).click()
+await rina.waitForURL((u) => /\/app(\/mulai)?$/.test(u.pathname))
+await rina.waitForTimeout(600)
+check(!/\/app\/mulai/.test(rina.url()), 'masuk sebagai Rina lalu Beranda malah membuka pengenalan')
+console.log('rina: role picker → Pass Saya → Beranda without the intro')
+await rinaCtx.close()
+
 // 6. Reduced motion: the splash is a still frame and leaves quickly
 const calmCtx = await browser.newContext({ ...phone, reducedMotion: 'reduce' })
 const calm = await calmCtx.newPage()

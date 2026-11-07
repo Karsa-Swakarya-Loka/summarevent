@@ -34,7 +34,8 @@ async function sign(purpose: string, payload: string): Promise<string> {
   return b64url(sig).slice(0, 22)
 }
 
-function sameString(a: string, b: string): boolean {
+/** Compares two strings in time that does not depend on where they first differ. */
+export function sameString(a: string, b: string): boolean {
   if (a.length !== b.length) return false
   let diff = 0
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
@@ -57,12 +58,15 @@ export async function verifyQrToken(token: string): Promise<ParsedToken> {
   return sameString(await sign('qr', `${ticketId}.${qrVersion}`), sig) ? { ok: true, ticketId, qrVersion } : { ok: false }
 }
 
-export function receiptPhotoSig(receiptId: string): Promise<string> {
-  return sign('receipt-photo', receiptId)
+/** A receipt photo link works until `exp` (ms since epoch), which is signed with the receipt id. */
+export function receiptPhotoSig(receiptId: string, exp: number): Promise<string> {
+  return sign('receipt-photo', `${receiptId}.${exp}`)
 }
 
-export async function verifyReceiptPhotoSig(receiptId: string, sig: string): Promise<boolean> {
-  return sameString(await receiptPhotoSig(receiptId), sig)
+export async function verifyReceiptPhotoSig(receiptId: string, exp: string | null, sig: string, now = Date.now()): Promise<boolean> {
+  const until = Number(exp)
+  if (!Number.isInteger(until) || until < now) return false
+  return sameString(await receiptPhotoSig(receiptId, until), sig)
 }
 
 export async function sha256Hex(data: ArrayBuffer | string): Promise<string> {

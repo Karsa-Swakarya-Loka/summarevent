@@ -290,10 +290,15 @@ const LIMITS: Record<string, number> = {
 }
 const LIMIT_WINDOW_MS = 10 * 60_000
 
-/** The caller's address as the edge in front of us reports it (Vercel or Convex); none means the check is skipped. */
+/**
+ * The caller's address; none means the check is skipped. Through the live host's /api rewrite every request reaches
+ * Convex from a Vercel server, so x-forwarded-for names Vercel and all visitors would share one limit: Vercel puts the
+ * visitor in x-vercel-forwarded-for (checked on summarevent-live, 2026-11-08). A direct caller could set that header
+ * itself and dodge this limit, which is why the per-account and per-phone limits do not depend on it.
+ */
 function clientIp(req: Request): string | null {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip')?.trim()
-  return ip || null
+  const first = (name: string) => req.headers.get(name)?.split(',')[0]?.trim()
+  return first('x-vercel-forwarded-for') || first('x-forwarded-for') || first('x-real-ip') || null
 }
 
 /* ------------------------------------------------------------------ the handler */

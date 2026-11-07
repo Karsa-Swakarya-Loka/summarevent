@@ -436,14 +436,17 @@ describe('profile (PV-06)', () => {
     expect(profileChanges({ avatar: `data:image/jpeg;base64,${'A'.repeat(AVATAR_MAX)}` })).toMatchObject({ ok: false, field: 'avatar' })
   })
 
-  it('saves for the signed-in visitor only, and never gives two accounts one email', async () => {
+  it('saves for the signed-in visitor only, and never gives two visitors one email', async () => {
     await expect(api.updateProfile({ name: 'Tamu' })).rejects.toMatchObject({ code: 'NEED_LOGIN' })
     asVisitor(PERSONA_ID)
     const user = await api.updateProfile({ name: 'Rina K', email: 'Rina@Contoh.id' })
     expect(user).toMatchObject({ name: 'Rina K', email: 'rina@contoh.id', phone: '081234567890' })
     expect(api.currentUser('VISITOR')).toMatchObject({ name: 'Rina K', email: 'rina@contoh.id' })
-    // the demo petugas account already uses this email
-    await expect(api.updateProfile({ email: 'desk.atrium@summarevent.test' })).rejects.toMatchObject({ code: 'DUPLICATE' })
+    // another visitor's email is taken; a petugas address is not reported, so it cannot be found out from here
+    asVisitor('u_yudi')
+    await expect(api.updateProfile({ email: 'rina@contoh.id' })).rejects.toMatchObject({ code: 'DUPLICATE' })
+    expect(await api.updateProfile({ email: 'desk.atrium@summarevent.test' })).toMatchObject({ email: 'desk.atrium@summarevent.test' })
+    asVisitor(PERSONA_ID)
     await expect(api.updateProfile({ email: 'bukan-email' })).rejects.toMatchObject({ code: 'INVALID' })
     expect(api.currentUser('VISITOR')?.email).toBe('rina@contoh.id')
     const photo = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ=='

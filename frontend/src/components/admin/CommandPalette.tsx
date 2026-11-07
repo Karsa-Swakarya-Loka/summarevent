@@ -28,7 +28,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="top-[12vh] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-lg"
+        className="gap-0 overflow-hidden p-0 sm:top-[12vh] sm:max-w-lg sm:translate-y-0"
         showCloseButton={false}
         // Radix focuses the search box on open; on touch that opens the keyboard before the person chose to type
         onOpenAutoFocus={(e) => {
@@ -101,7 +101,7 @@ function Palette({ close }: { close: () => void }) {
               go(hits[current])
             }
           }}
-          placeholder="Halaman, kode pesanan, nama, no. HP, atau kursi…"
+          placeholder="Cari halaman atau pesanan…"
           className="h-14 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
           role="combobox"
           aria-expanded="true"

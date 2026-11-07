@@ -6,7 +6,7 @@ import { TextInput, ToggleRow } from './inputs'
 import { newSession, type SessionForm, type StepProps } from './model'
 
 const dtCls =
-  'h-10 w-full min-w-0 rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/15'
+  'h-10 w-full min-w-0 rounded-lg border border-input bg-card px-2.5 text-sm pointer-coarse:h-11 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/15'
 
 export function StepSessions({ form, update, err }: StepProps) {
   const set = (k: string, patch: Partial<SessionForm>) => update((f) => ({ ...f, sessions: f.sessions.map((s) => (s.key === k ? { ...s, ...patch } : s)) }))

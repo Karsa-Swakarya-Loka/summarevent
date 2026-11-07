@@ -15,7 +15,7 @@ export const STEPS: Array<{ id: StepId; label: string }> = [
   { id: 'kategori', label: 'Kategori' },
   { id: 'denah', label: 'Denah' },
   { id: 'sesi', label: 'Sesi' },
-  { id: 'publish', label: 'Publish' },
+  { id: 'publish', label: 'Publikasi' },
 ]
 
 export interface CatForm {

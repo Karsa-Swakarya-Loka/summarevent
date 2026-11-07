@@ -66,7 +66,7 @@ export default function ReceiptQueue() {
         <ListSkeleton rows={4} />
       ) : !items.length ? (
         <EmptyState icon={<Inbox />} title={tab === 'PENDING' ? 'Antrean kosong' : 'Belum ada struk'}>
-          Struk muncul di sini setelah pengunjung memilih kategori Tukar Struk dan mengirim fotonya. Data contoh hilang dari antrean kalau waktu tahan kursinya (30 menit) habis. Muat ulang lewat menu Demo → Reset data demo.
+          {tab === 'PENDING' ? 'Semua struk sudah diputuskan.' : 'Struk muncul di sini setelah pengunjung mengirim foto struk untuk kategori Tukar struk.'}
         </EmptyState>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">

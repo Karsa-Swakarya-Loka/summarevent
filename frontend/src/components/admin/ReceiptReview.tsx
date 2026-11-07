@@ -55,7 +55,7 @@ export function QueueRow({ item, active, onOpen }: { item: ReceiptQueueItem; act
         </span>
         {canDecide(item) ? <span className="text-xs text-muted-foreground">Ditahan <Countdown to={item.order.holdExpiresAt} /></span> : <span className="text-xs text-muted-foreground">{fmtTime(item.receipt.createdAt)}</span>}
       </div>
-      {(failing || dup) && (
+      {canDecide(item) && (failing || dup) && (
         <div className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-[#a11b1b]">
           <TriangleAlert className="size-3.5" aria-hidden /> {dup ? 'Kemungkinan struk duplikat' : 'Ada syarat belum terpenuhi'}
         </div>
@@ -201,6 +201,8 @@ export function ReviewPanel({
             )}
           </div>
 
+          {/* the checks are re-run now, so they only judge a receipt still waiting for a decision */}
+          {canDecide(item) && (
           <div className="rounded-xl bg-muted/60 p-3">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">
               <span className="font-bold whitespace-nowrap">Cek otomatis</span>
@@ -223,6 +225,7 @@ export function ReviewPanel({
               ))}
             </ul>
           </div>
+          )}
 
           <dl className="grid grid-cols-[6.5rem_1fr] gap-x-2 gap-y-1 text-sm">
             <dt className="text-muted-foreground">Event</dt>
@@ -282,7 +285,14 @@ export function ReviewPanel({
             ))}
           </ul>
           <DialogFooter className="gap-2">
-            <Button size="lg" onClick={() => setAsk('NEEDS_REVISION')} disabled={!!busy}>
+            <Button
+              size="lg"
+              onClick={() => {
+                setReason(failing.map((c) => c.message).join(' '))
+                setAsk('NEEDS_REVISION')
+              }}
+              disabled={!!busy}
+            >
               Minta revisi saja
             </Button>
             <Button variant="outline" size="lg" onClick={() => void decide('APPROVE')} disabled={!!busy}>

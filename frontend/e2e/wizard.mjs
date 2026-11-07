@@ -67,7 +67,7 @@ await page.waitForTimeout(300)
 await shot('4-sesi')
 await next()
 await shot('5-review')
-await page.getByRole('button', { name: /Simpan & publish/ }).click()
+await page.getByRole('button', { name: /Simpan & publikasikan/ }).click()
 // create + publish are two requests; the toast says when both are done
 await page.getByRole('heading', { name: 'Event dipublikasikan!' }).waitFor({ timeout: 15_000 })
 await shot('6-published')

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNod
 import { Link, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { ArrowLeft, CalendarX2, CameraOff, ChevronDown, CircleAlert, Clock, CloudOff, FlaskConical, RefreshCw, RotateCcw, Search, ShieldX, Shuffle } from 'lucide-react'
-import { api } from '@/api'
+import { api, apiMode } from '@/api'
 import { CameraView } from '@/components/staff/CameraView'
 import { cameraPrecheck, type CameraProblem } from '@/components/staff/camera'
 import { ScanResult } from '@/components/staff/ScanResult'
@@ -377,6 +377,8 @@ function BottomBar({
   const [open, setOpen] = useState(loadDemoToolsOpen)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
+  // every sample ticket of this session has been used: offer the reset right here, not via another page
+  const [exhausted, setExhausted] = useState(false)
   const [lastDemo, setLastDemo] = useState<{ token: string; label: string } | null>(null)
 
   const toggle = () => {
@@ -406,6 +408,7 @@ function BottomBar({
       const pool = all.filter((r) => r.ticket.status === 'ACTIVE' && (kind === 'session' ? r.ticket.sessionId === sessionId : r.ticket.sessionId !== sessionId))
       const row = pickRandom(pool)
       if (!row) {
+        if (kind === 'session') setExhausted(true)
         setNote(
           kind === 'session'
             ? 'Tiket contoh sesi ini sudah habis dipakai.'
@@ -418,6 +421,20 @@ function BottomBar({
       setLastDemo({ token: row.ticket.qrToken, label })
       setNote(kind === 'session' ? `Tiket contoh: ${label}` : `Tiket ${sessionName(row.session)}: ${label}`)
       onSubmit(row.ticket.qrToken)
+    } catch (e) {
+      setNote(errorMessage(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const resetDemo = async () => {
+    if (apiMode === 'live' && !window.confirm('Versi live dipakai bersama. Reset menghapus pesanan dan check-in dari semua HP. Lanjut?')) return
+    setBusy(true)
+    try {
+      await api.demo.reset()
+      // the reset signs everyone out; the sign-in page brings the petugas back to this scanner
+      toast.success('Data demo kembali ke awal. Masuk lagi untuk lanjut scan.')
     } catch (e) {
       setNote(errorMessage(e))
     } finally {
@@ -460,6 +477,11 @@ function BottomBar({
           <p className="mt-2 min-h-5 text-sm font-semibold text-white" aria-live="polite" data-testid="demo-note">
             {busy ? 'Mengambil tiket…' : note}
           </p>
+          {exhausted && (
+            <button type="button" className={cn(tool, 'mt-2 w-full')} disabled={busy} onClick={() => void resetDemo()}>
+              <RotateCcw className="size-5 shrink-0" aria-hidden /> Reset data demo
+            </button>
+          )}
           {showPaste && <PasteForm onSubmit={onSubmit} pending={pending} compact className="mt-2" />}
         </section>
       )}

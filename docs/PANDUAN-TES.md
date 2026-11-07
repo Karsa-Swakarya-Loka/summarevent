@@ -20,7 +20,7 @@ Badge di pojok kiri atas halaman awal menulis **demo** atau **live**.
 | Peran | Cara masuk |
 | --- | --- |
 | Pengunjung | Nomor HP apa saja yang diawali 08. Kode OTP muncul di layar, tekan **Isi otomatis**. |
-| Pengunjung contoh (Rina) | Di halaman awal, **masuk cepat sebagai Rina**. Akunnya sudah punya e-ticket, struk yang sedang dicek, dan pesan. |
+| Pengunjung contoh (Rina) | Di halaman awal, **masuk sebagai Rina (akun contoh)**. Akunnya sudah punya e-ticket, struk yang sedang dicek, dan pesan. |
 | Panitia | `panitia@summarevent.test`, kata sandi `summaba2026`, atau tekan **Isi otomatis** |
 | Petugas | `desk.atrium@summarevent.test`, `pintu.utara@summarevent.test`, atau `atrium.cibadak@summarevent.test`, kata sandi `summaba2026` |
 

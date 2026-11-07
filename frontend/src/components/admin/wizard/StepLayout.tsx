@@ -9,7 +9,7 @@ import { rowIndex, rowLetter, seatLabel } from '@/domain/rules'
 import type { EventItem, SessionSeat, TicketCategory } from '@/domain/types'
 import { cn } from '@/lib/utils'
 import { NumberInput, ToggleRow } from './inputs'
-import { distributeRows, key, LAYOUT_TEMPLATES, previewSeats, rowCategoryKeys, seatCategories, seatCounts, type LayoutForm, type StepProps } from './model'
+import { distributeRows, key, LAYOUT_TEMPLATES, maxSellable, previewSeats, rowCategoryKeys, rowClosed, seatCategories, seatCounts, sellOnly, toggleRow, type LayoutForm, type StepProps } from './model'
 
 const selectCls =
   'h-10 w-full min-w-0 rounded-lg border border-input bg-card px-2 text-sm pointer-coarse:h-11 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive disabled:opacity-60'
@@ -17,6 +17,8 @@ const selectCls =
 export function StepLayout({ form, update, err, locked }: StepProps & { locked: boolean }) {
   const L = form.layout
   const [mode, setMode] = useState<'block' | 'priority'>('block')
+  // what the panitia is typing in "Kursi dijual per sesi" while the box is empty; otherwise it shows the live count
+  const [sellDraft, setSellDraft] = useState<number | null>(null)
   const seatCats = seatCategories(form)
   const noSeatCats = form.categories.filter((c) => c.noSeat)
   const counts = seatCounts(L)
@@ -106,6 +108,12 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
     return n
   }
   const totalSellable = [...counts.values()].reduce((a, b) => a + b, 0)
+  const maxSeats = validSize ? maxSellable(L) : 0
+  const sellTo = (n: number) => {
+    if (!Number.isFinite(n)) return setSellDraft(n)
+    setSellDraft(null)
+    setLayout((l) => ({ ...l, blocked: sellOnly(l, n) }))
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -162,6 +170,12 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                   <NumberInput id="lay-aisle" min={1} max={Math.max(1, L.seatsPerRow - 1)} value={L.aisleAfter} disabled={locked} invalid={!!err('layout.aisleAfter')} onChange={(n) => setLayout((l) => ({ ...l, aisleAfter: n }))} />
                 </Field>
               )}
+              {/* sell part of the venue: the back seats close first, and every one of them can still be opened by hand */}
+              <div onBlur={() => setSellDraft(null)}>
+                <Field id="lay-sell" label="Kursi dijual per sesi" hint={maxSeats ? 'Kursi paling belakang ditutup duluan.' : 'Atur kategori per baris dulu.'}>
+                  <NumberInput id="lay-sell" min={0} max={maxSeats} value={sellDraft ?? totalSellable} suffix={`dari ${maxSeats}`} disabled={locked || !maxSeats} onChange={sellTo} />
+                </Field>
+              </div>
             </div>
           </SectionCard>
 
@@ -304,6 +318,36 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
               ))}
             </div>
           </div>
+
+          {preview && (
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start">
+              <span className="text-sm font-semibold sm:pt-2" id="row-close-label">
+                Tutup satu baris:
+              </span>
+              <div role="group" aria-labelledby="row-close-label" className="flex flex-wrap gap-1.5">
+                {rowOptions.map((r) => {
+                  const closed = rowClosed(L, r)
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      aria-pressed={closed}
+                      aria-label={`Baris ${rowLetter(r)}${closed ? ', tidak dijual' : ''}`}
+                      disabled={locked}
+                      onClick={() => setLayout((l) => ({ ...l, blocked: toggleRow(l, r) }))}
+                      className={cn(
+                        'size-9 rounded-md border text-sm font-semibold tabular-nums transition pointer-coarse:size-11 disabled:opacity-60',
+                        // a closed row looks like a not-for-sale seat: dashed outline, no fill
+                        closed ? 'border-dashed border-foreground/35 bg-transparent text-muted-foreground' : 'border-border bg-card hover:border-foreground/40',
+                      )}
+                    >
+                      {rowLetter(r)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {err('layout.rows') || err('layout.seatsPerRow') || !preview ? (
             <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">Isi jumlah baris dan kursi per baris untuk melihat denah.</p>

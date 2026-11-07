@@ -13,7 +13,10 @@ export interface ShownResult {
   offline?: boolean
 }
 
-/** One check-in at a time (POST /staff/checkins), with the beep and the result to show. */
+/**
+ * One check-in at a time (POST /staff/checkins), with the beep and the result to show. `submit(qr)` is what the camera
+ * read or was pasted in, always a QR token; `submit(id, true)` is a ticket picked by hand in cari manual.
+ */
 export function useCheckin(sessionId: string) {
   const [current, setCurrent] = useState<ShownResult | null>(null)
   const [pending, setPending] = useState(false)
@@ -22,7 +25,7 @@ export function useCheckin(sessionId: string) {
   const seq = useRef(0)
 
   const submit = useCallback(
-    async (token: string): Promise<CheckinResponse | null> => {
+    async (token: string, byId = false): Promise<CheckinResponse | null> => {
       const t = token.trim()
       if (!t || inFlight.current) return null
       inFlight.current = true
@@ -32,14 +35,14 @@ export function useCheckin(sessionId: string) {
         let res: CheckinResponse
         let offline = false
         if (offlineCapable && typeof navigator !== 'undefined' && navigator.onLine === false) {
-          res = await checkOffline(t, sessionId)
+          res = await checkOffline(t, sessionId, undefined, byId)
           offline = true
         } else {
           try {
-            res = await api.staff.checkin(t, sessionId)
+            res = byId ? await api.staff.checkinTicket(t, sessionId) : await api.staff.checkin(t, sessionId)
           } catch (e) {
             if (!offlineCapable || !isOfflineError(e)) throw e
-            res = await checkOffline(t, sessionId)
+            res = await checkOffline(t, sessionId, undefined, byId)
             offline = true
           }
         }

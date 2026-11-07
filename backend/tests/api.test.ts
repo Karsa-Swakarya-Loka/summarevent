@@ -274,6 +274,9 @@ describe('security', () => {
     offDemo()
     const rows = await read('staff.searchTickets', req({ token: gate.token, query: { q: ticket.code } }))
     expect(rows[0].ticket.qrToken).toBe('')
+    // a ticket id read by the scanner (or pasted into its QR box) is not a QR
+    const pasted = await write('staff.checkin', req({ token: gate.token, body: { qr_token: ticket.id, session_id: 'ses_sk_demo' } }))
+    expect(pasted.result).toBe('INVALID')
     const res = await write('staff.checkin', req({ token: gate.token, body: { ticket_id: ticket.id, session_id: 'ses_sk_demo' } }))
     expect(res.result).toBe('VALID')
     expect(res.ticket.qrToken).toBe('')

@@ -58,8 +58,3 @@ export async function sha256Hex(data: ArrayBuffer | string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes)
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
-
-/** A ticket id (`tkt_…`), as a petugas sends it for a ticket picked by hand instead of a scanned QR. */
-export function isTicketId(code: string): boolean {
-  return /^tkt_[A-Za-z0-9_-]+$/.test(code.trim())
-}

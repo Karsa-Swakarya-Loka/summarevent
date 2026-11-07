@@ -5,7 +5,6 @@
  */
 import { ApiError, type Api } from './contract'
 import { clearClientSessions, guestId } from './mock/db'
-import { isTicketId } from '@/domain/qr'
 import type { Role, User } from '@/domain/types'
 
 const TOKEN_KEY = (role: Role) => `summarevent:token:${role}`
@@ -188,7 +187,8 @@ export function createHttpApi(baseUrl: string): Api {
     staff: {
       accounts: () => req('GET', '/staff/accounts'),
       offlineManifest: (sessionId) => req('GET', `/staff/sessions/${sessionId}/offline-manifest`),
-      checkin: (code, sessionId) => req('POST', '/staff/checkins', isTicketId(code) ? { ticket_id: code.trim(), session_id: sessionId } : { qr_token: code, session_id: sessionId }),
+      checkin: (qrToken, sessionId) => req('POST', '/staff/checkins', { qr_token: qrToken, session_id: sessionId }),
+      checkinTicket: (ticketId, sessionId) => req('POST', '/staff/checkins', { ticket_id: ticketId, session_id: sessionId }),
       searchTickets: (q, eventId) => req('GET', `/staff/tickets?q=${encodeURIComponent(q)}${eventId ? `&event_id=${eventId}` : ''}`),
       recentCheckins: (sessionId) => req('GET', `/staff/sessions/${sessionId}/checkins`),
       listReceipts: (eventId) => req('GET', `/staff/receipts${eventId ? `?event_id=${eventId}` : ''}`),

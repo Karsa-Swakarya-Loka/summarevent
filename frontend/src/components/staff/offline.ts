@@ -6,7 +6,7 @@
  * server has the last word: a ticket that another gate let in first comes back as a conflict.
  */
 import { api, ApiError, apiMode, type CheckinResponse, type OfflineManifest } from '@/api'
-import { isTicketId, sha256Hex } from '@/domain/qr'
+import { sha256Hex } from '@/domain/qr'
 import type { CheckinResult, Order, Ticket } from '@/domain/types'
 import { fmtTime } from '@/lib/format'
 import { sessionName, sessionWindow } from './session'
@@ -17,7 +17,9 @@ const QUEUE_KEY = 'summarevent:offline:queue'
 export const QUEUE_EVENT = 'summarevent:offline-queue'
 
 export interface QueuedScan {
+  /** The scanned QR token, or the ticket id when `byId` (a ticket picked by hand). */
   token: string
+  byId?: boolean
   ticketId: string
   sessionId: string
   scannedAt: string
@@ -80,15 +82,15 @@ export function isOfflineError(e: unknown): boolean {
 }
 
 /** Same order of checks as the server: known QR → not cancelled → not used → right session → window open. */
-export async function checkOffline(token: string, sessionId: string, now = new Date()): Promise<CheckinResponse> {
+export async function checkOffline(token: string, sessionId: string, now = new Date(), byId = false): Promise<CheckinResponse> {
   const m = loadManifest(sessionId)
   const none = { ticket: null, order: null, event: m?.event ?? null, session: m?.session ?? null, category: null, firstScan: null }
   if (!m) {
     return { ...none, result: 'INVALID', message: 'Daftar tiket offline belum tersimpan di HP ini. Sambungkan internet sebentar, lalu scan lagi.' }
   }
-  // a scanned QR is matched by its hash, a ticket picked by hand by its id
+  // a scanned QR is matched by its hash; only a ticket picked by hand (byId) by its id, never what the scanner read
   const code = token.trim()
-  const hash = isTicketId(code) ? null : await sha256Hex(code)
+  const hash = byId ? null : await sha256Hex(code)
   const entry = m.tickets.find((t) => (hash ? t.tokenHash === hash : t.ticket.id === code))
   if (!entry) return { ...none, result: 'INVALID', message: 'QR tidak dikenali: palsu, rusak, atau tiket event lain.' }
 
@@ -119,7 +121,7 @@ export async function checkOffline(token: string, sessionId: string, now = new D
   const who = ticket.attendeeName || order.buyerName
   saveQueue([
     ...loadQueue(),
-    { token: token.trim(), ticketId: ticket.id, sessionId, scannedAt: now.toISOString(), label: `${ticket.seatLabel ? `Kursi ${ticket.seatLabel}` : ticket.code} · ${who}` },
+    { token: code, ...(byId ? { byId: true } : {}), ticketId: ticket.id, sessionId, scannedAt: now.toISOString(), label: `${ticket.seatLabel ? `Kursi ${ticket.seatLabel}` : ticket.code} · ${who}` },
   ])
   return { ...res, result: 'VALID', message: 'Diperiksa offline.' }
 }
@@ -135,7 +137,7 @@ export function syncQueue() {
     let synced = 0
     for (const q of batch) {
       try {
-        const r = await api.staff.checkin(q.token, q.sessionId)
+        const r = q.byId ? await api.staff.checkinTicket(q.token, q.sessionId) : await api.staff.checkin(q.token, q.sessionId)
         if (r.result === 'VALID') synced++
         else conflicts.push({ ...q, result: r.result, message: r.message })
         done.add(`${q.ticketId}|${q.scannedAt}`)

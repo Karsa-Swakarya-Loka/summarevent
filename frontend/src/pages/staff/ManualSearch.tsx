@@ -141,7 +141,7 @@ export default function ManualSearch() {
                 <p className="mb-2 px-1 text-sm font-semibold text-muted-foreground">{stale ? 'Mencari…' : `${rows.length} tiket ditemukan${rows.length >= 30 ? ' · 30 teratas, perjelas pencarian' : ''}`}</p>
                 <ul className="space-y-3">
                   {rows.map((row) => (
-                    <TicketRow key={row.ticket.id} row={row} sessionId={sessionId} disabled={checkin.pending} onCheckin={() => void checkin.submit(row.ticket.id)} />
+                    <TicketRow key={row.ticket.id} row={row} sessionId={sessionId} disabled={checkin.pending} onCheckin={() => void checkin.submit(row.ticket.id, true)} />
                   ))}
                 </ul>
               </>

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { useVisitor } from '@/components/visitor/hooks'
 import { errorMessage } from '@/hooks/useLive'
+import { safeNext } from '@/lib/safeNext'
 
 const COPY = {
   masuk: {
@@ -33,8 +34,8 @@ const COPY = {
 } as const
 
 /** Only paths inside the visitor app, so ?next= cannot send anyone elsewhere. */
-function safeNext(raw: string | null): string {
-  return raw && /^\/app(\/|$)/.test(raw) && !raw.startsWith('//') ? raw : '/app'
+function nextScreen(raw: string | null): string {
+  return safeNext(raw, 'app') ?? '/app'
 }
 
 export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
@@ -42,7 +43,7 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
   const [params] = useSearchParams()
   const { refresh } = useVisitor()
   const [demoBusy, setDemoBusy] = useState(false)
-  const next = safeNext(params.get('next'))
+  const next = nextScreen(params.get('next'))
   const c = COPY[mode]
   const query = params.get('next') ? `?next=${encodeURIComponent(next)}` : ''
 

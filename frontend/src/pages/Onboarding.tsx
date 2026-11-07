@@ -13,6 +13,7 @@ import type { ArtName } from '@/components/stickers/Art'
 import { ACCESS_METHOD_LABEL } from '@/domain/labels'
 import { setOnboardingDone, type IntroRole } from '@/lib/intro'
 import { cn } from '@/lib/utils'
+import { safeNext } from '@/lib/safeNext'
 
 interface Step {
   art: ReadonlyArray<{ name: ArtName; label?: string }>
@@ -55,10 +56,6 @@ const STEPS: Record<IntroRole, ReadonlyArray<Step>> = {
   ],
 }
 
-/** Only paths inside the role's own area, so ?next= cannot send anyone elsewhere. */
-function nextIn(area: string, raw: string | null): string | null {
-  return raw && raw.startsWith(`/${area}`) && !raw.startsWith('//') ? raw : null
-}
 
 export default function Onboarding({ role }: { role: IntroRole }) {
   const navigate = useNavigate()
@@ -72,7 +69,7 @@ export default function Onboarding({ role }: { role: IntroRole }) {
 
   // panitia and petugas sign in next, carrying where they were headed
   const area = role === 'admin' ? 'admin' : 'staff'
-  const next = nextIn(area, params.get('next'))
+  const next = safeNext(params.get('next'), area)
   const signIn = `/${area}/masuk${next ? `?next=${encodeURIComponent(next)}` : ''}`
 
   const go = (n: number) => {

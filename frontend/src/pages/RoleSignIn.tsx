@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { SimTag } from '@/components/visitor/Common'
 import { errorMessage } from '@/hooks/useLive'
 import { DEMO_PASSWORD, DEMO_SIGN_IN } from '@/lib/demoAccounts'
+import { safeNext } from '@/lib/safeNext'
 
 const COPY = {
   ADMIN: {
@@ -44,7 +45,8 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
   const [params] = useSearchParams()
   const c = COPY[role]
   const raw = params.get('next')
-  const next = raw && raw.startsWith(`/${c.area}`) && !raw.startsWith('//') && !/\/(masuk|mulai)\/?$/.test(raw) ? raw : `/${c.area}`
+  const allowed = safeNext(raw, c.area)
+  const next = allowed && !/\/(masuk|mulai)\/?$/.test(allowed) ? allowed : `/${c.area}`
   const demo = DEMO_SIGN_IN[role][0]
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

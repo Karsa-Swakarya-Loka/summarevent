@@ -33,7 +33,7 @@ Token dikirim sebagai `Authorization: Bearer <token>`. Path `/admin/*` butuh rol
 lalu `401 NEED_LOGIN`. Petugas yang dinonaktifkan langsung keluar dari semua HP-nya (`403 FORBIDDEN` untuk token lain
 yang tersisa).
 
-Tahan kursi, OTP, login, lupa sandi, dan kirim struk dibatasi per alamat klien (header `x-forwarded-for`) dalam jendela
+Tahan kursi, OTP, login, lupa sandi, dan kirim struk dibatasi per alamat klien (header `x-vercel-forwarded-for` kalau lewat rewrite Vercel, selain itu `x-forwarded-for`) dalam jendela
 10 menit → `429 RATE_LIMIT`. Batasnya longgar supaya satu keluarga di Wi-Fi mal tetap bisa memesan.
 
 Setiap request juga membawa header `X-Guest-Id: guest_…` (id acak per browser). Itulah identitas pengunjung yang

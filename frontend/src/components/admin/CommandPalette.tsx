@@ -2,6 +2,7 @@
  * ⌘K for the panitia: type to jump to a page or to find an order by its code, buyer, phone or seat. Pages come from
  * the sidebar's menu; orders are looked up through `api.admin.listOrders` once the query settles.
  */
+import { finePointer } from '@/lib/pointer'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { CornerDownLeft, Search } from 'lucide-react'
@@ -45,6 +46,7 @@ function Palette({ close }: { close: () => void }) {
   const orders = useLive(() => (dq.length >= 2 ? api.admin.listOrders({ q: dq }) : Promise.resolve([] as OrderRow[])), [dq])
 
   useEffect(() => {
+    if (!finePointer()) return
     const t = setTimeout(() => input.current?.focus(), 50)
     return () => clearTimeout(t)
   }, [])

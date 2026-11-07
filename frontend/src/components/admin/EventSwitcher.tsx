@@ -4,6 +4,7 @@
  * picking a session opens its live seat map. The tree follows the WAI-ARIA tree pattern: arrows move, Right opens a
  * branch, Left closes it, Enter picks, and the search box above narrows the events.
  */
+import { finePointer } from '@/lib/pointer'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { CalendarPlus, Check, ChevronDown, ChevronRight, ChevronsUpDown, Play, Rows3, Search } from 'lucide-react'
@@ -78,6 +79,8 @@ function EventTree({ list, eventId, onPick, onSession }: { list: EventSummary[];
   const search = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    // on a phone the keyboard would cover the tree the person opened this to tap
+    if (!finePointer()) return
     const t = setTimeout(() => search.current?.focus(), 40)
     return () => clearTimeout(t)
   }, [])

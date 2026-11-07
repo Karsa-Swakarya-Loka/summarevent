@@ -8,9 +8,10 @@
 import { v } from 'convex/values'
 import { internalMutation, internalQuery, type MutationCtx } from './_generated/server'
 import type { TableNames } from './_generated/dataModel'
-import type { Req } from './lib/auth'
+import { logout, type Req } from './lib/auth'
 import { sweep } from './lib/core'
 import { receiptPhotoLink } from './lib/links'
+import { demoEnabled } from './lib/demo'
 import { Refusal } from './lib/errors'
 import { hashPassword } from './lib/password'
 import { Tx } from './lib/tx'
@@ -55,6 +56,7 @@ export const WRITES: Record<string, Handler> = {
   requestOtp: visitor.requestOtp,
   verifyOtp: visitor.verifyOtp,
   demoLogin: visitor.demoLogin,
+  logout,
   login: account.login,
   forgotPassword: account.forgotPassword,
   resetPassword: account.resetPassword,
@@ -153,6 +155,28 @@ export const receiptPhoto = internalQuery({
   },
 })
 
+/* ------------------------------------------------------------------ rate limit */
+
+/**
+ * One request of a kind from a client address: true while it stays within `limit` per `windowMs`, false once over.
+ * Called by http.ts before the request runs, so a refused one costs nothing else.
+ */
+export const rateHit = internalMutation({
+  args: { key: v.string(), limit: v.number(), windowMs: v.number() },
+  handler: async (ctx, { key, limit, windowMs }) => {
+    const now = Date.now()
+    const row = await ctx.db
+      .query('rateLimits')
+      .withIndex('by_key', (q) => q.eq('key', key))
+      .unique()
+    const hits = (row?.hits ?? []).filter((t) => now - t < windowMs)
+    if (hits.length >= limit) return false
+    if (row) await ctx.db.patch(row._id, { hits: [...hits, now] })
+    else await ctx.db.insert('rateLimits', { key, hits: [now] })
+    return true
+  },
+})
+
 /* ------------------------------------------------------------------ demo data */
 
 const TABLES: TableNames[] = [
@@ -160,6 +184,8 @@ const TABLES: TableNames[] = [
   'authTokens',
   'otps',
   'passwords',
+  'loginFails',
+  'rateLimits',
   'resetTokens',
   'emails',
   'venues',
@@ -188,9 +214,12 @@ async function seed(ctx: MutationCtx, now: Date) {
     for (const row of rows) await ctx.db.insert(table, JSON.parse(JSON.stringify(row)))
   }
   await put('users', db.users)
-  // panitia and petugas sign in with the demo password; the server keeps its PBKDF2 hash, not the mock's SHA-256
-  const demoHash = await hashPassword(DEMO_PASSWORD)
-  for (const u of db.users) if (u.role !== 'VISITOR') await ctx.db.insert('passwords', { userId: u.id, hash: demoHash, fails: [] })
+  // on a demo deployment panitia and petugas sign in with the shared demo password (its PBKDF2 hash, not the mock's
+  // SHA-256). Anywhere else the accounts get no password at all: a published password must never open a real server.
+  if (demoEnabled()) {
+    const demoHash = await hashPassword(DEMO_PASSWORD)
+    for (const u of db.users) if (u.role !== 'VISITOR') await ctx.db.insert('passwords', { userId: u.id, hash: demoHash, fails: [] })
+  }
   await put('venues', db.venues)
   await put('tenants', db.tenants)
   await put('layouts', db.layouts)

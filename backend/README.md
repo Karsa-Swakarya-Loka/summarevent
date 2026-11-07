@@ -46,8 +46,8 @@ npx convex run rpc:ensureSeeded                               # isi data contoh 
 | Env (di deployment Convex) | Fungsi |
 | --- | --- |
 | `APP_SECRET` | Wajib. Kunci HMAC untuk token QR dan link foto struk. Mengganti kunci membuat QR lama tidak berlaku |
-| `DEMO_MODE` | `false` mematikan `/demo/*` (produksi). Default menyala |
-| `ALLOWED_ORIGINS` | Origin app yang boleh memanggil API, dipisah koma. Default `*` |
+| `DEMO_MODE` | `true` menyalakan fitur demo: `/demo/*`, `/auth/demo-login`, sandi bersama akun contoh, kode OTP di layar, dan pembayaran simulasi. Tidak di-set atau nilai lain berarti mati. **Deployment demo dan live untuk juri wajib `true`** |
+| `ALLOWED_ORIGINS` | Origin app yang boleh memanggil API, dipisah koma. Default `summarevent.vercel.app`, `summarevent-live.vercel.app`, dan `localhost:5173` |
 | `PUBLIC_API_URL` | Alamat publik API kalau tidak lewat `.convex.site` (misalnya di balik proxy `/api`) |
 | `RESEND_API_KEY` | Kunci API Resend untuk email lupa sandi dan undangan petugas. Tanpa ini email dicatat `SKIPPED` di tabel `emails` dan tidak dikirim |
 | `EMAIL_FROM` | Pengirim, misalnya `Summarevent <noreply@domain-terverifikasi>`. Default `onboarding@resend.dev`. Prototipe ini sengaja belum memakai domain sendiri, jadi Resend hanya mengirim ke email pemilik akun Resend; email ke alamat lain dicatat `FAILED` dan layar tetap berjalan normal |

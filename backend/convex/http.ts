@@ -9,6 +9,7 @@ import type { Id } from './_generated/dataModel'
 import { httpAction, type ActionCtx } from './_generated/server'
 import type { AuthInput } from './lib/auth'
 import { verifyReceiptPhotoSig } from './lib/crypto'
+import { demoEnabled } from './lib/demo'
 import { HTTP_STATUS } from './lib/errors'
 import { REFUSED } from './rpc'
 
@@ -16,7 +17,6 @@ const REFUSED_PREFIX = `{"${REFUSED}":`
 
 const PREFIX = '/api'
 const VERSION = '1.0.0'
-const demoEnabled = () => process.env.DEMO_MODE !== 'false'
 
 type Kind = 'read' | 'write' | 'custom'
 interface Route {
@@ -34,6 +34,7 @@ const ROUTES: Route[] = [
   R('POST', '/auth/otp/verify', 'write', 'verifyOtp'),
   R('POST', '/auth/demo-login', 'write', 'demoLogin'),
   R('POST', '/auth/login', 'write', 'login'),
+  R('POST', '/auth/logout', 'write', 'logout'),
   R('POST', '/auth/password/forgot', 'write', 'forgotPassword'),
   R('POST', '/auth/password/reset', 'write', 'resetPassword'),
 
@@ -118,9 +119,12 @@ function match(method: string, path: string): { route: Route; params: Record<str
 
 /* ------------------------------------------------------------------ responses */
 
+/** Where the app runs, when ALLOWED_ORIGINS does not say. The live host calls through its own /api, so is same-origin. */
+const APP_ORIGINS = 'https://summarevent.vercel.app,https://summarevent-live.vercel.app,http://localhost:5173'
+
 function cors(req: Request): Record<string, string> {
   const origin = req.headers.get('Origin')
-  const allowed = (process.env.ALLOWED_ORIGINS ?? '*')
+  const allowed = (process.env.ALLOWED_ORIGINS || APP_ORIGINS)
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
@@ -170,8 +174,22 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
 
 const PHOTO = /^data:(image\/(?:jpeg|png|webp|svg\+xml))(;charset=[\w-]+)?(;base64)?,(.*)$/s
 const PHOTO_MAX = 3_000_000
+/** All the photos of one receipt submission together. */
+const RECEIPTS_MAX = 12_000_000
 
-function decodeDataUrl(url: string, allowSvg: boolean): Blob | null {
+/** The file really is the image its header claims: JPEG, PNG and WebP each start with their own signature. */
+function isImage(mime: string, b: Uint8Array): boolean {
+  if (mime === 'image/svg+xml') return /^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/.test(new TextDecoder().decode(b.slice(0, 256)))
+  if (mime === 'image/jpeg') return b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff
+  if (mime === 'image/png') return b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47
+  return String.fromCharCode(...b.slice(0, 4)) === 'RIFF' && String.fromCharCode(...b.slice(8, 12)) === 'WEBP'
+}
+
+/**
+ * A photo sent as a data URL: JPEG, PNG or WebP (checked by content, not only by name), at most PHOTO_MAX bytes. An SVG
+ * only where `allowSvg` (the demo's sample receipts are drawn as SVG); receiptPhoto serves it sandboxed either way.
+ */
+function decodeDataUrl(url: string, allowSvg = false): Blob | null {
   const m = PHOTO.exec(url)
   if (!m) return null
   const [, mime, , b64, data] = m
@@ -186,7 +204,7 @@ function decodeDataUrl(url: string, allowSvg: boolean): Blob | null {
   } catch {
     return null
   }
-  if (bytes.length > PHOTO_MAX) return null
+  if (bytes.length > PHOTO_MAX || !isImage(mime, bytes)) return null
   return new Blob([bytes as BlobPart], { type: mime })
 }
 
@@ -197,9 +215,11 @@ async function submitReceipts(ctx: ActionCtx, req: Request, r: { auth: AuthInput
   const dry = JSON.parse(await ctx.runQuery(internal.rpc.read, { op: 'checkReceipts', req: r })) as { checks: Array<{ ok: boolean }> }
   const storageIds: Array<Id<'_storage'> | null> = []
   if (dry.checks.every((c) => c.ok)) {
+    let total = 0
     for (const item of receipts) {
-      const blob = decodeDataUrl(String(item?.photoUrl ?? ''), true)
-      if (!blob) {
+      const blob = decodeDataUrl(String(item?.photoUrl ?? ''), demoEnabled())
+      total += blob?.size ?? 0
+      if (!blob || total > RECEIPTS_MAX) {
         for (const id of storageIds) if (id) await ctx.storage.delete(id)
         return errorResponse(req, 'INVALID', 'Foto struk harus JPG, PNG, atau WebP, paling besar 3 MB.', { field: 'photoUrl' })
       }
@@ -221,7 +241,7 @@ async function updateProfile(ctx: ActionCtx, req: Request, r: { auth: AuthInput;
   const avatar: unknown = r.body?.avatar
   let stored: Id<'_storage'> | null = null
   if (typeof avatar === 'string' && avatar) {
-    const blob = decodeDataUrl(avatar, false)
+    const blob = decodeDataUrl(avatar)
     if (!blob) return errorResponse(req, 'INVALID', 'Foto harus JPG, PNG, atau WebP, paling besar 300 KB.', { field: 'avatar' })
     stored = await ctx.storage.store(blob)
   }
@@ -235,8 +255,8 @@ async function updateProfile(ctx: ActionCtx, req: Request, r: { auth: AuthInput;
   }
 }
 
-async function receiptPhoto(ctx: ActionCtx, req: Request, id: string, sig: string | null) {
-  if (!sig || !(await verifyReceiptPhotoSig(id, sig))) return errorResponse(req, 'FORBIDDEN', 'Link foto struk tidak sah atau sudah diganti.')
+async function receiptPhoto(ctx: ActionCtx, req: Request, id: string, exp: string | null, sig: string | null) {
+  if (!sig || !(await verifyReceiptPhotoSig(id, exp, sig))) return errorResponse(req, 'FORBIDDEN', 'Link foto struk tidak sah atau sudah kedaluwarsa.')
   const storageId = await ctx.runQuery(internal.rpc.receiptPhoto, { receiptId: id })
   const blob = storageId ? await ctx.storage.get(storageId) : null
   if (!blob) return errorResponse(req, 'NOT_FOUND', 'Foto struk tidak ditemukan.')
@@ -253,6 +273,29 @@ async function receiptPhoto(ctx: ActionCtx, req: Request, id: string, sig: strin
   })
 }
 
+/* ------------------------------------------------------------------ rate limit */
+
+/**
+ * Requests a script could flood: seat holds (fake sell-outs), OTP and password guessing, receipt uploads. Counted per
+ * client address in a 10-minute window, generous enough for a whole family on one mall Wi-Fi.
+ */
+const LIMITS: Record<string, number> = {
+  createHold: 60,
+  autoHold: 60,
+  requestOtp: 20,
+  verifyOtp: 40,
+  login: 30,
+  forgotPassword: 10,
+  submitReceipts: 20,
+}
+const LIMIT_WINDOW_MS = 10 * 60_000
+
+/** The caller's address as the edge in front of us reports it (Vercel or Convex); none means the check is skipped. */
+function clientIp(req: Request): string | null {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip')?.trim()
+  return ip || null
+}
+
 /* ------------------------------------------------------------------ the handler */
 
 const handle = httpAction(async (ctx, req) => {
@@ -263,7 +306,13 @@ const handle = httpAction(async (ctx, req) => {
   if (found === 'METHOD') return errorResponse(req, 'BAD_REQUEST', `Metode ${req.method} tidak didukung untuk ${path}.`, undefined, 405)
   if (!found) return errorResponse(req, 'NOT_FOUND', 'Alamat API tidak dikenal.')
   const { route, params } = found
-  if (route.pattern.startsWith('/demo/') && !demoEnabled()) return errorResponse(req, 'FORBIDDEN', 'Fitur demo dimatikan di server ini.')
+  // demo routes (and the demo sign-in) exist only on a deployment that turns the demo on (lib/demo.ts)
+  if ((route.pattern.startsWith('/demo/') || route.pattern === '/auth/demo-login') && !demoEnabled()) return errorResponse(req, 'FORBIDDEN', 'Fitur demo dimatikan di server ini.')
+  const limit = LIMITS[route.op]
+  const ip = limit ? clientIp(req) : null
+  if (limit && ip && !(await ctx.runMutation(internal.rpc.rateHit, { key: `${route.op}:${ip}`, limit, windowMs: LIMIT_WINDOW_MS }))) {
+    return errorResponse(req, 'RATE_LIMIT', 'Terlalu banyak permintaan dari jaringan ini. Coba lagi beberapa menit lagi.')
+  }
 
   let body: any = undefined
   if (req.method !== 'GET' && req.method !== 'DELETE') {
@@ -305,7 +354,7 @@ const handle = httpAction(async (ctx, req) => {
       case 'updateProfile':
         return await updateProfile(ctx, req, r)
       case 'receiptPhoto':
-        return await receiptPhoto(ctx, req, params.id, url.searchParams.get('sig'))
+        return await receiptPhoto(ctx, req, params.id, url.searchParams.get('exp'), url.searchParams.get('sig'))
     }
     return errorResponse(req, 'NOT_FOUND', 'Alamat API tidak dikenal.')
   } catch (e) {

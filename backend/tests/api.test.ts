@@ -1,6 +1,6 @@
 /** End-to-end through the rpc layer with convex-test: the same paths http.ts calls, against a fresh seeded database. */
 import { convexTest } from 'convex-test'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { internal } from '../convex/_generated/api'
 import schema from '../convex/schema'
 
@@ -18,6 +18,13 @@ const req = (over: { token?: string | null; guestId?: string; params?: Record<st
 const write = async (op: string, r: ReturnType<typeof req>) => JSON.parse(await t.mutation(internal.rpc.write, { op, req: r }))
 const read = async (op: string, r: ReturnType<typeof req>) => JSON.parse(await t.query(internal.rpc.read, { op, req: r }))
 const code = (p: Promise<unknown>) => p.then(() => 'OK', (e: { data?: { code?: string } }) => e.data?.code ?? String(e))
+/** A refused write that keeps its writes comes back as `{ __refused: { code } }` (rpc.ts REFUSED). */
+const refused = (out: { __refused?: { code: string } }) => out.__refused?.code ?? 'OK'
+/** Sign a visitor in with the on-screen (demo) OTP. */
+const otpLogin = async (phone: string, guestId = 'guest_unittest1') => {
+  const { simulatedCode } = await write('requestOtp', req({ guestId, body: { phone } }))
+  return write('verifyOtp', req({ guestId, body: { phone, code: simulatedCode } }))
+}
 
 beforeEach(async () => {
   t = convexTest(schema, modules)
@@ -81,8 +88,11 @@ describe('profile (PV-06)', () => {
     const rina = await write('demoLogin', req({ body: { role: 'VISITOR' } }))
     const user = JSON.parse(await t.mutation(internal.rpc.updateProfile, { req: req({ token: rina.token, body: { name: '  Rina   K ', email: 'Rina@Contoh.ID' } }) }))
     expect(user).toMatchObject({ name: 'Rina K', email: 'rina@contoh.id', phone: '081234567890' })
-    // the demo petugas account already uses this email (seeded like the frontend's sample data)
-    expect(await code(read('checkProfile', req({ token: rina.token, body: { email: 'desk.atrium@summarevent.test' } })))).toBe('DUPLICATE')
+    // another visitor's email is taken; a petugas address is not reported, so it cannot be discovered from here
+    const yudi = await otpLogin('081200000015', 'guest_yudi1')
+    await t.mutation(internal.rpc.updateProfile, { req: req({ token: yudi.token, guestId: 'guest_yudi1', body: { email: 'yudi@contoh.id' } }) })
+    expect(await code(read('checkProfile', req({ token: rina.token, body: { email: 'yudi@contoh.id' } })))).toBe('DUPLICATE')
+    expect(await code(read('checkProfile', req({ token: rina.token, body: { email: 'desk.atrium@summarevent.test' } })))).toBe('OK')
     expect(await code(read('checkProfile', req({ token: rina.token, body: { avatar: 'data:text/html;base64,PGgxPg==' } })))).toBe('INVALID')
   })
 })
@@ -93,7 +103,7 @@ describe('waiting list (PV-14)', () => {
     const rows = await read('admin.listOrders', req({ token: admin.token, query: { eventId: 'evt_craft', status: 'CONFIRMED' } }))
     const full = rows.find((r: { session: { id: string } }) => r.session.id === 'ses_cr_1')
     await write('admin.patchOrder', req({ token: admin.token, params: { id: full.order.id }, body: { action: 'CANCEL' } }))
-    const yudi = await write('demoLogin', req({ body: { role: 'VISITOR', user_id: 'u_yudi' } }))
+    const yudi = await otpLogin('081200000015')
     const inbox = await read('myNotifications', req({ token: yudi.token }))
     expect(inbox.some((n: { kind: string }) => n.kind === 'WAITLIST')).toBe(true)
   })
@@ -199,3 +209,87 @@ describe('poster colours (AD-01)', () => {
     if (ev) expect(ev.event?.posterPalette).toBeUndefined()
   })
 })
+
+describe('security', () => {
+  const offDemo = () => {
+    process.env.DEMO_MODE = 'false'
+  }
+  afterEach(() => {
+    process.env.DEMO_MODE = 'true'
+    vi.useRealTimers()
+  })
+
+  it('outside the demo: no demo sign-in, no OTP on screen, no simulated payment, no shared password', async () => {
+    offDemo()
+    await t.mutation(internal.rpc.reset, {})
+    expect(await code(write('demoLogin', req({ body: { role: 'ADMIN' } })))).toBe('FORBIDDEN')
+    expect(await write('requestOtp', req({ body: { phone: '0812 9999 0002' } }))).not.toHaveProperty('simulatedCode')
+    const login = await write('login', req({ body: { email: 'panitia@summarevent.test', password: 'summaba2026', role: 'ADMIN' } }))
+    expect(refused(login)).toBe('BAD_LOGIN')
+    process.env.DEMO_MODE = 'true'
+    const hold = await write('createHold', req({ params: { id: 'ses_sk_16' }, body: { categoryId: 'cat_reg', seatIds: ['lay_ciunik:J10'] } }))
+    offDemo()
+    const pay = write('simulatePayment', req({ params: { id: hold.order.id }, body: { method: 'SIM_QRIS', outcome: 'SUCCESS', idempotencyKey: 'k-off' } }))
+    expect(await code(pay)).toBe('FORBIDDEN')
+  })
+
+  it('demo sign-in never opens another visitor’s account', async () => {
+    const as = await write('demoLogin', req({ body: { role: 'VISITOR', user_id: 'u_yudi' } }))
+    expect(as.user.id).toBe('u_rina')
+  })
+
+  it('five wrong OTP guesses burn the code', async () => {
+    const phone = '081299990003'
+    const { simulatedCode } = await write('requestOtp', req({ body: { phone } }))
+    const wrong = simulatedCode === '000000' ? '111111' : '000000'
+    for (let i = 0; i < 5; i++) expect(refused(await write('verifyOtp', req({ body: { phone, code: wrong } })))).toBe('BAD_OTP')
+    expect(await code(write('verifyOtp', req({ body: { phone, code: simulatedCode, name: 'Coba' } })))).toBe('BAD_OTP')
+  })
+
+  it('a sign-in expires, logout ends it, and a switched-off petugas is signed out everywhere', async () => {
+    const adm = await write('demoLogin', req({ body: { role: 'ADMIN' } }))
+    const gate = await write('demoLogin', req({ body: { role: 'STAFF', user_id: 'u_staff_utara' } }))
+    expect(await code(read('staff.listReceipts', req({ token: gate.token })))).toBe('OK')
+    await write('admin.setStaffActive', req({ token: adm.token, params: { id: 'u_staff_utara' }, body: { active: false } }))
+    expect(await code(read('staff.listReceipts', req({ token: gate.token })))).toBe('NEED_LOGIN')
+
+    expect(await write('logout', req({ token: adm.token }))).toEqual({ ok: true })
+    expect(await code(read('admin.listStaff', req({ token: adm.token })))).toBe('NEED_LOGIN')
+
+    const again = await write('demoLogin', req({ body: { role: 'ADMIN' } }))
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(Date.now() + 13 * 3_600_000)
+    expect(await code(read('admin.listStaff', req({ token: again.token })))).toBe('NEED_LOGIN')
+  })
+
+  it('a caller without a guest id cannot hold seats or reach orders', async () => {
+    const anon = { auth: { token: null, guestId: null }, params: { id: 'ses_sk_16' }, query: {}, body: { categoryId: 'cat_reg', seatIds: ['lay_ciunik:J11'] } }
+    expect(await code(write('createHold', anon))).toBe('BAD_REQUEST')
+  })
+
+  it('petugas get tickets without their QR outside the demo, and check one in by its id', async () => {
+    const rina = await write('demoLogin', req({ body: { role: 'VISITOR' } }))
+    const ticket = (await read('myTickets', req({ token: rina.token }))).find((p: { session: { id: string }; ticket: { status: string } }) => p.session.id === 'ses_sk_demo' && p.ticket.status === 'ACTIVE').ticket
+    const gate = await write('demoLogin', req({ body: { role: 'STAFF' } }))
+    offDemo()
+    const rows = await read('staff.searchTickets', req({ token: gate.token, query: { q: ticket.code } }))
+    expect(rows[0].ticket.qrToken).toBe('')
+    const res = await write('staff.checkin', req({ token: gate.token, body: { ticket_id: ticket.id, session_id: 'ses_sk_demo' } }))
+    expect(res.result).toBe('VALID')
+    expect(res.ticket.qrToken).toBe('')
+  })
+
+  it('locks out an unknown email the same way as a real one', async () => {
+    const tryLogin = (email: string) => write('login', req({ body: { email, password: 'salah-salah', role: 'ADMIN' } }))
+    for (const email of ['panitia@summarevent.test', 'tidak-ada@summarevent.test']) {
+      for (let i = 0; i < 5; i++) expect(refused(await tryLogin(email))).toBe('BAD_LOGIN')
+      expect(refused(await tryLogin(email))).toBe('RATE_LIMIT')
+    }
+  })
+
+  it('a visitor cannot find out a panitia email through the profile', async () => {
+    const rina = await write('demoLogin', req({ body: { role: 'VISITOR' } }))
+    expect(await code(t.mutation(internal.rpc.updateProfile, { req: req({ token: rina.token, body: { email: 'panitia@summarevent.test' } }) }))).toBe('OK')
+  })
+})
+

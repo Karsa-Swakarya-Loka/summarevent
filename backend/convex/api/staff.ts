@@ -4,7 +4,7 @@ import { ORDER_STATUS_LABEL } from '../shared/labels'
 import { fmtShortDate, fmtTime, normalizePhone } from '../shared/format'
 import { checkinWindow, resolveSession, suggestSeats } from '../shared/rules'
 import type { Checkin, Order, SessionSeat, Ticket, User } from '../shared/types'
-import { requireRole, visitorId, type Req } from '../lib/auth'
+import { ownerId, requireRole, type Req } from '../lib/auth'
 import { verifyQrToken, sha256Hex } from '../lib/crypto'
 import {
   categoriesOf,
@@ -20,6 +20,7 @@ import {
   seatViews,
   sessionOf,
   sessionsOf,
+  staffTicket,
   sweep,
 } from '../lib/core'
 import { fail } from '../lib/errors'
@@ -61,8 +62,9 @@ export async function checkin(tx: Tx, req: Req): Promise<CheckinResponse> {
   const me = await staff(tx, req)
   if (me.active === false) fail('FORBIDDEN', 'Akun petugas ini dinonaktifkan panitia. Minta panitia mengaktifkannya lagi.')
   const qrToken = typeof req.body?.qr_token === 'string' ? req.body.qr_token : ''
+  // a ticket picked by hand (cari manual, rombongan) comes by id: the petugas never needs to hold its QR
+  const byId = typeof req.body?.ticket_id === 'string' ? req.body.ticket_id : ''
   const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id : fail('BAD_REQUEST', 'Pilih sesi dulu.')
-  const parsed = await verifyQrToken(qrToken)
   const now = tx.now
   const staffId = me.id
   const record = (result: CheckinResponse['result'], ticket: Ticket | null) => recordCheckin(tx, { ticketId: ticket?.id ?? null, sessionId, staffId, scannedAt: now.toISOString(), result })
@@ -72,9 +74,16 @@ export async function checkin(tx: Tx, req: Req): Promise<CheckinResponse> {
   }
 
   const scanSession = await sessionOf(tx, sessionId)
-  if (!parsed.ok) return respond('INVALID', 'QR tidak dikenali atau sudah diubah. Minta pengunjung membuka Pass Saya.', null)
-  const ticket = await tx.get<Ticket>('tickets', parsed.ticketId)
-  if (!ticket || ticket.qrVersion !== parsed.qrVersion) return respond('INVALID', 'Tiket tidak ditemukan atau QR sudah diganti.', ticket)
+  let ticket: Ticket | null
+  if (byId) {
+    ticket = await tx.get<Ticket>('tickets', byId)
+    if (!ticket) return respond('INVALID', 'Tiket tidak ditemukan.', null)
+  } else {
+    const parsed = await verifyQrToken(qrToken)
+    if (!parsed.ok) return respond('INVALID', 'QR tidak dikenali atau sudah diubah. Minta pengunjung membuka Pass Saya.', null)
+    ticket = await tx.get<Ticket>('tickets', parsed.ticketId)
+    if (!ticket || ticket.qrVersion !== parsed.qrVersion) return respond('INVALID', 'Tiket tidak ditemukan atau QR sudah diganti.', ticket)
+  }
   if (ticket.status === 'CANCELLED') return respond('INVALID', 'Tiket ini sudah dibatalkan.', ticket)
   if (ticket.eventId !== scanSession.eventId) return respond('INVALID', `Tiket untuk event lain (${(await eventOf(tx, ticket.eventId)).title}).`, ticket)
   const event = await eventOf(tx, ticket.eventId)
@@ -123,7 +132,7 @@ export async function searchTickets(tx: Tx, req: Req): Promise<TicketSearchRow[]
       o.buyerName.toLowerCase().includes(term) ||
       (t.attendeeName?.toLowerCase().includes(term) ?? false)
     if (!hit) continue
-    out.push({ ticket: t, order: o, event: await eventOf(tx, t.eventId), session: await sessionOf(tx, t.sessionId), category: await categoryOf(tx, t.categoryId) })
+    out.push({ ticket: staffTicket(t), order: o, event: await eventOf(tx, t.eventId), session: await sessionOf(tx, t.sessionId), category: await categoryOf(tx, t.categoryId) })
   }
   return out
 }
@@ -157,7 +166,7 @@ export async function patchReceipt(tx: Tx, req: Req) {
 
 export async function expireHold(tx: Tx, req: Req) {
   const order = await orderOf(tx, req.params.id)
-  if (order.userId !== (await visitorId(tx, req.auth))) fail('NOT_FOUND', 'Pesanan tidak ditemukan.')
+  if (order.userId !== (await ownerId(tx, req.auth))) fail('NOT_FOUND', 'Pesanan tidak ditemukan.')
   if (!isPending(order)) fail('BAD_STATE', `Pesanan ${ORDER_STATUS_LABEL[order.status].toLowerCase()}, tidak sedang menahan kursi.`)
   const past = new Date(tx.now.getTime() - 1000).toISOString()
   order.holdExpiresAt = past

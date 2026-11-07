@@ -167,7 +167,13 @@ for (let i = 0; i < 6; i++) {
   await page.getByRole('button', { name: 'Ambil tiket contoh' }).click()
   const r = await resultOf(page)
   const group = await page.getByRole('button', { name: /Masukkan juga/ }).count()
-  if (r === 'VALID' && !group) {
+  // a bonus to hand over keeps the result up on purpose, so only a plain VALID closes by itself
+  const bonus = await page.getByTestId('bonus').count()
+  if (r === 'VALID' && bonus) {
+    await page.waitForTimeout(4500)
+    check((await page.locator('section[data-result]').count()) === 1, 'hasil VALID dengan bonus tertutup sendiri sebelum bonusnya diberikan')
+  }
+  if (r === 'VALID' && !group && !bonus) {
     const t0 = Date.now()
     await page.locator('section[data-result]').waitFor({ state: 'detached', timeout: 8000 })
     console.log('auto-dismissed after', Date.now() - t0, 'ms')

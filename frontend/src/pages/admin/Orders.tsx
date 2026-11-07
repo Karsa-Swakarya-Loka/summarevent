@@ -86,11 +86,14 @@ export default function Orders() {
         description="Cari pesanan, lalu kelola dari panel detailnya."
         actions={
           <>
-            <Button variant="outline" size="lg" onClick={() => void exportCsv('attendees')} disabled={eventId === 'ALL' || !!busy} title={eventId === 'ALL' ? 'Pilih satu event dulu' : undefined}>
-              {busy === 'attendees' ? <LoaderCircle className="animate-spin" /> : <Download />} Unduh data peserta
+            {/* short labels below lg so both fit beside the title on a tablet; the full name stays for screen readers */}
+            <Button variant="outline" size="lg" className="h-11 max-sm:flex-1 sm:h-10" onClick={() => void exportCsv('attendees')} disabled={eventId === 'ALL' || !!busy} title={eventId === 'ALL' ? 'Pilih satu event dulu' : undefined} aria-label="Unduh data peserta">
+              {busy === 'attendees' ? <LoaderCircle className="animate-spin" /> : <Download />} <span className="max-lg:hidden">Unduh data peserta</span>
+              <span className="lg:hidden">Data peserta</span>
             </Button>
-            <Button variant="outline" size="lg" onClick={() => void exportCsv('transactions')} disabled={eventId === 'ALL' || !!busy} title={eventId === 'ALL' ? 'Pilih satu event dulu' : undefined}>
-              {busy === 'transactions' ? <LoaderCircle className="animate-spin" /> : <FileSpreadsheet />} Unduh laporan transaksi
+            <Button variant="outline" size="lg" className="h-11 max-sm:flex-1 sm:h-10" onClick={() => void exportCsv('transactions')} disabled={eventId === 'ALL' || !!busy} title={eventId === 'ALL' ? 'Pilih satu event dulu' : undefined} aria-label="Unduh laporan transaksi">
+              {busy === 'transactions' ? <LoaderCircle className="animate-spin" /> : <FileSpreadsheet />} <span className="max-lg:hidden">Unduh laporan transaksi</span>
+              <span className="lg:hidden">Transaksi</span>
             </Button>
           </>
         }
@@ -135,7 +138,7 @@ export default function Orders() {
         </EmptyState>
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-[1.25rem] bg-card ring-1 ring-foreground/[0.07] md:block">
+          <div className="hidden overflow-hidden rounded-[1.25rem] bg-card ring-1 ring-foreground/[0.07] xl:block">
             <Table>
               <TableHeader>
                 <TableRow className="bg-panel hover:bg-panel">
@@ -195,10 +198,10 @@ export default function Orders() {
             </Table>
           </div>
 
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Daftar pesanan">
+          <ul className="grid gap-2 md:grid-cols-2 xl:hidden" aria-label="Daftar pesanan">
             {shown.map((r) => (
               <li key={r.order.id}>
-                <button type="button" onClick={() => setOpenId(r.order.id)} className="w-full rounded-xl bg-panel p-3 text-left transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+                <button type="button" onClick={() => setOpenId(r.order.id)} className="h-full w-full rounded-xl bg-panel p-3 text-left transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-sm font-semibold">{r.order.code}</span>
                     <StatusBadge tone={ORDER_TONE[r.order.status]}>{statusText(r)}</StatusBadge>
@@ -259,6 +262,8 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
   const [askCancel, setAskCancel] = useState(false)
   const [askPay, setAskPay] = useState(askPaid && order.status === 'AWAITING_PAYMENT' && !order.simulated)
   const free = order.paymentMethod === 'FREE' || (order.totalAmount === 0 && category.accessMethod !== 'RECEIPT')
+  // the same rule as the API: a confirmed order paid by QRIS or VA gets its money back in full when panitia cancel it
+  const refund = order.status === 'CONFIRMED' && (order.paymentMethod === 'SIM_QRIS' || order.paymentMethod === 'SIM_VA') ? order.totalAmount : 0
 
   const markPaid = async () => {
     setBusy('paid')
@@ -396,7 +401,7 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
               </Button>
             )}
             <Button variant="destructive" size="lg" className="h-11" onClick={() => setAskCancel(true)} disabled={!!busy}>
-              <Ban /> Batalkan pesanan
+              <Ban /> {refund ? 'Batalkan dan refund' : 'Batalkan pesanan'}
             </Button>
             {order.status === 'AWAITING_VERIFICATION' && <p className="text-xs text-muted-foreground">Setujui atau tolak struk dari menu Verifikasi struk.</p>}
           </div>
@@ -429,7 +434,8 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
             <DialogTitle>Batalkan {order.code}?</DialogTitle>
             <DialogDescription>
               {seatSummary(order.items)} dilepas dan bisa dipesan orang lain.
-              {order.status === 'CONFIRMED' ? ' E-ticket ikut dibatalkan dan pengunjung dapat pesan WA (simulasi).' : ''}
+              {order.status === 'CONFIRMED' ? ' E-ticket ikut dibatalkan dan pemesan mendapat pesan WA (simulasi).' : ''}
+              {refund ? ` ${rupiahPlain(refund)} dikembalikan penuh ke metode bayar asal (simulasi).` : ''} Pembatalan tidak bisa diurungkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
@@ -437,7 +443,7 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
               Tidak jadi
             </Button>
             <Button variant="destructive" size="lg" onClick={() => void cancel()} disabled={busy === 'cancel'}>
-              {busy === 'cancel' && <LoaderCircle className="animate-spin" />} Ya, batalkan
+              {busy === 'cancel' && <LoaderCircle className="animate-spin" />} {refund ? 'Ya, batalkan dan refund' : 'Ya, batalkan'}
             </Button>
           </DialogFooter>
         </DialogContent>

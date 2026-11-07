@@ -219,6 +219,76 @@ export function seatCounts(layout: LayoutForm): Map<string, number> {
   return out
 }
 
+/** Seats a layout can sell at most: every seat in a row that has a category. */
+export function maxSellable(layout: LayoutForm): number {
+  const rowCats = rowCategoryKeys(layout)
+  return previewSeats(layout).filter((s) => rowCats[rowIndex(s.row)]).length
+}
+
+/** Seats on sale per session: every seat in a category row that is not marked not-for-sale. */
+export function sellableSeats(layout: LayoutForm): number {
+  let n = 0
+  for (const c of seatCounts(layout).values()) n += c
+  return n
+}
+
+/**
+ * The order in which "sell only N seats" closes seats: back row first, and within a row from the two ends toward the
+ * middle, so the best seats stay on sale. Priority (wheelchair) seats are never closed by it.
+ */
+function closingOrder(layout: LayoutForm): string[] {
+  const rowCats = rowCategoryKeys(layout)
+  const priority = new Set(layout.priority)
+  const mid = (layout.seatsPerRow + 1) / 2
+  return previewSeats(layout)
+    .filter((s) => rowCats[rowIndex(s.row)] && !priority.has(seatLabel(s)))
+    .sort((a, b) => rowIndex(b.row) - rowIndex(a.row) || Math.abs(b.number - mid) - Math.abs(a.number - mid) || a.number - b.number)
+    .map(seatLabel)
+}
+
+/**
+ * The not-for-sale list that leaves `target` seats on sale. Fewer: seats close in closingOrder. More: seats reopen in
+ * the same order, so the back seats it closed come back first and a seat closed by hand in front (a camera spot)
+ * stays closed until the layout needs it.
+ */
+export function sellOnly(layout: LayoutForm, target: number): string[] {
+  const order = closingOrder(layout)
+  const goal = Math.max(0, Math.min(Math.floor(target), maxSellable(layout)))
+  let selling = sellableSeats(layout)
+  const blocked = new Set(layout.blocked)
+  for (const label of order) {
+    if (selling === goal) break
+    if (selling > goal && !blocked.has(label)) {
+      blocked.add(label)
+      selling--
+    } else if (selling < goal && blocked.has(label)) {
+      blocked.delete(label)
+      selling++
+    }
+  }
+  return [...layout.blocked.filter((l) => blocked.has(l)), ...[...blocked].filter((l) => !layout.blocked.includes(l))]
+}
+
+/** Seat labels of one row (0 = A). */
+function rowLabels(layout: LayoutForm, row: number): string[] {
+  return previewSeats(layout)
+    .filter((s) => rowIndex(s.row) === row)
+    .map(seatLabel)
+}
+
+/** True when every seat of the row is marked not for sale. */
+export function rowClosed(layout: LayoutForm, row: number): boolean {
+  const labels = rowLabels(layout, row)
+  return labels.length > 0 && labels.every((l) => layout.blocked.includes(l))
+}
+
+/** Close a whole row, or open it again when it is closed already. */
+export function toggleRow(layout: LayoutForm, row: number): string[] {
+  const labels = rowLabels(layout, row)
+  if (rowClosed(layout, row)) return layout.blocked.filter((l) => !labels.includes(l))
+  return [...layout.blocked, ...labels.filter((l) => !layout.blocked.includes(l))]
+}
+
 export function capacityOf(form: WizardForm): number {
   const quotas = form.categories.filter((c) => form.seatingMode === 'GENERAL' || c.noSeat).reduce((a, c) => a + (Number.isFinite(c.quota) ? c.quota : 0), 0)
   if (form.seatingMode !== 'RESERVED') return quotas

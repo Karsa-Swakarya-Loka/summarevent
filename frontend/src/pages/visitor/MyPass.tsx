@@ -124,7 +124,7 @@ export default function MyPass() {
                     <Link to="/app/masuk?next=/app/pass">Masuk dengan nomor HP</Link>
                   </Button>
                   <Button variant="outline" className="h-11" onClick={() => void loginAsPersona()} disabled={demoBusy}>
-                    Lihat contoh: masuk sebagai Rina
+                    Masuk sebagai Rina (akun contoh)
                   </Button>
                 </div>
               }

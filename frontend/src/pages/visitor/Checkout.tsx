@@ -406,7 +406,7 @@ function QrisBox({ detail }: { detail: OrderDetail }) {
       </div>
       <div className="min-w-0">
         <SimTag />
-        <p className="mt-2 leading-snug font-bold">Pindai dengan e‑wallet atau m‑banking</p>
+        <p className="mt-2 leading-snug font-bold">QR simulasi, tidak perlu dipindai. Tekan tombol bayar di bawah.</p>
         <p className="mt-1 text-xs text-muted-foreground">Summarevent · SUMMABA</p>
       </div>
     </div>

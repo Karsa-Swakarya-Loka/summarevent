@@ -62,7 +62,7 @@ function priceLabel(c: TicketCategory) {
   // a receipt category costs no money but a minimum spend at the tenants, so that is its price
   if (c.accessMethod !== 'RECEIPT') return rupiah(c.price)
   const min = c.receiptRules?.minSpend
-  return min ? `Belanja Rp${min % 1000 === 0 ? `${min / 1000}rb` : new Intl.NumberFormat('id-ID').format(min)}` : 'Tukar struk'
+  return min ? `Min. belanja Rp${min % 1000 === 0 ? `${min / 1000}rb` : new Intl.NumberFormat('id-ID').format(min)}` : 'Tukar struk'
 }
 
 /**

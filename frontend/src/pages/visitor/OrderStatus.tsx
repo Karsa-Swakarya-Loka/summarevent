@@ -21,7 +21,28 @@ import { useVisitor } from '@/components/visitor/hooks'
 import { PAYMENT_METHOD_LABEL, RECEIPT_STATUS_LABEL, RECEIPT_TONE, TICKET_STATUS_LABEL, TICKET_TONE, orderStatusLabel } from '@/domain/labels'
 import { CANCEL_MIN_HOURS, attendeeEditPolicy, visitorCancelPolicy } from '@/domain/rules'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
+import { setOnboardingDone } from '@/lib/intro'
 import { rupiahPlain } from '@/lib/format'
+import { markSplashSeen } from '@/lib/splash'
+
+/**
+ * Demo for judges: the panitia's receipt queue in a new tab, already signed in as the demo panitia (the Demo menu does
+ * the same), so this tab stays and flips to "Tiketmu siap" once the receipt is approved there.
+ */
+async function approveAsPanitia() {
+  // open the tab inside the tap, so no pop-up blocker stops it; it is pointed at the queue once signed in
+  const tab = window.open('', '_blank')
+  try {
+    await api.demoLogin('ADMIN')
+    markSplashSeen('/admin')
+    setOnboardingDone(true, 'admin')
+    if (tab) tab.location.href = '/admin/receipts'
+    else window.location.assign('/admin/receipts')
+  } catch (e) {
+    tab?.close()
+    toast.error(errorMessage(e))
+  }
+}
 
 export default function OrderStatus() {
   const { orderId = '' } = useParams()
@@ -109,11 +130,10 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
     )
     after = (
       <>
+        <p className="text-sm text-muted-foreground">Hasilnya dikirim lewat WhatsApp (simulasi), dan halaman ini ikut berubah.</p>
         <ReceiptList detail={detail} />
-        <Button asChild variant="outline" className="h-12 w-full">
-          <Link to="/admin/receipts" target="_blank" rel="noopener">
-            <FlaskConical className="size-4" aria-hidden /> Demo: setujui sebagai panitia
-          </Link>
+        <Button variant="outline" className="h-12 w-full" onClick={() => void approveAsPanitia()}>
+          <FlaskConical className="size-4" aria-hidden /> Demo: setujui sebagai panitia
         </Button>
       </>
     )

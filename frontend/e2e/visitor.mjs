@@ -251,7 +251,7 @@ if (only === 'all' || only === 'bonus') {
   await page.getByText(/Bonus VIP:/).waitFor()
   await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', { waitUntil: 'networkidle' })
   await pickCategory(page, 'VIP')
-  await page.getByText(/Bonus Foto bareng pemeran Sangkuriang untuk tiket pertama/).waitFor()
+  await page.getByText(/Bonus Foto bareng pemeran Sangkuriang untuk \d+ tiket pertama/).waitFor()
   console.log('bonus: offer shown on event detail and seat map')
   await shot(page, 'b1-bonus', false)
   await ctx.close()

@@ -74,6 +74,12 @@ export default function Home() {
   const demoSession = demo?.sessions.find((s) => s.demoLive)
   const free = all.find((e) => !e.event.infoOnly && e.categories.some((c) => c.accessMethod === 'FREE'))
   const receipt = all.find((e) => e.categories.some((c) => c.accessMethod === 'RECEIPT'))
+  // a shortcut opens the seat map of the first regular session with its category already picked
+  const shortcutTo = (e: EventSummary | undefined, access: 'FREE' | 'RECEIPT') => {
+    const cat = e?.categories.find((c) => c.accessMethod === access)
+    const session = e?.sessions.find((s) => !s.demoLive) ?? e?.sessions[0]
+    return e && cat && session ? `/app/e/${e.event.slug}/s/${session.id}?c=${cat.id}` : e ? `/app/e/${e.event.slug}` : '/app'
+  }
   const minSpend = receipt?.categories.find((c) => c.accessMethod === 'RECEIPT')?.receiptRules?.minSpend
   const spotlight = all.filter((e) => !e.event.infoOnly && e.sessions.some((s) => new Date(s.endAt) > now))
 
@@ -153,15 +159,15 @@ export default function Home() {
                   }
                 />
               )}
-              {free && <QuickRow to={`/app/e/${free.event.slug}`} art="gift" tint="bg-[#fff1e2]" title="Daftar gratis" sub={free.event.title} chip={<Chip>Gratis</Chip>} />}
+              {free && <QuickRow to={shortcutTo(free, 'FREE')} art="gift" tint="bg-[#fff1e2]" title="Daftar gratis" sub={free.event.title} chip={<Chip>Gratis</Chip>} />}
               {receipt && (
                 <QuickRow
-                  to={`/app/e/${receipt.event.slug}`}
+                  to={shortcutTo(receipt, 'RECEIPT')}
                   art="notes"
                   tint="bg-[#fff7c7]"
                   title="Tukar struk"
                   sub={receipt.event.title}
-                  chip={minSpend ? <Chip>{shortRupiah(minSpend)}</Chip> : null}
+                  chip={minSpend ? <Chip>Min. belanja {shortRupiah(minSpend)}</Chip> : null}
                 />
               )}
             </ul>
@@ -215,7 +221,7 @@ export default function Home() {
             <ul className="space-y-3" aria-label="Daftar event">
               {list.map((e, i) => (
                 <li key={e.event.id} className="animate-rise" style={{ animationDelay: `${Math.min(i, 5) * 60}ms` }}>
-                  <EventCard e={e} now={now} />
+                  <EventCard e={e} now={now} today={when === 'TODAY'} />
                 </li>
               ))}
             </ul>
@@ -342,7 +348,10 @@ function availabilityOf(e: EventSummary, now: Date): { label: string; tone: Tone
   return { label: `Sisa ${available} ${unit}`, tone: 'valid' }
 }
 
-function dateLabelOf(e: EventSummary) {
+function dateLabelOf(e: EventSummary, today = false) {
+  // under "Hari ini" an event is listed for its session running today, so that is the date it shows
+  const live = today ? e.sessions.find((s) => s.demoLive) : undefined
+  if (live) return `Hari ini · ${live.label ?? 'Sesi demo'}`
   const realSessions = e.sessions.filter((s) => !s.demoLive)
   const sameDay = fmtDate(e.event.startAt, { day: 'numeric', month: 'short' }) === fmtDate(e.event.endAt, { day: 'numeric', month: 'short' })
   const day = sameDay ? fmtDate(e.event.startAt, { weekday: 'long', day: 'numeric', month: 'long' }) : `${fmtShortDate(e.event.startAt)} – ${fmtShortDate(e.event.endAt)}`
@@ -385,7 +394,7 @@ function SpotCard({ e, now }: { e: EventSummary; now: Date }) {
   )
 }
 
-function EventCard({ e, now }: { e: EventSummary; now: Date }) {
+function EventCard({ e, now, today = false }: { e: EventSummary; now: Date; today?: boolean }) {
   const av = availabilityOf(e, now)
   return (
     <Link
@@ -399,7 +408,7 @@ function EventCard({ e, now }: { e: EventSummary; now: Date }) {
         <p className="text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{POSTER_THEMES[e.event.posterTheme].label}</p>
         <h3 className="mt-0.5 leading-snug font-bold text-balance">{e.event.title}</h3>
         <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <CalendarDays className="size-3.5 shrink-0" aria-hidden /> {dateLabelOf(e)}
+          <CalendarDays className="size-3.5 shrink-0" aria-hidden /> {dateLabelOf(e, today)}
         </p>
         <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
           <MapPin className="size-3.5 shrink-0" aria-hidden /> {e.venue.name}

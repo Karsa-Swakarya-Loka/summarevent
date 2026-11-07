@@ -165,7 +165,7 @@ export default function Onboarding({ role }: { role: IntroRole }) {
             role === 'visitor' ? (
               <div className="grid gap-2">
                 <Button className="h-14 text-base" onClick={() => finish('/app')}>
-                  Mulai pilih kursi <ArrowRight />
+                  Lihat event <ArrowRight />
                 </Button>
                 <Button variant="outline" className="h-12 text-base" onClick={() => finish('/app/masuk')}>
                   Masuk atau daftar

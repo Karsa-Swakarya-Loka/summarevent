@@ -179,7 +179,7 @@ export function LoginPanel({
             <div role="status" className="animate-drop-in rounded-2xl bg-ink p-3.5 text-white shadow-lg shadow-ink/20">
               <div className="flex items-center gap-2 text-xs text-white/75">
                 <BrandAppIcon className="size-5 rounded-md" />
-                <span className="font-semibold text-white">Pesan</span>
+                <span className="font-semibold text-white">SMS</span>
                 <span>· sekarang</span>
                 <SimTag className="ml-auto bg-white text-ink" />
               </div>

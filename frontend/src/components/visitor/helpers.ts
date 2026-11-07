@@ -31,9 +31,11 @@ export function seatsAdjacent(seats: Seat[]): boolean {
   return sorted.every((s, i) => i === 0 || (s.y === sorted[0].y && s.x === sorted[i - 1].x + 1))
 }
 
-/** Price hint for an event card: "Mulai Rp50.000", "Gratis", "Tukar struk". */
+/** Price hint for an event card: "Gratis – Rp150.000", "Mulai Rp50.000", "Gratis", "Tukar struk". */
 export function priceHint(categories: TicketCategory[]): string {
   const paid = categories.filter((c) => c.accessMethod === 'PAID' && c.price > 0)
+  // a free category makes the event start at nothing, so the range says so instead of the cheapest paid seat
+  if (paid.length && categories.some((c) => c.accessMethod === 'FREE')) return `Gratis – ${rupiahPlain(Math.max(...paid.map((c) => c.price)))}`
   if (paid.length) return `Mulai ${rupiahPlain(Math.min(...paid.map((c) => c.price)))}`
   if (categories.some((c) => c.accessMethod === 'FREE')) return 'Gratis'
   if (categories.some((c) => c.accessMethod === 'RECEIPT')) return 'Tukar struk'

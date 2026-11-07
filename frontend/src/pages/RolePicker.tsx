@@ -74,7 +74,7 @@ export default function RolePicker() {
       ),
       art: <Illustration name="kursi" className="w-full" still />,
       action: { label: 'Masuk sebagai pengunjung', onClick: () => void enter('VISITOR'), disabled: off },
-      secondary: { label: 'masuk cepat sebagai Rina', name: 'atau masuk cepat sebagai Rina (persona)', onClick: () => void enter('VISITOR_RINA'), disabled: off },
+      secondary: { label: 'masuk sebagai Rina (akun contoh)', name: 'atau masuk sebagai Rina (akun contoh)', onClick: () => void enter('VISITOR_RINA'), disabled: off },
     },
     {
       key: 'admin',
@@ -135,7 +135,7 @@ export default function RolePicker() {
         }
         menu={
           <>
-            <p className="ssf-mhead">{live ? 'Versi live' : 'Prototype'}</p>
+            <p className="ssf-mhead">{live ? 'Versi live' : 'Prototipe'}</p>
             <p className="ssf-mnote">{live ? 'Semua HP dan laptop memakai data yang sama di server. Buka denah yang sama di dua HP dan rebut kursinya.' : 'Data contoh di browser ini. Bayar, OTP, dan WA/email disimulasikan, bukan transaksi sungguhan.'}</p>
             <div className="ssf-msep" />
             <button type="button" className="ssf-mi" onClick={() => void reset()}>

@@ -176,9 +176,11 @@ Tujuannya menunjukkan inti lomba, yaitu pemilihan kursi dan pencegahan pesanan g
 
 ### Alur demo lima menit
 
+Jalur paling cepat kalau waktunya mepet: di halaman awal, **masuk sebagai Rina (akun contoh)**. Tanpa pengenalan dan tanpa OTP, akunnya sudah punya e-ticket.
+
 | Menit | Yang ditunjukkan | Yang ditekankan |
 | --- | --- | --- |
-| 0–1 | Halaman awal → **Masuk sebagai pengunjung** → Pentas Musikal Sangkuriang sesi 16.00 → **Reguler** → **Pilihkan 2 kursi berdampingan** → **Pesan 2 kursi** | Kursi dipilih langsung dari denah dan ditahan 10 menit |
+| 0–1 | Halaman awal → **Masuk sebagai pengunjung** → **Lewati** (pengenalan muncul di HP atau browser baru) → Pentas Musikal Sangkuriang sesi 16.00 → **Reguler** → **Pilihkan 2 kursi berdampingan** → **Pesan 2 kursi** | Kursi dipilih langsung dari denah dan ditahan 10 menit |
 | 1–2 | Masuk dengan nomor HP (OTP simulasi), **Bayar Rp100.000** (simulasi) → **Lihat e-ticket** | Satu QR bertanda tangan untuk tiap kursi, tersimpan di Pass Saya |
 | 2–3 | Kembali ke denah → **Uji rebutan kursi** → saran kursi terdekat, lalu **Kenapa satu kursi tidak bisa terjual dua kali?** | Pencegahan pesanan ganda: kursi ditahan sekaligus, terlihat oleh semua, dicek ulang saat konfirmasi |
 | 3–4 | Kategori **Tukar Struk** → **Isi struk contoh** → **Kirim struk** → **Demo → Masuk sebagai Panitia** → **Verifikasi struk** → **Setujui** | Belanja di tenant SUMMABA bisa jadi tiket, dicek otomatis lalu oleh panitia |

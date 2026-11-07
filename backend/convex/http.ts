@@ -221,7 +221,9 @@ async function submitReceipts(ctx: ActionCtx, req: Request, r: { auth: AuthInput
       total += blob?.size ?? 0
       if (!blob || total > RECEIPTS_MAX) {
         for (const id of storageIds) if (id) await ctx.storage.delete(id)
-        return errorResponse(req, 'INVALID', 'Foto struk harus JPG, PNG, atau WebP, paling besar 3 MB.', { field: 'photoUrl' })
+        // one photo that is not an image or over 3 MB, or all of them together over 12 MB: each gets its own message
+        const message = blob ? 'Total foto struk paling besar 12 MB. Kirim lebih sedikit foto, atau foto yang lebih kecil.' : 'Foto struk harus JPG, PNG, atau WebP, paling besar 3 MB.'
+        return errorResponse(req, 'INVALID', message, { field: 'photoUrl' })
       }
       storageIds.push(await ctx.storage.store(blob))
     }

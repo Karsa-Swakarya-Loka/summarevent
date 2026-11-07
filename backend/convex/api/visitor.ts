@@ -4,7 +4,7 @@ import { ORDER_STATUS_LABEL } from '../shared/labels'
 import { fmtTime, isValidPhone, normalizePhone, rupiahPlain } from '../shared/format'
 import { attendeeEditPolicy, checkReceiptRules, effectiveSeatStatus, profileChanges, randomCode, receiptChecksPass, suggestSeats, uid, visitorCancelPolicy } from '../shared/rules'
 import type { AppNotification, EventItem, Order, Payment, Receipt, Role, SessionSeat, Ticket, TicketCategory, User, WaitlistEntry } from '../shared/types'
-import { guestOf, issueToken, visitorId, visitorUser, type Req } from '../lib/auth'
+import { ANONYMOUS, guestOf, issueToken, ownerId, visitorId, visitorUser, type Req } from '../lib/auth'
 import {
   assertHoldActive,
   bonusPlacesLeft,
@@ -39,12 +39,16 @@ import {
   venueOf,
   waitlistItem,
 } from '../lib/core'
-import { fail, must } from '../lib/errors'
+import { demoEnabled } from '../lib/demo'
+import { sameString } from '../lib/crypto'
+import { fail, must, Refusal } from '../lib/errors'
 import type { Tx } from '../lib/tx'
 
 export const DEMO_ADMIN_ID = 'u_admin'
 export const DEMO_STAFF_ID = 'u_staff'
 export const PERSONA_ID = 'u_rina'
+/** Wrong guesses a code survives; six digits and five guesses leave a 1 in 200 000 chance per code. */
+const OTP_MAX_ATTEMPTS = 5
 
 const str = (v: unknown, what: string): string => {
   if (typeof v !== 'string') fail('BAD_REQUEST', `${what} wajib diisi.`)
@@ -53,7 +57,7 @@ const str = (v: unknown, what: string): string => {
 
 /** Move what a guest did before logging in (holds, receipts, tickets, messages) to the account. */
 async function claimGuest(tx: Tx, guest: string, user: User) {
-  if (guest === user.id || !guest.startsWith('guest_')) return
+  if (guest === user.id || guest === ANONYMOUS || !guest.startsWith('guest_')) return
   for (const o of await tx.where<Order>('orders', 'by_user', { userId: guest })) {
     o.userId = user.id
     o.buyerName = user.name
@@ -69,7 +73,7 @@ async function claimGuest(tx: Tx, guest: string, user: User) {
 
 async function ownOrder(tx: Tx, req: Req, orderId: string): Promise<Order> {
   const order = await orderOf(tx, orderId)
-  if (order.userId !== (await visitorId(tx, req.auth))) fail('NOT_FOUND', 'Pesanan tidak ditemukan.')
+  if (order.userId !== (await ownerId(tx, req.auth))) fail('NOT_FOUND', 'Pesanan tidak ditemukan.')
   return order
 }
 
@@ -79,7 +83,7 @@ export async function requestOtp(tx: Tx, req: Req) {
   const phone = normalizePhone(str(req.body?.phone, 'Nomor HP'))
   if (!isValidPhone(phone)) fail('BAD_PHONE', 'Nomor HP belum benar. Contoh: 0812 3456 7890.')
   const now = tx.now
-  let entry = (await tx.where<{ phone: string; code: string; expiresAt: string; requests: string[] }>('otps', 'by_phone', { phone }))[0]
+  let entry = (await tx.where<{ phone: string; code: string; expiresAt: string; requests: string[]; attempts?: number }>('otps', 'by_phone', { phone }))[0]
   if (!entry) entry = await tx.insert('otps', { phone, code: '', expiresAt: '', requests: [] as string[] })
   const recent = entry.requests.filter((t) => now.getTime() - new Date(t).getTime() < 60_000)
   if (recent.length >= 3) {
@@ -88,18 +92,29 @@ export async function requestOtp(tx: Tx, req: Req) {
   }
   const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000))
   entry.code = code
+  entry.attempts = 0
   entry.expiresAt = new Date(now.getTime() + 5 * 60_000).toISOString()
   entry.requests = [...recent, now.toISOString()]
-  return { simulatedCode: code, expiresAt: entry.expiresAt }
+  // the demo shows the code on screen; a real deployment sends it by SMS or WhatsApp and never hands it back here
+  return demoEnabled() ? { simulatedCode: code, expiresAt: entry.expiresAt } : { expiresAt: entry.expiresAt }
 }
 
 export async function verifyOtp(tx: Tx, req: Req) {
   const phone = normalizePhone(str(req.body?.phone, 'Nomor HP'))
   const code = str(req.body?.code, 'Kode OTP')
   const name: unknown = req.body?.name
-  const entry = (await tx.where<{ phone: string; code: string; expiresAt: string }>('otps', 'by_phone', { phone }))[0]
-  if (!entry || !entry.code || entry.code !== code.trim()) fail('BAD_OTP', 'Kode OTP salah. Cek lagi kode yang tampil di layar.')
+  const entry = (await tx.where<{ phone: string; code: string; expiresAt: string; attempts?: number }>('otps', 'by_phone', { phone }))[0]
+  if (!entry || !entry.code) fail('BAD_OTP', 'Kode OTP salah. Minta kode baru.')
   if (new Date(entry.expiresAt) < tx.now) fail('OTP_EXPIRED', 'Kode OTP sudah kedaluwarsa. Minta kode baru.')
+  if (!sameString(entry.code, code.trim())) {
+    // a wrong guess is counted (a Refusal keeps the count); after OTP_MAX_ATTEMPTS the code is gone and a new one is needed
+    entry.attempts = (entry.attempts ?? 0) + 1
+    if (entry.attempts >= OTP_MAX_ATTEMPTS) {
+      entry.code = ''
+      return new Refusal('BAD_OTP', 'Kode OTP salah terlalu sering. Minta kode baru.')
+    }
+    return new Refusal('BAD_OTP', 'Kode OTP salah. Cek lagi kodenya.')
+  }
   let user = (await tx.where<User>('users', 'by_phone', { phone, role: 'VISITOR' }))[0]
   let isNew = false
   if (!user) {
@@ -116,11 +131,13 @@ export async function verifyOtp(tx: Tx, req: Req) {
 }
 
 export async function demoLogin(tx: Tx, req: Req) {
+  if (!demoEnabled()) fail('FORBIDDEN', 'Fitur demo dimatikan di server ini.')
   const role = req.body?.role as Role
   if (role !== 'ADMIN' && role !== 'STAFF' && role !== 'VISITOR') fail('BAD_REQUEST', 'Role tidak dikenal.')
   let id = role === 'ADMIN' ? DEMO_ADMIN_ID : role === 'STAFF' ? DEMO_STAFF_ID : PERSONA_ID
   const userId: unknown = req.body?.user_id
-  if (typeof userId === 'string' && userId) {
+  // only the staff switcher picks an account; a visitor demo sign-in is always the persona, never someone's account
+  if (role === 'STAFF' && typeof userId === 'string' && userId) {
     const u = await getUser(tx, userId)
     if (!u || u.role !== role) fail('NOT_FOUND', 'Akun tidak ditemukan.')
     if (u.active === false) fail('FORBIDDEN', 'Akun petugas ini dinonaktifkan panitia.')
@@ -203,12 +220,12 @@ export async function suggest(tx: Tx, req: Req) {
 export async function createHold(tx: Tx, req: Req): Promise<HoldResult> {
   await sweep(tx)
   const b = req.body ?? {}
-  return holdTx(tx, req.params.id, { categoryId: str(b.categoryId, 'Kategori'), seatIds: Array.isArray(b.seatIds) ? b.seatIds : undefined, qty: b.qty }, await visitorId(tx, req.auth))
+  return holdTx(tx, req.params.id, { categoryId: str(b.categoryId, 'Kategori'), seatIds: Array.isArray(b.seatIds) ? b.seatIds : undefined, qty: b.qty }, await ownerId(tx, req.auth))
 }
 
 export async function autoHold(tx: Tx, req: Req): Promise<HoldResult> {
   await sweep(tx)
-  const me = await visitorId(tx, req.auth)
+  const me = await ownerId(tx, req.auth)
   const sessionId = req.params.id
   const categoryId = str(req.body?.category_id, 'Kategori')
   const qty = Math.floor(Number(req.body?.qty))
@@ -276,6 +293,8 @@ export async function cancelOrder(tx: Tx, req: Req) {
 }
 
 export async function simulatePayment(tx: Tx, req: Req) {
+  // the client says how the payment went, so this exists only in the demo; a real one is confirmed by the gateway
+  if (!demoEnabled()) fail('FORBIDDEN', 'Pembayaran simulasi hanya ada di versi demo.')
   await sweep(tx)
   const order = await ownOrder(tx, req, req.params.id)
   const b = req.body ?? {}
@@ -479,7 +498,7 @@ export async function joinWaitlist(tx: Tx, req: Req) {
 }
 
 export async function leaveWaitlist(tx: Tx, req: Req) {
-  const me = await visitorId(tx, req.auth)
+  const me = await ownerId(tx, req.auth)
   const entry = await tx.get<WaitlistEntry>('waitlist', req.params.id)
   if (!entry || entry.userId !== me) fail('NOT_FOUND', 'Daftar tunggu tidak ditemukan.')
   entry.status = 'LEFT'
@@ -501,7 +520,8 @@ export async function checkProfile(tx: Tx, req: Req) {
   const body = req.body ?? {}
   const checked = profileChanges({ name: body.name, email: body.email, avatar: body.avatar })
   if (!checked.ok) fail('INVALID', checked.reason, { field: checked.field })
-  if (checked.email && (await tx.where<User>('users', 'by_email', { email: checked.email })).some((u) => u.id !== user.id)) {
+  // only other visitors count: a panitia or petugas address must not be discoverable from the visitor profile
+  if (checked.email && (await tx.where<User>('users', 'by_email', { email: checked.email })).some((u) => u.id !== user.id && u.role === 'VISITOR')) {
     fail('DUPLICATE', 'Email ini sudah dipakai akun lain.', { field: 'email' })
   }
   return { ok: true }

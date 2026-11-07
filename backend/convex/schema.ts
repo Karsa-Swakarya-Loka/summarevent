@@ -63,10 +63,15 @@ export default defineSchema({
   /** Bearer tokens (only their SHA-256 is stored). */
   authTokens: defineTable({ tokenHash: str, userId: str, role, createdAt: str }).index('by_token', ['tokenHash']).index('by_user', ['userId']),
 
-  otps: defineTable({ phone: str, code: str, expiresAt: str, requests: v.array(str) }).index('by_phone', ['phone']),
+  /** One row per phone: the live code, its requests in the last minute (rate limit) and the wrong guesses at it. */
+  otps: defineTable({ phone: str, code: str, expiresAt: str, requests: v.array(str), attempts: v.optional(v.number()) }).index('by_phone', ['phone']),
 
   /** Panitia and petugas passwords (PBKDF2, lib/password.ts) and their recent failed sign-ins (rate limit). */
   passwords: defineTable({ userId: str, hash: str, fails: v.array(str) }).index('by_user', ['userId']),
+  /** Recent failed sign-ins per email and role (a hash of both), kept for addresses with no account too. */
+  loginFails: defineTable({ key: str, fails: v.array(str) }).index('by_key', ['key']),
+  /** Requests per client address and kind in the current window (http.ts LIMITS), against scripted floods. */
+  rateLimits: defineTable({ key: str, hits: v.array(num) }).index('by_key', ['key']),
 
   /** One-time links to set a password: forgot-password (30 min) and a new petugas' invitation (24 h). Only the hash is kept. */
   resetTokens: defineTable({ tokenHash: str, userId: str, purpose: v.union(v.literal('RESET'), v.literal('INVITE')), expiresAt: str, createdAt: str })

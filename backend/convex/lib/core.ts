@@ -3,6 +3,7 @@
  * from ../shared (generated from frontend/src/domain), so both sides decide the same way.
  */
 import type { CategoryAvailability, CheckinResponse, EventDraft, EventSummary, HoldRequest, HoldResult, OrderDetail, SessionSummary, WaitlistItem } from '../shared/contract'
+import { demoEnabled } from './demo'
 import { fmtRange, fmtShortDate, fmtTime } from '../shared/format'
 import { buildSeats, effectiveSeatStatus, isHoldActive, posterPaletteCheck, randomCode, resolveSession, rowIndex, rowLetter, saleState, seatLabel, suggestSeats, uid } from '../shared/rules'
 import type {
@@ -636,7 +637,7 @@ export async function checkinResponseFrom(
   return {
     result,
     message,
-    ticket,
+    ticket: ticket ? staffTicket(ticket) : null,
     order: ticket ? await tx.get<Order>('orders', ticket.orderId) : null,
     event: ticket ? await tx.get<EventItem>('events', ticket.eventId) : null,
     session: raw ? resolveSession(raw, tx.now) : null,
@@ -650,3 +651,11 @@ export async function recordCheckin(tx: Tx, c: Omit<Checkin, 'id'>) {
 }
 
 export type { Payment }
+
+/**
+ * A ticket as a petugas sees it: everything but its QR token, which only its owner's Pass Saya shows. A petugas checks a
+ * ticket in by its id instead. The demo keeps the token, for the scan screen's sample tickets.
+ */
+export function staffTicket(ticket: Ticket): Ticket {
+  return demoEnabled() ? ticket : { ...ticket, qrToken: '' }
+}

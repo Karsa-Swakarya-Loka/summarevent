@@ -31,28 +31,37 @@ export async function login(tx: Tx, req: Req) {
   const password = String(req.body?.password ?? '')
   const user = email ? (await tx.where<User>('users', 'by_email', { email })).find((u) => u.role === role) : undefined
   const row = user ? await passwordRow(tx, user.id) : null
+  // the failed attempts are counted per email whether or not it has an account, so the lockout answers alike for both
+  const key = await sha256Hex(`${role}:${email}`)
+  const counter = await tx.mctx.db
+    .query('loginFails')
+    .withIndex('by_key', (q) => q.eq('key', key))
+    .unique()
   const window = tx.now.getTime() - LOGIN_FAIL_WINDOW_MIN * 60_000
-  const fails = (row?.fails ?? []).filter((t) => new Date(t).getTime() > window)
+  const fails = (counter?.fails ?? []).filter((t) => new Date(t).getTime() > window)
   if (fails.length >= LOGIN_MAX_FAILS) return new Refusal('RATE_LIMIT', `Terlalu banyak percobaan. Coba lagi dalam ${LOGIN_FAIL_WINDOW_MIN} menit.`)
   // the hash is checked even for an unknown email, so the answer takes as long either way
   const ok = await verifyPassword(password, row?.hash ?? null)
   // one message for a wrong email and a wrong password, so an address cannot be probed
   if (!user || !row || !ok) {
-    if (row) await tx.mctx.db.patch(row._id, { fails: [...fails, tx.now.toISOString()] })
+    const next = [...fails, tx.now.toISOString()]
+    if (counter) await tx.mctx.db.patch(counter._id, { fails: next })
+    else if (email) await tx.mctx.db.insert('loginFails', { key, fails: next })
     return new Refusal('BAD_LOGIN', 'Email atau kata sandi salah.')
   }
   if (user.active === false) fail('FORBIDDEN', 'Akun ini dinonaktifkan panitia.')
-  if (row.fails.length) await tx.mctx.db.patch(row._id, { fails: [] })
+  if (counter) await tx.mctx.db.delete(counter._id)
   return { user, token: await issueToken(tx, user) }
 }
 
 /** A one-time link that lets the account set its password; only the token's hash is stored. */
 async function newResetLink(tx: Tx, user: User, purpose: 'RESET' | 'INVITE'): Promise<string> {
+  // a new link replaces the old one of the same kind only: asking for a reset never voids a petugas' invitation
   for (const old of await tx.mctx.db
     .query('resetTokens')
     .withIndex('by_user', (q) => q.eq('userId', user.id))
     .collect())
-    await tx.mctx.db.delete(old._id)
+    if (old.purpose === purpose) await tx.mctx.db.delete(old._id)
   const token = newToken()
   const minutes = purpose === 'INVITE' ? INVITE_HOURS * 60 : RESET_TOKEN_MIN
   await tx.mctx.db.insert('resetTokens', {

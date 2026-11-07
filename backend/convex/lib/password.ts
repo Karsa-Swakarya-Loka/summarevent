@@ -3,7 +3,8 @@
  * `pbkdf2-sha256$<iterations>$<salt b64>$<hash b64>` so the cost can be raised later without breaking old hashes.
  */
 const ALGO = 'pbkdf2-sha256'
-const ITERATIONS = 100_000
+/** OWASP's figure for PBKDF2-HMAC-SHA256 (2023); hashes made with fewer still verify, at their own count. */
+const ITERATIONS = 600_000
 const enc = new TextEncoder()
 
 const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes))

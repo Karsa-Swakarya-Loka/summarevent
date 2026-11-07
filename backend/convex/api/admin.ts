@@ -4,7 +4,7 @@ import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL, TICKET_STATUS_LABEL } from '.
 import { csvCell, fmtRange, fmtShortDate, fmtTime, isValidPhone, normalizePhone, rupiahPlain, wibDate } from '../shared/format'
 import { checkReceiptRules, profileChanges, resolveSession, uid } from '../shared/rules'
 import type { Checkin, EventItem, Order, OrderStatus, Payment, Receipt, Session, SessionQuota, SessionSeat, Tenant, Ticket, TicketCategory, User, Venue } from '../shared/types'
-import { requireRole, type Req } from '../lib/auth'
+import { requireRole, revokeTokens, type Req } from '../lib/auth'
 import {
   addInventory,
   applyLayout,
@@ -571,5 +571,7 @@ export async function setStaffActive(tx: Tx, req: Req) {
   if (!u || u.role !== 'STAFF') fail('NOT_FOUND', 'Akun petugas tidak ditemukan.')
   if (typeof req.body?.active !== 'boolean') fail('BAD_REQUEST', 'Isi active dengan true atau false.')
   u.active = req.body.active
+  // switched off: every phone signed in with it is signed out now
+  if (!u.active) await revokeTokens(tx, u.id)
   return u
 }

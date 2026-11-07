@@ -133,7 +133,7 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
     setGroup({ phase: 'running', rows, done: [] })
     for (const row of rows) {
       try {
-        done.push({ row, res: await api.staff.checkin(row.ticket.qrToken, sessionId) })
+        done.push({ row, res: await api.staff.checkin(row.ticket.id, sessionId) })
       } catch (e) {
         done.push({ row, res: null, error: errorMessage(e) })
       }

@@ -350,8 +350,11 @@ export interface StaffApi {
   accounts(): Promise<StaffAccount[]>
   /** GET /staff/sessions/:id/offline-manifest – tickets to check against while offline (PT-07) */
   offlineManifest(sessionId: string): Promise<OfflineManifest>
-  /** POST /staff/checkins { qr_token, session_id } */
-  checkin(qrToken: string, sessionId: string): Promise<CheckinResponse>
+  /**
+   * POST /staff/checkins { qr_token | ticket_id, session_id }: `code` is a scanned QR token, or the id of a ticket the
+   * petugas picked by hand (cari manual, rombongan), which petugas responses carry instead of its QR token.
+   */
+  checkin(code: string, sessionId: string): Promise<CheckinResponse>
   /** GET /staff/tickets?q= */
   searchTickets(q: string, eventId?: string): Promise<TicketSearchRow[]>
   /** Recent scans for the session (live counter). */

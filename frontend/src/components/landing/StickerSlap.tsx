@@ -123,7 +123,7 @@ const CSS =
   '.ssf-slide{min-width:0;min-height:0;height:100%}' +
   // the wordmark stage
   '.ssf-stage{position:relative;z-index:1;margin-top:auto;width:min(100%,calc(var(--ssf-wmh) * var(--ssf-ar)));align-self:center;padding:0 clamp(6px,.8cqw,12px)}' +
-  '.ssf-stage-in{position:relative;container-type:inline-size}' +
+  '.ssf-stage-in{position:relative;container-type:inline-size;margin-bottom:var(--ssf-sink,0)}' +
   '.ssf-wm-btn{display:block;width:100%;border-radius:0 !important;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
   '.ssf-wm{width:100%;height:auto;color:var(--ssf-cream)}' +
   '.ssf-wm path{fill:none;stroke:currentColor;stroke-width:' + STROKE + ';stroke-linecap:round;stroke-linejoin:round}' +
@@ -141,7 +141,7 @@ const CSS =
   '.ssf-sheen{transform:translateX(-130%);transition:transform 0s}' +
   '.ssf-st-btn:hover .ssf-sheen{transform:translateX(130%);transition:transform .9s cubic-bezier(.4,0,.2,1)}' +
   '.ssf-ring{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:2px solid var(--ssf-cream);opacity:0;pointer-events:none}' +
-  '@container (max-width: 760px){.ssf-top{padding-bottom:14px}.ssf-slides{padding-top:60px;min-height:260px}.ssf-stage{width:min(165%,calc(var(--ssf-wmh) * var(--ssf-ar)));max-width:none;margin-left:-6%}}' +
+  '@container (max-width: 760px){.ssf-top{padding-bottom:14px}.ssf-slides{padding-top:60px;min-height:260px}.ssf-stage{width:100%}.ssf-stage-in{margin-bottom:0}.ssf-st:not(:nth-of-type(2)):not(:nth-of-type(5)){display:none}.ssf-st{translate:-50% -78%}}' +
   '@keyframes ssf-rewrite{0%{stroke-dashoffset:var(--l,120px)}100%{stroke-dashoffset:0}}' +
   '@keyframes ssf-popin{from{opacity:0;transform:translateY(10px) scale(.7) rotate(4deg)}}' +
   // the storyboard: everything above is the finished state; motion only adds the way in
@@ -571,7 +571,7 @@ export function StickerSlap({
         {children}
 
         <div className="ssf-stage">
-          <div className="ssf-stage-in" ref={stageRef} style={{ marginBottom: round(-((vbH - cutH) / vbW) * 100) + '%' }}>
+          <div className="ssf-stage-in" ref={stageRef} style={{ '--ssf-sink': round(-((vbH - cutH) / vbW) * 100) + '%' } as React.CSSProperties}>
             <button type="button" className="ssf-wm-btn" onClick={replay} aria-label={'Tulis ulang ' + wordmark}>
               <svg key={run} className="ssf-wm" viewBox={[vbX, vbY, vbW, vbH].map(round).join(' ')} aria-hidden="true" focusable="false">
                 <g transform="skewX(-9)">

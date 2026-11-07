@@ -6,7 +6,6 @@
 import { useId, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft, Eye, EyeOff, LoaderCircle } from 'lucide-react'
-import { toast } from 'sonner'
 import { api } from '@/api'
 import { CoBrand } from '@/components/common/Brand'
 import { Illustration } from '@/components/common/Illustration'
@@ -60,8 +59,7 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
     setError(null)
     setBusy(true)
     try {
-      const user = await api.login(address, password, role)
-      toast.success(`Halo, ${user.name}!`)
+      await api.login(address, password, role)
       navigate(next, { replace: true })
     } catch (err) {
       setError({ field: null, text: errorMessage(err) })

@@ -124,10 +124,12 @@ export default function Scanner() {
           <ArrowLeft className="size-6" />
         </Link>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-base leading-tight font-bold">{event?.title ?? 'Memuat sesi…'}</h1>
+          {/* the session comes first: it is what the petugas has to be sure of; the event may be cut short */}
+          <h1 className="truncate text-base leading-tight font-bold">{session ? sessionName(session) : 'Memuat sesi…'}</h1>
           {session && (
             <p className="truncate text-sm text-white/80">
-              {sessionName(session)} · {fmtRange(win?.session.startAt ?? session.startAt, win?.session.endAt ?? session.endAt)}
+              {fmtRange(win?.session.startAt ?? session.startAt, win?.session.endAt ?? session.endAt)}
+              {event && ` · ${event.title}`}
             </p>
           )}
         </div>
@@ -149,8 +151,9 @@ export default function Scanner() {
         <div className="flex shrink-0 items-start gap-2 bg-status-warn px-4 py-2 text-sm font-bold text-ink" role="status">
           <Clock className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
-            {win.state === 'NOT_YET' ? `Check-in sesi ini belum dibuka (dibuka ${fmtDateTime(win.open.toISOString())}).` : `Check-in sesi ini sudah ditutup (${fmtDateTime(win.close.toISOString())}).`}{' '}
-            Tiket akan tampil kuning.
+            {win.state === 'NOT_YET'
+              ? `Check-in sesi ini dibuka ${fmtDateTime(win.open.toISOString())}. Sebelum itu tiket belum bisa masuk.`
+              : `Check-in sesi ini sudah ditutup ${fmtDateTime(win.close.toISOString())}. Tiket tidak bisa masuk lagi.`}
           </span>
         </div>
       )}
@@ -349,7 +352,7 @@ function PasteForm({ onSubmit, pending, className, compact = false }: { onSubmit
           className="h-14 min-w-0 flex-1 rounded-xl bg-white px-4 font-mono text-base text-ink placeholder:text-ink/45 focus:outline-4 focus:outline-white/40"
         />
         <button type="submit" disabled={pending || !value.trim()} className="h-14 shrink-0 rounded-xl bg-white/15 px-4 text-base font-bold ring-1 ring-white/30 disabled:opacity-50">
-          Periksa
+          Check-in
         </button>
       </div>
     </form>
@@ -405,7 +408,7 @@ function BottomBar({
       if (!row) {
         setNote(
           kind === 'session'
-            ? 'Semua tiket contoh sesi ini sudah dipakai. Reset data demo dari halaman Pilih sesi (menu Demo), atau beli tiket baru di sisi pengunjung.'
+            ? 'Tiket contoh sesi ini sudah habis dipakai.'
             : 'Tidak ada tiket aktif di sesi lain event ini.',
         )
         return

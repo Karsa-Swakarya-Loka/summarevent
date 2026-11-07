@@ -96,7 +96,7 @@ export default function RolePicker() {
       variant: 'ambar',
       word: 'Scan',
       title: 'Petugas',
-      note: 'Scan QR di pintu: valid, sudah dipakai, atau tidak valid',
+      note: 'Scan QR di pintu: valid, sudah digunakan, atau tidak valid',
       top: ['Petugas', '03'],
       foot: (
         <>

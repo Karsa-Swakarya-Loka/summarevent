@@ -8,9 +8,9 @@ import { useLive } from '@/hooks/useLive'
 export type WindowState = 'NOT_YET' | 'OPEN' | 'CLOSED'
 
 export const WINDOW_LABEL: Record<WindowState, string> = {
-  NOT_YET: 'Belum dibuka',
-  OPEN: 'Dibuka',
-  CLOSED: 'Ditutup',
+  NOT_YET: 'Check-in belum dibuka',
+  OPEN: 'Check-in dibuka',
+  CLOSED: 'Check-in ditutup',
 }
 
 /** Check-in window of a session right now (demo-live sessions are re-resolved against `now`). */

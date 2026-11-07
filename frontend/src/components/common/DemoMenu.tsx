@@ -82,7 +82,7 @@ export function DemoMenu({ className, variant = 'float' }: { className?: string;
             <ScanLine /> Masuk sebagai Petugas
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate('/')}>Halaman pilih role</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/')}>Halaman pilih peran</DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
               setOnboardingDone(false, here)

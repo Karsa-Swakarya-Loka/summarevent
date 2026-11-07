@@ -53,7 +53,7 @@ export default function ManualSearch() {
     <div className="pb-24">
       <BackHeader
         to="/staff"
-        title={session && ctx.event ? <span className="block truncate text-sm text-muted-foreground">{ctx.event.title} · {sessionName(session)}</span> : undefined}
+        title={session && ctx.event ? <span className="block truncate text-sm text-muted-foreground">{sessionName(session)} · {ctx.event.title}</span> : undefined}
         right={
           <Link to={`/staff/scan/${sessionId}`} className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold hover:bg-muted">
             <ScanLine className="size-5" aria-hidden /> Scan
@@ -89,7 +89,7 @@ export default function ManualSearch() {
                 autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Rina, 0812…, TKT-…, SEV-…"
+                placeholder="Nama, 4 angka akhir HP, TKT-…, SEV-…"
                 className="h-14 rounded-full border-transparent bg-card pr-12 pl-12 text-base shadow-xs md:text-base [&::-webkit-search-cancel-button]:appearance-none"
               />
               {q && (
@@ -126,7 +126,7 @@ export default function ManualSearch() {
                   </Button>
                 }
               >
-                Kode tiket (TKT-…) atau kode pesanan (SEV-…) dari WA/email pengunjung, nomor HP pemesan, atau namanya.
+                Kode TKT-… dan SEV-… ada di WA atau email pengunjung.
               </Note>
             ) : search.error ? (
               <EmptyState icon={<CircleAlert />} title="Pencarian gagal" action={<Button className="h-11" onClick={search.reload}>Coba lagi</Button>}>
@@ -134,7 +134,7 @@ export default function ManualSearch() {
               </EmptyState>
             ) : rows.length === 0 && !stale ? (
               <Note title="Tiket tidak ditemukan">
-                Tidak ada tiket yang cocok dengan “{term}”. Cek ejaan nama, coba 4 digit terakhir nomor HP, atau minta kode pesanan dari WA/email pengunjung. Pesanan yang belum terkonfirmasi belum punya tiket.
+                Tidak ada tiket untuk “{term}”. Coba 4 angka akhir HP atau kode dari WA/email. Pesanan yang belum terkonfirmasi belum punya tiket: arahkan ke meja bantuan.
               </Note>
             ) : (
               <>

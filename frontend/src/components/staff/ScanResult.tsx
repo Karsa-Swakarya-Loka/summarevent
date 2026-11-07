@@ -68,6 +68,8 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
   const Icon = ICON[res.result]
   const label = CHECKIN_RESULT_LABEL[res.result]
   const nextRef = useRef<HTMLButtonElement>(null)
+  // when this result came in: a window that is shut after the session began has closed, not "not open yet"
+  const [shownAt] = useState(() => Date.now())
   const onNextRef = useRef(onNext)
   useEffect(() => {
     onNextRef.current = onNext
@@ -112,7 +114,7 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
   }, [canGroup, res, sessionId])
 
   // VALID auto-dismiss (only when there is nothing else to decide).
-  const autoActive = !!autoDismissMs && res.result === 'VALID' && group.phase === 'none'
+  const autoActive = !!autoDismissMs && res.result === 'VALID' && group.phase === 'none' && !res.ticket?.bonus
   useEffect(() => {
     if (!autoActive || !autoDismissMs) return
     const end = Date.now() + autoDismissMs
@@ -185,7 +187,7 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
       <>
         {first ? (
           <div className={cn('mt-6 rounded-3xl px-4 py-4', PANEL.invalid)}>
-            <div className="text-xl font-bold">Dipindai pertama jam</div>
+            <div className="text-xl font-bold">Sudah masuk jam</div>
             <div className="mt-1 text-7xl font-black leading-none tabular-nums">{fmtTime(first.scannedAt)}</div>
             <div className="mt-2 text-xl font-bold leading-snug">
               {wibDate(new Date(first.scannedAt)) !== wibDate() && `${fmtShortDate(first.scannedAt)} · `}oleh {first.staffName}
@@ -214,7 +216,9 @@ export function ScanResult({ res, sessionId, onNext, nextLabel, autoDismissMs, o
         <p className="mt-4 text-xl font-bold leading-snug">
           {res.result === 'WRONG_SESSION'
             ? 'Belum bisa masuk di sesi ini. Minta pengunjung datang di sesi yang tertulis di tiket.'
-            : 'Belum bisa masuk sekarang. Minta pengunjung kembali saat check-in dibuka.'}
+            : res.session && shownAt > new Date(res.session.startAt).getTime()
+              ? 'Check-in sesi ini sudah selesai. Arahkan pengunjung ke meja bantuan.'
+              : 'Belum bisa masuk sekarang. Minta pengunjung kembali saat check-in dibuka.'}
         </p>
       </>
     )

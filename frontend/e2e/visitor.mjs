@@ -266,13 +266,11 @@ if (only === 'all' || only === 'profile') {
   await page.goto(BASE + '/app/akun', { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: 'Edit profil' }).click()
   const sheet = page.getByRole('dialog', { name: 'Edit profil' })
-  // an email without a domain is refused before it is sent, one another account uses by the API
+  // an email without a domain is refused before it is sent (an email another visitor uses is covered by the unit tests;
+  // a panitia or petugas address is accepted, so the profile cannot be used to find one out)
   await sheet.getByLabel('Email').fill('hana@contoh')
   await sheet.getByRole('button', { name: 'Simpan' }).click()
   await sheet.getByRole('alert').filter({ hasText: 'email lengkap' }).waitFor()
-  await sheet.getByLabel('Email').fill('desk.atrium@summarevent.test')
-  await sheet.getByRole('button', { name: 'Simpan' }).click()
-  await sheet.getByRole('alert').filter({ hasText: 'sudah dipakai' }).waitFor()
   await sheet.getByLabel('Nama').fill('Hana Pratiwi')
   await sheet.getByLabel('Email').fill('Hana@Contoh.id')
   await sheet.getByRole('button', { name: 'Simpan' }).click()

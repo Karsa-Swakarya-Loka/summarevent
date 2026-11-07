@@ -1190,7 +1190,8 @@ export function createMockApi(): Api {
       if (!checked.ok) return Promise.reject(new ApiError('INVALID', checked.reason, { field: checked.field }))
       return write((db) => {
         const user = must(getUser(db, me), 'Pengguna')
-        if (checked.email && db.users.some((u) => u.id !== me && u.email === checked.email)) {
+        // only other visitors count, as on the server: a panitia or petugas address must not be discoverable from here
+        if (checked.email && db.users.some((u) => u.id !== me && u.role === 'VISITOR' && u.email === checked.email)) {
           throw new ApiError('DUPLICATE', 'Email ini sudah dipakai akun lain.', { field: 'email' })
         }
         if (checked.name !== undefined) user.name = checked.name

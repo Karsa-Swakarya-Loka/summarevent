@@ -72,12 +72,12 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
       </header>
 
       <main className="flex-1 px-6 pb-10">
-        <div className="relative grid size-36 place-items-center overflow-hidden rounded-[2rem] bg-brand-soft">
+        <div className="relative mx-auto grid size-36 place-items-center overflow-hidden rounded-[2rem] bg-brand-soft">
           <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
           <Illustration name={c.art} className="relative w-28 animate-pop" />
         </div>
-        <h1 className="mt-6 animate-rise font-poster text-[2.5rem] leading-[0.95] text-balance uppercase">{c.title}</h1>
-        <p className="mt-1.5 animate-rise text-base text-muted-foreground [animation-delay:60ms]">{c.lead}</p>
+        <h1 className="mt-6 animate-rise text-center font-poster text-[2.5rem] leading-[0.95] text-balance uppercase">{c.title}</h1>
+        <p className="mt-1.5 animate-rise text-center text-base text-muted-foreground [animation-delay:60ms]">{c.lead}</p>
 
         <LoginPanel key={mode} mode={mode} className="mt-7" onSuccess={done} />
 

@@ -99,12 +99,12 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
 
         <main className="flex-1 px-6 pb-10">
           {/* on a short phone the form and the demo account come first, so the tile gives way */}
-          <div className="relative mb-6 grid size-28 place-items-center overflow-hidden rounded-[1.75rem] bg-brand-soft lg:hidden [@media(max-height:780px)]:hidden">
+          <div className="relative mx-auto mb-6 grid size-28 place-items-center overflow-hidden rounded-[1.75rem] bg-brand-soft lg:hidden [@media(max-height:780px)]:hidden">
             <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
             <Illustration name={c.art} className="relative w-22 animate-pop" />
           </div>
-          <h1 className="mt-2 animate-rise font-poster text-[2.5rem] leading-[0.95] uppercase">{c.title}</h1>
-          <p className="mt-1.5 animate-rise text-base text-muted-foreground [animation-delay:60ms]">{c.lead}</p>
+          <h1 className="mt-2 animate-rise font-poster text-[2.5rem] leading-[0.95] uppercase max-lg:text-center">{c.title}</h1>
+          <p className="mt-1.5 animate-rise text-base text-muted-foreground [animation-delay:60ms] max-lg:text-center">{c.lead}</p>
 
           <form onSubmit={(e) => void submit(e)} className="mt-6 space-y-4" noValidate>
             <div className="space-y-1.5">
@@ -168,7 +168,11 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
               </p>
               <dl className="mt-1 font-mono text-xs leading-relaxed">
                 <dt className="sr-only">Email</dt>
-                <dd className="break-all">{demo.email}</dd>
+                {/* a narrow phone breaks the address before its @, never inside the domain */}
+                <dd className="[overflow-wrap:anywhere]">
+                  {demo.email.split('@')[0]}
+                  <wbr />@{demo.email.split('@')[1]}
+                </dd>
                 <dt className="sr-only">Kata sandi</dt>
                 <dd>{DEMO_PASSWORD}</dd>
               </dl>

@@ -141,7 +141,7 @@ const CSS =
   '.ssf-sheen{transform:translateX(-130%);transition:transform 0s}' +
   '.ssf-st-btn:hover .ssf-sheen{transform:translateX(130%);transition:transform .9s cubic-bezier(.4,0,.2,1)}' +
   '.ssf-ring{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:2px solid var(--ssf-cream);opacity:0;pointer-events:none}' +
-  '@container (max-width: 760px){.ssf-top{padding-bottom:14px}.ssf-slides{padding-top:60px;min-height:260px}.ssf-stage{width:100%}.ssf-stage-in{margin-bottom:0}.ssf-st:not(:nth-of-type(2)):not(:nth-of-type(5)){display:none}.ssf-st{translate:-50% -78%}}' +
+  '@container (max-width: 760px){.ssf-top{padding-bottom:14px}.ssf-slides{padding-top:60px;min-height:260px}.ssf-stage{width:100%}.ssf-stage-in{margin-bottom:0}.ssf-st:not(:nth-of-type(2)):not(:nth-of-type(5)){display:none}.ssf-st{translate:-50% -78%}.ssf-wm-btn{min-height:44px;display:flex;align-items:flex-end}}' +
   '@keyframes ssf-rewrite{0%{stroke-dashoffset:var(--l,120px)}100%{stroke-dashoffset:0}}' +
   '@keyframes ssf-popin{from{opacity:0;transform:translateY(10px) scale(.7) rotate(4deg)}}' +
   // the storyboard: everything above is the finished state; motion only adds the way in

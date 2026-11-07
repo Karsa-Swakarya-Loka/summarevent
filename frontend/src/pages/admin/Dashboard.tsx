@@ -244,7 +244,7 @@ function RevenueCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   return (
     <Card label="Pendapatan per hari">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <Headline label={`Pendapatan ${RANGES.find((r) => r.days === range)?.label.toLowerCase()}`} value={sum.now} format={rupiahPlain} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} width="w-40" />
+        <Headline label={`Pendapatan ${RANGES.find((r) => r.days === range)?.label} terakhir`} value={sum.now} format={rupiahPlain} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} width="w-40" />
         <RangeTabs id="rev" value={range} onChange={setRange} />
       </div>
       <div className="mt-4 flex min-h-56 flex-1 flex-col">{loading ? <Skeleton className="flex-1 rounded-xl bg-track" /> : <RevenueBars rows={rows} className="flex-1" />}</div>
@@ -260,7 +260,7 @@ function TicketsCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   return (
     <Card label="Tiket terjual per hari">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <Headline label={`Tiket terjual ${RANGES.find((r) => r.days === range)?.label.toLowerCase()}`} value={sum.now} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} />
+        <Headline label={`Tiket terjual ${RANGES.find((r) => r.days === range)?.label} terakhir`} value={sum.now} beside={<DeltaChip now={sum.now} before={sum.before} days={range} />} loading={loading} />
         <RangeTabs id="tix" value={range} onChange={setRange} />
       </div>
       <div className="mt-4 flex min-h-48 flex-1 flex-col">{loading ? <Skeleton className="flex-1 rounded-xl bg-track" /> : <TicketsArea rows={rows} className="flex-1" />}</div>
@@ -280,7 +280,7 @@ function AttendanceCard({ s, loading }: { s?: EventStats; loading: boolean }) {
       value: s ? `${sold ? Math.round((checkedIn / sold) * 100) : 0}%` : '',
     },
     {
-      label: 'No-show sesi selesai',
+      label: 'Tidak hadir (sesi selesai)',
       value: s ? (s.noShowPct == null ? '–' : `${s.noShowPct}%`) : '',
     },
     {
@@ -416,11 +416,13 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
             ))}
           </SelectContent>
         </Select>
-        <Button variant="outline" size="lg" className="h-10 bg-card max-sm:size-10 max-sm:px-0" onClick={() => void exportCsv('attendees')} disabled={!eventId || !!busy} aria-label="Unduh data peserta">
-          <Download /> <span className="max-sm:sr-only">Unduh data peserta</span>
+        <Button variant="outline" size="lg" className="h-10 bg-card max-sm:h-11 max-sm:px-3" onClick={() => void exportCsv('attendees')} disabled={!eventId || !!busy} aria-label="Unduh data peserta">
+          <Download /> <span className="max-sm:hidden">Unduh data peserta</span>
+          <span className="sm:hidden">Peserta</span>
         </Button>
-        <Button variant="outline" size="lg" className="h-10 bg-card max-sm:size-10 max-sm:px-0" onClick={() => void exportCsv('transactions')} disabled={!eventId || !!busy} aria-label="Unduh laporan transaksi">
-          <FileSpreadsheet /> <span className="max-sm:sr-only">Unduh laporan transaksi</span>
+        <Button variant="outline" size="lg" className="h-10 bg-card max-sm:h-11 max-sm:px-3" onClick={() => void exportCsv('transactions')} disabled={!eventId || !!busy} aria-label="Unduh laporan transaksi">
+          <FileSpreadsheet /> <span className="max-sm:hidden">Unduh laporan transaksi</span>
+          <span className="sm:hidden">Transaksi</span>
         </Button>
       </div>
 
@@ -550,7 +552,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
       )}
 
       <Sheet open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-md">{open ? <OrderDetailPanel key={open.order.id} row={open} askPaid={askPaid} /> : <SheetTitle className="sr-only">Detail pesanan</SheetTitle>}</SheetContent>
+        <SheetContent className="w-full overflow-y-auto data-[side=right]:w-full sm:max-w-md data-[side=right]:sm:max-w-md">{open ? <OrderDetailPanel key={open.order.id} row={open} askPaid={askPaid} /> : <SheetTitle className="sr-only">Detail pesanan</SheetTitle>}</SheetContent>
       </Sheet>
     </section>
   )

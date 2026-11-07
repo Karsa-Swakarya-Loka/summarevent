@@ -217,9 +217,9 @@ export const axisRupiah = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).to
 
 export type Range = 7 | 14 | 30
 export const RANGES: Array<{ days: Range; label: string }> = [
-  { days: 7, label: 'Minggu ini' },
-  { days: 14, label: '2 minggu' },
-  { days: 30, label: 'Bulan ini' },
+  { days: 7, label: '7 hari' },
+  { days: 14, label: '14 hari' },
+  { days: 30, label: '30 hari' },
 ]
 
 /**

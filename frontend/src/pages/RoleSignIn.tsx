@@ -189,7 +189,7 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
             </Button>
           </section>
 
-          <p className="mt-4 text-center text-xs text-muted-foreground">Di versi demo, email undangan dan link reset tampil di layar.</p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">Di versi demo, link untuk membuat atau mengganti kata sandi tampil di layar lewat Lupa kata sandi.</p>
         </main>
       </div>
     </div>

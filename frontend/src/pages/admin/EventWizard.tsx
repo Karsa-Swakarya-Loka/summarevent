@@ -255,7 +255,7 @@ export default function EventWizard() {
           </Button>
           <Button size="lg" variant="outline" className="h-11" asChild>
             <Link to={`/admin/live?event=${ev.id}`}>
-              <Rows3 /> Pantau kursi live
+              <Rows3 /> Peta kursi live
             </Link>
           </Button>
           <Button size="lg" variant="outline" className="h-11" onClick={() => navigate('/admin/events')}>
@@ -337,7 +337,7 @@ export default function EventWizard() {
               <Save /> {saving === 'draft' ? 'Menyimpan…' : 'Simpan draft'}
             </Button>
             <Button size="lg" className="h-11 px-5 text-base" disabled={!!saving} onClick={() => void save(true)}>
-              <Rocket /> {saving === 'publish' ? 'Mempublikasikan…' : 'Simpan & publish'}
+              <Rocket /> {saving === 'publish' ? 'Mempublikasikan…' : 'Simpan & publikasikan'}
             </Button>
           </div>
         )}

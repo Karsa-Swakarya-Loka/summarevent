@@ -45,7 +45,7 @@ const STEPS: Record<IntroRole, ReadonlyArray<Step>> = {
   ],
   admin: [
     { art: [{ name: 'notes' }], ...PANELS[0], title: 'Event jadi dalam lima langkah', body: 'Info, kategori dan harga, denah, sesi, lalu publish.' },
-    { art: [{ name: 'kursi' }], ...PANELS[1], title: 'Kursi terpantau live', body: 'Terjual, ditahan, dan kosong, saat itu juga di tiap sesi.' },
+    { art: [{ name: 'kursi' }], ...PANELS[1], title: 'Kursi terpantau live', body: 'Tersedia, sedang dipesan, dan terjual, saat itu juga di tiap sesi.' },
     { art: [{ name: 'coins' }], ...PANELS[2], title: 'Struk, pesanan, laporan', body: 'Setujui tukar struk, kelola pesanan, unduh CSV.' },
   ],
   staff: [

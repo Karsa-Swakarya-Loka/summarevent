@@ -26,7 +26,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines.slice(0, 3)
 }
 
-export function ShareEventPanel({ event, className }: { event: Pick<EventItem, 'slug' | 'title' | 'status'>; className?: string }) {
+export function ShareEventPanel({ event, className }: { event: Pick<EventItem, 'slug' | 'title' | 'status' | 'infoOnly'>; className?: string }) {
   const url = publicEventUrl(event.slug)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copied, setCopied] = useState(false)
@@ -64,7 +64,7 @@ export function ShareEventPanel({ event, className }: { event: Pick<EventItem, '
     ctx.fillStyle = '#f26f22'
     ctx.font = '700 22px "Plus Jakarta Sans Variable", system-ui, sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText('SCAN UNTUK PESAN TIKET', W / 2, 105)
+    ctx.fillText(event.infoOnly ? 'SCAN UNTUK INFO EVENT' : 'SCAN UNTUK PESAN TIKET', W / 2, 105)
     ctx.fillStyle = '#231f20'
     ctx.font = '800 34px "Plus Jakarta Sans Variable", system-ui, sans-serif'
     const lines = wrapText(ctx, event.title, W - 160)
@@ -117,7 +117,7 @@ export function ShareEventPanel({ event, className }: { event: Pick<EventItem, '
   )
 }
 
-export function ShareEventDialog({ event, open, onOpenChange }: { event: Pick<EventItem, 'slug' | 'title' | 'status'> | null; open: boolean; onOpenChange: (v: boolean) => void }) {
+export function ShareEventDialog({ event, open, onOpenChange }: { event: Pick<EventItem, 'slug' | 'title' | 'status' | 'infoOnly'> | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent

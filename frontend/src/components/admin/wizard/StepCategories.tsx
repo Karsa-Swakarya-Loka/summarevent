@@ -88,7 +88,7 @@ function ReceiptRulesPanel({ c, set, err, tenants }: { c: CatForm; set: (r: Rece
               <label
                 key={t.id}
                 htmlFor={cid}
-                className={cn('flex min-h-9 cursor-pointer items-center gap-2 rounded-full border bg-card px-3 text-xs font-medium', checked && 'border-status-invalid/40 bg-status-invalid/5')}
+                className={cn('flex min-h-9 cursor-pointer items-center gap-2 rounded-full border bg-card px-3 text-xs font-medium pointer-coarse:min-h-11', checked && 'border-status-invalid/40 bg-status-invalid/5')}
               >
                 <Checkbox
                   id={cid}

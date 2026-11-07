@@ -103,8 +103,8 @@ export function DemoMenu({ className, variant = 'float' }: { className?: string;
             <DialogTitle>Reset data demo?</DialogTitle>
             <DialogDescription>
               {apiMode === 'live'
-                ? 'Versi live dipakai bersama: semua pesanan, struk, dan check-in dari semua HP dihapus, lalu data contoh dimuat ulang.'
-                : 'Semua pesanan, struk, dan check-in yang dibuat di browser ini dihapus, lalu data contoh dimuat ulang.'}
+                ? 'Versi live dipakai bersama: semua pesanan, struk, dan check-in dari semua HP dihapus, lalu data contoh dimuat ulang. Setelah itu kamu perlu masuk lagi.'
+                : 'Semua pesanan, struk, dan check-in yang dibuat di browser ini dihapus, lalu data contoh dimuat ulang. Setelah itu kamu perlu masuk lagi.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

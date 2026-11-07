@@ -244,13 +244,13 @@ export default function Orders() {
             ))}
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">
-            {shown.length} pesanan{status !== 'ALL' ? ` berstatus ${ORDER_STATUS_LABEL[status].toLowerCase()}` : ''}. Pesanan berlabel Simulasi dibuat tombol demo dan tidak ikut CSV.
+            {shown.length} pesanan{status !== 'ALL' ? ` berstatus ${ORDER_STATUS_LABEL[status].toLowerCase()}` : ''}. Pesanan berlabel Simulasi datang dari pembeli contoh dan tidak ikut CSV.
           </p>
         </>
       )}
 
       <Sheet open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-md">{open ? <OrderDetailPanel row={open} /> : <SheetTitle className="sr-only">Detail pesanan</SheetTitle>}</SheetContent>
+        <SheetContent className="w-full overflow-y-auto data-[side=right]:w-full sm:max-w-md data-[side=right]:sm:max-w-md">{open ? <OrderDetailPanel row={open} /> : <SheetTitle className="sr-only">Detail pesanan</SheetTitle>}</SheetContent>
       </Sheet>
     </div>
   )
@@ -332,7 +332,7 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
       <div className="flex flex-col gap-5 px-4 pb-6">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge tone={ORDER_TONE[order.status]}>{statusText(row)}</StatusBadge>
-          {order.simulated && <StatusBadge tone="neutral">Simulasi (tombol demo)</StatusBadge>}
+          {order.simulated && <StatusBadge tone="neutral">Simulasi</StatusBadge>}
         </div>
 
         <Section title="Pemesan">
@@ -369,7 +369,7 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
           <Section
             title={`Struk (${receipts.length})`}
             right={
-              <Link to="/admin/receipts" className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline">
+              <Link to="/admin/receipts" className="-mr-2 inline-flex min-h-11 items-center gap-1 px-2 text-xs font-semibold text-brand hover:underline">
                 <ReceiptText className="size-3.5" aria-hidden /> Verifikasi struk
               </Link>
             }
@@ -410,7 +410,7 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
 
         {order.simulated && ACTIVE.includes(order.status) && (
           <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-            Pesanan ini dibuat tombol demo pembeli lain. Kursinya lepas sendiri saat waktu tahan habis, jadi tidak perlu diproses.
+            Pesanan simulasi dari pembeli contoh. Kursinya lepas sendiri saat waktu tahan habis, jadi tidak perlu diproses.
           </p>
         )}
 

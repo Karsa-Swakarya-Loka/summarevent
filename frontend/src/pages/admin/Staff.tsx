@@ -5,7 +5,7 @@
 import { useState, type FormEvent } from 'react'
 import { LoaderCircle, Power, UserPlus, Users } from 'lucide-react'
 import { toast } from 'sonner'
-import { api, ApiError } from '@/api'
+import { api, ApiError, apiMode } from '@/api'
 import type { StaffAccount } from '@/api/contract'
 import { Field, ListSkeleton, LoadError, PageHeader, SectionCard } from '@/components/admin/AdminUi'
 import { EmptyState, StatusBadge } from '@/components/common/bits'
@@ -36,7 +36,7 @@ export default function Staff() {
     setBusy('add')
     try {
       const u = await api.admin.createStaff({ name, phone, email })
-      toast.success(`Akun ${u.name} dibuat. Undangan untuk membuat kata sandi dikirim ke ${u.email}.`)
+      toast.success(`Akun ${u.name} dibuat. Undangan dikirim ke ${u.email}.`, { description: apiMode === 'live' ? undefined : 'Di versi demo, petugas membuat kata sandi lewat Lupa kata sandi di halaman masuk.' })
       setName('')
       setPhone('')
       setEmail('')

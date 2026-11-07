@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 const POINTS = [
   {
     title: 'Ditahan sekaligus',
-    body: 'Semua kursi pilihanmu ditahan dalam satu transaksi. Kalau satu saja sudah diambil orang, tidak ada yang ditahan dan kamu langsung dapat saran kursi terdekat.',
+    body: 'Semua kursi satu pesanan ditahan dalam satu transaksi. Kalau satu saja sudah diambil orang, tidak ada yang ditahan dan pemesan langsung dapat saran kursi terdekat.',
   },
   {
     title: 'Terlihat oleh semua',

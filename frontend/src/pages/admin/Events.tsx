@@ -98,7 +98,7 @@ export default function Events() {
             {canLive && (
               <Button variant="outline" size="lg" asChild>
                 <Link to={`/admin/live?event=${ev.id}`}>
-                  <Rows3 /> Lihat live
+                  <Rows3 /> Peta kursi live
                 </Link>
               </Button>
             )}
@@ -187,7 +187,7 @@ export default function Events() {
                               {e.event.title}
                             </Link>
                             <div className="text-xs text-muted-foreground">
-                              {e.event.infoOnly ? 'Hanya informasi, tanpa pendaftaran' : `${e.event.seatingMode === 'RESERVED' ? 'Kursi bernomor' : 'Tanpa nomor kursi'} · ${e.categories.length} kategori`}
+                              {e.event.infoOnly ? 'Info saja, tanpa tiket' : `${e.event.seatingMode === 'RESERVED' ? 'Kursi bernomor' : 'Tanpa nomor kursi'} · ${e.categories.length} kategori`}
                             </div>
                           </div>
                         </div>
@@ -221,7 +221,7 @@ export default function Events() {
                   <div className="flex flex-col gap-3 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge tone={EVENT_STATUS_TONE[st]}>{EVENT_STATUS_LABEL[st]}</StatusBadge>
-                      <span className="text-xs text-muted-foreground">{e.event.infoOnly ? 'Hanya informasi' : e.event.seatingMode === 'RESERVED' ? 'Kursi bernomor' : 'Tanpa nomor kursi'}</span>
+                      <span className="text-xs text-muted-foreground">{e.event.infoOnly ? 'Info saja' : e.event.seatingMode === 'RESERVED' ? 'Kursi bernomor' : 'Tanpa nomor kursi'}</span>
                     </div>
                     <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                       <div>

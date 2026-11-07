@@ -27,7 +27,7 @@ import {
   type WaitlistItem,
 } from '@/api/contract'
 import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL, TICKET_STATUS_LABEL } from '@/domain/labels'
-import { isTicketId, makeQrToken, sha256Hex, verifyQrToken } from '@/domain/qr'
+import { makeQrToken, sha256Hex, verifyQrToken } from '@/domain/qr'
 import {
   attendeeEditPolicy,
   buildSeats,
@@ -1719,9 +1719,12 @@ export function createMockApi(): Api {
         return { ...rest, tickets }
       },
 
-      async checkin(code, sessionId) {
-        // a ticket picked by hand comes by id: check it in as if its QR had been scanned
-        const qrToken = isTicketId(code) ? await read((db) => db.tickets.find((t) => t.id === code.trim())?.qrToken ?? '') : code
+      async checkinTicket(ticketId, sessionId) {
+        // a ticket picked by hand: checked as if its QR had been scanned (an unknown id finds no QR, so is INVALID)
+        const qrToken = await read((db) => db.tickets.find((t) => t.id === ticketId)?.qrToken ?? '')
+        return this.checkin(qrToken, sessionId)
+      },
+      async checkin(qrToken, sessionId) {
         const parsed = await verifyQrToken(qrToken)
         return write((db, now): CheckinResponse => {
           const staffId = getSessionUserId('STAFF') ?? DEMO_STAFF_ID

@@ -160,6 +160,13 @@ describe('check-in (PRD §8, QA-07…09)', () => {
     expect((await api.staff.checkin(forged, DEMO)).result).toBe('INVALID')
   })
 
+  it('a pasted ticket id is not a QR; only cari manual checks a ticket in by id', async () => {
+    const t = readDb()!.tickets.find((x) => x.sessionId === DEMO && x.status === 'ACTIVE')!
+    expect((await api.staff.checkin(t.id, DEMO)).result).toBe('INVALID')
+    expect((await api.staff.checkinTicket(t.id, DEMO)).result).toBe('VALID')
+    expect((await api.staff.checkinTicket('tkt_tidak_ada', DEMO)).result).toBe('INVALID')
+  })
+
   it('ticket for another session is yellow (WRONG_SESSION)', async () => {
     const t = readDb()!.tickets.find((x) => x.sessionId === 'ses_sk_13' && x.status === 'ACTIVE')!
     expect((await api.staff.checkin(t.qrToken, DEMO)).result).toBe('WRONG_SESSION')

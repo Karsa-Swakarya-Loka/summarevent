@@ -5,6 +5,7 @@
  */
 import { ApiError, type Api } from './contract'
 import { clearClientSessions, guestId } from './mock/db'
+import { isTicketId } from '@/domain/qr'
 import type { Role, User } from '@/domain/types'
 
 const TOKEN_KEY = (role: Role) => `summarevent:token:${role}`
@@ -114,8 +115,13 @@ export function createHttpApi(baseUrl: string): Api {
       return r.user
     },
     logout(role) {
+      const token = load(TOKEN_KEY(role))
       store(TOKEN_KEY(role), null)
       store(USER_KEY(role), null)
+      // the server forgets this sign-in too; signing out here never waits on it or fails because of it
+      if (token) {
+        void fetch(base + '/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'X-Guest-Id': guestId() }, keepalive: true }).catch(() => undefined)
+      }
     },
     async login(email, password, role) {
       const r = await req<{ user: User; token: string }>('POST', '/auth/login', { email, password, role })
@@ -182,7 +188,7 @@ export function createHttpApi(baseUrl: string): Api {
     staff: {
       accounts: () => req('GET', '/staff/accounts'),
       offlineManifest: (sessionId) => req('GET', `/staff/sessions/${sessionId}/offline-manifest`),
-      checkin: (qrToken, sessionId) => req('POST', '/staff/checkins', { qr_token: qrToken, session_id: sessionId }),
+      checkin: (code, sessionId) => req('POST', '/staff/checkins', isTicketId(code) ? { ticket_id: code.trim(), session_id: sessionId } : { qr_token: code, session_id: sessionId }),
       searchTickets: (q, eventId) => req('GET', `/staff/tickets?q=${encodeURIComponent(q)}${eventId ? `&event_id=${eventId}` : ''}`),
       recentCheckins: (sessionId) => req('GET', `/staff/sessions/${sessionId}/checkins`),
       listReceipts: (eventId) => req('GET', `/staff/receipts${eventId ? `?event_id=${eventId}` : ''}`),

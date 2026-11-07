@@ -3,6 +3,7 @@
  * Run: npm test
  */
 import { beforeEach, describe, expect, it } from 'vitest'
+import { safeNext } from '@/lib/safeNext'
 import { createMockApi } from '@/api/mock/adapter'
 import { clearClientSessions, clearDb, readDb, replaceDb, setSessionUserId, transaction } from '@/api/mock/db'
 import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
@@ -599,5 +600,22 @@ describe('CSV export (AD-10)', () => {
     expect(csvCell('Rina Kartika')).toBe('Rina Kartika')
     expect(csvCell(150000)).toBe('150000')
     expect(csvCell(null)).toBe('')
+  })
+})
+
+describe('safeNext', () => {
+  it('keeps a path inside the role area', () => {
+    expect(safeNext('/admin', 'admin')).toBe('/admin')
+    expect(safeNext('/admin/orders?x=1', 'admin')).toBe('/admin/orders?x=1')
+    expect(safeNext('/app/pass', 'app')).toBe('/app/pass')
+  })
+  it('refuses other sites, other roles and look-alike paths', () => {
+    expect(safeNext('//evil.com', 'app')).toBeNull()
+    expect(safeNext('/\\evil.com', 'app')).toBeNull()
+    expect(safeNext('https://evil.com/app', 'app')).toBeNull()
+    expect(safeNext('/adminx', 'admin')).toBeNull()
+    expect(safeNext('/admin.evil.com', 'admin')).toBeNull()
+    expect(safeNext('/staff', 'admin')).toBeNull()
+    expect(safeNext(null, 'app')).toBeNull()
   })
 })

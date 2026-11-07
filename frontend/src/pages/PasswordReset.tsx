@@ -4,7 +4,7 @@
  * would carry is shown on screen. `/reset?token=…` sets the new password and signs the person in; the token works
  * once, for 30 minutes.
  */
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft, Eye, EyeOff, LoaderCircle, MailCheck } from 'lucide-react'
 import { toast } from 'sonner'
@@ -127,7 +127,11 @@ export function ResetPassword() {
   const id = useId()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const token = params.get('token') ?? ''
+  // the token is read once, then taken out of the address so it does not stay in the history or show on screen
+  const [token] = useState(() => params.get('token') ?? '')
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has('token')) window.history.replaceState(window.history.state, '', window.location.pathname)
+  }, [])
   const [password, setPassword] = useState('')
   const [again, setAgain] = useState('')
   const [show, setShow] = useState(false)

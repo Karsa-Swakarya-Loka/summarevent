@@ -6,7 +6,7 @@
  * server has the last word: a ticket that another gate let in first comes back as a conflict.
  */
 import { api, ApiError, apiMode, type CheckinResponse, type OfflineManifest } from '@/api'
-import { sha256Hex } from '@/domain/qr'
+import { isTicketId, sha256Hex } from '@/domain/qr'
 import type { CheckinResult, Order, Ticket } from '@/domain/types'
 import { fmtTime } from '@/lib/format'
 import { sessionName, sessionWindow } from './session'
@@ -86,8 +86,10 @@ export async function checkOffline(token: string, sessionId: string, now = new D
   if (!m) {
     return { ...none, result: 'INVALID', message: 'Daftar tiket offline belum tersimpan di HP ini. Sambungkan internet sebentar, lalu scan lagi.' }
   }
-  const hash = await sha256Hex(token.trim())
-  const entry = m.tickets.find((t) => t.tokenHash === hash)
+  // a scanned QR is matched by its hash, a ticket picked by hand by its id
+  const code = token.trim()
+  const hash = isTicketId(code) ? null : await sha256Hex(code)
+  const entry = m.tickets.find((t) => (hash ? t.tokenHash === hash : t.ticket.id === code))
   if (!entry) return { ...none, result: 'INVALID', message: 'QR tidak dikenali: palsu, rusak, atau tiket event lain.' }
 
   const ticket = { ...entry.ticket, qrToken: '' } as Ticket

@@ -268,7 +268,8 @@ const screens = [
 ]
 
 for (const [device, path, prep] of screens) {
-  const ctx = await browser.newContext(device)
+  // axe goes in as an inline script, which the app's Content-Security-Policy would (rightly) block
+  const ctx = await browser.newContext({ ...device, bypassCSP: true })
   await skipIntro(ctx)
   const page = await ctx.newPage()
   page.on('pageerror', (e) => errors.push(`${path}: ${e.message}`))

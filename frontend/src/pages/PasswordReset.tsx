@@ -30,12 +30,12 @@ function Frame({ title, lead, back, children }: { title: string; lead: string; b
           </Button>
         </header>
         <main className="flex-1 px-6 pb-10">
-          <div className="relative grid size-36 place-items-center overflow-hidden rounded-[2rem] bg-brand-soft">
+          <div className="relative mx-auto grid size-36 place-items-center overflow-hidden rounded-[2rem] bg-brand-soft">
             <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
             <Illustration name="padlock" className="relative w-28 animate-pop" />
           </div>
-          <h1 className="mt-6 animate-rise font-poster text-[2.5rem] leading-[0.95] text-balance uppercase">{title}</h1>
-          <p className="mt-1.5 animate-rise text-base text-muted-foreground [animation-delay:60ms]">{lead}</p>
+          <h1 className="mt-6 animate-rise text-center font-poster text-[2.5rem] leading-[0.95] text-balance uppercase">{title}</h1>
+          <p className="mt-1.5 animate-rise text-center text-base text-muted-foreground [animation-delay:60ms]">{lead}</p>
           {children}
         </main>
       </div>

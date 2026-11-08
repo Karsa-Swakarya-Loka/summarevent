@@ -59,11 +59,16 @@ await page.getByRole('button', { name: /Teater kecil/ }).click()
 await page.waitForTimeout(400)
 await page.getByRole('button', { name: /^Baris A nomor 1,/ }).first().click({ force: true })
 await page.waitForTimeout(300)
-// sell fewer seats than the layout has: the back seats close, A1 (closed by hand) stays closed
+// sell fewer seats than the layout has, typed key by key as on a phone: the back seats close, the front row stays on
+// sale and A1 (closed by hand) stays closed
 const sell = page.getByLabel('Kursi dijual per sesi')
 const before = Number(await sell.inputValue())
-await sell.fill(String(before - 10))
+await sell.fill('')
+await sell.pressSequentially(String(before - 10), { delay: 60 })
+if ((await sell.inputValue()) !== String(before - 10)) errors.push(`kolom kursi dijual berisi ${await sell.inputValue()} saat diketik, seharusnya ${before - 10}`)
 await page.waitForTimeout(300)
+const frontClosed = await page.getByRole('button', { name: /^Baris A nomor \d+,.*tidak dijual/ }).count()
+if (frontClosed !== 1) errors.push(`kursi dijual per sesi: ${frontClosed} kursi baris A tidak dijual, seharusnya hanya A1 (yang ditutup kursi belakang)`)
 const totalSold = async () => Number((await page.getByRole('list', { name: 'Jumlah kursi per kategori' }).innerText()).match(/Total kursi dijual\s+(\d+)/)?.[1])
 if ((await totalSold()) !== before - 10) errors.push(`kursi dijual per sesi: total ${await totalSold()}, seharusnya ${before - 10}`)
 // one tap closes a whole row (B, untouched so far), a second opens it again

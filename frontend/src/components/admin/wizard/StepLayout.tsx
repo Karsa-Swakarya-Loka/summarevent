@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Accessibility, Ban, Lock, Plus, Shuffle, Trash2 } from 'lucide-react'
 import type { SeatMapData } from '@/api/contract'
 import { Field, SectionCard } from '@/components/admin/AdminUi'
@@ -17,8 +17,12 @@ const selectCls =
 export function StepLayout({ form, update, err, locked }: StepProps & { locked: boolean }) {
   const L = form.layout
   const [mode, setMode] = useState<'block' | 'priority'>('block')
-  // what the panitia is typing in "Kursi dijual per sesi" while the box is empty; otherwise it shows the live count
+  // what the panitia is typing in "Kursi dijual per sesi"; once the box loses focus it shows the live count again
   const [sellDraft, setSellDraft] = useState<number | null>(null)
+  // the not-for-sale list from when the box got focus: every keystroke counts from it, so typing 1, 12, 129 ends where
+  // 129 at once would. Counting from the previous keystroke closes nearly everything at "1" and then reopens the back
+  // rows first, leaving the front rows closed.
+  const sellBase = useRef<string[] | null>(null)
   const seatCats = seatCategories(form)
   const noSeatCats = form.categories.filter((c) => c.noSeat)
   const counts = seatCounts(L)
@@ -110,9 +114,9 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
   const totalSellable = [...counts.values()].reduce((a, b) => a + b, 0)
   const maxSeats = validSize ? maxSellable(L) : 0
   const sellTo = (n: number) => {
-    if (!Number.isFinite(n)) return setSellDraft(n)
-    setSellDraft(null)
-    setLayout((l) => ({ ...l, blocked: sellOnly(l, n) }))
+    setSellDraft(n)
+    if (!Number.isFinite(n)) return
+    setLayout((l) => ({ ...l, blocked: sellOnly({ ...l, blocked: sellBase.current ?? l.blocked }, n) }))
   }
 
   return (
@@ -171,7 +175,15 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                 </Field>
               )}
               {/* sell part of the venue: the back seats close first, and every one of them can still be opened by hand */}
-              <div onBlur={() => setSellDraft(null)}>
+              <div
+                onFocus={() => {
+                  if (!sellBase.current) sellBase.current = L.blocked
+                }}
+                onBlur={() => {
+                  sellBase.current = null
+                  setSellDraft(null)
+                }}
+              >
                 <Field id="lay-sell" label="Kursi dijual per sesi" hint={maxSeats ? 'Kursi paling belakang ditutup duluan.' : 'Atur kategori per baris dulu.'}>
                   <NumberInput id="lay-sell" min={0} max={maxSeats} value={sellDraft ?? totalSellable} suffix={`dari ${maxSeats}`} disabled={locked || !maxSeats} onChange={sellTo} />
                 </Field>

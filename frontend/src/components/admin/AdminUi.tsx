@@ -64,7 +64,7 @@ export function EventSelect({
         {label}
       </Label>
       <Select value={value} onValueChange={onChange} disabled={!events}>
-        <SelectTrigger id={id} className="h-10 w-full min-w-0 bg-card sm:w-72" aria-label={label}>
+        <SelectTrigger id={id} className="w-full min-w-0 bg-card data-[size=default]:h-10 sm:w-72" aria-label={label}>
           <SelectValue placeholder={events ? 'Pilih event' : 'Memuat event…'} />
         </SelectTrigger>
         <SelectContent position="popper" className="max-w-[min(92vw,28rem)]">

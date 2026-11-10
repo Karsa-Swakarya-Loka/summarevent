@@ -84,7 +84,7 @@ export default function LiveSeats() {
                   Pilih sesi
                 </Label>
                 <Select value={sessionId} onValueChange={(id) => setQuery({ event: eventId, session: id })} disabled={!sessions.length}>
-                  <SelectTrigger id="session-select" className="h-10 w-full min-w-0 bg-card sm:w-64" aria-label="Pilih sesi">
+                  <SelectTrigger id="session-select" className="w-full min-w-0 bg-card data-[size=default]:h-10 sm:w-64" aria-label="Pilih sesi">
                     <SelectValue placeholder="Pilih sesi" />
                   </SelectTrigger>
                   <SelectContent position="popper">

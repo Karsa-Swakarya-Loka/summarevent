@@ -385,7 +385,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
             setPage(0)
           }}
         >
-          <SelectTrigger className="h-10 w-auto bg-card" aria-label="Filter status">
+          <SelectTrigger className="w-auto bg-card data-[size=default]:h-10" aria-label="Filter status">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -404,7 +404,7 @@ function OrdersCard({ eventId, eventTitle }: { eventId: string; eventTitle?: str
             setPage(0)
           }}
         >
-          <SelectTrigger className="h-10 w-auto bg-card" aria-label="Filter kategori">
+          <SelectTrigger className="w-auto bg-card data-[size=default]:h-10" aria-label="Filter kategori">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

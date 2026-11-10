@@ -57,7 +57,24 @@ if (only === 'all' || only === 'paid') {
   await page.getByRole('radio', { name: /^16\.00–17\.00/ }).click()
   await page.getByRole('button', { name: 'Pilih kursi' }).click()
   await page.waitForURL(/\/s\/ses_sk_16/)
+  // seat numbers: none while the whole hall is in view (too small to read), there once a category is zoomed in
+  const seatNos = page.locator('svg[aria-label="Denah kursi"] text[data-seat-no]')
+  if (await seatNos.count()) errors.push('nomor kursi tampil saat seluruh denah masih terlihat (terlalu kecil untuk dibaca)')
   await pickCategory(page, 'Reguler')
+  await page.waitForTimeout(900)
+  if (!(await seatNos.count())) errors.push('nomor kursi tidak tampil setelah denah diperbesar ke kategori')
+  // seats tapped by hand: the people count follows them, and the order button says the same number
+  const people = async () => Number((await page.getByRole('group', { name: 'Jumlah orang' }).locator('output').innerText()).match(/\d+/)?.[0])
+  const orderBtn = () => page.getByRole('button', { name: /^Pesan( \d+)? (kursi|tiket)$/ }).innerText()
+  const freeSeat = page.getByRole('button', { name: /^Baris [A-Z]+ nomor \d+, Reguler, tersedia$/ })
+  for (const n of [1, 2, 3]) {
+    await freeSeat.first().press('Enter')
+    await page.waitForTimeout(250)
+    if ((await people()) !== n || (await orderBtn()) !== `Pesan ${n} kursi`) errors.push(`ketuk ${n} kursi: penghitung ${await people()} orang, tombol "${await orderBtn()}"`)
+  }
+  await page.getByRole('button', { name: /^Baris [A-Z]+ nomor \d+, Reguler, pilihanmu/ }).first().press('Enter')
+  await page.waitForTimeout(250)
+  if ((await people()) !== 2 || (await orderBtn()) !== 'Pesan 2 kursi') errors.push(`lepas 1 dari 3 kursi: penghitung ${await people()} orang, tombol "${await orderBtn()}"`)
   await page.getByRole('button', { name: /Pilihkan 2 kursi/ }).click()
   await page.waitForTimeout(700)
   // on a 360 px phone the summary "2 kursi · G5–G6 · Reguler" stays on one line (it used to break after a separator)

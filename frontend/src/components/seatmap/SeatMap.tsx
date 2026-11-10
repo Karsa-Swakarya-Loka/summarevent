@@ -7,12 +7,12 @@
  * - The zoom buttons sit in a bar under the map, so they never cover a seat.
  * - Every seat is a keyboard-focusable button with an aria-label.
  */
-import { useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { TransformComponent, TransformWrapper, useControls } from 'react-zoom-pan-pinch'
 import { Maximize2, Minus, Plus } from 'lucide-react'
 import type { SeatMapData } from '@/api/contract'
 import { PRIORITY_SEAT_LABEL, SEAT_STATUS_LABEL, SELECTED_SEAT_LABEL } from '@/domain/labels'
-import { seatLabel } from '@/domain/rules'
+import { posterInk, seatLabel } from '@/domain/rules'
 import type { Seat, SeatStatus, TicketCategory } from '@/domain/types'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +22,8 @@ const PAD_X = 34
 const TOP = 78
 /** Seat pitch on screen after zooming into a category: a 44 px touch target (PRD §13–14). */
 const TOUCH_PX = 44
+/** A seat shows its number once its pitch on screen reaches this: the number is then about 10 px tall, the smallest that still reads. */
+const NUMBER_PX = 30
 const MAX_SCALE = 4
 
 export type SeatVisual = SeatStatus | 'SELECTED' | 'MINE' | 'SUGGESTED' | 'CONFLICT'
@@ -144,6 +146,8 @@ export function SeatMap({
   toolbar,
 }: SeatMapProps) {
   const { seats, sessionSeats, categories, layout } = data
+  // seat numbers are drawn only while the seats are big enough on screen to read them (zoomed into a category, a wide screen)
+  const [numbered, setNumbered] = useState(false)
   const catById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories])
   const ssById = useMemo(() => new Map(sessionSeats.map((s) => [s.seatId, s])), [sessionSeats])
   const seatById = useMemo(() => new Map(seats.map((s) => [s.id, s])), [seats])
@@ -163,6 +167,9 @@ export function SeatMap({
   }, [seats])
 
   if (!layout || !seats.length) return null
+  const readable = (content: HTMLElement | null, scale: number) => {
+    if (content) setNumbered((content.offsetWidth / geo.width) * SEAT_UNIT * scale >= NUMBER_PX)
+  }
 
   const focus = (): Box | null => {
     const picked = (focusSeatIds ?? []).map((id) => seatById.get(id)).filter((s): s is Seat => !!s)
@@ -189,7 +196,17 @@ export function SeatMap({
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <TransformWrapper minScale={0.6} maxScale={MAX_SCALE} initialScale={1} centerOnInit limitToBounds={false} doubleClick={{ disabled: true }} wheel={{ step: 0.12 }}>
+      <TransformWrapper
+        minScale={0.6}
+        maxScale={MAX_SCALE}
+        initialScale={1}
+        centerOnInit
+        limitToBounds={false}
+        doubleClick={{ disabled: true }}
+        wheel={{ step: 0.12 }}
+        onInit={(ref) => readable(ref.instance.contentComponent, ref.state.scale)}
+        onTransform={(ref, state) => readable(ref.instance.contentComponent, state.scale)}
+      >
         <ZoomTo mapWidth={geo.width} focus={focus} zoomKey={zoomKey ?? ''} />
         <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border bg-[#fdfcf9]">
           <TransformComponent wrapperClass="!size-full" contentClass="!w-full">
@@ -258,6 +275,12 @@ export function SeatMap({
                     <title>{`${seatLabel(seat)} · ${category?.name ?? '-'} · ${visual === 'SELECTED' || visual === 'MINE' ? SELECTED_SEAT_LABEL : SEAT_STATUS_LABEL[status]}`}</title>
                     <SeatShape visual={visual} color={color} pop={visual === 'SELECTED'} />
                     {seat.isPriority && (visual === 'AVAILABLE' || visual === 'SUGGESTED') && <Wheelchair color="#ffffff" />}
+                    {/* the number of a seat that is still free; a taken or picked seat shows its mark instead, and the label says it for a screen reader */}
+                    {numbered && !seat.isPriority && (visual === 'AVAILABLE' || visual === 'SUGGESTED') && (
+                      <text data-seat-no x={SEAT / 2} y={SEAT / 2 + 4.2} textAnchor="middle" fontSize="12" fontWeight="700" fill={posterInk(color)} aria-hidden className="pointer-events-none">
+                        {seat.number}
+                      </text>
+                    )}
                     {/* the touch target covers the whole pitch, gap included */}
                     {clickable && <rect x={(SEAT - SEAT_UNIT) / 2} y={(SEAT - SEAT_UNIT) / 2} width={SEAT_UNIT} height={SEAT_UNIT} fill="transparent" />}
                   </g>

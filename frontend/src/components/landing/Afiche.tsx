@@ -77,7 +77,9 @@ function mount(scene: HTMLElement, o: Options) {
   let s = 0
   let sMeta = 0
   let sVel = 0
-  let drag: { id: number; x0: number; s0: number; mov: boolean; v: number; j: number } | null = null
+  let drag: { id: number; x0: number; s0: number; mov: boolean; v: number; j: number; ctl: boolean } | null = null
+  // a drag that began on a poster's button must not also press that button when the finger lifts
+  let swallowClick = false
   let hover = -1
   let open = -1
   let lastCentre = -1
@@ -209,7 +211,18 @@ function mount(scene: HTMLElement, o: Options) {
     const [x, y] = pos(e)
     if (drag && e.pointerId === drag.id) {
       const dx = x - drag.x0
-      if (Math.abs(dx) > 6) drag.mov = true
+      // a press on a button needs a clearer sideways move, so a tap that wobbles a little still presses it
+      if (!drag.mov && Math.abs(dx) > (drag.ctl ? 10 : 6)) {
+        drag.mov = true
+        // a press on a button only becomes ours once it moves; until then the button keeps its own tap
+        if (drag.ctl) {
+          try {
+            scene.setPointerCapture(drag.id)
+          } catch {
+            /* fine */
+          }
+        }
+      }
       if (drag.mov) {
         const next = drag.s0 - dx / (o.paso * kk)
         drag.v = drag.v * 0.6 + (next - s) * 0.4
@@ -226,21 +239,41 @@ function mount(scene: HTMLElement, o: Options) {
     if (!drag) hover = -1
   }
   const onDown = (e: PointerEvent) => {
-    if ((e.target as Element).closest('button, a')) return
+    // On a phone the poster's buttons cover most of it, so a swipe may start on one: track it, capture only once it moves.
+    swallowClick = false
+    const ctl = !!(e.target as Element).closest('button, a')
     const [x, y] = pos(e)
-    drag = { id: e.pointerId, x0: x, s0: s, mov: false, v: 0, j: under(x, y) }
+    drag = { id: e.pointerId, x0: x, s0: s, mov: false, v: 0, j: under(x, y), ctl }
+    if (ctl) return
     try {
       scene.setPointerCapture(e.pointerId)
     } catch {
       /* fine */
     }
   }
+  const onClickCapture = (e: MouseEvent) => {
+    if (!swallowClick) return
+    swallowClick = false
+    e.preventDefault()
+    e.stopPropagation()
+  }
   const onUp = (e: PointerEvent) => {
     if (!drag || e.pointerId !== drag.id) return
     const g = drag
     drag = null
+    if (g.ctl && !g.mov) return
     if (g.mov) {
-      sMeta = Math.round(s - g.v * 6)
+      swallowClick = g.ctl
+      // the click a drag can leave behind comes right after this release; if none comes (a touch drag, a cancelled
+      // press), forget it so the next Enter or screen-reader activation on a poster button still works
+      if (g.ctl) setTimeout(() => (swallowClick = false), 0)
+      // one swipe = one poster in the swipe's direction (the old release subtracted the velocity, so short swipes
+      // snapped back and the fan felt stuck); a long drag still lands on the nearest poster
+      const moved = s - g.s0
+      let steps = Math.round(moved + g.v * 3)
+      if (steps === 0 && Math.abs(moved) > 0.2) steps = Math.sign(moved)
+      if (Math.abs(moved) < 1.5) steps = lim(steps, -1, 1)
+      sMeta = Math.round(g.s0) + steps
       sVel = g.v * 60
       return
     }
@@ -264,10 +297,13 @@ function mount(scene: HTMLElement, o: Options) {
   scene.addEventListener('pointerdown', onDown)
   scene.addEventListener('pointerup', onUp)
   scene.addEventListener('pointercancel', onUp)
+  scene.addEventListener('click', onClickCapture, true)
   document.addEventListener('keydown', onKey)
   // a focused action brings its poster to the centre and shows it whole
   const focusers = cards.map((c, j) => {
-    const f = () => {
+    const f = (e: FocusEvent) => {
+      // focus that comes from a tap or a swipe must not pull the fan back; only keyboard focus centres a poster
+      if (drag || !(e.target as Element).matches(':focus-visible')) return
       hover = canHover ? j : -1
       goTo(j)
       o.onFocusCard(j)
@@ -346,6 +382,7 @@ function mount(scene: HTMLElement, o: Options) {
       scene.removeEventListener('pointerdown', onDown)
       scene.removeEventListener('pointerup', onUp)
       scene.removeEventListener('pointercancel', onUp)
+      scene.removeEventListener('click', onClickCapture, true)
       document.removeEventListener('keydown', onKey)
       cards.forEach((c, j) => c.removeEventListener('focusin', focusers[j]))
     },

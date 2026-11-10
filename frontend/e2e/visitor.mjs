@@ -1,5 +1,5 @@
 // Visitor flows: paid, receipt, free, conflict (+ expire).
-// Usage: dev server running (npm run dev), then node e2e/visitor.mjs [paid|receipt|free|conflict|expire|waitlist|manage|bonus|profile|ocr|all]
+// Usage: dev server running (npm run dev), then node e2e/visitor.mjs [paid|receipt|free|conflict|expire|waitlist|manage|bonus|profile|ocr|swipe|all]
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import { chromium } from 'playwright-core'
 import { skipIntro } from './skip-intro.mjs'
@@ -88,7 +88,8 @@ if (only === 'all' || only === 'paid') {
   // the first e-ticket opens on its own screen; Pass Saya lists one per seat
   await page.getByRole('link', { name: 'Lihat e-ticket' }).click()
   await page.waitForURL(/\/app\/pass\/[^/]+$/)
-  await page.locator('article[aria-label^="E-ticket"]').waitFor()
+  // the other tickets of the order sit beside it, ready to swipe to
+  await page.locator('article[aria-label^="E-ticket"]').first().waitFor()
   await page.waitForTimeout(800)
   await shot(page, 'v5-ticket', false)
   await page.getByRole('button', { name: /Perbesar QR/ }).click()
@@ -341,6 +342,64 @@ if (only === 'all' || only === 'ocr') {
   } else {
     console.log(`ocr: SKIPPED (${outcome}, model download from CDN not available)`)
   }
+  await ctx.close()
+}
+
+if (only === 'all' || only === 'swipe') {
+  // a real finger: a swipe that starts on a poster's button, and a swipe across an e-ticket
+  const ctx = await browser.newContext(mobile)
+  const page = await newPage(ctx, 'swipe')
+  const cdp = await ctx.newCDPSession(page)
+  const swipe = async (x0, x1, y) => {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y }] })
+    for (let i = 1; i <= 10; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x0 + ((x1 - x0) * i) / 10, y }] })
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await page.waitForTimeout(900)
+  }
+  const check = (ok, what) => (ok ? console.log('swipe:', what) : errors.push(`swipe: ${what} gagal`))
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' })
+  // the fan mounts once the poster font is in
+  await page.waitForTimeout(1500)
+  const cta = await page.getByRole('button', { name: 'Masuk sebagai pengunjung' }).boundingBox()
+  // a short swipe (about a fifth of the screen) from the button moves the fan one poster and does not press the button
+  await swipe(cta.x + cta.width / 2, cta.x + cta.width / 2 - 80, cta.y + cta.height / 2)
+  check(new URL(page.url()).pathname === '/' && (await page.getByText('Dashboard, event, denah, struk, dan kehadiran').isVisible()), 'kipas bergeser satu poster dari tombolnya')
+  await page.getByRole('button', { name: 'Poster sebelumnya' }).click()
+  await page.waitForTimeout(900)
+  await page.getByRole('button', { name: 'atau masuk sebagai Rina (akun contoh)' }).click()
+  await page.waitForURL(/\/app\/pass$/)
+  const first = await page.locator('a[href^="/app/pass/"]').first().getAttribute('href')
+  await page.locator(`a[href="${first}"]`).click()
+  await page.waitForURL((u) => u.pathname === first)
+  await page.waitForTimeout(800)
+  const pos = page.locator('nav[aria-label="Tiket lain di pesanan ini"] .sr-only')
+  const box = await page.locator('article').first().boundingBox()
+  await swipe(box.x + box.width - 20, box.x + 20, box.y + 200)
+  check((await pos.innerText()) === 'Tiket 2 dari 2' && new URL(page.url()).pathname !== first, 'e-ticket digeser ke tiket berikutnya')
+  await shot(page, 's1-ticket-2', false)
+  await page.getByRole('button', { name: 'Tiket sebelumnya' }).click()
+  await page.waitForTimeout(900)
+  check(new URL(page.url()).pathname === first, 'panah kembali ke tiket pertama')
+  // after a swipe the app's own Back still steps back through history, not forward into a new entry
+  await page.getByRole('button', { name: 'Tiket berikutnya' }).click()
+  await page.waitForTimeout(900)
+  const second = new URL(page.url()).pathname
+  await page.getByRole('link', { name: /Kelola pesanan/ }).click()
+  await page.waitForURL(/\/app\/orders\//)
+  await page.goBack()
+  await page.waitForURL((u) => u.pathname === second)
+  await page.waitForTimeout(600)
+  await page.getByRole('button', { name: 'Kembali' }).first().click()
+  await page.waitForURL(/\/app\/pass$/)
+  await page.goForward()
+  await page.waitForTimeout(600)
+  check(new URL(page.url()).pathname === second, 'back sesudah geser tiket mundur di riwayat')
+  await page.goto(BASE + '/app/akun', { waitUntil: 'networkidle' })
+  await page.locator('a[href^="/app/orders/"]').first().click()
+  await page.waitForURL(/\/app\/orders\//)
+  await page.getByRole('button', { name: 'Kembali' }).first().click()
+  await page.waitForTimeout(800)
+  check(new URL(page.url()).pathname === '/app/akun', 'back dari pesanan yang dibuka dari Akun kembali ke Akun')
   await ctx.close()
 }
 

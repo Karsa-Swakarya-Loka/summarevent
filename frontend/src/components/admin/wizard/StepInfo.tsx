@@ -62,7 +62,7 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
           <Field id="ev-venue" label="Venue" error={err('venueId')} hint={editing ? undefined : 'Ukuran denah awal ikut kapasitas venue.'}>
             {/* a saved event keeps its seat map; only a new one follows the venue */}
             <Select value={form.venueId} onValueChange={(v) => update((f) => (editing ? { ...f, venueId: v } : changeVenue(f, v, venues)))}>
-              <SelectTrigger id="ev-venue" className="h-10 w-full bg-card" aria-invalid={!!err('venueId') || undefined}>
+              <SelectTrigger id="ev-venue" className="w-full bg-card data-[size=default]:h-10" aria-invalid={!!err('venueId') || undefined}>
                 <SelectValue placeholder="Pilih venue" />
               </SelectTrigger>
               <SelectContent position="popper">

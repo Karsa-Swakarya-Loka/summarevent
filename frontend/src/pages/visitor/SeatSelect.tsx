@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError, QtyStepper } from '@/components/visitor/Common'
-import { continuePath, isPendingOrder, pendingTitle, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen } from '@/components/visitor/helpers'
+import { continuePath, isPendingOrder, pendingTitle, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen, tapSeat } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { saleState, seatLabel } from '@/domain/rules'
 import type { Seat, SeatStatus, TicketCategory } from '@/domain/types'
@@ -187,29 +187,25 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
   const onSeatClick = (seat: Seat, status: SeatStatus, cat: TicketCategory | null) => {
     if (!cat || cat.quota != null) return
     setRuleError(null)
-    if (selected.includes(seat.id)) {
-      haptic()
-      setSelected((s) => s.filter((x) => x !== seat.id))
-      return
-    }
-    if (status !== 'AVAILABLE') return
-    if (cat.id !== categoryId) {
+    const picking = selected.includes(seat.id)
+    if (!picking && status !== 'AVAILABLE') return
+    if (!picking && cat.id !== categoryId) {
       haptic()
       pickCategory(cat.id)
       setSelected([seat.id])
+      setQty(1)
       return
     }
-    if (selected.length >= qty) {
-      toast.info(
-        qty >= max
-          ? `Maksimal ${max} kursi per pesanan. Ketuk kursi pilihanmu dulu untuk melepasnya.`
-          : `Sudah ${qty} kursi untuk ${qty} orang. Tambah jumlah orang dulu, atau ketuk kursi pilihanmu untuk melepasnya.`,
-      )
+    // the people count follows the seats tapped, so "Pesan 1 kursi" never sits beside "2 orang"
+    const tap = tapSeat(selected, seat.id, qty, max)
+    if (tap.full) {
+      toast.info(`Maksimal ${max} kursi per pesanan. Ketuk kursi pilihanmu dulu untuk melepasnya.`)
       return
     }
     haptic()
-    setConflict(null)
-    setSelected((s) => [...s, seat.id])
+    if (!picking) setConflict(null)
+    setSelected(tap.picked)
+    setQty(tap.qty)
   }
 
   const autoPick = async () => {
@@ -370,7 +366,9 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
       : isGeneral
         ? `Tanpa nomor kursi · setelah pesan, ditahan ${holdMin} menit`
         : count
-          ? `Setelah pesan, ditahan ${holdMin} menit untuk ${holdFor}`
+          ? count < qty
+            ? `Ketuk ${qty - count} kursi lagi untuk ${qty} orang.`
+            : `Setelah pesan, ditahan ${holdMin} menit untuk ${holdFor}`
           : 'Ketuk kursi di denah'
   const generalShort = isGeneral && catAvail && !soldOut ? catAvail.available < qty : false
   const canHold = !!category && !closedReason && !pending && (isGeneral ? !generalShort && qty >= 1 : selected.length > 0) && busy !== 'hold'
@@ -411,7 +409,13 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
             <Button variant="outline" className="h-auto min-h-12 flex-1 gap-2 px-3 text-left text-sm leading-tight whitespace-normal" onClick={() => void autoPick()} disabled={busy === 'suggest' || !!closedReason}>
               {busy === 'suggest' ? <LoaderCircle className="size-5 animate-spin" /> : <WandSparkles className="size-5" />}
               <span>
-                Pilihkan {qty} kursi <span className="whitespace-nowrap">berdampingan</span>
+                Pilihkan {qty} kursi
+                {qty > 1 && (
+                  <>
+                    {' '}
+                    <span className="whitespace-nowrap">berdampingan</span>
+                  </>
+                )}
               </span>
             </Button>
           </div>

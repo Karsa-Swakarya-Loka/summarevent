@@ -87,7 +87,7 @@ export function key(prefix = 'k'): string {
   return `${prefix}${seq}_${Math.random().toString(36).slice(2, 7)}`
 }
 
-const DEFAULT_RULES: EventRules = {
+export const DEFAULT_RULES: EventRules = {
   maxSeatsPerOrder: 4,
   paymentHoldMin: 10,
   receiptHoldMin: 30,
@@ -168,7 +168,7 @@ export function emptyForm(venues: Venue[]): WizardForm {
     seatingMode: 'RESERVED',
     rules: { ...DEFAULT_RULES },
     categories: [first],
-    layout: { rows: 8, seatsPerRow: 12, aisleAfter: 6, ranges: [], blocked: [], priority: [] },
+    layout: { ...templateSize(templateForVenue(venues[0]?.capacity)), ranges: [], blocked: [], priority: [] },
     sessions: [newSession()],
   }
 }
@@ -552,11 +552,37 @@ export function accessSummary(c: CatForm): string {
   return Number.isFinite(min) ? `Tukar struk min ${rupiahPlain(min!)}` : 'Tukar struk'
 }
 
+/** Smallest first: templateForVenue relies on the order. */
 export const LAYOUT_TEMPLATES = [
   { name: 'Teater kecil', rows: 6, seatsPerRow: 10, aisleAfter: 5 },
   { name: 'Courtyard', rows: 8, seatsPerRow: 12, aisleAfter: 6 },
   { name: 'Atrium besar', rows: 10, seatsPerRow: 14, aisleAfter: 7 },
 ] as const
+
+type LayoutTemplate = (typeof LAYOUT_TEMPLATES)[number]
+const templateSize = (t: LayoutTemplate) => ({ rows: t.rows, seatsPerRow: t.seatsPerRow, aisleAfter: t.aisleAfter as number | null })
+
+/** The biggest template that still fits the venue's capacity, so a new seat map starts at the venue's size; the smallest when none fits. */
+export function templateForVenue(capacity: number | undefined): LayoutTemplate {
+  const fits = LAYOUT_TEMPLATES.filter((t) => t.rows * t.seatsPerRow <= (capacity ?? 0))
+  return fits[fits.length - 1] ?? LAYOUT_TEMPLATES[0]
+}
+
+/**
+ * Picking another venue also resizes the seat map of a new event to it, but only while the map is still the untouched
+ * default for the venue picked before: a size, a row range, a closed seat or a curve the panitia set is never thrown
+ * away. Row ranges the wizard spread out by itself (opening the Denah step) count as untouched and are spread again.
+ */
+export function changeVenue(form: WizardForm, venueId: string, venues: Venue[]): WizardForm {
+  const L = form.layout
+  const before = templateSize(templateForVenue(venues.find((v) => v.id === form.venueId)?.capacity))
+  const same = (a: RangeForm[], b: RangeForm[]) => a.length === b.length && a.every((r, i) => r.catKey === b[i].catKey && r.from === b[i].from && r.to === b[i].to)
+  const autoRanges = !L.ranges.length || same(L.ranges, distributeRows(form))
+  const untouched = L.rows === before.rows && L.seatsPerRow === before.seatsPerRow && L.aisleAfter === before.aisleAfter && !L.curved && autoRanges && !L.blocked.length && !L.priority.length
+  if (!untouched) return { ...form, venueId }
+  const resized = { ...form, venueId, layout: { ...L, ...templateSize(templateForVenue(venues.find((v) => v.id === venueId)?.capacity)) } }
+  return L.ranges.length ? { ...resized, layout: { ...resized.layout, ranges: distributeRows(resized) } } : resized
+}
 
 export interface StepProps {
   form: WizardForm

@@ -298,7 +298,7 @@ export default function EventWizard() {
       />
       <Stepper step={step} onPick={goTo} skipped={skipped} issuesByStep={issuesByStep} />
 
-      {step === 'info' && <StepInfo form={form} update={update} err={err} venues={venues} layoutLocked={layoutLocked} />}
+      {step === 'info' && <StepInfo form={form} update={update} err={err} venues={venues} layoutLocked={layoutLocked} editing={editing} />}
       {step === 'kategori' && <StepCategories form={form} update={update} err={err} tenants={tenants} />}
       {step === 'denah' && <StepLayout form={form} update={update} err={err} locked={layoutLocked} />}
       {step === 'sesi' && <StepSessions form={form} update={update} err={err} />}

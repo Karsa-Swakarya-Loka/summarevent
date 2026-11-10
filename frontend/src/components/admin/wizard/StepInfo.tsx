@@ -1,4 +1,5 @@
-import { AlertCircle, Armchair, Check, Pipette, Users } from 'lucide-react'
+import { useState } from 'react'
+import { AlertCircle, Armchair, Check, ChevronDown, Pipette, Users } from 'lucide-react'
 import { Field, SectionCard } from '@/components/admin/AdminUi'
 import { Poster } from '@/components/common/Poster'
 import { POSTER_SWATCHES, POSTER_THEMES } from '@/components/common/posterThemes'
@@ -7,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type { PosterPalette, PosterTheme, SeatingMode, Venue } from '@/domain/types'
 import { cn } from '@/lib/utils'
 import { ChoiceCards, NumberInput, TextInput, ToggleRow } from './inputs'
-import type { StepProps } from './model'
+import { changeVenue, DEFAULT_RULES, type StepProps } from './model'
 
 const THEMES: Array<{ id: PosterTheme; name: string }> = [
   { id: 'stage', name: 'Pertunjukan' },
@@ -16,7 +17,7 @@ const THEMES: Array<{ id: PosterTheme; name: string }> = [
   { id: 'expo', name: 'Pameran' },
 ]
 
-export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps & { venues: Venue[]; layoutLocked: boolean }) {
+export function StepInfo({ form, update, err, venues, layoutLocked, editing }: StepProps & { venues: Venue[]; layoutLocked: boolean; editing: boolean }) {
   const setMode = (mode: SeatingMode) =>
     update((f) => ({
       ...f,
@@ -30,6 +31,12 @@ export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps 
   const setPalette = (p: PosterPalette) => update((f) => ({ ...f, posterPalette: p }))
   const rules = form.rules
   const setRule = <K extends keyof typeof rules>(k: K, v: (typeof rules)[K]) => update((f) => ({ ...f, rules: { ...f.rules, [k]: v } }))
+  // the rules already hold common values, so they start folded away unless they were changed or one needs fixing
+  const rulesChanged = (Object.keys(DEFAULT_RULES) as Array<keyof typeof rules>).some((k) => rules[k] !== DEFAULT_RULES[k])
+  const rulesError = ['maxSeatsPerOrder', 'paymentHoldMin', 'receiptHoldMin', 'checkinOpenMin'].some((k) => err(`rules.${k}`))
+  const [showRules, setShowRules] = useState(rulesChanged || rulesError)
+  // a rule that needs fixing opens the panel and keeps it open, so it does not fold away under the fingers once fixed
+  if (rulesError && !showRules) setShowRules(true)
 
   return (
     <div className="flex flex-col gap-4">
@@ -52,8 +59,9 @@ export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps 
               onChange={(e) => update((f) => ({ ...f, description: e.target.value }))}
             />
           </Field>
-          <Field id="ev-venue" label="Venue" error={err('venueId')}>
-            <Select value={form.venueId} onValueChange={(v) => update((f) => ({ ...f, venueId: v }))}>
+          <Field id="ev-venue" label="Venue" error={err('venueId')} hint={editing ? undefined : 'Ukuran denah awal ikut kapasitas venue.'}>
+            {/* a saved event keeps its seat map; only a new one follows the venue */}
+            <Select value={form.venueId} onValueChange={(v) => update((f) => (editing ? { ...f, venueId: v } : changeVenue(f, v, venues)))}>
               <SelectTrigger id="ev-venue" className="h-10 w-full bg-card" aria-invalid={!!err('venueId') || undefined}>
                 <SelectValue placeholder="Pilih venue" />
               </SelectTrigger>
@@ -129,24 +137,48 @@ export function StepInfo({ form, update, err, venues, layoutLocked }: StepProps 
         />
       </SectionCard>
 
-      <SectionCard title="Aturan event" description="Berlaku untuk semua kategori dan sesi.">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Field id="rule-max" label="Maks kursi per pesanan" error={err('rules.maxSeatsPerOrder')}>
-            <NumberInput id="rule-max" value={rules.maxSeatsPerOrder} min={1} max={10} suffix="kursi" invalid={!!err('rules.maxSeatsPerOrder')} onChange={(n) => setRule('maxSeatsPerOrder', n)} />
-          </Field>
-          <Field id="rule-pay" label="Waktu tahan bayar" error={err('rules.paymentHoldMin')} hint="Kursi ditahan selama pembayaran.">
-            <NumberInput id="rule-pay" value={rules.paymentHoldMin} min={3} max={60} suffix="menit" invalid={!!err('rules.paymentHoldMin')} onChange={(n) => setRule('paymentHoldMin', n)} />
-          </Field>
-          <Field id="rule-rcp" label="Waktu tahan struk" error={err('rules.receiptHoldMin')} hint="Selama struk diverifikasi panitia.">
-            <NumberInput id="rule-rcp" value={rules.receiptHoldMin} min={5} max={180} suffix="menit" invalid={!!err('rules.receiptHoldMin')} onChange={(n) => setRule('receiptHoldMin', n)} />
-          </Field>
-          <Field id="rule-checkin" label="Check-in dibuka" error={err('rules.checkinOpenMin')} hint="Sebelum sesi mulai.">
-            <NumberInput id="rule-checkin" value={rules.checkinOpenMin} min={0} max={240} suffix="menit" invalid={!!err('rules.checkinOpenMin')} onChange={(n) => setRule('checkinOpenMin', n)} />
-          </Field>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <ToggleRow id="rule-transfer" checked={rules.transferable} onChange={(v) => setRule('transferable', v)} title="Tiket bisa dipindahtangankan" description="Nama peserta boleh diganti setelah tiket terbit." />
-          <ToggleRow id="rule-reentry" checked={rules.reentryAllowed} onChange={(v) => setRule('reentryAllowed', v)} title="Boleh keluar-masuk" description="QR bisa dipindai ulang di sesi yang sama." />
+      <SectionCard
+        title="Pengaturan lanjutan"
+        description="Aturan untuk semua kategori dan sesi. Nilai umumnya sudah terisi."
+        actions={
+          !rulesError && (
+            <button
+              type="button"
+              aria-expanded={showRules}
+              aria-controls="rules-body"
+              onClick={() => setShowRules((o) => !o)}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-brand hover:bg-brand-soft focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            >
+              {showRules ? 'Sembunyikan' : 'Ubah aturan'}
+              <ChevronDown className={cn('size-4 transition-transform', showRules && 'rotate-180')} aria-hidden />
+            </button>
+          )
+        }
+      >
+        {!showRules && (
+          <p className="text-sm text-muted-foreground">
+            Maks {rules.maxSeatsPerOrder} kursi per pesanan · tahan bayar {rules.paymentHoldMin} menit · tahan struk {rules.receiptHoldMin} menit · check-in dibuka {rules.checkinOpenMin} menit sebelum mulai · {rules.transferable ? 'bisa dipindahtangankan' : 'tidak dipindahtangankan'} · {rules.reentryAllowed ? 'boleh keluar-masuk' : 'sekali masuk'}
+          </p>
+        )}
+        <div id="rules-body" hidden={!showRules}>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Field id="rule-max" label="Maks kursi per pesanan" error={err('rules.maxSeatsPerOrder')}>
+              <NumberInput id="rule-max" value={rules.maxSeatsPerOrder} min={1} max={10} suffix="kursi" invalid={!!err('rules.maxSeatsPerOrder')} onChange={(n) => setRule('maxSeatsPerOrder', n)} />
+            </Field>
+            <Field id="rule-pay" label="Waktu tahan bayar" error={err('rules.paymentHoldMin')} hint="Kursi ditahan selama pembayaran.">
+              <NumberInput id="rule-pay" value={rules.paymentHoldMin} min={3} max={60} suffix="menit" invalid={!!err('rules.paymentHoldMin')} onChange={(n) => setRule('paymentHoldMin', n)} />
+            </Field>
+            <Field id="rule-rcp" label="Waktu tahan struk" error={err('rules.receiptHoldMin')} hint="Selama struk diverifikasi panitia.">
+              <NumberInput id="rule-rcp" value={rules.receiptHoldMin} min={5} max={180} suffix="menit" invalid={!!err('rules.receiptHoldMin')} onChange={(n) => setRule('receiptHoldMin', n)} />
+            </Field>
+            <Field id="rule-checkin" label="Check-in dibuka" error={err('rules.checkinOpenMin')} hint="Sebelum sesi mulai.">
+              <NumberInput id="rule-checkin" value={rules.checkinOpenMin} min={0} max={240} suffix="menit" invalid={!!err('rules.checkinOpenMin')} onChange={(n) => setRule('checkinOpenMin', n)} />
+            </Field>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <ToggleRow id="rule-transfer" checked={rules.transferable} onChange={(v) => setRule('transferable', v)} title="Tiket bisa dipindahtangankan" description="Nama peserta boleh diganti setelah tiket terbit." />
+            <ToggleRow id="rule-reentry" checked={rules.reentryAllowed} onChange={(v) => setRule('reentryAllowed', v)} title="Boleh keluar-masuk" description="QR bisa dipindai ulang di sesi yang sama." />
+          </div>
         </div>
       </SectionCard>
     </div>

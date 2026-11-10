@@ -241,7 +241,8 @@ export function ReviewPanel({
           </dl>
 
           {decidable ? (
-            <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap">
+            // on a laptop the photo and checks run past the fold, so the decision stays on screen while the panitia scrolls
+            <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap lg:sticky lg:bottom-0 lg:z-10 lg:mt-auto lg:bg-panel lg:pb-4">
               <Button size="lg" className="h-11 sm:flex-1" onClick={() => (failing.length ? setAsk('APPROVE_ANYWAY') : void decide('APPROVE'))} disabled={!!busy}>
                 {busy === 'APPROVE' ? <LoaderCircle className="animate-spin" /> : <CircleCheck />} Setujui
               </Button>

@@ -9,6 +9,7 @@ import type { ReceiptRules } from '@/domain/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { errorMessage } from '@/hooks/useLive'
 import { shrinkPhoto } from '@/lib/image'
 import { rupiahPlain, wibDate, wibTime } from '@/lib/format'
@@ -378,21 +379,19 @@ export function ReceiptForm({
                       <Label htmlFor={`${f}-tenant`} className="text-xs">
                         Tenant
                       </Label>
-                      <select
-                        id={`${f}-tenant`}
-                        value={d.tenantId}
-                        onChange={(e) => update(d.key, { tenantId: e.target.value })}
-                        disabled={disabled}
-                        className="h-11 w-full rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                      >
-                        <option value="">Pilih tenant…</option>
-                        {tenants.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name}
-                            {rules.excludedTenantIds.includes(t.id) ? ' (tidak berlaku)' : ''}
-                          </option>
-                        ))}
-                      </select>
+                      <Select value={d.tenantId} onValueChange={(v) => update(d.key, { tenantId: v })} disabled={disabled}>
+                        <SelectTrigger id={`${f}-tenant`} className="w-full min-w-0 bg-card data-[size=default]:h-11">
+                          <SelectValue placeholder="Pilih tenant…" />
+                        </SelectTrigger>
+                        <SelectContent position="popper">
+                          {tenants.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.name}
+                              {rules.excludedTenantIds.includes(t.id) ? ' (tidak berlaku)' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor={`${f}-no`} className="text-xs">

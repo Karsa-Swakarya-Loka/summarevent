@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { LogOut, ReceiptText, ScanLine, Search, Ticket } from 'lucide-react'
 import { api, type EventSummary, type SessionSummary } from '@/api'
@@ -14,6 +14,7 @@ import { scannableEvents, sessionName, sessionWindow, WINDOW_LABEL, type WindowS
 import { SectionLabel } from '@/components/visitor/Common'
 import { SettingsGroup, SettingsRow } from '@/components/visitor/SettingsList'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Tone } from '@/domain/labels'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
@@ -122,30 +123,37 @@ export default function StaffHome() {
 function StaffSwitcher({ userId, onSwitch }: { userId: string | null; onSwitch: (u: User) => void }) {
   const staff = useLive(() => api.staff.accounts(), [])
   const options = staff.data ?? []
+  const id = useId()
   if (options.length < 2) return null
   return (
-    <label className="mt-3 flex flex-col gap-1.5 text-[0.7rem] font-bold tracking-[0.18em] uppercase">
-      Ganti akun petugas
-      <select
+    <div className="mt-3 flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[0.7rem] font-bold tracking-[0.18em] uppercase">
+        Ganti akun petugas
+      </label>
+      <Select
         value={userId ?? ''}
-        onChange={(e) =>
+        onValueChange={(v) =>
           void api
-            .demoLogin('STAFF', e.target.value)
+            .demoLogin('STAFF', v)
             .then((u) => {
               onSwitch(u)
               toast(`Masuk sebagai ${u.name}.`)
             })
             .catch((err: unknown) => toast.error(errorMessage(err)))
         }
-        className="h-11 w-full min-w-0 rounded-full border border-ink/15 bg-card px-4 text-sm font-semibold tracking-normal text-ink normal-case"
       >
-        {options.map((s) => (
-          <option key={s.id} value={s.id} className="text-ink">
-            {s.name}
-          </option>
-        ))}
-      </select>
-    </label>
+        <SelectTrigger id={id} className="w-full min-w-0 rounded-full border-ink/15 bg-card px-4 font-semibold text-ink data-[size=default]:h-11">
+          <SelectValue placeholder="Pilih akun petugas" />
+        </SelectTrigger>
+        <SelectContent position="popper">
+          {options.map((s) => (
+            <SelectItem key={s.id} value={s.id}>
+              {s.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   )
 }
 

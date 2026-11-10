@@ -120,6 +120,13 @@ if (only === 'all' || only === 'receipt') {
   await login(page, '081299990002', 'Budi Santoso')
   await page.getByRole('button', { name: 'Isi struk contoh' }).click()
   await page.waitForTimeout(1200)
+  // the tenant picker is the app's own list: it shows the tenant of the sample receipt and opens with every tenant in it
+  const tenant = page.getByRole('combobox', { name: 'Tenant' }).first()
+  if (/Pilih tenant/.test(await tenant.innerText())) errors.push('struk contoh: tenant belum terpilih di daftar tenant')
+  await tenant.click()
+  if ((await page.getByRole('option').count()) < 2) errors.push('daftar tenant tidak menampilkan pilihannya')
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(200)
   await shot(page, 'r1-receipt-filled')
   await page.getByRole('button', { name: /^Kirim struk$/ }).click()
   await page.waitForURL(/\/orders\//)

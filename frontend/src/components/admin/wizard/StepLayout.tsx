@@ -4,6 +4,7 @@ import type { SeatMapData } from '@/api/contract'
 import { Field, SectionCard } from '@/components/admin/AdminUi'
 import { SeatMap, SeatSample } from '@/components/seatmap/SeatMap'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PRIORITY_SEAT_LABEL, SEAT_STATUS_LABEL } from '@/domain/labels'
 import { rowIndex, rowLetter, seatLabel } from '@/domain/rules'
 import type { EventItem, SessionSeat, TicketCategory } from '@/domain/types'
@@ -11,8 +12,25 @@ import { cn } from '@/lib/utils'
 import { NumberInput, ToggleRow } from './inputs'
 import { distributeRows, key, LAYOUT_TEMPLATES, maxSellable, previewSeats, rowCategoryKeys, rowClosed, seatCategories, seatCounts, sellOnly, toggleRow, type LayoutForm, type StepProps } from './model'
 
-const selectCls =
-  'h-10 w-full min-w-0 rounded-lg border border-input bg-card px-2 text-sm pointer-coarse:h-11 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive disabled:opacity-60'
+const rangeTrigger = 'w-full min-w-0 bg-card data-[size=default]:h-10'
+
+/** One end of a row range: a row letter picked from the layout's rows. */
+function RowSelect({ label, value, rows, disabled, onChange }: { label: string; value: number; rows: number[]; disabled: boolean; onChange: (row: number) => void }) {
+  return (
+    <Select value={String(value)} disabled={disabled} onValueChange={(v) => onChange(Number(v))}>
+      <SelectTrigger aria-label={label} className={rangeTrigger}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent position="popper">
+        {rows.map((r) => (
+          <SelectItem key={r} value={String(r)}>
+            {rowLetter(r)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
 
 export function StepLayout({ form, update, err, locked }: StepProps & { locked: boolean }) {
   const L = form.layout
@@ -217,48 +235,38 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                   return (
                     <div key={rg.key} className="flex flex-col gap-1">
                       <div className="grid grid-cols-[minmax(0,1fr)_4.25rem_auto_4.25rem_auto] items-center gap-2">
-                        <select
-                          aria-label={`Kategori rentang ${i + 1}`}
-                          className={selectCls}
-                          value={rg.catKey}
+                        {/* a range whose category was removed shows the placeholder, not a stale name */}
+                        <Select
+                          value={seatCats.some((c) => c.key === rg.catKey) ? rg.catKey : ''}
                           disabled={locked}
-                          aria-invalid={!!e || undefined}
-                          onChange={(ev) => setLayout((l) => ({ ...l, ranges: l.ranges.map((x) => (x.key === rg.key ? { ...x, catKey: ev.target.value } : x)) }))}
+                          onValueChange={(v) => setLayout((l) => ({ ...l, ranges: l.ranges.map((x) => (x.key === rg.key ? { ...x, catKey: v } : x)) }))}
                         >
-                          {!seatCats.some((c) => c.key === rg.catKey) && <option value={rg.catKey}>Pilih kategori</option>}
-                          {seatCats.map((c) => (
-                            <option key={c.key} value={c.key}>
-                              {c.name.trim() || 'Tanpa nama'}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          aria-label={`Dari baris (rentang ${i + 1})`}
-                          className={selectCls}
+                          <SelectTrigger aria-label={`Kategori rentang ${i + 1}`} aria-invalid={!!e || undefined} className={rangeTrigger}>
+                            <SelectValue placeholder="Pilih kategori" />
+                          </SelectTrigger>
+                          <SelectContent position="popper">
+                            {seatCats.map((c) => (
+                              <SelectItem key={c.key} value={c.key}>
+                                {c.name.trim() || 'Tanpa nama'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <RowSelect
+                          label={`Dari baris (rentang ${i + 1})`}
                           value={rg.from}
+                          rows={rowOptions}
                           disabled={locked}
-                          onChange={(ev) => setLayout((l) => ({ ...l, ranges: l.ranges.map((x) => (x.key === rg.key ? { ...x, from: Number(ev.target.value) } : x)) }))}
-                        >
-                          {rowOptions.map((r) => (
-                            <option key={r} value={r}>
-                              {rowLetter(r)}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(row) => setLayout((l) => ({ ...l, ranges: l.ranges.map((x) => (x.key === rg.key ? { ...x, from: row } : x)) }))}
+                        />
                         <span className="text-xs text-muted-foreground">s/d</span>
-                        <select
-                          aria-label={`Sampai baris (rentang ${i + 1})`}
-                          className={selectCls}
+                        <RowSelect
+                          label={`Sampai baris (rentang ${i + 1})`}
                           value={rg.to}
+                          rows={rowOptions}
                           disabled={locked}
-                          onChange={(ev) => setLayout((l) => ({ ...l, ranges: l.ranges.map((x) => (x.key === rg.key ? { ...x, to: Number(ev.target.value) } : x)) }))}
-                        >
-                          {rowOptions.map((r) => (
-                            <option key={r} value={r}>
-                              {rowLetter(r)}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(row) => setLayout((l) => ({ ...l, ranges: l.ranges.map((x) => (x.key === rg.key ? { ...x, to: row } : x)) }))}
+                        />
                         <Button
                           type="button"
                           variant="ghost"

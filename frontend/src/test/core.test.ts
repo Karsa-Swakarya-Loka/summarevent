@@ -14,7 +14,7 @@ import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRul
 import type { EventDraft } from '@/api/contract'
 import { posterColors } from '@/components/common/posterThemes'
 import { scrubToView } from '@/components/landing/crumple'
-import { placeUnit } from '@/components/visitor/helpers'
+import { placeUnit, tapSeat } from '@/components/visitor/helpers'
 import { layoutScript, stickerSpots } from '@/components/landing/script'
 import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
 import { csvCell, wibDate } from '@/lib/format'
@@ -659,5 +659,23 @@ describe('what is left to book', () => {
     expect(placeUnit([{ quota: null }, { quota: 60 }])).toBe('tempat')
     expect(placeUnit([{ quota: 100 }])).toBe('tempat')
     expect(placeUnit([])).toBe('tempat')
+  })
+})
+
+describe('seats tapped by hand', () => {
+  it('the people count follows the seats picked, up and down', () => {
+    // one tap with the counter at its default 2: one seat, one person
+    expect(tapSeat([], 'G1', 2, 4)).toEqual({ picked: ['G1'], qty: 1, full: false })
+    // past the number on the counter: the counter grows with the seats
+    expect(tapSeat(['G1', 'G2'], 'G3', 2, 4)).toEqual({ picked: ['G1', 'G2', 'G3'], qty: 3, full: false })
+    // a picked seat tapped again leaves, and the counter follows
+    expect(tapSeat(['G1', 'G2', 'G3'], 'G2', 3, 4)).toEqual({ picked: ['G1', 'G3'], qty: 2, full: false })
+  })
+
+  it('stops at the most one order may hold, and keeps the count when the last seat is let go', () => {
+    const four = ['G1', 'G2', 'G3', 'G4']
+    expect(tapSeat(four, 'G5', 4, 4)).toEqual({ picked: four, qty: 4, full: true })
+    expect(tapSeat(four, 'G4', 4, 4)).toEqual({ picked: ['G1', 'G2', 'G3'], qty: 3, full: false })
+    expect(tapSeat(['G1'], 'G1', 1, 4)).toEqual({ picked: [], qty: 1, full: false })
   })
 })

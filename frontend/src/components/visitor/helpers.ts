@@ -11,6 +11,20 @@ export function placeUnit(categories: Array<Pick<TicketCategory, 'quota'>>): 'ku
   return categories.length > 0 && categories.every((c) => c.quota == null) ? 'kursi' : 'tempat'
 }
 
+/**
+ * A tap on a seat of the chosen category: it joins or leaves the picked seats, up to the most one order may hold. The
+ * people count follows the seats picked, so the order button and the counter always say the same number; with nothing
+ * picked the count keeps its last number, for "Pilihkan N kursi".
+ */
+export function tapSeat(picked: string[], seatId: string, qty: number, max: number): { picked: string[]; qty: number; full: boolean } {
+  if (picked.includes(seatId)) {
+    const left = picked.filter((id) => id !== seatId)
+    return { picked: left, qty: left.length || qty, full: false }
+  }
+  if (picked.length >= max) return { picked, qty, full: true }
+  return { picked: [...picked, seatId], qty: picked.length + 1, full: false }
+}
+
 /** "C7–C10" for a contiguous run in one row, otherwise "C7, C9, D2". */
 export function seatRangeLabel(labels: string[]): string {
   if (!labels.length) return ''

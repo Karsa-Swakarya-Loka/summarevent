@@ -44,7 +44,9 @@ export function Countdown({ to, className, onDone, prefix }: { to: string; class
   return (
     <span className={cn('inline-flex items-center gap-1.5 font-semibold tabular-nums', urgent && 'text-status-invalid', className)} role="timer" aria-live="off">
       <Clock className="size-4" aria-hidden />
+      {/* the prefix and the time are one run of text, so only a real space parts them */}
       {prefix}
+      {prefix != null && ' '}
       {ms <= 0 ? '00:00' : fmtCountdown(ms)}
     </span>
   )

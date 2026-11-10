@@ -6,6 +6,11 @@ import { fmtDayMonth, fmtRange, fmtShortDate, fmtTime, rupiahPlain, wibDate } fr
 const PENDING_STATUSES: OrderStatus[] = ['AWAITING_PAYMENT', 'AWAITING_VERIFICATION']
 export const isPendingOrder = (o: Pick<Order, 'status'>) => PENDING_STATUSES.includes(o.status)
 
+/** What is left to book: "kursi" only when every category is numbered seats; with a standing area it is "tempat". */
+export function placeUnit(categories: Array<Pick<TicketCategory, 'quota'>>): 'kursi' | 'tempat' {
+  return categories.length > 0 && categories.every((c) => c.quota == null) ? 'kursi' : 'tempat'
+}
+
 /** "C7–C10" for a contiguous run in one row, otherwise "C7, C9, D2". */
 export function seatRangeLabel(labels: string[]): string {
   if (!labels.length) return ''

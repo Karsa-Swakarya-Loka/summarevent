@@ -59,7 +59,7 @@ function ReceiptRulesPanel({ c, set, err, tenants }: { c: CatForm; set: (r: Rece
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field id={id('min')} label="Minimal belanja" error={err(f('minSpend'))} hint={Number.isFinite(rr.minSpend) ? `Total struk ≥ ${rupiahPlain(rr.minSpend)} untuk 1 pesanan` : undefined}>
-          <NumberInput id={id('min')} prefix="Rp" step={10000} min={0} value={rr.minSpend} invalid={!!err(f('minSpend'))} placeholder="300000" onChange={(n) => set({ ...rr, minSpend: n })} />
+          <NumberInput id={id('min')} prefix="Rp" step={10000} min={0} value={rr.minSpend} invalid={!!err(f('minSpend'))} placeholder="mis. 300000" onChange={(n) => set({ ...rr, minSpend: n })} />
         </Field>
         <Field id={id('maxr')} label="Maks struk digabung" error={err(f('maxReceipts'))}>
           <NumberInput id={id('maxr')} min={1} max={10} suffix="struk" value={rr.maxReceiptsCombined} invalid={!!err(f('maxReceipts'))} onChange={(n) => set({ ...rr, maxReceiptsCombined: n })} />
@@ -206,7 +206,7 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
               </div>
               {c.accessMethod === 'PAID' ? (
                 <Field id={id('price')} label="Harga per kursi" error={err(f('price'))} hint={Number.isFinite(c.price) && c.price > 0 ? rupiahPlain(c.price) : 'Kelipatan Rp1.000'}>
-                  <NumberInput id={id('price')} prefix="Rp" step={5000} min={0} value={c.price} invalid={!!err(f('price'))} placeholder="50000" onChange={(n) => setCat(c.key, { price: n })} />
+                  <NumberInput id={id('price')} prefix="Rp" step={5000} min={0} value={c.price} invalid={!!err(f('price'))} placeholder="mis. 50000" onChange={(n) => setCat(c.key, { price: n })} />
                 </Field>
               ) : (
                 <div className="flex flex-col justify-center rounded-lg bg-muted/60 p-3 text-sm">

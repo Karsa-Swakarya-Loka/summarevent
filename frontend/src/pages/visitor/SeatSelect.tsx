@@ -506,15 +506,16 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
             <Gift className="size-4 shrink-0" aria-hidden /> Bonus {category.bonusDesc} untuk {category.bonusFirstN} tiket pertama · sisa {bonusLeft}
           </p>
         )}
-        <div className="flex items-end justify-between gap-3" aria-live="polite">
-          <div className="min-w-0">
-            <p className={cn('font-bold', count ? 'text-base' : 'text-sm')}>
-              {category && <span className="mr-1.5 inline-block size-3 rounded-[4px] align-middle" style={{ background: category.color }} aria-hidden />}
-              {summary}
-            </p>
-            <p className={cn('text-xs', closedReason ? 'font-semibold text-[#a11b1b]' : 'text-muted-foreground')}>{subline}</p>
+        <div aria-live="polite">
+          {/* the summary has the bar's full width: beside the price it broke after a separator on a 360 px phone */}
+          <p className={cn('font-bold', count ? 'text-base' : 'text-sm')}>
+            {category && <span className="mr-1.5 inline-block size-3 rounded-[4px] align-middle" style={{ background: category.color }} aria-hidden />}
+            {summary}
+          </p>
+          <div className="flex items-end justify-between gap-3">
+            <p className={cn('min-w-0 text-xs', closedReason ? 'font-semibold text-[#a11b1b]' : 'text-muted-foreground')}>{subline}</p>
+            {category && count > 0 && !soldOut && category.accessMethod !== 'RECEIPT' && <p className="shrink-0 text-2xl leading-none font-extrabold tabular-nums">{totalText}</p>}
           </div>
-          {category && count > 0 && !soldOut && category.accessMethod !== 'RECEIPT' && <p className="shrink-0 text-2xl font-extrabold tabular-nums">{totalText}</p>}
         </div>
         <div className="mt-3 flex items-stretch gap-2">
           {pending ? (

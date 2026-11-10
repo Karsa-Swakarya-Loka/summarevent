@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError } from '@/components/visitor/Common'
 import { StageScene } from '@/components/visitor/StageScene'
 import { UserAvatar } from '@/components/visitor/UserAvatar'
-import { continuePath, eventInRange, isPendingOrder, pendingTitle, priceHint, wibTodayRange, wibWeekRange } from '@/components/visitor/helpers'
+import { continuePath, eventInRange, isPendingOrder, pendingTitle, placeUnit, priceHint, wibTodayRange, wibWeekRange } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import type { Tone } from '@/domain/labels'
 import type { User } from '@/domain/types'
@@ -342,7 +342,7 @@ function availabilityOf(e: EventSummary, now: Date): { label: string; tone: Tone
   if (!open.length) return { label: 'Sudah selesai', tone: 'neutral' }
   const available = open.reduce((a, s) => a + s.available, 0)
   const total = open.reduce((a, s) => a + s.total, 0)
-  const unit = e.event.seatingMode === 'RESERVED' ? 'kursi' : 'tempat'
+  const unit = placeUnit(e.categories)
   if (available === 0) return { label: 'Habis', tone: 'invalid' }
   if (total && available / total < 0.15) return { label: `Sisa ${available} ${unit}`, tone: 'warn' }
   return { label: `Sisa ${available} ${unit}`, tone: 'valid' }

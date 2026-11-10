@@ -10,7 +10,7 @@ import { POSTER_THEMES } from '@/components/common/posterThemes'
 import { CategoryLegend } from '@/components/seatmap/SeatLegend'
 import { Button } from '@/components/ui/button'
 import { BottomBar, LoadError, PageSkeleton, SectionTitle } from '@/components/visitor/Common'
-import { priceHint, recallSession, rememberSession, sessionName } from '@/components/visitor/helpers'
+import { placeUnit, priceHint, recallSession, rememberSession, sessionName } from '@/components/visitor/helpers'
 import { saleState } from '@/domain/rules'
 import { useLive, useNow } from '@/hooks/useLive'
 import { fmtDate, fmtRange, fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
@@ -187,7 +187,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                       <span className="mt-2.5 flex items-baseline justify-between gap-2 text-xs">
                         {st.open ? (
                           <span className={cn('font-bold', s.available === 0 ? 'text-[#a11b1b]' : 'text-foreground')}>
-                            {s.available === 0 ? 'Habis' : `Sisa ${s.available} ${isReserved ? 'kursi' : 'tempat'}`}
+                            {s.available === 0 ? 'Habis' : `Sisa ${s.available} ${placeUnit(categories)}`}
                           </span>
                         ) : (
                           <span className="font-semibold text-muted-foreground">{st.reason}</span>

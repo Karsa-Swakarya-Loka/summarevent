@@ -14,6 +14,7 @@ import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRul
 import type { EventDraft } from '@/api/contract'
 import { posterColors } from '@/components/common/posterThemes'
 import { scrubToView } from '@/components/landing/crumple'
+import { placeUnit } from '@/components/visitor/helpers'
 import { layoutScript, stickerSpots } from '@/components/landing/script'
 import type { EventRules, SeatLayout, Session, TicketCategory } from '@/domain/types'
 import { csvCell, wibDate } from '@/lib/format'
@@ -649,5 +650,14 @@ describe('safeNext', () => {
     expect(safeNext('/admin.evil.com', 'admin')).toBeNull()
     expect(safeNext('/staff', 'admin')).toBeNull()
     expect(safeNext(null, 'app')).toBeNull()
+  })
+})
+
+describe('what is left to book', () => {
+  it('says kursi only when every category is numbered seats, tempat once there is a standing area', () => {
+    expect(placeUnit([{ quota: null }, { quota: null }])).toBe('kursi')
+    expect(placeUnit([{ quota: null }, { quota: 60 }])).toBe('tempat')
+    expect(placeUnit([{ quota: 100 }])).toBe('tempat')
+    expect(placeUnit([])).toBe('tempat')
   })
 })

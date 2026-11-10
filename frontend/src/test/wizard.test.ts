@@ -1,6 +1,7 @@
 /** Event wizard, denah step: selling fewer seats than the layout has, and closing a whole row. */
 import { describe, expect, it } from 'vitest'
-import { maxSellable, rowClosed, sellableSeats, sellOnly, toggleRow, type LayoutForm } from '@/components/admin/wizard/model'
+import { changeVenue, distributeRows, emptyForm, maxSellable, rowClosed, sellableSeats, sellOnly, templateForVenue, toggleRow, type LayoutForm } from '@/components/admin/wizard/model'
+import type { Venue } from '@/domain/types'
 
 /** 4 rows (A–D) of 6 seats, rows A–B one category and C–D another. */
 const layout = (over: Partial<LayoutForm> = {}): LayoutForm => ({
@@ -56,5 +57,52 @@ describe('close a whole row', () => {
     expect(rowClosed({ ...l, blocked: closed }, 1)).toBe(true)
     expect(toggleRow({ ...l, blocked: closed }, 1)).toEqual([])
     expect(rowClosed(l, 1)).toBe(false)
+  })
+})
+
+describe('seat map size follows the venue', () => {
+  const venues: Venue[] = [
+    { id: 'v_ciunik', name: 'Atrium Ciunik', capacity: 200 },
+    { id: 'v_sawarga', name: 'Sawarga Courtyard', capacity: 96 },
+    { id: 'v_cileutik', name: 'Atrium Cileutik', capacity: 60 },
+    { id: 'v_mini', name: 'Ruang kecil', capacity: 20 },
+  ]
+
+  it('picks the biggest template that fits the capacity, the smallest when none fits', () => {
+    expect(templateForVenue(200).name).toBe('Atrium besar')
+    expect(templateForVenue(96).name).toBe('Courtyard')
+    expect(templateForVenue(95).name).toBe('Teater kecil')
+    expect(templateForVenue(20).name).toBe('Teater kecil')
+    expect(templateForVenue(undefined).name).toBe('Teater kecil')
+  })
+
+  it('a new event starts at the first venue\'s size', () => {
+    const L = emptyForm(venues).layout
+    expect([L.rows, L.seatsPerRow, L.aisleAfter]).toEqual([10, 14, 7])
+  })
+
+  it('another venue resizes the untouched seat map, but never one the panitia changed', () => {
+    const form = emptyForm(venues)
+    const small = changeVenue(form, 'v_cileutik', venues)
+    expect(small.venueId).toBe('v_cileutik')
+    expect([small.layout.rows, small.layout.seatsPerRow, small.layout.aisleAfter]).toEqual([6, 10, 5])
+    // back again: still untouched, so it follows
+    expect(changeVenue(small, 'v_ciunik', venues).layout.rows).toBe(10)
+    // a size, a closed seat or a curve the panitia set stays
+    for (const layout of [{ ...form.layout, rows: 9 }, { ...form.layout, blocked: ['A1'] }, { ...form.layout, curved: true }]) {
+      const kept = changeVenue({ ...form, layout }, 'v_cileutik', venues)
+      expect(kept.venueId).toBe('v_cileutik')
+      expect(kept.layout).toBe(layout)
+    }
+  })
+
+  it('row ranges the wizard spread by itself are spread again for the new size, ranges the panitia set stay', () => {
+    const base = emptyForm(venues)
+    const opened = { ...base, layout: { ...base.layout, ranges: distributeRows(base) } }
+    const moved = changeVenue(opened, 'v_cileutik', venues)
+    expect(moved.layout.rows).toBe(6)
+    expect(Math.max(...moved.layout.ranges.map((r) => r.to))).toBe(5)
+    const custom = { ...opened, layout: { ...opened.layout, ranges: opened.layout.ranges.map((r) => ({ ...r, to: 3 })) } }
+    expect(changeVenue(custom, 'v_cileutik', venues).layout).toBe(custom.layout)
   })
 })

@@ -358,7 +358,9 @@ if (only === 'all' || only === 'swipe') {
   }
   const check = (ok, what) => (ok ? console.log('swipe:', what) : errors.push(`swipe: ${what} gagal`))
   await page.goto(BASE + '/', { waitUntil: 'networkidle' })
-  // the fan mounts once the poster font is in
+  // a first visit opens under the splash, which takes the finger until it is gone (later on a real backend than on the
+  // demo); the fan itself mounts once the poster font is in
+  await page.locator('#splash').waitFor({ state: 'detached', timeout: 10000 })
   await page.waitForTimeout(1500)
   const cta = await page.getByRole('button', { name: 'Masuk sebagai pengunjung' }).boundingBox()
   // a short swipe (about a fifth of the screen) from the button moves the fan one poster and does not press the button

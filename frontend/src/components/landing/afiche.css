@@ -33,7 +33,9 @@
   height: calc(var(--af-w) * 1.4);
   margin: calc(var(--af-w) * -0.7) 0 0 calc(var(--af-w) / -2);
   container-type: inline-size;
-  border-radius: 3.2cqw;
+  /* from the poster's own width: cqw on the container itself measures the page, which made the corners deep enough on a
+     wide screen to crowd the labels */
+  border-radius: calc(var(--af-w) * 0.05);
   overflow: hidden;
   isolation: isolate;
   will-change: transform;

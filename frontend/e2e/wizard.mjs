@@ -59,6 +59,14 @@ await page.getByRole('button', { name: /Teater kecil/ }).click()
 await page.waitForTimeout(400)
 await page.getByRole('button', { name: /^Baris A nomor 1,/ }).first().click({ force: true })
 await page.waitForTimeout(300)
+// the row ranges use the app's own lists: picking the option already shown leaves the layout as it is
+for (const name of ['Kategori rentang 1', 'Sampai baris (rentang 1)']) {
+  const box = page.getByRole('combobox', { name })
+  const shown = (await box.innerText()).trim()
+  await box.click()
+  await page.getByRole('option', { name: shown, exact: true }).click()
+  if ((await box.innerText()).trim() !== shown) errors.push(`${name}: pilihan berubah dari ${shown}`)
+}
 // sell fewer seats than the layout has, typed key by key as on a phone: the back seats close, the front row stays on
 // sale and A1 (closed by hand) stays closed
 const sell = page.getByLabel('Kursi dijual per sesi')

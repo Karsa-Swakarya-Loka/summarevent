@@ -376,7 +376,7 @@ function SpotCard({ e, now }: { e: EventSummary; now: Date }) {
       to={`/app/e/${e.event.slug}`}
       className="group relative block h-64 overflow-hidden rounded-[1.6rem] shadow-md shadow-ink/10 transition-transform duration-200 active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
-      <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} title={e.event.title} bare className="absolute inset-0 transition-transform duration-700 ease-(--ease-soft) group-hover:scale-[1.04]" />
+      <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} image={e.event.posterImage} title={e.event.title} bare className="absolute inset-0 transition-transform duration-700 ease-(--ease-soft) group-hover:scale-[1.04]" />
       <div className="absolute inset-0 bg-linear-to-t from-ink/90 via-ink/25 to-transparent" aria-hidden />
       <DateTile iso={e.event.startAt} className="absolute top-3 left-3" />
       <span className="absolute top-3 right-3 rounded-full bg-white px-3 py-1.5 text-xs font-extrabold text-ink shadow-md">{priceHint(e.categories)}</span>
@@ -401,8 +401,8 @@ function EventCard({ e, now, today = false }: { e: EventSummary; now: Date; toda
       to={`/app/e/${e.event.slug}`}
       className="group flex gap-3.5 rounded-[1.4rem] bg-card p-3 shadow-xs transition hover:shadow-md active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
-      <div className="relative w-24 shrink-0 self-stretch overflow-hidden rounded-2xl">
-        <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} title={e.event.title} bare className="absolute inset-0 transition-transform duration-500 ease-(--ease-soft) group-hover:scale-105" />
+      <div className="relative aspect-square w-28 shrink-0 self-start overflow-hidden rounded-2xl">
+        <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} image={e.event.posterImage} title={e.event.title} bare className="absolute inset-0 transition-transform duration-500 ease-(--ease-soft) group-hover:scale-105" />
       </div>
       <div className="min-w-0 flex-1 py-0.5">
         <p className="text-[0.66rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{POSTER_THEMES[e.event.posterTheme].label}</p>

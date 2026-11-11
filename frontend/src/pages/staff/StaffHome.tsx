@@ -188,7 +188,7 @@ function EventOption({ summary, checked, onSelect }: { summary: EventSummary; ch
   const { event, venue } = summary
   return (
     <button type="button" role="radio" aria-checked={checked} onClick={onSelect} className={cn('flex min-h-16 w-full items-center gap-3 px-3.5 py-3 text-left transition active:bg-muted', checked && 'bg-muted/50')}>
-      <Poster theme={event.posterTheme} title={event.title} bare className="h-11 w-16 shrink-0 rounded-xl" />
+      <Poster theme={event.posterTheme} palette={event.posterPalette} image={event.posterImage} title={event.title} bare className="h-11 w-16 shrink-0 rounded-xl" />
       <span className="min-w-0 flex-1">
         <span className="line-clamp-2 font-bold leading-snug">{event.title}</span>
         <span className="mt-0.5 block truncate text-xs text-muted-foreground">

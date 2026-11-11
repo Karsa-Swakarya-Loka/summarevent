@@ -9,6 +9,7 @@ import type { PosterPalette, PosterTheme, SeatingMode, Venue } from '@/domain/ty
 import { cn } from '@/lib/utils'
 import { ChoiceCards, NumberInput, TextInput, ToggleRow } from './inputs'
 import { changeVenue, DEFAULT_RULES, type StepProps } from './model'
+import { PosterImageField } from './PosterImageField'
 
 const THEMES: Array<{ id: PosterTheme; name: string }> = [
   { id: 'stage', name: 'Pertunjukan' },
@@ -77,7 +78,11 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
         </div>
       </SectionCard>
 
-      <SectionCard title="Tema poster" description="Poster dibuat otomatis dari judul: pilih gayanya, lalu warnanya kalau mau. Tiket pengunjung memakai tema yang sama.">
+      <SectionCard title="Gambar poster" description="Tampil di daftar event, halaman event, dan e-ticket pengunjung. Tanpa gambar, poster dibuat otomatis dari tema di bawah.">
+        <PosterImageField value={form.posterImage} onChange={(posterImage) => update((f) => ({ ...f, posterImage }))} error={err('posterImage')} />
+      </SectionCard>
+
+      <SectionCard title="Tema poster" description={form.posterImage ? 'Jenis acara dan warna e-ticket. Posternya memakai gambar di atas.' : 'Poster dibuat otomatis dari judul: pilih gayanya, lalu warnanya kalau mau. Tiket pengunjung memakai tema yang sama.'}>
         <div role="radiogroup" aria-label="Tema poster" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {THEMES.map((t) => {
             const active = form.posterTheme === t.id

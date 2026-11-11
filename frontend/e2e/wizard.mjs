@@ -37,6 +37,24 @@ await page.getByRole('textbox', { name: 'Deskripsi' }).fill('Pertunjukan boneka 
 await page.getByRole('switch', { name: 'Warna sendiri' }).click()
 await page.getByRole('radiogroup', { name: 'Warna dasar' }).getByRole('radio', { name: 'Biru malam' }).click()
 await page.getByRole('radiogroup', { name: 'Warna aksen' }).getByRole('radio', { name: 'Amber' }).click()
+// the panitia's own poster picture: a 1600x900 PNG drawn in the page, shrunk to a JPEG by the wizard
+const png = await page.evaluate(() => {
+  const c = document.createElement('canvas')
+  c.width = 1600
+  c.height = 900
+  const g = c.getContext('2d')
+  const grad = g.createLinearGradient(0, 0, 1600, 900)
+  grad.addColorStop(0, '#006426')
+  grad.addColorStop(1, '#f9a61b')
+  g.fillStyle = grad
+  g.fillRect(0, 0, 1600, 900)
+  g.fillStyle = '#fbf3e4'
+  g.font = 'bold 160px sans-serif'
+  g.fillText('KABAYAN', 220, 520)
+  return c.toDataURL('image/png').split(',')[1]
+})
+await page.locator('input[type="file"][accept^="image/jpeg"]').setInputFiles({ name: 'poster-kabayan.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') })
+await page.getByRole('img', { name: 'Gambar poster event' }).waitFor({ timeout: 8000 }).catch(() => errors.push('gambar poster: pratinjau tidak muncul setelah diunggah'))
 await shot('1-info')
 await next()
 // categories
@@ -107,6 +125,9 @@ const card = page.getByRole('link').filter({ hasText: TITLE })
 await card.first().waitFor({ timeout: 15_000 }).catch(() => undefined)
 console.log('visitor card found:', await card.count())
 if (!(await card.count())) errors.push('event baru tidak muncul di app pengunjung')
+const cardImg = await card.first().locator('img[src^="data:image/jpeg"]').count()
+console.log('visitor card shows the poster picture:', cardImg > 0)
+if (!cardImg) errors.push('gambar poster: kartu event pengunjung tidak memakai gambar yang diunggah')
 await card.first().click()
 await page.getByRole('button', { name: 'Pilih kursi' }).waitFor()
 const navy = await page.locator('[style*="rgb(28, 47, 94)"]').count()

@@ -510,7 +510,7 @@ export function TalonTicket({
       <section ref={body} className="talon-card relative overflow-hidden rounded-t-[1.1rem] px-6 pt-6 pb-8">
         {/* the event's poster printed along the top, in the panitia's colours */}
         <div className={cn('relative -mx-6 -mt-6 mb-5 h-12 overflow-hidden', used && 'opacity-50 saturate-0')} aria-hidden>
-          <Poster theme={event.posterTheme} palette={event.posterPalette} title={event.title} bare className="absolute inset-0" />
+          <Poster theme={event.posterTheme} palette={event.posterPalette} image={event.posterImage} title={event.title} bare className="absolute inset-0" />
           <span className="absolute bottom-2.5 left-6 rounded-full px-2 py-0.5 text-[0.6rem] font-bold tracking-[0.16em] uppercase" style={{ background: colors.accent, color: '#231f20' }}>
             {colors.label}
           </span>

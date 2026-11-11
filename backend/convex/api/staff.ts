@@ -2,7 +2,7 @@
 import type { CheckinResponse, OfflineManifest, TicketSearchRow } from '../shared/contract'
 import { ORDER_STATUS_LABEL } from '../shared/labels'
 import { fmtShortDate, fmtTime, normalizePhone } from '../shared/format'
-import { checkinWindow, resolveSession, suggestSeats } from '../shared/rules'
+import { checkinWindow, eventRow, resolveSession, suggestSeats } from '../shared/rules'
 import type { Checkin, Order, SessionSeat, Ticket, User } from '../shared/types'
 import { ownerId, requireRole, type Req } from '../lib/auth'
 import { verifyQrToken, sha256Hex } from '../lib/crypto'
@@ -51,7 +51,7 @@ export async function offlineManifest(tx: Tx, req: Req): Promise<OfflineManifest
       session: sessions.get(ticket.sessionId) ?? session,
     })
   }
-  return { sessionId: session.id, generatedAt: tx.now.toISOString(), event, session, categories: await categoriesOf(tx, event.id), tickets }
+  return { sessionId: session.id, generatedAt: tx.now.toISOString(), event: eventRow(event), session, categories: await categoriesOf(tx, event.id), tickets }
 }
 
 /**
@@ -132,7 +132,7 @@ export async function searchTickets(tx: Tx, req: Req): Promise<TicketSearchRow[]
       o.buyerName.toLowerCase().includes(term) ||
       (t.attendeeName?.toLowerCase().includes(term) ?? false)
     if (!hit) continue
-    out.push({ ticket: staffTicket(t), order: o, event: await eventOf(tx, t.eventId), session: await sessionOf(tx, t.sessionId), category: await categoryOf(tx, t.categoryId) })
+    out.push({ ticket: staffTicket(t), order: o, event: eventRow(await eventOf(tx, t.eventId)), session: await sessionOf(tx, t.sessionId), category: await categoryOf(tx, t.categoryId) })
   }
   return out
 }

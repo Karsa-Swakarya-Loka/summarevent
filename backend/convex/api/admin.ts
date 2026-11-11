@@ -2,7 +2,7 @@
 import type { EventDraft, EventStats, OrderRow, ReceiptQueueItem, ReviewDecision, StaffAccount } from '../shared/contract'
 import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL, TICKET_STATUS_LABEL } from '../shared/labels'
 import { csvCell, fmtRange, fmtShortDate, fmtTime, isValidPhone, normalizePhone, rupiahPlain, wibDate } from '../shared/format'
-import { checkReceiptRules, profileChanges, resolveSession, uid } from '../shared/rules'
+import { checkReceiptRules, eventRow, profileChanges, resolveSession, uid } from '../shared/rules'
 import type { Checkin, EventItem, Order, OrderStatus, Payment, Receipt, Session, SessionQuota, SessionSeat, Tenant, Ticket, TicketCategory, User, Venue } from '../shared/types'
 import { requireRole, revokeTokens, type Req } from '../lib/auth'
 import {
@@ -216,7 +216,7 @@ export async function listOrders(tx: Tx, req: Req): Promise<OrderRow[]> {
   for (const o of rows) {
     out.push({
       order: liveOrder(o, tx.now),
-      event: await eventOf(tx, o.eventId),
+      event: eventRow(await eventOf(tx, o.eventId)),
       session: await sessionOf(tx, o.sessionId),
       category: await categoryOf(tx, o.categoryId),
       receipts: await receiptsOf(tx, o.id),
@@ -309,7 +309,7 @@ export async function receiptQueue(tx: Tx, status: string, eventId?: string): Pr
     items.push({
       receipt: rep,
       order: live,
-      event: await eventOf(tx, order.eventId),
+      event: eventRow(await eventOf(tx, order.eventId)),
       session: await sessionOf(tx, order.sessionId),
       category,
       tenant: tenants.find((t) => t.id === rep.tenantId) ?? null,
@@ -453,7 +453,7 @@ export async function stats(tx: Tx, req: Req): Promise<EventStats> {
     }
   }
   return {
-    event,
+    event: eventRow(event),
     registrants: new Set(orders.filter((o) => !o.simulated && (o.status === 'CONFIRMED' || isPending(o))).map((o) => o.userId)).size,
     ticketsSold: tickets.length,
     revenue: confirmed.reduce((s, o) => s + o.totalAmount, 0),

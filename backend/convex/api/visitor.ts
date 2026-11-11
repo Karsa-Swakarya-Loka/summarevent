@@ -2,7 +2,7 @@
 import type { EventDetail, HoldResult, PassItem, ReceiptInput, SeatMapData } from '../shared/contract'
 import { ORDER_STATUS_LABEL } from '../shared/labels'
 import { fmtTime, isValidPhone, normalizePhone, rupiahPlain } from '../shared/format'
-import { attendeeEditPolicy, checkReceiptRules, effectiveSeatStatus, profileChanges, randomCode, receiptChecksPass, suggestSeats, uid, visitorCancelPolicy } from '../shared/rules'
+import { attendeeEditPolicy, checkReceiptRules, effectiveSeatStatus, eventRow, profileChanges, randomCode, receiptChecksPass, suggestSeats, uid, visitorCancelPolicy } from '../shared/rules'
 import type { AppNotification, EventItem, Order, Payment, Receipt, Role, SessionSeat, Ticket, TicketCategory, User, WaitlistEntry } from '../shared/types'
 import { ANONYMOUS, guestOf, issueToken, ownerId, visitorId, visitorUser, type Req } from '../lib/auth'
 import {
@@ -182,7 +182,7 @@ export async function getSeatMap(tx: Tx, req: Req): Promise<SeatMapData> {
   for (const c of categories.filter((x) => x.bonusFirstN && x.bonusDesc)) bonus.push({ categoryId: c.id, left: (await bonusPlacesLeft(tx, sessionId, c)) ?? 0 })
   return {
     session,
-    event,
+    event: eventRow(event),
     layout: await layoutOf(tx, event.layoutId),
     seats: await seatsOf(tx, event.layoutId),
     sessionSeats: rows.map((x) => {
@@ -463,7 +463,7 @@ export async function myTickets(tx: Tx, req: Req): Promise<PassItem[]> {
     out.push({
       ticket,
       order,
-      event,
+      event: eventRow(event),
       venue: await venueOf(tx, event.venueId),
       session: await sessionOf(tx, ticket.sessionId),
       category: await categoryOf(tx, ticket.categoryId),

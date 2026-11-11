@@ -5,7 +5,7 @@
 import type { CategoryAvailability, CheckinResponse, EventDraft, EventSummary, HoldRequest, HoldResult, OrderDetail, SessionSummary, WaitlistItem } from '../shared/contract'
 import { demoEnabled } from './demo'
 import { fmtRange, fmtShortDate, fmtTime } from '../shared/format'
-import { buildSeats, effectiveSeatStatus, isHoldActive, posterImageCheck, posterPaletteCheck, randomCode, resolveSession, rowIndex, rowLetter, saleState, seatLabel, suggestSeats, uid } from '../shared/rules'
+import { buildSeats, effectiveSeatStatus, eventRow, isHoldActive, posterImageCheck, posterPaletteCheck, randomCode, resolveSession, rowIndex, rowLetter, saleState, seatLabel, suggestSeats, uid } from '../shared/rules'
 import type {
   AppNotification,
   Checkin,
@@ -180,7 +180,7 @@ export async function notifyWaitlist(tx: Tx, order: Pick<Order, 'sessionId' | 'c
 
 export async function waitlistItem(tx: Tx, entry: WaitlistEntry): Promise<WaitlistItem> {
   const session = await sessionOf(tx, entry.sessionId)
-  const base = { ...entry, session, event: await eventOf(tx, session.eventId), category: await categoryOf(tx, entry.categoryId) }
+  const base = { ...entry, session, event: eventRow(await eventOf(tx, session.eventId)), category: await categoryOf(tx, entry.categoryId) }
   if (entry.status !== 'WAITING') return { ...base, position: null }
   const line = (await tx.where<WaitlistEntry>('waitlist', 'by_line', { sessionId: entry.sessionId, categoryId: entry.categoryId, status: 'WAITING' })).sort((a, b) =>
     a.createdAt.localeCompare(b.createdAt),
@@ -245,7 +245,7 @@ export async function orderDetail(tx: Tx, order: Order): Promise<OrderDetail> {
   const event = await eventOf(tx, order.eventId)
   return {
     order,
-    event,
+    event: eventRow(event),
     venue: await venueOf(tx, event.venueId),
     session: await sessionOf(tx, order.sessionId),
     category: await categoryOf(tx, order.categoryId),
@@ -646,12 +646,13 @@ export async function checkinResponseFrom(
   firstScan: CheckinResponse['firstScan'] = null,
 ): Promise<CheckinResponse> {
   const raw = ticket ? await tx.get<Session>('sessions', ticket.sessionId) : null
+  const event = ticket ? await tx.get<EventItem>('events', ticket.eventId) : null
   return {
     result,
     message,
     ticket: ticket ? staffTicket(ticket) : null,
     order: ticket ? await tx.get<Order>('orders', ticket.orderId) : null,
-    event: ticket ? await tx.get<EventItem>('events', ticket.eventId) : null,
+    event: event ? eventRow(event) : null,
     session: raw ? resolveSession(raw, tx.now) : null,
     category: ticket ? await tx.get<TicketCategory>('categories', ticket.categoryId) : null,
     firstScan,

@@ -2,13 +2,33 @@
 import { parseReceiptText, type ReceiptReading } from '@/domain/ocr'
 import type { Tenant } from '@/domain/types'
 
+const PHOTO_FAILED = 'Foto tidak bisa dimuat. Cek koneksi lalu coba lagi.'
+
+async function fetchPhoto(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) throw new Error(String(res.status))
+    return URL.createObjectURL(await res.blob())
+  } catch {
+    throw new Error(PHOTO_FAILED)
+  }
+}
+
 /** OCR works on raster images: draw the photo (or the SVG sample receipt) on a canvas, upscaled. */
 async function rasterize(url: string): Promise<string> {
+  // a stored photo (live version) is fetched fresh with CORS, so the canvas stays readable even when the page already
+  // shows the same photo from the browser cache
+  const remote = /^https?:/i.test(url)
+  const src = remote ? await fetchPhoto(url) : url
   const img = new Image()
-  // a stored photo comes from the API's own address; asking with CORS keeps the canvas readable
-  if (/^https?:/i.test(url)) img.crossOrigin = 'anonymous'
-  img.src = url
-  await img.decode()
+  img.src = src
+  try {
+    await img.decode()
+  } catch {
+    throw new Error(PHOTO_FAILED)
+  } finally {
+    if (remote) URL.revokeObjectURL(src)
+  }
   const w0 = img.naturalWidth || 320
   const h0 = img.naturalHeight || 440
   const scale = Math.min(3, Math.max(1, 1400 / Math.max(w0, h0)))

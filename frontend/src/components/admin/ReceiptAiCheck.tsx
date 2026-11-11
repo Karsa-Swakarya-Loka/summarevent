@@ -1,15 +1,29 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CircleCheck, CircleHelp, CircleX, LoaderCircle, RefreshCw, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { matchReceipt, type FieldMatch, type ReceiptField } from '@/domain/ocr'
+import { matchReceipt, matchVerdict, type FieldMatch, type ReceiptField } from '@/domain/ocr'
 import type { Receipt, Tenant } from '@/domain/types'
-import { errorMessage } from '@/hooks/useLive'
 import { fmtDayMonth, rupiahPlain } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 const LABEL: Record<ReceiptField, string> = { tenant: 'Tenant', receiptNo: 'No. struk', amount: 'Nominal', date: 'Tanggal', time: 'Jam' }
 
-type State = { phase: 'idle' } | { phase: 'reading'; progress: number } | { phase: 'done'; matches: FieldMatch[] } | { phase: 'failed'; message: string }
+const SUMMARY: Record<ReturnType<typeof matchVerdict>, string> = {
+  differ: 'beda dengan foto. Cek fotonya sebelum menyetujui.',
+  match: 'Nominal dan nomor struk cocok dengan foto.',
+  partial: 'Sebagian belum terbaca. Cek nominal dan nomor struk dari fotonya.',
+  unread: 'Tulisan di foto belum terbaca. Cek manual dari fotonya.',
+}
+
+const FAILED = 'Foto belum bisa dibaca. Cek koneksi lalu coba lagi, atau cek manual dari fotonya.'
+
+type State = { phase: 'idle' } | { phase: 'reading'; progress: number } | { phase: 'done'; matches: FieldMatch[] } | { phase: 'failed' }
+
+function summaryOf(matches: FieldMatch[]): string {
+  const verdict = matchVerdict(matches)
+  if (verdict !== 'differ') return SUMMARY[verdict]
+  return `${matches.filter((m) => m.state === 'differ').length} isian ${SUMMARY.differ}`
+}
 
 /**
  * AD-07 cross-check: AI reads the receipt photo (tesseract.js, on this device) and lays what it found next to what the
@@ -17,6 +31,12 @@ type State = { phase: 'idle' } | { phase: 'reading'; progress: number } | { phas
  */
 export function ReceiptAiCheck({ receipt, tenants }: { receipt: Receipt; tenants: Tenant[] }) {
   const [state, setState] = useState<State>({ phase: 'idle' })
+  const heading = useRef<HTMLHeadingElement>(null)
+
+  // the button that started the reading is gone once it finishes: keyboard focus moves to the result
+  useEffect(() => {
+    if (state.phase === 'done' || state.phase === 'failed') heading.current?.focus()
+  }, [state.phase])
 
   const run = async () => {
     setState({ phase: 'reading', progress: 0 })
@@ -24,8 +44,8 @@ export function ReceiptAiCheck({ receipt, tenants }: { receipt: Receipt; tenants
       const { readReceiptPhoto } = await import('@/components/visitor/ocr')
       const reading = await readReceiptPhoto(receipt.photoUrl, tenants, (progress) => setState({ phase: 'reading', progress }))
       setState({ phase: 'done', matches: matchReceipt(reading, receipt) })
-    } catch (e) {
-      setState({ phase: 'failed', message: errorMessage(e) })
+    } catch {
+      setState({ phase: 'failed' })
     }
   }
 
@@ -38,36 +58,34 @@ export function ReceiptAiCheck({ receipt, tenants }: { receipt: Receipt; tenants
     return String(value)
   }
 
+  const announce = state.phase === 'reading' ? 'Membaca foto struk…' : state.phase === 'done' ? summaryOf(state.matches) : state.phase === 'failed' ? FAILED : ''
+  const differ = state.phase === 'done' && matchVerdict(state.matches) === 'differ'
+
   return (
     <section aria-label="Cek silang AI" className="rounded-xl border border-dashed p-3">
-      <div className="flex items-center gap-1.5 text-sm font-bold">
+      <h4 ref={heading} tabIndex={-1} className="flex items-center gap-1.5 text-sm font-bold focus:outline-none">
         <Sparkles className="size-4 text-brand" aria-hidden /> Cek silang AI
-      </div>
+      </h4>
 
-      {state.phase === 'idle' && (
-        <>
-          <p className="mt-1 text-xs text-muted-foreground">AI membaca foto struk lalu membandingkannya dengan isian pengunjung. Fotonya dibaca di perangkat ini.</p>
-          <Button type="button" variant="outline" className="mt-2 h-11 w-full sm:w-auto" onClick={() => void run()}>
-            Bandingkan foto dengan isian
-          </Button>
-        </>
-      )}
+      {state.phase === 'idle' && <p className="mt-1 text-xs text-muted-foreground">AI membaca foto struk lalu membandingkannya dengan isian pengunjung. Fotonya dibaca di perangkat ini.</p>}
 
-      {state.phase === 'reading' && (
-        <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground" role="status">
-          <LoaderCircle className="size-4 animate-spin" aria-hidden /> Membaca foto… {Math.round(state.progress * 100)}%
-        </p>
-      )}
+      {/* one live region that stays on the page, so screen readers announce each change once */}
+      <p role="status" className={cn('text-sm', announce && 'mt-2', state.phase === 'done' ? 'font-semibold' : 'text-muted-foreground', (differ || state.phase === 'failed') && 'text-[#a11b1b]')}>
+        {state.phase === 'reading' && <LoaderCircle className="mr-1.5 inline size-4 animate-spin align-[-3px]" aria-hidden />}
+        {announce}
+        {state.phase === 'reading' && <span aria-hidden> {Math.round(state.progress * 100)}%</span>}
+      </p>
 
-      {state.phase === 'failed' && (
-        <div className="mt-2 flex flex-col gap-2">
-          <p className="text-sm text-[#a11b1b]" role="alert">
-            Foto belum bisa dibaca: {state.message}. Cek manual dari fotonya.
-          </p>
-          <Button type="button" variant="outline" className="h-11 w-full sm:w-auto" onClick={() => void run()}>
-            <RefreshCw aria-hidden /> Coba lagi
-          </Button>
-        </div>
+      {(state.phase === 'idle' || state.phase === 'failed') && (
+        <Button type="button" variant="outline" className="mt-2 h-11 w-full sm:w-auto" onClick={() => void run()}>
+          {state.phase === 'failed' ? (
+            <>
+              <RefreshCw aria-hidden /> Coba lagi
+            </>
+          ) : (
+            'Bandingkan foto dengan isian'
+          )}
+        </Button>
       )}
 
       {state.phase === 'done' && <Result matches={state.matches} shown={shown} />}
@@ -76,17 +94,8 @@ export function ReceiptAiCheck({ receipt, tenants }: { receipt: Receipt; tenants
 }
 
 function Result({ matches, shown }: { matches: FieldMatch[]; shown: (field: ReceiptField, value: string | number | undefined) => string }) {
-  const differ = matches.filter((m) => m.state === 'differ').length
-  const read = matches.filter((m) => m.state !== 'unread').length
-  const summary =
-    differ > 0
-      ? `${differ} isian beda dengan foto. Cek fotonya sebelum menyetujui.`
-      : read === 0
-        ? 'Tulisan di foto belum terbaca. Cek manual dari fotonya.'
-        : `Isian cocok dengan foto (${read} dari ${matches.length} bagian terbaca).`
   return (
-    <div className="mt-2" role="status">
-      <p className={cn('text-sm font-semibold', differ > 0 && 'text-[#a11b1b]')}>{summary}</p>
+    <>
       <ul className="mt-2 flex flex-col gap-1.5 text-sm">
         {matches.map((m) => (
           <li key={m.field} className="grid grid-cols-[5.5rem_1fr_auto] items-start gap-2">
@@ -100,7 +109,7 @@ function Result({ matches, shown }: { matches: FieldMatch[]; shown: (field: Rece
         ))}
       </ul>
       <p className="mt-2 text-xs text-muted-foreground">Kolom tengah adalah yang terbaca di foto. AI bisa salah baca, jadi keputusan tetap di panitia.</p>
-    </div>
+    </>
   )
 }
 

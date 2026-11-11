@@ -13,6 +13,8 @@ export interface ReceiptReading {
   receiptDate?: string
   /** HH:MM */
   receiptTime?: string
+  /** every tenant whose name is in the top lines of the receipt, where the shop name is printed */
+  headTenantIds?: string[]
 }
 
 const norm = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, '')
@@ -37,6 +39,8 @@ export function parseReceiptText(text: string, tenants: Tenant[]): ReceiptReadin
     .filter(({ n }) => n.length >= 4 && (head.includes(n) || all.includes(n)))
     .sort((a, b) => Number(head.includes(b.n)) - Number(head.includes(a.n)) || b.n.length - a.n.length)[0]
   if (hit) out.tenantId = hit.t.id
+  const onTop = tenants.filter((t) => norm(t.name).length >= 4 && head.includes(norm(t.name))).map((t) => t.id)
+  if (onTop.length) out.headTenantIds = onTop
 
   const no = /(?:no\.?\s*(?:struk|nota|transaksi)|invoice|nota)\s*[:#]?\s*([A-Z0-9][A-Z0-9-]{4,})/i.exec(flat) ?? /\b(INV[\s-]?\d{4,})\b/i.exec(flat)
   if (no) out.receiptNo = no[1].replace(/[\s-]/g, '').toUpperCase()
@@ -81,11 +85,25 @@ const looseNo = (s: string) => norm(s).replace(/O/g, '0').replace(/[IL]/g, '1')
 export function matchReceipt(reading: ReceiptReading, typed: Pick<Receipt, 'tenantId' | 'receiptNo' | 'amount' | 'receiptDate' | 'receiptTime'>): FieldMatch[] {
   const pair = (field: ReceiptField, read: string | number | undefined, value: string | number, same: (r: string | number) => boolean): FieldMatch =>
     read === undefined ? { field, typed: value, state: 'unread' } : { field, read, typed: value, state: same(read) ? 'same' : 'differ' }
+  // the shop name counts only where it is printed, on top: a name further down may be an item on the receipt
+  const top = reading.headTenantIds ?? []
+  const tenantRead = top.includes(typed.tenantId) ? typed.tenantId : top[0]
   return [
-    pair('tenant', reading.tenantId, typed.tenantId, (r) => r === typed.tenantId),
+    pair('tenant', tenantRead, typed.tenantId, (r) => r === typed.tenantId),
     pair('receiptNo', reading.receiptNo, typed.receiptNo, (r) => looseNo(String(r)) === looseNo(typed.receiptNo)),
     pair('amount', reading.amount, typed.amount, (r) => r === typed.amount),
     pair('date', reading.receiptDate, typed.receiptDate, (r) => r === typed.receiptDate),
     pair('time', reading.receiptTime, typed.receiptTime, (r) => r === typed.receiptTime),
   ]
+}
+
+/**
+ * One line for the whole cross-check. "Match" needs the two fields people fake, amount and receipt number, read and
+ * the same; a photo with those unread is never called a match.
+ */
+export function matchVerdict(matches: FieldMatch[]): 'differ' | 'match' | 'partial' | 'unread' {
+  if (matches.some((m) => m.state === 'differ')) return 'differ'
+  if (matches.every((m) => m.state === 'unread')) return 'unread'
+  const key = matches.filter((m) => m.field === 'amount' || m.field === 'receiptNo')
+  return key.every((m) => m.state === 'same') ? 'match' : 'partial'
 }

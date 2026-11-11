@@ -9,7 +9,7 @@ import { clearClientSessions, clearDb, readDb, replaceDb, setSessionUserId, tran
 import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
 import { DEMO_PASSWORD } from '@/lib/demoAccounts'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
-import { matchReceipt, parseReceiptText } from '@/domain/ocr'
+import { matchReceipt, matchVerdict, parseReceiptText } from '@/domain/ocr'
 import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, eventRow, passwordCheck, posterImageCheck, posterInk, posterPaletteCheck, POSTER_IMAGE_MAX, profileChanges, resolveSession, saleState, suggestSeats, ticketAllowance, ticketLimitCheck, ticketsOwned } from '@/domain/rules'
 import type { EventDraft } from '@/api/contract'
 import { posterColors } from '@/components/common/posterThemes'
@@ -506,14 +506,14 @@ describe('bonus, staff accounts, desk review, OCR (AD-12, AD-13, PT-06, PV-16)',
   it('PV-16: OCR text of a receipt becomes form fields', () => {
     const db = readDb()!
     const text = `TOKO MAINAN CERIA\nSummarecon Mall Bandung (contoh)\nNo. Struk : INV713128\nTanggal : 02/11/2026\nJam : 21:40\n----------\nPuzzle kayu Rp100.000\nMobil remote Rp60.000\nLilin mainan Rp40.000\nTOTAL Rp200.000\nTerima kasih!`
-    expect(parseReceiptText(text, db.tenants)).toEqual({ tenantId: 't_mainan', receiptNo: 'INV713128', amount: 200_000, receiptDate: '2026-11-02', receiptTime: '21:40' })
+    expect(parseReceiptText(text, db.tenants)).toEqual({ tenantId: 't_mainan', headTenantIds: ['t_mainan'], receiptNo: 'INV713128', amount: 200_000, receiptDate: '2026-11-02', receiptTime: '21:40' })
     expect(parseReceiptText('SUBTOTAL 50.000\nGrand total: 75.000', db.tenants).amount).toBe(75_000)
     expect(parseReceiptText('foto buram', db.tenants)).toEqual({})
   })
 
   it('AD-07: the AI cross-check flags typed fields the photo does not show', () => {
     const typed = { tenantId: 't_mainan', receiptNo: 'INV-7131O8', amount: 500_000, receiptDate: '2026-11-02', receiptTime: '21:40' }
-    const read = { tenantId: 't_mainan', receiptNo: 'INV713108', amount: 50_000, receiptDate: '2026-11-02' }
+    const read = { tenantId: 't_mainan', headTenantIds: ['t_mainan'], receiptNo: 'INV713108', amount: 50_000, receiptDate: '2026-11-02' }
     expect(matchReceipt(read, typed)).toEqual([
       { field: 'tenant', read: 't_mainan', typed: 't_mainan', state: 'same' },
       { field: 'receiptNo', read: 'INV713108', typed: 'INV-7131O8', state: 'same' },
@@ -521,8 +521,16 @@ describe('bonus, staff accounts, desk review, OCR (AD-12, AD-13, PT-06, PV-16)',
       { field: 'date', read: '2026-11-02', typed: '2026-11-02', state: 'same' },
       { field: 'time', typed: '21:40', state: 'unread' },
     ])
-    expect(matchReceipt({}, typed).every((m) => m.state === 'unread')).toBe(true)
-    expect(matchReceipt({ tenantId: 't_kopi', receiptNo: 'INV999999' }, typed).slice(0, 2).map((m) => m.state)).toEqual(['differ', 'differ'])
+    expect(matchVerdict(matchReceipt(read, typed))).toBe('differ')
+    expect(matchVerdict(matchReceipt({}, typed))).toBe('unread')
+    expect(matchReceipt({ headTenantIds: ['t_kopi'], receiptNo: 'INV999999' }, typed).slice(0, 2).map((m) => m.state)).toEqual(['differ', 'differ'])
+    // a tenant name found only lower on the receipt (an item line) is not the shop
+    expect(matchReceipt({ tenantId: 't_kopi' }, typed)[0].state).toBe('unread')
+    // the shop on top wins over another tenant on top or the parser's pick
+    expect(matchReceipt({ tenantId: 't_kopi', headTenantIds: ['t_kopi', 't_mainan'] }, typed)[0].state).toBe('same')
+    // only the date read: not a match, the amount and number still need a look
+    expect(matchVerdict(matchReceipt({ receiptDate: '2026-11-02' }, typed))).toBe('partial')
+    expect(matchVerdict(matchReceipt({ ...read, amount: 500_000 }, typed))).toBe('match')
   })
 })
 

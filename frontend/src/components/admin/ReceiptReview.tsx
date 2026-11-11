@@ -227,7 +227,8 @@ export function ReviewPanel({
             </ul>
           </div>
           )}
-          {decidable && <ReceiptAiCheck key={r.id} receipt={r} tenants={tenants.data ?? []} />}
+          {/* keyed by what is compared, so a re-sent receipt starts a fresh check */}
+          {decidable && <ReceiptAiCheck key={[r.id, r.photoHash, r.tenantId, r.receiptNo, r.amount, r.receiptDate, r.receiptTime].join('|')} receipt={r} tenants={tenants.data ?? []} />}
 
           <dl className="grid grid-cols-[6.5rem_1fr] gap-x-2 gap-y-1 text-sm">
             <dt className="text-muted-foreground">Event</dt>

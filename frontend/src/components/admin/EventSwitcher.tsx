@@ -19,7 +19,7 @@ export function EventSwitcher({ ctx, variant, className }: { ctx: AdminOutlet; v
   const navigate = useNavigate()
   const current = ctx.summary
   const title = current?.event.title ?? (ctx.events ? 'Belum ada event' : 'Memuat event…')
-  const thumb = current ? <Poster theme={current.event.posterTheme} palette={current.event.posterPalette} title={current.event.title} bare className={variant === 'card' ? 'h-10 w-10 shrink-0 rounded-lg' : 'h-6 w-8 shrink-0 rounded-md'} /> : <span className={cn('shrink-0 rounded-lg bg-track', variant === 'card' ? 'size-10' : 'h-6 w-8')} aria-hidden />
+  const thumb = current ? <Poster theme={current.event.posterTheme} palette={current.event.posterPalette} image={current.event.posterImage} title={current.event.title} bare className={variant === 'card' ? 'h-10 w-10 shrink-0 rounded-lg' : 'h-6 w-8 shrink-0 rounded-md'} /> : <span className={cn('shrink-0 rounded-lg bg-track', variant === 'card' ? 'size-10' : 'h-6 w-8')} aria-hidden />
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -202,7 +202,7 @@ function EventTree({ list, eventId, onPick, onSession }: { list: EventSummary[];
                 >
                   <ChevronRight className={cn('size-4 transition-transform', open && 'rotate-90')} aria-hidden />
                 </span>
-                <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} title={e.event.title} bare className="h-7 w-10 shrink-0 rounded-md" />
+                <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} image={e.event.posterImage} title={e.event.title} bare className="h-7 w-10 shrink-0 rounded-md" />
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block truncate text-sm font-semibold">{e.event.title}</span>
                   <span className="block truncate text-xs text-muted-foreground">

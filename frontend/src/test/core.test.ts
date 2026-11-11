@@ -10,7 +10,7 @@ import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
 import { DEMO_PASSWORD } from '@/lib/demoAccounts'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
 import { parseReceiptText } from '@/domain/ocr'
-import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, passwordCheck, posterInk, posterPaletteCheck, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
+import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, passwordCheck, posterImageCheck, posterInk, posterPaletteCheck, POSTER_IMAGE_MAX, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
 import type { EventDraft } from '@/api/contract'
 import { posterColors } from '@/components/common/posterThemes'
 import { scrubToView } from '@/components/landing/crumple'
@@ -677,5 +677,27 @@ describe('seats tapped by hand', () => {
     expect(tapSeat(four, 'G5', 4, 4)).toEqual({ picked: four, qty: 4, full: true })
     expect(tapSeat(four, 'G4', 4, 4)).toEqual({ picked: ['G1', 'G2', 'G3'], qty: 3, full: false })
     expect(tapSeat(['G1'], 'G1', 1, 4)).toEqual({ picked: [], qty: 1, full: false })
+  })
+})
+
+describe('posterImageCheck', () => {
+  it('keeps the generated poster when there is no picture', () => {
+    expect(posterImageCheck(null)).toEqual({ ok: true, image: null })
+    expect(posterImageCheck(undefined)).toEqual({ ok: true, image: null })
+    expect(posterImageCheck('')).toEqual({ ok: true, image: null })
+  })
+  it('takes a JPEG, PNG or WebP data URL', () => {
+    expect(posterImageCheck(' data:image/jpeg;base64,QUJD ')).toEqual({ ok: true, image: 'data:image/jpeg;base64,QUJD' })
+    expect(posterImageCheck('data:image/webp;base64,QUJD').ok).toBe(true)
+    expect(posterImageCheck('data:image/png;base64,QUJD').ok).toBe(true)
+  })
+  it('refuses other files, any web address, and pictures over the limit', () => {
+    expect(posterImageCheck('https://cdn.example.com/poster.jpg').ok).toBe(false)
+    expect(posterImageCheck('data:image/gif;base64,QUJD').ok).toBe(false)
+    expect(posterImageCheck('data:text/html;base64,PHNjcmlwdD4=').ok).toBe(false)
+    expect(posterImageCheck('http://example.com/poster.jpg').ok).toBe(false)
+    expect(posterImageCheck('javascript:alert(1)').ok).toBe(false)
+    expect(posterImageCheck(42).ok).toBe(false)
+    expect(posterImageCheck(`data:image/jpeg;base64,${'A'.repeat(POSTER_IMAGE_MAX)}`).ok).toBe(false)
   })
 })

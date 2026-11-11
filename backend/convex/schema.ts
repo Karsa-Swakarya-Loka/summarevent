@@ -106,6 +106,8 @@ export default defineSchema({
     description: str,
     posterTheme: v.union(v.literal('stage'), v.literal('acoustic'), v.literal('craft'), v.literal('expo')),
     posterPalette: opt(v.object({ bg: str, accent: str })),
+    // the panitia's own poster picture, a JPEG/PNG/WebP data URL checked by posterImageCheck
+    posterImage: opt(str),
     venueId: str,
     layoutId: nul(str),
     seatingMode: v.union(v.literal('RESERVED'), v.literal('GENERAL')),

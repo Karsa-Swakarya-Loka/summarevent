@@ -410,6 +410,30 @@ export function posterPaletteCheck(input: unknown): { ok: true; palette: PosterP
   return { ok: true, palette: { bg, accent } }
 }
 
+/* ---------------- Poster image ---------------- */
+
+/** The panitia's own poster picture: a JPEG, PNG or WebP data URL, stored as is by the demo and the backend. */
+const POSTER_DATA = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/
+/**
+ * Characters, about 90 KB of picture. Every event the app lists carries it (and the demo keeps all data in the
+ * browser's storage), so it stays small; the wizard shrinks a photo until it fits.
+ */
+export const POSTER_IMAGE_MAX = 120_000
+
+/**
+ * The poster picture of an event draft, made ready to store: none (null) keeps the generated poster. Only a JPEG, PNG
+ * or WebP data URL of at most POSTER_IMAGE_MAX characters is taken; a web address is refused, so a poster can never make
+ * every visitor's phone load a picture from someone else's server.
+ */
+export function posterImageCheck(input: unknown): { ok: true; image: string | null } | { ok: false; reason: string } {
+  if (input === null || input === undefined || input === '') return { ok: true, image: null }
+  if (typeof input !== 'string') return { ok: false, reason: 'Gambar poster tidak terbaca. Pilih ulang gambarnya.' }
+  const v = input.trim()
+  if (!POSTER_DATA.test(v)) return { ok: false, reason: 'Gambar poster harus JPG, PNG, atau WebP.' }
+  if (v.length > POSTER_IMAGE_MAX) return { ok: false, reason: 'Gambar poster terlalu besar. Pilih gambar lain atau yang lebih kecil.' }
+  return { ok: true, image: v }
+}
+
 /** Relative luminance (WCAG 2) of a six-digit hex colour: 0 is black, 1 is white. */
 export function luminance(hex: string): number {
   const ch = (i: number) => {

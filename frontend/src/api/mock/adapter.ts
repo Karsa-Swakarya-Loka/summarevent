@@ -42,6 +42,7 @@ import {
   randomCode,
   RESET_TOKEN_MIN,
   FORGOT_MIN_INTERVAL_SEC,
+  posterImageCheck,
   posterPaletteCheck,
   receiptChecksPass,
   resolveSession,
@@ -621,6 +622,7 @@ function draftOf(db: Db, event: EventItem): EventDraft {
     description: event.description,
     posterTheme: event.posterTheme,
     posterPalette: event.posterPalette ?? null,
+    posterImage: event.posterImage ?? null,
     venueId: event.venueId,
     seatingMode: event.seatingMode,
     rules: { ...event.rules },
@@ -1232,6 +1234,7 @@ export function createMockApi(): Api {
             description: draft.description.trim(),
             posterTheme: draft.posterTheme,
             posterPalette: posterPaletteOf(draft),
+            posterImage: posterImageOf(draft),
             venueId: draft.venueId,
             layoutId: null,
             seatingMode: draft.seatingMode,
@@ -1275,6 +1278,7 @@ export function createMockApi(): Api {
             description: draft.description.trim(),
             posterTheme: draft.posterTheme,
             posterPalette: posterPaletteOf(draft),
+            posterImage: posterImageOf(draft),
             venueId: draft.venueId,
             seatingMode: draft.seatingMode,
             rules: { ...draft.rules },
@@ -1937,9 +1941,17 @@ function posterPaletteOf(d: EventDraft) {
   return c.palette
 }
 
+/** The draft's own poster picture, checked; none when the generated poster applies. */
+function posterImageOf(d: EventDraft) {
+  const c = posterImageCheck(d.posterImage)
+  if (!c.ok) throw new ApiError('INVALID', c.reason, { field: 'posterImage' })
+  return c.image ?? undefined
+}
+
 function validateDraft(d: EventDraft) {
   if (!d.title.trim()) throw new ApiError('INVALID', 'Judul event wajib diisi.')
   posterPaletteOf(d)
+  posterImageOf(d)
   if (!d.venueId) throw new ApiError('INVALID', 'Pilih venue.')
   if (!d.categories.length) throw new ApiError('INVALID', 'Tambahkan minimal 1 kategori tiket.')
   for (const c of d.categories) {

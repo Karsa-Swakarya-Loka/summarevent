@@ -227,6 +227,22 @@ describe('poster colours (AD-01)', () => {
   })
 })
 
+describe('poster picture (AD-01)', () => {
+  it('keeps a picture through save and edit, refuses a web address or another file, and null clears it', async () => {
+    const adm = await write('demoLogin', req({ body: { role: 'ADMIN' } }))
+    const { draft } = await read('admin.getEventDraft', req({ token: adm.token, params: { id: 'evt_akustik' } }))
+    expect(draft.posterImage).toBeNull()
+    const save = (posterImage: unknown) => write('admin.updateEvent', req({ token: adm.token, params: { id: 'evt_akustik' }, body: { ...draft, posterImage } }))
+    const jpeg = 'data:image/jpeg;base64,QUJD'
+    expect((await save(jpeg)).posterImage).toBe(jpeg)
+    const again = await read('admin.getEventDraft', req({ token: adm.token, params: { id: 'evt_akustik' } }))
+    expect(again.draft.posterImage).toBe(jpeg)
+    expect(await code(save('https://example.com/poster.jpg'))).toBe('INVALID')
+    expect(await code(save('data:image/svg+xml;base64,PHN2Zz4='))).toBe('INVALID')
+    expect((await save(null)).posterImage).toBeUndefined()
+  })
+})
+
 describe('security', () => {
   const offDemo = () => {
     process.env.DEMO_MODE = 'false'

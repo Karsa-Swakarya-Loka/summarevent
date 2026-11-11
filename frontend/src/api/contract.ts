@@ -183,6 +183,8 @@ export interface EventDraft {
   posterTheme: PosterTheme
   /** The panitia's own colours; null or absent keeps the theme's. */
   posterPalette?: PosterPalette | null
+  /** The panitia's own poster picture; null or absent keeps the generated poster (posterImageCheck in domain/rules). */
+  posterImage?: string | null
   venueId: string
   seatingMode: SeatingMode
   rules: EventRules

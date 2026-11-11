@@ -181,7 +181,7 @@ export default function Events() {
                     <TableRow key={e.event.id}>
                       <TableCell className="py-3 pl-4">
                         <div className="flex items-center gap-3">
-                          <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} title="" compact className="hidden h-12 w-16 shrink-0 rounded-lg lg:block [&_span]:hidden" />
+                          <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} image={e.event.posterImage} title="" compact className="hidden h-12 w-16 shrink-0 rounded-lg lg:block [&_span]:hidden" />
                           <div className="min-w-0 max-w-[18rem] whitespace-normal">
                             <Link to={`/admin/events/${e.event.id}/edit`} className="line-clamp-2 font-semibold hover:underline">
                               {e.event.title}
@@ -217,7 +217,7 @@ export default function Events() {
               const st = eventDisplayStatus(e.event)
               return (
                 <li key={e.event.id} className="overflow-hidden rounded-[1.25rem] bg-panel">
-                  <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} title={e.event.title} compact className="h-24" />
+                  <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} image={e.event.posterImage} title={e.event.title} compact className="h-24" />
                   <div className="flex flex-col gap-3 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge tone={EVENT_STATUS_TONE[st]}>{EVENT_STATUS_LABEL[st]}</StatusBadge>

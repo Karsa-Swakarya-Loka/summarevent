@@ -4,7 +4,7 @@
  */
 import type { EventDraft } from '@/api/contract'
 import { CATEGORY_COLORS } from '@/domain/labels'
-import { buildSeats, posterPaletteCheck, rowIndex, rowLetter, seatLabel } from '@/domain/rules'
+import { buildSeats, posterImageCheck, posterPaletteCheck, rowIndex, rowLetter, seatLabel } from '@/domain/rules'
 import type { AccessMethod, EventRules, PosterPalette, PosterTheme, ReceiptRules, Seat, SeatingMode, Tenant, Venue } from '@/domain/types'
 import { rupiahPlain, wibDate } from '@/lib/format'
 import { addDaysYmd, isoToLocalInput, localInputToIso, wibIso } from '../lib'
@@ -73,6 +73,8 @@ export interface WizardForm {
   posterTheme: PosterTheme
   /** The panitia's own colours, or null for the theme's. */
   posterPalette: PosterPalette | null
+  /** The panitia's own poster picture (a data URL), or null for the generated poster. */
+  posterImage: string | null
   venueId: string
   seatingMode: SeatingMode
   rules: EventRules
@@ -164,6 +166,7 @@ export function emptyForm(venues: Venue[]): WizardForm {
     description: '',
     posterTheme: 'stage',
     posterPalette: null,
+    posterImage: null,
     venueId: venues[0]?.id ?? '',
     seatingMode: 'RESERVED',
     rules: { ...DEFAULT_RULES },
@@ -324,6 +327,8 @@ export function validate(form: WizardForm, venues: Venue[]): Issue[] {
     const c = posterPaletteCheck(form.posterPalette)
     if (!c.ok) add('info', 'posterPalette', c.reason)
   }
+  const img = posterImageCheck(form.posterImage)
+  if (!img.ok) add('info', 'posterImage', img.reason)
   const r = form.rules
   if (!intIn(r.maxSeatsPerOrder, 1, 10)) add('info', 'rules.maxSeatsPerOrder', 'Isi angka 1–10 kursi per pesanan.')
   if (!intIn(r.paymentHoldMin, 3, 60)) add('info', 'rules.paymentHoldMin', 'Isi 3–60 menit. Disarankan 10 menit.')
@@ -474,6 +479,7 @@ export function toDraft(form: WizardForm): EventDraft {
     description: form.description.trim(),
     posterTheme: form.posterTheme,
     posterPalette: form.posterPalette,
+    posterImage: form.posterImage,
     venueId: form.venueId,
     seatingMode: form.seatingMode,
     rules: { ...form.rules },
@@ -534,6 +540,7 @@ export function fromDraft(draft: EventDraft): { form: WizardForm; categoryKeys: 
       description: draft.description,
       posterTheme: draft.posterTheme,
       posterPalette: draft.posterPalette ?? null,
+      posterImage: draft.posterImage ?? null,
       venueId: draft.venueId,
       seatingMode: draft.seatingMode,
       rules: { ...DEFAULT_RULES, ...draft.rules },

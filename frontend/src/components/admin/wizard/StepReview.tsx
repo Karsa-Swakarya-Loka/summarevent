@@ -52,7 +52,7 @@ export function StepReview({ form, venues, issues, goTo }: { form: WizardForm; v
 
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-[1.25rem]">
-          <Poster theme={form.posterTheme} palette={form.posterPalette} title={form.title.trim() || 'Judul event'} className="aspect-[4/3] w-full" />
+          <Poster theme={form.posterTheme} palette={form.posterPalette} image={form.posterImage} title={form.title.trim() || 'Judul event'} className="aspect-[4/3] w-full" />
         </div>
         <SectionCard title={form.title.trim() || 'Tanpa judul'} description={form.subtitle.trim() || undefined}>
           <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">

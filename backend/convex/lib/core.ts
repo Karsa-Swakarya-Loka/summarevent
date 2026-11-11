@@ -5,7 +5,7 @@
 import type { CategoryAvailability, CheckinResponse, EventDraft, EventSummary, HoldRequest, HoldResult, OrderDetail, SessionSummary, WaitlistItem } from '../shared/contract'
 import { demoEnabled } from './demo'
 import { fmtRange, fmtShortDate, fmtTime } from '../shared/format'
-import { buildSeats, effectiveSeatStatus, isHoldActive, posterPaletteCheck, randomCode, resolveSession, rowIndex, rowLetter, saleState, seatLabel, suggestSeats, uid } from '../shared/rules'
+import { buildSeats, effectiveSeatStatus, isHoldActive, posterImageCheck, posterPaletteCheck, randomCode, resolveSession, rowIndex, rowLetter, saleState, seatLabel, suggestSeats, uid } from '../shared/rules'
 import type {
   AppNotification,
   Checkin,
@@ -531,6 +531,7 @@ export async function draftOf(tx: Tx, event: EventItem): Promise<EventDraft> {
     description: event.description,
     posterTheme: event.posterTheme,
     posterPalette: event.posterPalette ?? null,
+    posterImage: event.posterImage ?? null,
     venueId: event.venueId,
     seatingMode: event.seatingMode,
     rules: { ...event.rules },
@@ -609,10 +610,18 @@ export function posterPaletteOf(d: EventDraft): PosterPalette | undefined {
   return c.palette
 }
 
+/** The draft's own poster picture, checked; undefined when the generated poster applies (same as the mock). */
+export function posterImageOf(d: EventDraft): string | undefined {
+  const c = posterImageCheck(d.posterImage)
+  if (!c.ok) fail('INVALID', c.reason, { field: 'posterImage' })
+  return c.image ?? undefined
+}
+
 export function validateDraft(d: EventDraft) {
   if (!d || typeof d.title !== 'string' || !Array.isArray(d.categories) || !Array.isArray(d.sessions) || !d.rules) fail('BAD_REQUEST', 'Data event tidak lengkap.')
   if (!d.title.trim()) fail('INVALID', 'Judul event wajib diisi.')
   posterPaletteOf(d)
+  posterImageOf(d)
   if (!d.venueId) fail('INVALID', 'Pilih venue.')
   if (!d.categories.length) fail('INVALID', 'Tambahkan minimal 1 kategori tiket.')
   for (const c of d.categories) {

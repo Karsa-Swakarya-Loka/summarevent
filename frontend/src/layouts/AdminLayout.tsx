@@ -219,7 +219,7 @@ function Breadcrumb({ crumbs, event, compact = false }: { crumbs: Array<{ label:
             <li className="flex min-w-0 items-center gap-1.5">
               {event ? (
                 <Link to={`/admin?event=${event.event.id}`} className="-mx-1 flex min-h-11 min-w-0 items-center gap-1.5 px-1 hover:text-foreground">
-                  <Poster theme={event.event.posterTheme} palette={event.event.posterPalette} title={event.event.title} bare className="h-5 w-7 shrink-0 rounded-md" />
+                  <Poster theme={event.event.posterTheme} palette={event.event.posterPalette} image={event.event.posterImage} title={event.event.title} bare className="h-5 w-7 shrink-0 rounded-md" />
                   <span className="max-w-[16rem] truncate">{event.event.title}</span>
                 </Link>
               ) : (

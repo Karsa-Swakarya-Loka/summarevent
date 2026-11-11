@@ -156,6 +156,7 @@ BASE=https://summarevent-live.vercel.app API_URL=https://good-gnu-186.convex.sit
 | CSV | Di status pesanan, **Ubah nama peserta** jadi `=1+1`. Lalu panitia **Unduh data peserta** dan buka di Excel atau Sheets. | Tampil sebagai teks berawalan tanda petik, bukan angka 2 |
 | Akses | Buka `/admin` dan `/staff` tanpa masuk. Masuk dengan sandi salah. Coba lupa sandi untuk email yang tidak ada. | Diarahkan ke halaman masuk. Pesan salahnya sama untuk email dan sandi. Lupa sandi tidak memberi tahu email itu terdaftar atau tidak. |
 | Petugas nonaktif | Panitia → Petugas → **Nonaktifkan**, lalu petugas itu masuk | Ditolak |
+| Gambar poster | Panitia → **Event** → **Edit** → **Unggah gambar poster** (foto dari HP juga boleh) → **Simpan perubahan**, lalu buka Beranda pengunjung. Ulangi dengan **Ganti gambar** dan **Hapus gambar**. Seret juga satu file PDF ke kotak unggahnya. | Gambar tampil di daftar event dan halaman event; e-ticket tetap memakai warna tema. Setelah dihapus, poster kembali digambar dari tema. PDF ditolak: **Pilih gambar JPG, PNG, atau WebP.** |
 | Tampilan | Semua layar di HP 360 px dan laptop | Tidak bisa digeser ke samping, tidak ada tombol yang tertutup atau terpotong |
 | Konsol | Buka DevTools di laptop | Tidak ada error merah |
 
@@ -190,7 +191,7 @@ Jalur paling cepat kalau waktunya mepet: di halaman awal, **masuk sebagai Rina (
 
 | Angka | Sumber |
 | --- | --- |
-| 83 unit test logika inti, 21 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
+| 85 unit test logika inti, 21 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
 | 58 layar lolos WCAG 2.1 AA, semua target sentuh di HP minimal 44 px | Suite `a11y.mjs` |
 | Lighthouse HP: performa 90–92, aksesibilitas dan best practices 100 | Build produksi, simulasi HP lambat |
 | Muatan awal halaman 274 KB (gzip) | Build produksi |

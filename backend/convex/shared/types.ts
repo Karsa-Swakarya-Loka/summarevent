@@ -119,7 +119,10 @@ export interface EventItem {
   description: string
   /** Key of the generated poster theme: the poster itself when there is no picture, its colours and label otherwise. */
   posterTheme: PosterTheme
-  /** The panitia's own poster picture (a data URL in the demo, an https address from a backend); none draws the theme. */
+  /**
+   * The panitia's own poster picture (a data URL in the demo, an https address from a backend); none draws the theme.
+   * Only the event lists, the event page and the wizard's draft carry it; rows leave it out (eventRow in domain/rules).
+   */
   posterImage?: string
   /** The panitia's own poster colours over the theme's; the visitor's ticket carries them too. */
   posterPalette?: PosterPalette

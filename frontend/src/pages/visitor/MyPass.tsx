@@ -200,7 +200,7 @@ function MiniTicket({ item, now }: { item: PassItem; now: Date }) {
         className={cn('ticket-mini relative flex min-h-32 overflow-hidden rounded-[1.1rem] text-[#ededed] transition active:scale-[0.98]', active ? 'talon-card' : 'bg-[#4a4746]')}
       >
         <span className={cn('absolute inset-x-0 top-0 h-6 overflow-hidden', !active && 'opacity-50 saturate-0')} aria-hidden>
-          <Poster theme={event.posterTheme} palette={event.posterPalette} image={event.posterImage} title={event.title} bare className="absolute inset-0" />
+          <Poster theme={event.posterTheme} palette={event.posterPalette} title={event.title} bare className="absolute inset-0" />
         </span>
         <i className="talon-grain" aria-hidden />
         <span className="relative flex min-w-0 flex-1 flex-col justify-between gap-2.5 pt-9 pr-3 pb-3.5 pl-4">

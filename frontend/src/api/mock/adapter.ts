@@ -34,6 +34,7 @@ import {
   checkReceiptRules,
   checkinWindow,
   effectiveSeatStatus,
+  eventRow,
   isHoldActive,
   LOGIN_FAIL_WINDOW_MIN,
   LOGIN_MAX_FAILS,
@@ -270,7 +271,7 @@ function notifyWaitlist(db: Db, order: Pick<Order, 'sessionId' | 'categoryId'>, 
 
 function waitlistItem(db: Db, entry: WaitlistEntry, now: Date): WaitlistItem {
   const session = sessionOf(db, entry.sessionId, now)
-  const base = { ...entry, session, event: eventOf(db, session.eventId), category: categoryOf(db, entry.categoryId) }
+  const base = { ...entry, session, event: eventRow(eventOf(db, session.eventId)), category: categoryOf(db, entry.categoryId) }
   if (entry.status !== 'WAITING') return { ...base, position: null }
   const line = db.waitlist
     .filter((w) => w.status === 'WAITING' && w.sessionId === entry.sessionId && w.categoryId === entry.categoryId)
@@ -332,7 +333,7 @@ function summary(db: Db, event: EventItem, now: Date): EventSummary {
 }
 
 function orderDetail(db: Db, order: Order, now: Date): OrderDetail {
-  const event = eventOf(db, order.eventId)
+  const event = eventRow(eventOf(db, order.eventId))
   return {
     order,
     event,
@@ -701,7 +702,8 @@ function eventDates(draft: EventDraft): { startAt: string; endAt: string } {
 
 function checkinResponseFrom(db: Db, result: CheckinResponse['result'], message: string, ticket: Ticket | null, now: Date, firstScan: CheckinResponse['firstScan'] = null): CheckinResponse {
   const order = ticket ? (byId(db.orders, ticket.orderId) ?? null) : null
-  const event = ticket ? (byId(db.events, ticket.eventId) ?? null) : null
+  const found = ticket ? byId(db.events, ticket.eventId) : undefined
+  const event = found ? eventRow(found) : null
   const rawSession = ticket ? byId(db.sessions, ticket.sessionId) : undefined
   return {
     result,
@@ -887,7 +889,7 @@ export function createMockApi(): Api {
         const categories = db.categories.filter((c) => c.eventId === event.id)
         return {
           session,
-          event,
+          event: eventRow(event),
           layout: layoutOf(db, event.layoutId),
           seats: db.seats.filter((s) => s.layoutId === event.layoutId),
           sessionSeats: db.sessionSeats
@@ -1129,7 +1131,7 @@ export function createMockApi(): Api {
           .filter((t) => t.userId === me)
           .map((ticket) => {
             const order = must(byId(db.orders, ticket.orderId), 'Pesanan')
-            const event = eventOf(db, ticket.eventId)
+            const event = eventRow(eventOf(db, ticket.eventId))
             return {
               ticket,
               order,
@@ -1367,7 +1369,7 @@ export function createMockApi(): Api {
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
             .map((o) => ({
               order: liveOrder(o, now),
-              event: eventOf(db, o.eventId),
+              event: eventRow(eventOf(db, o.eventId)),
               session: sessionOf(db, o.sessionId, now),
               category: categoryOf(db, o.categoryId),
               receipts: db.receipts.filter((r) => r.orderId === o.id),
@@ -1458,7 +1460,7 @@ export function createMockApi(): Api {
             items.push({
               receipt: rep,
               order: live,
-              event: eventOf(db, order.eventId),
+              event: eventRow(eventOf(db, order.eventId)),
               session: sessionOf(db, order.sessionId, now),
               category,
               tenant: db.tenants.find((t) => t.id === rep.tenantId) ?? null,
@@ -1580,7 +1582,7 @@ export function createMockApi(): Api {
             checkinsByHour[(at.getUTCDay() + 6) % 7][at.getUTCHours()] += 1
           }
           return {
-            event,
+            event: eventRow(event),
             registrants: new Set(orders.filter((o) => !o.simulated && (o.status === 'CONFIRMED' || isPending(o))).map((o) => o.userId)).size,
             ticketsSold: tickets.length,
             revenue: confirmed.reduce((s, o) => s + o.totalAmount, 0),
@@ -1719,7 +1721,7 @@ export function createMockApi(): Api {
               const order = orders.get(ticket.orderId)
               return { qrToken, ticket, order: { id: ticket.orderId, code: order?.code ?? '', buyerName: order?.buyerName ?? '' }, session: sessions.get(ticket.sessionId) ?? session }
             })
-          return { sessionId, generatedAt: now.toISOString(), event, session, categories: db.categories.filter((c) => c.eventId === event.id), rows }
+          return { sessionId, generatedAt: now.toISOString(), event: eventRow(event), session, categories: db.categories.filter((c) => c.eventId === event.id), rows }
         })
         const { rows, ...rest } = snapshot
         // only a hash of each QR token leaves the server
@@ -1816,7 +1818,7 @@ export function createMockApi(): Api {
             .map((t) => ({
               ticket: t,
               order: must(byId(db.orders, t.orderId), 'Pesanan'),
-              event: eventOf(db, t.eventId),
+              event: eventRow(eventOf(db, t.eventId)),
               session: sessionOf(db, t.sessionId, now),
               category: categoryOf(db, t.categoryId),
             }))

@@ -78,7 +78,7 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
         </div>
       </SectionCard>
 
-      <SectionCard title="Gambar poster" description="Tampil di daftar event, halaman event, dan e-ticket pengunjung. Tanpa gambar, poster dibuat otomatis dari tema di bawah.">
+      <SectionCard title="Gambar poster" description="Tampil di daftar event dan halaman event. Tanpa gambar, poster dibuat otomatis dari tema di bawah.">
         <PosterImageField value={form.posterImage} onChange={(posterImage) => update((f) => ({ ...f, posterImage }))} error={err('posterImage')} />
       </SectionCard>
 

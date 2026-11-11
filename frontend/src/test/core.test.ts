@@ -10,7 +10,7 @@ import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
 import { DEMO_PASSWORD } from '@/lib/demoAccounts'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
 import { parseReceiptText } from '@/domain/ocr'
-import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, passwordCheck, posterImageCheck, posterInk, posterPaletteCheck, POSTER_IMAGE_MAX, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
+import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, eventRow, passwordCheck, posterImageCheck, posterInk, posterPaletteCheck, POSTER_IMAGE_MAX, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
 import type { EventDraft } from '@/api/contract'
 import { posterColors } from '@/components/common/posterThemes'
 import { scrubToView } from '@/components/landing/crumple'
@@ -699,5 +699,54 @@ describe('posterImageCheck', () => {
     expect(posterImageCheck('javascript:alert(1)').ok).toBe(false)
     expect(posterImageCheck(42).ok).toBe(false)
     expect(posterImageCheck(`data:image/jpeg;base64,${'A'.repeat(POSTER_IMAGE_MAX)}`).ok).toBe(false)
+  })
+})
+
+describe('poster picture on the wire (AD-01)', () => {
+  beforeEach(freshDb)
+  const EVENT = 'evt_sangkuriang'
+  const jpeg = `data:image/jpeg;base64,${'A'.repeat(4000)}`
+
+  it('drops the picture from a row and leaves an event without one as it is', async () => {
+    const [plain] = (await api.listEvents()).map((e) => e.event)
+    expect(eventRow(plain)).toBe(plain)
+    const row = eventRow({ ...plain, posterImage: jpeg })
+    expect(row).toEqual(plain)
+    expect('posterImage' in row).toBe(false)
+  })
+
+  it('sends the picture with the event lists, the event page and the draft, never with orders, tickets or the seat map', async () => {
+    setSessionUserId('ADMIN', 'u_admin')
+    const { draft } = await api.admin.getEventDraft(EVENT)
+    expect((await api.admin.updateEvent(EVENT, { ...draft, posterImage: jpeg })).posterImage).toBe(jpeg)
+
+    // where the poster is drawn
+    expect((await api.listEvents()).find((e) => e.event.id === EVENT)?.event.posterImage).toBe(jpeg)
+    expect((await api.admin.listEvents()).find((e) => e.event.id === EVENT)?.event.posterImage).toBe(jpeg)
+    expect((await api.getEvent('pentas-musikal-sangkuriang')).event.posterImage).toBe(jpeg)
+    expect((await api.admin.getEventDraft(EVENT)).draft.posterImage).toBe(jpeg)
+
+    // everything that only names the event
+    const orders = await api.admin.listOrders({ eventId: EVENT, status: 'ALL' })
+    expect(orders.length).toBeGreaterThan(10)
+    asVisitor(PERSONA_ID)
+    const tickets = await api.myTickets()
+    expect(tickets.some((t) => t.event.id === EVENT)).toBe(true)
+    setSessionUserId('STAFF', 'u_staff')
+    const rows = {
+      orders,
+      receipts: await api.admin.listReceipts('ALL'),
+      stats: await api.admin.stats(EVENT),
+      seatMap: await api.getSeatMap(SESSION),
+      tickets,
+      myOrders: await api.myOrders(),
+      waitlist: await api.myWaitlist(),
+      manifest: await api.staff.offlineManifest(SESSION),
+      search: await api.staff.searchTickets('rina', EVENT),
+      desk: await api.staff.listReceipts(EVENT),
+    }
+    for (const [name, value] of Object.entries(rows)) expect(JSON.stringify(value).includes('"posterImage"'), name).toBe(false)
+    // the stored event still has it
+    expect((await api.listEvents()).find((e) => e.event.id === EVENT)?.event.posterImage).toBe(jpeg)
   })
 })

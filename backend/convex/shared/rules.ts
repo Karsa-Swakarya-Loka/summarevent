@@ -7,6 +7,7 @@
 import { fmtDayMonth, rupiahPlain, wibDate } from './format'
 import type { ReceiptInput, RuleCheck } from './contract'
 import type {
+  EventItem,
   EventRules,
   Order,
   PosterPalette,
@@ -432,6 +433,18 @@ export function posterImageCheck(input: unknown): { ok: true; image: string | nu
   if (!POSTER_DATA.test(v)) return { ok: false, reason: 'Gambar poster harus JPG, PNG, atau WebP.' }
   if (v.length > POSTER_IMAGE_MAX) return { ok: false, reason: 'Gambar poster terlalu besar. Pilih gambar lain atau yang lebih kecil.' }
   return { ok: true, image: v }
+}
+
+/**
+ * An event as a row carries it: without the poster picture. Only the event lists, the event page and the wizard draw
+ * the picture; an order, ticket, receipt or seat map names its event many times over and is asked for again every few
+ * seconds, so it leaves the picture out.
+ */
+export function eventRow(event: EventItem): EventItem {
+  if (!event.posterImage) return event
+  const row = { ...event }
+  delete row.posterImage
+  return row
 }
 
 /** Relative luminance (WCAG 2) of a six-digit hex colour: 0 is black, 1 is white. */

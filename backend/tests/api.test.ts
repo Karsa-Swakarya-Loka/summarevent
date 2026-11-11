@@ -241,6 +241,42 @@ describe('poster picture (AD-01)', () => {
     expect(await code(save('data:image/svg+xml;base64,PHN2Zz4='))).toBe('INVALID')
     expect((await save(null)).posterImage).toBeUndefined()
   })
+
+  it('goes out with the event lists, the event page and the draft, never with orders, tickets, receipts or the seat map', async () => {
+    const adm = await write('demoLogin', req({ body: { role: 'ADMIN' } }))
+    const EVENT = 'evt_sangkuriang'
+    const { draft } = await read('admin.getEventDraft', req({ token: adm.token, params: { id: EVENT } }))
+    const jpeg = `data:image/jpeg;base64,${'A'.repeat(4000)}`
+    expect((await write('admin.updateEvent', req({ token: adm.token, params: { id: EVENT }, body: { ...draft, posterImage: jpeg } }))).posterImage).toBe(jpeg)
+
+    // where the poster is drawn
+    expect((await read('listEvents', req())).find((e: { event: { id: string } }) => e.event.id === EVENT).event.posterImage).toBe(jpeg)
+    expect((await read('admin.listEvents', req({ token: adm.token }))).find((e: { event: { id: string } }) => e.event.id === EVENT).event.posterImage).toBe(jpeg)
+    expect((await read('getEvent', req({ params: { slug: 'pentas-musikal-sangkuriang' } }))).event.posterImage).toBe(jpeg)
+
+    // everything that only names the event
+    const rina = await write('demoLogin', req({ body: { role: 'VISITOR' } }))
+    const gate = await write('demoLogin', req({ body: { role: 'STAFF' } }))
+    const tickets = await read('myTickets', req({ token: rina.token }))
+    const live = tickets.find((p: { session: { demoLive?: boolean }; ticket: { status: string } }) => p.session.demoLive && p.ticket.status === 'ACTIVE')
+    const orders = await read('admin.listOrders', req({ token: adm.token, query: { eventId: EVENT, status: 'ALL' } }))
+    expect(orders.length).toBeGreaterThan(10)
+    const rows = {
+      orders,
+      tickets,
+      order: await read('getOrder', req({ token: rina.token, params: { id: live.order.id } })),
+      myOrders: await read('myOrders', req({ token: rina.token })),
+      waitlist: await read('myWaitlist', req({ token: rina.token })),
+      receipts: await read('admin.listReceipts', req({ token: adm.token, query: { status: 'ALL' } })),
+      stats: await read('admin.stats', req({ token: adm.token, params: { id: EVENT } })),
+      seatMap: await read('getSeatMap', req({ params: { id: 'ses_sk_16' } })),
+      manifest: await read('staff.offlineManifest', req({ token: gate.token, params: { id: 'ses_sk_demo' } })),
+      search: await read('staff.searchTickets', req({ token: gate.token, query: { q: 'rina', event_id: EVENT } })),
+      checkin: await write('staff.checkin', req({ token: gate.token, body: { qr_token: live.ticket.qrToken, session_id: 'ses_sk_demo' } })),
+    }
+    expect(rows.checkin.event.id).toBe(EVENT)
+    for (const [name, body] of Object.entries(rows)) expect(JSON.stringify(body), name).not.toContain('"posterImage"')
+  })
 })
 
 describe('security', () => {

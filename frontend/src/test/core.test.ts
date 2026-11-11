@@ -9,7 +9,7 @@ import { clearClientSessions, clearDb, readDb, replaceDb, setSessionUserId, tran
 import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
 import { DEMO_PASSWORD } from '@/lib/demoAccounts'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
-import { parseReceiptText } from '@/domain/ocr'
+import { matchReceipt, parseReceiptText } from '@/domain/ocr'
 import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, eventRow, passwordCheck, posterImageCheck, posterInk, posterPaletteCheck, POSTER_IMAGE_MAX, profileChanges, resolveSession, saleState, suggestSeats, ticketAllowance, ticketLimitCheck, ticketsOwned } from '@/domain/rules'
 import type { EventDraft } from '@/api/contract'
 import { posterColors } from '@/components/common/posterThemes'
@@ -509,6 +509,20 @@ describe('bonus, staff accounts, desk review, OCR (AD-12, AD-13, PT-06, PV-16)',
     expect(parseReceiptText(text, db.tenants)).toEqual({ tenantId: 't_mainan', receiptNo: 'INV713128', amount: 200_000, receiptDate: '2026-11-02', receiptTime: '21:40' })
     expect(parseReceiptText('SUBTOTAL 50.000\nGrand total: 75.000', db.tenants).amount).toBe(75_000)
     expect(parseReceiptText('foto buram', db.tenants)).toEqual({})
+  })
+
+  it('AD-07: the AI cross-check flags typed fields the photo does not show', () => {
+    const typed = { tenantId: 't_mainan', receiptNo: 'INV-7131O8', amount: 500_000, receiptDate: '2026-11-02', receiptTime: '21:40' }
+    const read = { tenantId: 't_mainan', receiptNo: 'INV713108', amount: 50_000, receiptDate: '2026-11-02' }
+    expect(matchReceipt(read, typed)).toEqual([
+      { field: 'tenant', read: 't_mainan', typed: 't_mainan', state: 'same' },
+      { field: 'receiptNo', read: 'INV713108', typed: 'INV-7131O8', state: 'same' },
+      { field: 'amount', read: 50_000, typed: 500_000, state: 'differ' },
+      { field: 'date', read: '2026-11-02', typed: '2026-11-02', state: 'same' },
+      { field: 'time', typed: '21:40', state: 'unread' },
+    ])
+    expect(matchReceipt({}, typed).every((m) => m.state === 'unread')).toBe(true)
+    expect(matchReceipt({ tenantId: 't_kopi', receiptNo: 'INV999999' }, typed).slice(0, 2).map((m) => m.state)).toEqual(['differ', 'differ'])
   })
 })
 

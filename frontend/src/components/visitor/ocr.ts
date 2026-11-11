@@ -5,6 +5,8 @@ import type { Tenant } from '@/domain/types'
 /** OCR works on raster images: draw the photo (or the SVG sample receipt) on a canvas, upscaled. */
 async function rasterize(url: string): Promise<string> {
   const img = new Image()
+  // a stored photo comes from the API's own address; asking with CORS keeps the canvas readable
+  if (/^https?:/i.test(url)) img.crossOrigin = 'anonymous'
   img.src = url
   await img.decode()
   const w0 = img.naturalWidth || 320

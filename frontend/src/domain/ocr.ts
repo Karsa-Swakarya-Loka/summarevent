@@ -3,7 +3,7 @@
  * itself runs in the visitor's browser with tesseract.js (components/visitor/ocr.ts), so the photo
  * never leaves the device for reading.
  */
-import type { Tenant } from './types'
+import type { Receipt, Tenant } from './types'
 
 export interface ReceiptReading {
   tenantId?: string
@@ -57,4 +57,35 @@ export function parseReceiptText(text: string, tenants: Tenant[]): ReceiptReadin
   if (t) out.receiptTime = `${t[1].padStart(2, '0')}:${t[2]}`
 
   return out
+}
+
+export type ReceiptField = 'tenant' | 'receiptNo' | 'amount' | 'date' | 'time'
+
+/** One field of a receipt: what the photo says next to what the visitor typed. */
+export interface FieldMatch {
+  field: ReceiptField
+  /** the value read from the photo; absent when the photo did not show it clearly */
+  read?: string | number
+  /** what the visitor typed */
+  typed: string | number
+  state: 'same' | 'differ' | 'unread'
+}
+
+/** OCR mixes up O and 0, I or L and 1 on receipt numbers, so those count as the same character. */
+const looseNo = (s: string) => norm(s).replace(/O/g, '0').replace(/[IL]/g, '1')
+
+/**
+ * AD-07: the panitia's cross-check. Compares the reading of a receipt photo with what the visitor typed, field by
+ * field, so a typed amount that is not on the photo stands out before anyone approves it.
+ */
+export function matchReceipt(reading: ReceiptReading, typed: Pick<Receipt, 'tenantId' | 'receiptNo' | 'amount' | 'receiptDate' | 'receiptTime'>): FieldMatch[] {
+  const pair = (field: ReceiptField, read: string | number | undefined, value: string | number, same: (r: string | number) => boolean): FieldMatch =>
+    read === undefined ? { field, typed: value, state: 'unread' } : { field, read, typed: value, state: same(read) ? 'same' : 'differ' }
+  return [
+    pair('tenant', reading.tenantId, typed.tenantId, (r) => r === typed.tenantId),
+    pair('receiptNo', reading.receiptNo, typed.receiptNo, (r) => looseNo(String(r)) === looseNo(typed.receiptNo)),
+    pair('amount', reading.amount, typed.amount, (r) => r === typed.amount),
+    pair('date', reading.receiptDate, typed.receiptDate, (r) => r === typed.receiptDate),
+    pair('time', reading.receiptTime, typed.receiptTime, (r) => r === typed.receiptTime),
+  ]
 }

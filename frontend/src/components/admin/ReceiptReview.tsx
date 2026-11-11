@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { api, ApiError } from '@/api'
 import type { ReceiptQueueItem, ReviewDecision } from '@/api/contract'
 import { SectionCard } from '@/components/admin/AdminUi'
+import { ReceiptAiCheck } from '@/components/admin/ReceiptAiCheck'
 import { canDecide, seatSummary, sessionLabel } from '@/components/admin/lib'
 import { Countdown, StatusBadge, Swatch } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
@@ -226,6 +227,7 @@ export function ReviewPanel({
             </ul>
           </div>
           )}
+          {decidable && <ReceiptAiCheck key={r.id} receipt={r} tenants={tenants.data ?? []} />}
 
           <dl className="grid grid-cols-[6.5rem_1fr] gap-x-2 gap-y-1 text-sm">
             <dt className="text-muted-foreground">Event</dt>

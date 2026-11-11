@@ -153,6 +153,7 @@ BASE=https://summarevent-live.vercel.app API_URL=https://good-gnu-186.convex.sit
 | Rombongan | Valid untuk pesanan dua kursi | Tawaran **Masukkan juga 1 tiket lain** berhasil |
 | Offline | Versi live, HP petugas mode pesawat saat scan, lalu online lagi | Scan tetap jalan, antrean terkirim. Tiket yang lebih dulu masuk lewat pintu lain muncul sebagai konflik. |
 | Panitia | Tolak atau minta revisi struk tanpa alasan, **Tandai lunas** | Alasan wajib. Tandai lunas meminta konfirmasi dulu. |
+| Cek silang AI | Pengunjung: **Isi struk contoh**, lalu ubah **Nominal** jadi Rp900.000 dan **Kirim struk**. Panitia: **Verifikasi struk** → buka struk itu → **Bandingkan foto dengan isian** | Nominal ditandai **Beda**, bagian lain **Sama**. Pertama kali butuh internet untuk mengunduh model baca. |
 | CSV | Di status pesanan, **Ubah nama peserta** jadi `=1+1`. Lalu panitia **Unduh data peserta** dan buka di Excel atau Sheets. | Tampil sebagai teks berawalan tanda petik, bukan angka 2 |
 | Akses | Buka `/admin` dan `/staff` tanpa masuk. Masuk dengan sandi salah. Coba lupa sandi untuk email yang tidak ada. | Diarahkan ke halaman masuk. Pesan salahnya sama untuk email dan sandi. Lupa sandi tidak memberi tahu email itu terdaftar atau tidak. |
 | Petugas nonaktif | Panitia → Petugas → **Nonaktifkan**, lalu petugas itu masuk | Ditolak |
@@ -184,14 +185,14 @@ Jalur paling cepat kalau waktunya mepet: halaman awal → **Masuk sebagai pengun
 | 0–1 | Halaman awal → **Daftar sebagai pengunjung** → **Lewati** pengenalan → daftar dengan nama dan nomor HP (OTP simulasi, **Isi otomatis**) → Pentas Musikal Sangkuriang sesi 16.00 → **Reguler** → **Pilihkan 2 kursi berdampingan** → **Pesan 2 kursi** | Kursi dipilih langsung dari denah dan ditahan 10 menit |
 | 1–2 | **Bayar Rp100.000** (simulasi) → **Lihat e-ticket** | Satu QR bertanda tangan untuk tiap kursi, tersimpan di Pass Saya |
 | 2–3 | Kembali ke denah → **Uji rebutan kursi** → saran kursi terdekat, lalu **Kenapa satu kursi tidak bisa terjual dua kali?** | Pencegahan pesanan ganda: kursi ditahan sekaligus, terlihat oleh semua, dicek ulang saat konfirmasi |
-| 3–4 | Kategori **Tukar Struk** → **Isi struk contoh** → **Kirim struk** → **Demo → Masuk sebagai Panitia** → **Verifikasi struk** → **Setujui** | Belanja di tenant SUMMABA bisa jadi tiket, dicek otomatis lalu oleh panitia |
+| 3–4 | Kategori **Tukar Struk** → **Isi struk contoh** → **Kirim struk** → **Demo → Masuk sebagai Panitia** → **Verifikasi struk** → **Bandingkan foto dengan isian** → **Setujui** | Belanja di tenant SUMMABA bisa jadi tiket. AI membaca foto struk dan mencocokkannya dengan isian, lalu panitia memutuskan |
 | 4–5 | Panitia: dashboard dan peta kursi live. Lalu **Demo → Masuk sebagai Petugas** → **Sesi Demo Juri** → **Mulai scan** → **Alat demo** → **Ambil tiket contoh** → **Valid**, lalu **Scan ulang tiket tadi** → **Sudah digunakan** | Satu sistem untuk tiga peran, dan hasil scan terbaca dari satu meter |
 
 ### Angka untuk slide
 
 | Angka | Sumber |
 | --- | --- |
-| 90 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
+| 91 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
 | 58 layar lolos WCAG 2.1 AA, semua target sentuh di HP minimal 44 px | Suite `a11y.mjs` |
 | Lighthouse HP: performa 90–92, aksesibilitas dan best practices 100 | Build produksi, simulasi HP lambat |
 | Muatan awal halaman 274 KB (gzip) | Build produksi |

@@ -304,7 +304,8 @@ function AttendanceCard({ s, loading }: { s?: EventStats; loading: boolean }) {
         {facts.map((f) => (
           <div key={f.label} className="rounded-xl bg-card px-3 py-2.5 shadow-[0_1px_2px_rgb(35_31_32/0.05)]">
             {loading ? <Skeleton className="h-5 w-16 bg-track" /> : <dd className="truncate text-base font-semibold tabular-nums">{f.value}</dd>}
-            <dt className="truncate text-xs text-muted-foreground">{f.label}</dt>
+            {/* a long label wraps instead of being cut on a 360 px phone */}
+            <dt className="text-xs leading-snug text-muted-foreground">{f.label}</dt>
           </div>
         ))}
       </dl>

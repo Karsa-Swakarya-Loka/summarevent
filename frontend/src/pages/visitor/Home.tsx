@@ -199,7 +199,8 @@ export default function Home() {
                   tint="bg-[#fff7c7]"
                   title="Tukar struk"
                   sub={receipt.event.title}
-                  chip={minSpend ? <Chip>Min. belanja {shortRupiah(minSpend)}</Chip> : null}
+                  // short enough that "Tukar struk" stays on one line on a 360 px phone
+                  chip={minSpend ? <Chip>Min. {shortRupiah(minSpend)}</Chip> : null}
                 />
               )}
             </ul>

@@ -80,10 +80,6 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <AuthArt art={c.art} label="Pengunjung SUMMABA" lines={POINTS}>
-        {mode === 'masuk' && demo('secondary', 'max-w-md rounded-2xl border border-dashed border-white/40 p-4 text-sm')}
-      </AuthArt>
-
       <div className="flex flex-1 flex-col lg:relative lg:min-h-dvh lg:items-center lg:justify-center">
         <header className="px-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:absolute lg:top-0 lg:left-0 lg:px-6 lg:pt-5">
           <Button variant="ghost" className="size-11 rounded-full" aria-label="Kembali" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/app'))}>
@@ -112,6 +108,11 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
           {mode === 'masuk' && demo('outline', 'mt-4 rounded-2xl border border-dashed border-ink/25 p-4 text-sm lg:hidden')}
         </main>
       </div>
+
+      {/* after the form in the page order, so Tab reaches the form first; drawn as the left half */}
+      <AuthArt art={c.art} label="Pengunjung SUMMABA" lines={POINTS}>
+        {mode === 'masuk' && demo('secondary', 'max-w-md rounded-2xl border border-dashed border-white/40 p-4 text-sm')}
+      </AuthArt>
     </div>
   )
 }

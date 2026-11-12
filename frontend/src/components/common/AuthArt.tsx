@@ -8,11 +8,11 @@ import { cn } from '@/lib/utils'
  * The green half of the sign-in screens on a laptop: the brand, the screen's sticker large and, when given, what the
  * role gets in poster type, with room at the foot for the demo notes. It stays put while the form beside it scrolls,
  * and sizes itself to the window's height so a short laptop screen still shows all of it. Hidden below lg, where these
- * screens are a single column.
+ * screens are a single column. It always takes the left column, wherever it sits in the page order.
  */
 export function AuthArt({ art, label, lines, children }: { art: ArtName; label?: string; lines?: ReadonlyArray<string>; children?: ReactNode }) {
   return (
-    <aside className="sticky top-0 hidden h-dvh overflow-hidden bg-brand px-12 py-[clamp(1.75rem,6dvh,3rem)] text-white lg:flex lg:flex-col">
+    <aside className="sticky top-0 hidden h-dvh overflow-hidden bg-brand lg:order-first px-12 py-[clamp(1.75rem,6dvh,3rem)] text-white lg:flex lg:flex-col">
       <div className="seat-dots pointer-events-none absolute inset-0 text-white/[0.08]" aria-hidden />
       <CoBrand tone="light" className="relative" />
       <div className={cn('relative flex min-h-0 flex-1 flex-col justify-center py-[3dvh]', !lines && 'items-center')}>

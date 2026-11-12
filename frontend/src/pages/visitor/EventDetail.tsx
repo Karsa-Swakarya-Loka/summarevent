@@ -80,9 +80,29 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
   const dateLabel = sameDay ? fmtDate(event.startAt) : `${fmtDate(event.startAt, { day: 'numeric', month: 'long' })} – ${fmtDate(event.endAt, { day: 'numeric', month: 'long', year: 'numeric' })}`
   const list = terms(d)
 
+  // the one action: in the phone's bottom bar, on a laptop under the sessions in the right column
+  const action = (
+    <>
+      {selected && !selOpen.open && <p className="mb-2 text-center text-sm text-muted-foreground">{selOpen.reason}</p>}
+      <div className="flex items-center gap-3 lg:flex-col lg:items-stretch">
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+            <Clock className="size-3.5 shrink-0" aria-hidden />
+            {selected ? `${sessionName(selected)} · ${fmtRange(selected.startAt, selected.endAt)}` : 'Pilih sesi dulu'}
+          </p>
+          <p className="truncate text-lg font-extrabold">{priceHint(categories)}</p>
+        </div>
+        <Button className="h-14 shrink-0 px-6 text-base" disabled={!selected || !selOpen.open} onClick={() => selected && onGo(selected.id)}>
+          {selected && selected.available === 0 ? 'Lihat & ikut daftar tunggu' : isReserved ? 'Pilih kursi' : 'Pilih tiket'}
+        </Button>
+      </div>
+    </>
+  )
+
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="sticky top-0 z-30 h-0 lg:top-(--spacing-desk-bar)">
+    // on a laptop the page is two columns: the poster and the event on the left, sessions and the action on the right
+    <div className="flex flex-1 flex-col lg:mx-auto lg:grid lg:w-full lg:max-w-6xl lg:flex-none lg:grid-cols-[minmax(0,1fr)_23rem] lg:grid-rows-[auto_auto_auto_auto_1fr] lg:items-start lg:gap-x-10 lg:gap-y-8 lg:px-8 lg:pt-8 lg:pb-20 xl:gap-x-14">
+      <div className="sticky top-0 z-30 h-0 lg:hidden">
         <div
           className={cn(
             'flex min-h-14 items-center gap-1 px-1.5 pt-[env(safe-area-inset-top)] transition-[background-color,box-shadow] duration-200',
@@ -104,18 +124,27 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
         </div>
       </div>
 
-      <div ref={hero} className="relative">
-        <Poster theme={event.posterTheme} palette={event.posterPalette} image={event.posterImage} title={event.title} bare className="h-64" />
-        <div className="absolute inset-0 bg-linear-to-b from-black/25 via-transparent to-transparent" aria-hidden />
+      <div ref={hero} className="relative lg:col-start-1 lg:row-start-1 lg:overflow-hidden lg:rounded-[2rem]">
+        <Poster theme={event.posterTheme} palette={event.posterPalette} image={event.posterImage} title={event.title} bare className="h-64 lg:aspect-[2.2/1] lg:h-auto" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/25 via-transparent to-transparent lg:hidden" aria-hidden />
+        {/* on a laptop the phone app bar is gone: the way back sits on the poster */}
+        <button
+          type="button"
+          onClick={back}
+          aria-label="Kembali"
+          className="absolute top-4 left-4 hidden size-11 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur transition hover:bg-black/45 active:scale-90 lg:flex"
+        >
+          <ChevronLeft className="size-6" />
+        </button>
       </div>
 
-      {/* the page itself rides up over the poster like a sheet */}
-      <div className="relative -mt-7 flex-1 space-y-6 rounded-t-[1.75rem] bg-background px-4 pt-6 pb-6">
-        <header>
+      {/* the page itself rides up over the poster like a sheet; on a laptop: the event on the left, booking on the right */}
+      <div className="relative -mt-7 flex-1 space-y-6 rounded-t-[1.75rem] bg-background px-4 pt-6 pb-6 lg:contents lg:space-y-0">
+        <header className="lg:col-start-1 lg:row-start-2">
           <p className="text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">{POSTER_THEMES[event.posterTheme].label}</p>
-          <h1 className="mt-1.5 font-poster text-[2.6rem] leading-[0.92] text-balance uppercase">{event.title}</h1>
+          <h1 className="mt-1.5 font-poster text-[2.6rem] leading-[0.92] text-balance uppercase lg:text-[3.5rem]">{event.title}</h1>
           {event.subtitle && <p className="mt-1 text-muted-foreground">{event.subtitle}</p>}
-          <ul className="mt-4 divide-y overflow-hidden rounded-[1.4rem] bg-card text-sm shadow-xs">
+          <ul className="mt-4 divide-y overflow-hidden rounded-[1.4rem] bg-card text-sm shadow-xs lg:mt-6 lg:grid lg:grid-cols-2 lg:divide-x lg:divide-y-0">
             <li className="flex min-h-12 items-center gap-3 px-3.5 py-2.5">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-ink/[0.06]">
                 <CalendarDays className="size-4" aria-hidden />
@@ -132,16 +161,16 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
               <span>{venue.name}, Summarecon Mall Bandung</span>
             </li>
           </ul>
-          <p className={cn('mt-4 text-[0.95rem] leading-relaxed text-foreground/85', longText && !more && 'line-clamp-3')}>{event.description}</p>
+          <p className={cn('mt-4 text-[0.95rem] leading-relaxed text-foreground/85 lg:mt-6 lg:max-w-prose lg:text-base', longText && !more && 'line-clamp-3 lg:line-clamp-none')}>{event.description}</p>
           {longText && (
-            <button type="button" onClick={() => setMore((m) => !m)} className="-ml-1 inline-flex min-h-11 items-center px-1 text-sm font-bold underline underline-offset-4" aria-expanded={more}>
+            <button type="button" onClick={() => setMore((m) => !m)} className="-ml-1 inline-flex min-h-11 items-center px-1 text-sm font-bold underline underline-offset-4 lg:hidden" aria-expanded={more}>
               {more ? 'Tampilkan lebih sedikit' : 'Selengkapnya'}
             </button>
           )}
         </header>
 
         {event.infoOnly ? (
-          <section className="rounded-[1.4rem] bg-[#ffe7a3] p-4 text-sm">
+          <section className="rounded-[1.4rem] bg-[#ffe7a3] p-4 text-sm lg:col-start-2 lg:row-start-1">
             <p className="flex items-center gap-2 text-base font-bold">
               <DoorOpen className="size-5" aria-hidden /> Masuk bebas, tanpa tiket
             </p>
@@ -149,11 +178,11 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
           </section>
         ) : (
           <>
-            <section aria-labelledby="sesi-title">
+            <section aria-labelledby="sesi-title" className="lg:sticky lg:top-[calc(var(--spacing-desk-bar)+2rem)] lg:col-start-2 lg:row-span-5 lg:row-start-1">
               <SectionTitle>
                 <span id="sesi-title">Pilih sesi</span>
               </SectionTitle>
-              <div role="radiogroup" aria-labelledby="sesi-title" className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4 pt-0.5 pb-1.5 [scrollbar-width:none]">
+              <div role="radiogroup" aria-labelledby="sesi-title" className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2.5 overflow-x-auto px-4 pt-0.5 pb-1.5 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-2 lg:overflow-visible lg:px-0">
                 {sessions.map((s) => {
                   const st = sessionOpen(d, s, now)
                   const active = selected?.id === s.id
@@ -167,7 +196,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                       disabled={!st.open}
                       onClick={() => onPick(s.id)}
                       className={cn(
-                        'w-44 shrink-0 snap-start rounded-2xl border bg-card p-3 text-left transition active:scale-[0.97] disabled:opacity-55',
+                        'w-44 shrink-0 snap-start rounded-2xl border bg-card p-3 text-left transition active:scale-[0.97] disabled:opacity-55 lg:w-auto lg:min-w-0',
                         active ? 'border-ink ring-1 ring-ink' : 'hover:border-foreground/30',
                         s.demoLive && !active && 'border-dashed',
                       )}
@@ -200,13 +229,14 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                   )
                 })}
               </div>
+              <div className="mt-5 hidden lg:block">{action}</div>
             </section>
 
-            <section aria-labelledby="kat-title">
+            <section aria-labelledby="kat-title" className="lg:col-start-1 lg:row-start-3">
               <SectionTitle right={selected && <span className="text-xs text-muted-foreground">Sisa untuk {selected.demoLive ? 'sesi demo' : fmtTime(selected.startAt)}</span>}>
                 <span id="kat-title">Kategori & harga</span>
               </SectionTitle>
-              <CategoryLegend categories={categories} availability={selected?.availability} className="grid-cols-1" />
+              <CategoryLegend categories={categories} availability={selected?.availability} className="grid-cols-1 lg:grid-cols-2" />
               {categories
                 .filter((c) => c.bonusFirstN && c.bonusDesc)
                 .map((c) => {
@@ -223,7 +253,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                 })}
             </section>
 
-            <details className="group rounded-[1.4rem] bg-card shadow-xs">
+            <details className="group rounded-[1.4rem] bg-card shadow-xs lg:col-start-1 lg:row-start-4">
               <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 font-bold [&::-webkit-details-marker]:hidden">
                 <CircleCheck className="size-5 shrink-0" aria-hidden />
                 <span className="flex-1">Syarat & ketentuan</span>
@@ -243,23 +273,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
         )}
       </div>
 
-      {!event.infoOnly && (
-        <BottomBar>
-          {selected && !selOpen.open && <p className="mb-2 text-center text-sm text-muted-foreground">{selOpen.reason}</p>}
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                <Clock className="size-3.5 shrink-0" aria-hidden />
-                {selected ? `${sessionName(selected)} · ${fmtRange(selected.startAt, selected.endAt)}` : 'Pilih sesi dulu'}
-              </p>
-              <p className="truncate text-lg font-extrabold">{priceHint(categories)}</p>
-            </div>
-            <Button className="h-14 shrink-0 px-6 text-base" disabled={!selected || !selOpen.open} onClick={() => selected && onGo(selected.id)}>
-              {selected && selected.available === 0 ? 'Lihat & ikut daftar tunggu' : isReserved ? 'Pilih kursi' : 'Pilih tiket'}
-            </Button>
-          </div>
-        </BottomBar>
-      )}
+      {!event.infoOnly && <BottomBar className="lg:hidden">{action}</BottomBar>}
     </div>
   )
 }

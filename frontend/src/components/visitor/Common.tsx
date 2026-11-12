@@ -1,26 +1,55 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
-import { CircleAlert, Minus, Plus, RefreshCw } from 'lucide-react'
+import { ChevronLeft, CircleAlert, Minus, Plus, RefreshCw } from 'lucide-react'
 import { ApiError, apiMode, DEMO_URL } from '@/api'
 import { EmptyState } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { errorMessage } from '@/hooks/useLive'
+import { useBack } from '@/lib/navStack'
 import { cn } from '@/lib/utils'
 
 /**
  * Action bar at the bottom of a pushed screen. It stays in reach of the thumb while the page scrolls, and rests at the
- * bottom of the screen when the page is short.
+ * bottom of the screen when the page is short. On a laptop it is an ordinary block at the end of the form.
  */
 export function BottomBar({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
       className={cn(
         'sticky bottom-0 z-20 mt-auto border-t bg-card/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_-18px_rgb(0_0_0/0.35)] backdrop-blur',
+        'lg:static lg:mt-0 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none',
         className,
       )}
     >
       {children}
+    </div>
+  )
+}
+
+/** The phone app bar of a pushed screen. On a laptop it is hidden and DeskHead shows the way back instead. */
+export function PhoneOnly({ children }: { children: ReactNode }) {
+  return <div className="contents lg:hidden">{children}</div>
+}
+
+/** Laptop only: the way back and the screen's title at the top of the page column, under the site's top bar. */
+export function DeskHead({ to, title, subtitle, right, className }: { to: string; title: ReactNode; subtitle?: ReactNode; right?: ReactNode; className?: string }) {
+  const back = useBack(to)
+  return (
+    <div className={cn('hidden min-w-0 items-center gap-4 pt-7 pb-6 lg:flex', className)}>
+      <button
+        type="button"
+        onClick={back}
+        aria-label="Kembali"
+        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card shadow-xs ring-1 ring-border transition hover:bg-muted active:scale-90"
+      >
+        <ChevronLeft className="size-6" />
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-poster text-[2rem] leading-[1.05] uppercase">{title}</div>
+        {subtitle && <div className="truncate text-sm text-muted-foreground">{subtitle}</div>}
+      </div>
+      {right}
     </div>
   )
 }

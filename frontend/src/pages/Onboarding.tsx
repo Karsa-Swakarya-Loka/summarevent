@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { BrandAppIcon } from '@/components/common/Brand'
+import { BrandAppIcon, BrandLockup } from '@/components/common/Brand'
 import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
 import type { ArtName } from '@/components/stickers/Art'
@@ -100,15 +100,18 @@ export default function Onboarding({ role }: { role: IntroRole }) {
   }
 
   return (
-    <div className="flex min-h-dvh justify-center bg-background" data-shell="intro">
-      <div className="flex w-full max-w-md flex-col">
-        <header className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))]">
+    // On a laptop the same pieces sit in a grid on one fixed screen: the art panel fills the left half, and the text and
+    // buttons stand centred in the right.
+    <div className="flex min-h-dvh justify-center bg-background lg:h-dvh lg:overflow-hidden" data-shell="intro">
+      <div className="flex w-full max-w-md flex-col lg:grid lg:max-w-none lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)_auto_auto_minmax(0,1fr)]">
+        <header className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))] lg:z-10 lg:col-span-full lg:row-start-1 lg:px-8 lg:pt-6">
           <div className="flex items-center gap-1">
             {/* back to where the pengenalan was opened from (the landing), or the landing itself */}
             <Button variant="ghost" className="-ml-2.5 size-11 rounded-full" aria-label="Kembali" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>
               <ArrowLeft className="size-5" />
             </Button>
-            <BrandAppIcon className="size-10 rounded-xl" />
+            <BrandAppIcon className="size-10 rounded-xl lg:hidden" />
+            <BrandLockup className="hidden h-8 lg:block" />
           </div>
           <Button variant="ghost" className="h-11 px-4 text-base text-muted-foreground" onClick={() => finish(role === 'visitor' ? '/app' : signIn)}>
             Lewati
@@ -118,42 +121,45 @@ export default function Onboarding({ role }: { role: IntroRole }) {
         <section
           key={step}
           aria-labelledby="onboarding-title"
-          className="flex flex-1 touch-pan-y flex-col px-6"
+          className="flex flex-1 touch-pan-y flex-col px-6 lg:contents"
           style={{ '--slide-from': `${dir * 36}px` } as CSSProperties}
           onPointerDown={(e) => (swipeFrom.current = e.clientX)}
           onPointerUp={onPointerUp}
           onPointerCancel={() => (swipeFrom.current = null)}
         >
-          <div className={cn('relative mx-auto mt-4 grid aspect-square w-full max-w-[19rem] place-items-center overflow-hidden rounded-[2.5rem]', s.panel)}>
+          <div className={cn(
+              'relative mx-auto mt-4 grid aspect-square w-full max-w-[19rem] place-items-center overflow-hidden rounded-[2.5rem] lg:col-start-1 lg:row-span-full lg:mt-0 lg:aspect-auto lg:h-full lg:max-w-none lg:rounded-none',
+              s.panel,
+            )}>
             <div className={cn('seat-dots absolute inset-0', s.dots)} aria-hidden />
             {s.art.length === 1 ? (
-              <Illustration name={s.art[0].name} className="relative w-[82%] animate-pop" />
+              <Illustration name={s.art[0].name} className="relative w-[82%] animate-pop lg:w-[min(64%,62dvh)]" />
             ) : (
-              <ul className="relative grid w-full grid-cols-3">
+              <ul className="relative grid w-full grid-cols-3 lg:w-[min(86%,92dvh)]">
                 {s.art.map(({ name, label }, i) => (
                   <li key={name} className="animate-rise text-center" style={{ animationDelay: `${120 + i * 110}ms` }}>
                     <Illustration name={name} className="mx-auto -mb-2 w-[125%] max-w-none -translate-x-[10%]" />
-                    <span className="mt-1 block text-sm font-bold">{label}</span>
+                    <span className="mt-1 block text-sm font-bold lg:text-lg">{label}</span>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          <div className="mt-8 animate-slide-in" aria-live="polite">
+          <div className="mt-8 animate-slide-in lg:col-start-2 lg:row-start-3 lg:mt-0 lg:w-[27rem] lg:justify-self-center" aria-live="polite">
             <p className="text-[0.7rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">
               {role === 'admin' ? 'Panitia · ' : role === 'staff' ? 'Petugas · ' : 'Langkah '}
               {step + 1} dari {steps.length}
             </p>
-            <h1 id="onboarding-title" className="mt-1.5 font-poster text-[2.5rem] leading-[0.95] text-balance uppercase">
+            <h1 id="onboarding-title" className="mt-1.5 font-poster text-[2.5rem] leading-[0.95] text-balance uppercase lg:min-h-[1.9em] lg:text-[clamp(2.75rem,8dvh,4rem)]">
               {s.title}
             </h1>
-            <p className="mt-3 text-base leading-relaxed text-muted-foreground">{s.body}</p>
+            <p className="mt-3 text-base leading-relaxed text-muted-foreground lg:min-h-[3.6rem] lg:text-lg">{s.body}</p>
           </div>
         </section>
 
-        <footer className="px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <div className="mb-5 flex justify-center gap-2" aria-hidden>
+        <footer className="px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-4 lg:w-[27rem] lg:justify-self-center lg:px-0 lg:pt-[clamp(1.25rem,4dvh,2rem)] lg:pb-0">
+          <div className="mb-5 flex justify-center gap-2 lg:justify-start" aria-hidden>
             {steps.map((_, i) => (
               <span key={i} className={cn('h-2 rounded-full transition-[width,background-color] duration-300 ease-(--ease-soft)', i === step ? 'w-7 bg-ink' : 'w-2 bg-foreground/15')} />
             ))}

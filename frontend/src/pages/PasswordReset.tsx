@@ -9,6 +9,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft, Eye, EyeOff, LoaderCircle, MailCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
+import { AuthArt } from '@/components/common/AuthArt'
 import { Illustration } from '@/components/common/Illustration'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,20 +23,22 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 function Frame({ title, lead, back, children }: { title: string; lead: string; back: string; children: React.ReactNode }) {
   const navigate = useNavigate()
   return (
-    <div className="flex min-h-dvh justify-center bg-background" data-shell="intro">
-      <div className="flex w-full max-w-md flex-col">
-        <header className="px-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <div className="flex min-h-dvh justify-center bg-background lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" data-shell="intro">
+      {/* on a laptop the padlock moves to the green half and the form takes the other */}
+      <AuthArt art="padlock" />
+      <div className="flex w-full max-w-md flex-col lg:relative lg:min-h-dvh lg:max-w-none lg:items-center lg:justify-center">
+        <header className="px-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:absolute lg:top-0 lg:left-0 lg:px-6 lg:pt-5">
           <Button variant="ghost" className="size-11 rounded-full" aria-label="Kembali" onClick={() => navigate(back)}>
             <ArrowLeft className="size-5" />
           </Button>
         </header>
-        <main className="flex-1 px-6 pb-10">
-          <div className="relative mx-auto grid size-36 place-items-center overflow-hidden rounded-[2rem] bg-brand-soft">
+        <main className="flex-1 px-6 pb-10 lg:w-[27rem] lg:flex-none lg:px-0 lg:pt-14 lg:pb-[clamp(1.25rem,6dvh,3rem)]">
+          <div className="relative mx-auto grid size-36 place-items-center overflow-hidden rounded-[2rem] bg-brand-soft lg:hidden">
             <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
             <Illustration name="padlock" className="relative w-28 animate-pop" />
           </div>
-          <h1 className="mt-6 animate-rise text-center font-poster text-[2.5rem] leading-[0.95] text-balance uppercase">{title}</h1>
-          <p className="mt-1.5 animate-rise text-center text-base text-muted-foreground [animation-delay:60ms]">{lead}</p>
+          <h1 className="mt-6 animate-rise text-center font-poster text-[2.5rem] leading-[0.95] text-balance uppercase lg:mt-0 lg:text-left lg:text-[clamp(2rem,6.5dvh,2.75rem)]">{title}</h1>
+          <p className="mt-1.5 animate-rise text-center text-base text-muted-foreground [animation-delay:60ms] lg:text-left">{lead}</p>
           {children}
         </main>
       </div>

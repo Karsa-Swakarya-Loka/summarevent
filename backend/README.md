@@ -59,7 +59,7 @@ npx convex run rpc:ensureSeeded                               # isi data contoh 
 ```sh
 npm run check-domain   # convex/shared sama dengan frontend/src/domain (jalan juga di CI)
 npm run typecheck
-npm test               # convex-test: hold, bayar, klaim tamu, check-in, profil, daftar tunggu, login + reset sandi, email, warna poster
+npm test               # convex-test: hold, bayar, klaim tamu, check-in, profil, daftar tunggu, login + reset sandi, email, warna dan gambar poster
 ```
 
 Uji terima terhadap deployment (mereset data demo):

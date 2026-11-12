@@ -142,6 +142,7 @@ Asisten **Isi cepat dengan AI** di wizard buat event memakai fungsi Vercel `fron
 | --- | --- |
 | `GEMINI_API_KEY` | Kunci Gemini API dari Google AI Studio. Tanpa ini, asisten menjawab "Asisten AI belum dipasang" dan form tetap bisa diisi manual. |
 | `GEMINI_MODEL` | Opsional. Default `gemini-3.5-flash-lite`. |
+| `GEMINI_FALLBACK_MODEL` | Opsional. Model cadangan saat model utama sedang penuh atau lambat. Default `gemini-flash-lite-latest`. |
 | `AI_ALLOWED_ORIGINS` | Opsional. Asal yang boleh memanggil asisten, dipisah koma. Default `https://summarevent.vercel.app,https://summarevent-live.vercel.app`. |
 
 ## Struktur

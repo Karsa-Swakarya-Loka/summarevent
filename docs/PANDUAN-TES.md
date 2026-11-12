@@ -154,7 +154,7 @@ BASE=https://summarevent-live.vercel.app API_URL=https://good-gnu-186.convex.sit
 | Offline | Versi live, HP petugas mode pesawat saat scan, lalu online lagi | Scan tetap jalan, antrean terkirim. Tiket yang lebih dulu masuk lewat pintu lain muncul sebagai konflik. |
 | Panitia | Tolak atau minta revisi struk tanpa alasan, **Tandai lunas** | Alasan wajib. Tandai lunas meminta konfirmasi dulu. |
 | Cek silang AI | Pengunjung: **Isi struk contoh**, lalu ubah **Nominal** jadi Rp900.000 dan **Kirim struk**. Panitia: **Verifikasi struk** → buka struk itu → **Bandingkan foto dengan isian** | Nominal ditandai **Beda**, bagian lain **Sama**. Pertama kali butuh internet untuk mengunduh model baca. |
-| Isi cepat dengan AI | Panitia → **Buat event**. Di kartu **Isi cepat dengan AI** tulis "Mau bikin Bandung Kids Fest di Atrium Cibadak, pengunjung 100–200 orang, tiket 50 ribu", **Kirim**, lalu jawab pertanyaannya | AI menanyakan tanggal dan jam. Setelah dijawab, judul, deskripsi, venue, sesi pertama, dan harga kategori pertama terisi, dan denah ikut jumlah pengunjung. Tanpa `GEMINI_API_KEY` di Vercel muncul "Asisten AI belum dipasang". |
+| Isi cepat dengan AI | Panitia → **Buat event**. Di kartu **Isi cepat dengan AI** tulis "Mau bikin Bandung Kids Fest" saja, **Kirim**, lalu jawab pertanyaannya. Coba juga satu pesan lengkap: "Bandung Kids Fest di Atrium Cibadak, kursi bernomor, Sabtu 28 November jam 10–12 dan 15–17, VIP 100 ribu, Reguler 50 ribu, Tukar Struk min belanja 300 ribu, sekitar 200 orang", lalu koreksi "ganti venue ke Atrium Ciunik" | AI menanyakan semua yang kurang sekaligus dan menerima koreksi. Setelah lengkap, Info, Kategori, Denah, dan Sesi terisi dan event bisa langsung dipublikasikan. Tanpa `GEMINI_API_KEY` di Vercel muncul "Asisten AI belum dipasang". |
 | CSV | Di status pesanan, **Ubah nama peserta** jadi `=1+1`. Lalu panitia **Unduh data peserta** dan buka di Excel atau Sheets. | Tampil sebagai teks berawalan tanda petik, bukan angka 2 |
 | Akses | Buka `/admin` dan `/staff` tanpa masuk. Masuk dengan sandi salah. Coba lupa sandi untuk email yang tidak ada. | Diarahkan ke halaman masuk. Pesan salahnya sama untuk email dan sandi. Lupa sandi tidak memberi tahu email itu terdaftar atau tidak. |
 | Petugas nonaktif | Panitia → Petugas → **Nonaktifkan**, lalu petugas itu masuk | Ditolak |
@@ -193,7 +193,7 @@ Jalur paling cepat kalau waktunya mepet: halaman awal → **Masuk sebagai pengun
 
 | Angka | Sumber |
 | --- | --- |
-| 99 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
+| 102 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
 | 58 layar lolos WCAG 2.1 AA, semua target sentuh di HP minimal 44 px | Suite `a11y.mjs` |
 | Lighthouse HP: performa 90–92, aksesibilitas dan best practices 100 | Build produksi, simulasi HP lambat |
 | Muatan awal halaman 274 KB (gzip) | Build produksi |

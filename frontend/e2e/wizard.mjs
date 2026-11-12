@@ -165,8 +165,8 @@ await page.route('**/api/ai-event', async (route) => {
   const first = messages.length === 1
   await route.fulfill({
     json: first
-      ? { reply: 'Siap. Acaranya tanggal berapa, jam berapa?', fields: { title: 'Bandung Kids Fest', venueName: 'Atrium Cibadak', price: 50000, audience: 200 } }
-      : { reply: 'Bandung Kids Fest, Atrium Cibadak, 28 November 09.30. Form siap diisi.', fields: { title: 'Bandung Kids Fest', venueName: 'Atrium Cibadak', price: 50000, audience: 200, date: '2026-11-28', start: '09:30', description: 'Festival anak dan keluarga di Atrium Cibadak.' } },
+      ? { reply: 'Siap. Acaranya tanggal berapa, jam berapa?', fields: { title: 'Bandung Kids Fest', venueName: 'Atrium Cibadak', seating: 'bernomor', categories: [{ name: 'Reguler', method: 'bayar', price: 50000 }], audience: 200 } }
+      : { reply: 'Bandung Kids Fest, Atrium Cibadak, 28 November 09.30. Form siap diisi.', fields: { title: 'Bandung Kids Fest', venueName: 'Atrium Cibadak', seating: 'bernomor', categories: [{ name: 'Reguler', method: 'bayar', price: 50000 }], audience: 200, sessions: [{ date: '2099-11-28', start: '09:30' }], description: 'Festival anak dan keluarga di Atrium Cibadak.' } },
   })
 })
 await page.goto(BASE + '/admin/events/new', { waitUntil: 'networkidle' })

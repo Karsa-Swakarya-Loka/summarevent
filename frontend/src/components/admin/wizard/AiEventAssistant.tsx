@@ -7,10 +7,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { Venue } from '@/domain/types'
 import { cn } from '@/lib/utils'
-import { AI_FIELD_LABEL, changedAiFields, mergeAiFields, missingAiFields, sanitizeAiFields, type AiEventFields } from './aiFill'
+import { AI_FIELD_LABEL, aiKnown, changedAiFields, mergeAiFields, missingAiFields, sanitizeAiFields, type AiEventFields } from './aiFill'
 
-/** The server takes 16 turns; the last one has to be the panitia's. */
-const MAX_TURNS = 15
+/** Shown first, so the panitia knows what to tell; it is not sent to the AI. */
+const GREETING =
+  'Halo! Ceritakan acara yang mau dibuat. Yang saya perlukan: nama acara, venue, kursi bernomor atau bebas, tanggal dan jam (boleh beberapa sesi), jenis tiket beserta harganya (bayar, gratis, atau tukar struk), dan perkiraan jumlah pengunjung. Boleh sekaligus, boleh sedikit-sedikit.'
 
 /**
  * AD-01 with AI: the panitia tells the assistant about the event in their own words, it asks for what is still missing,
@@ -28,7 +29,7 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
   const box = useRef<HTMLTextAreaElement>(null)
 
   const found = (Object.keys(fields) as Array<keyof AiEventFields>).map((k) => AI_FIELD_LABEL[k])
-  const full = turns.length >= MAX_TURNS
+  const missing = missingAiFields(fields).map((k) => AI_FIELD_LABEL[k])
 
   const fill = (f: AiEventFields) => {
     const fresh = changedAiFields(applied, f)
@@ -41,14 +42,18 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
   const send = async (e?: FormEvent) => {
     e?.preventDefault()
     const message = text.trim()
-    if (!message || busy || full) return
+    if (!message || busy) return
     const next: AiTurn[] = [...turns, { role: 'user', text: message }]
     setTurns(next)
     setText('')
     setBusy(true)
     setProblem(null)
     try {
-      const answer = await askEventAssistant(next, venues.map((v) => v.name))
+      const answer = await askEventAssistant(
+        next,
+        venues.map((v) => `${v.name} (kapasitas ${v.capacity})`),
+        aiKnown(fields, venues),
+      )
       const merged = mergeAiFields(fields, sanitizeAiFields(answer.fields, venues))
       setTurns([...next, { role: 'ai', text: answer.reply }])
       setFields(merged)
@@ -76,9 +81,10 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">Ceritakan acaranya. AI menanyakan yang kurang, lalu mengisi form. Semuanya tetap bisa diubah.</p>
 
-      {turns.length > 0 && (
-        <ol role="log" aria-live="polite" aria-label="Percakapan dengan AI" className="mt-3 flex flex-col gap-2">
-          {turns.map((t, i) => (
+      {/* the live region wraps the list, so the messages stay list items */}
+      <div role="log" aria-live="polite" aria-label="Percakapan dengan AI" className="mt-3">
+        <ol className="flex flex-col gap-2">
+          {[{ role: 'ai' as const, text: GREETING }, ...turns].map((t, i) => (
             <li key={i} className={cn('max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-line', t.role === 'user' ? 'self-end bg-brand text-white' : 'self-start bg-card shadow-[0_1px_2px_rgb(35_31_32/0.06)]')}>
               <span className="sr-only">{t.role === 'user' ? 'Kamu: ' : 'AI: '}</span>
               {t.text}
@@ -90,9 +96,13 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
             </li>
           )}
         </ol>
-      )}
+      </div>
 
-      {found.length > 0 && <p className="mt-3 text-xs text-muted-foreground">Sudah ditangkap: {found.join(', ')}.</p>}
+      {found.length > 0 && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Sudah ditangkap: {found.join(', ')}.{missing.length > 0 && <> Masih perlu: <span className="font-semibold text-foreground">{missing.join(', ')}</span>.</>}
+        </p>
+      )}
 
       <form onSubmit={(e) => void send(e)} className="mt-3 flex flex-col gap-2">
         <Label htmlFor={inputId} className="sr-only">
@@ -107,10 +117,9 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
           rows={2}
           maxLength={AI_MAX_TEXT}
           readOnly={busy}
-          disabled={full}
           aria-busy={busy}
           aria-describedby={problem ? `${inputId}-error` : undefined}
-          placeholder={turns.length ? 'Jawab pertanyaan AI…' : 'Contoh: Mau bikin acara Bandung Kids Fest di Atrium Ciunik, pengunjungnya 100–200 orang, tiket Rp50.000.'}
+          placeholder={turns.length ? 'Jawab pertanyaan AI…' : 'Contoh: Bandung Kids Fest di Atrium Cibadak, kursi bernomor, Sabtu 28 November jam 10 pagi, VIP 100 ribu dan Reguler 50 ribu, sekitar 200 orang.'}
           className="bg-card"
         />
         {problem && (
@@ -118,9 +127,8 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
             {problem}
           </p>
         )}
-        {full && <p className="text-xs text-muted-foreground">Percakapan sudah panjang. Isi form sekarang, lalu lengkapi sisanya manual.</p>}
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="submit" className="h-11 sm:w-auto" disabled={busy || full || !text.trim()}>
+          <Button type="submit" className="h-11 sm:w-auto" disabled={busy || !text.trim()}>
             {busy ? <LoaderCircle className="animate-spin" aria-hidden /> : <Send aria-hidden />} Kirim
           </Button>
           <Button type="button" variant="outline" className="h-11 sm:w-auto" disabled={busy || !Object.keys(changedAiFields(applied, fields)).length} onClick={() => fill(fields)}>

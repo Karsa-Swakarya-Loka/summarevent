@@ -15,15 +15,18 @@ export interface AiAnswer {
 }
 
 export const AI_MAX_TEXT = 600
-const TIMEOUT_MS = 25_000
+const TIMEOUT_MS = 50_000
 
-export async function askEventAssistant(messages: AiTurn[], venues: string[]): Promise<AiAnswer> {
+/** Only the latest turns travel; `known` carries everything understood before them. */
+export const AI_RECENT_TURNS = 12
+
+export async function askEventAssistant(messages: AiTurn[], venues: string[], known: Record<string, unknown>): Promise<AiAnswer> {
   let res: Response
   try {
     res = await fetch('/api/ai-event', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, venues }),
+      body: JSON.stringify({ messages: messages.slice(-AI_RECENT_TURNS), venues, known }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
   } catch {

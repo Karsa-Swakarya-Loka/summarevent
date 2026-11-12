@@ -2,17 +2,13 @@ import { lazy, Suspense, type ComponentType } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Toaster } from '@/components/ui/sonner'
-import { VisitorLayout } from '@/layouts/VisitorLayout'
 import { roleSplash } from '@/lib/splash'
 import NotFound from '@/pages/NotFound'
 import RolePicker from '@/pages/RolePicker'
-import EventDetail from '@/pages/visitor/EventDetail'
-import Home from '@/pages/visitor/Home'
-import SeatSelect from '@/pages/visitor/SeatSelect'
 import { screen } from '@/screens'
 
 /**
- * Panitia and petugas screens load on demand, so a visitor's phone never downloads the
+ * Every screen but the landing loads on demand: the landing ships no app code, and a visitor's phone never downloads the
  * dashboard charts or the QR scanner.
  */
 function page(load: () => Promise<{ default: ComponentType }>) {
@@ -38,12 +34,14 @@ function Loading() {
   )
 }
 
-// their shells too: the panitia sidebar, event switcher and search stay off a visitor's phone. Opened straight on an
-// admin or petugas link, the shell starts loading at once, beside the sample data
+// their shells too: the panitia sidebar, event switcher and search stay off a visitor's phone, and the visitor shell off
+// the landing. Opened straight on a role's link, its shell starts loading at once, beside the sample data
+const visitorLayout = () => import('@/layouts/VisitorLayout').then((m) => ({ Component: m.VisitorLayout }))
 const adminLayout = () => import('@/layouts/AdminLayout').then((m) => ({ Component: m.AdminLayout }))
 const staffLayout = () => import('@/layouts/StaffLayout').then((m) => ({ Component: m.StaffLayout }))
 if (typeof location !== 'undefined') {
-  if (/^\/admin(\/|$)/.test(location.pathname)) void adminLayout()
+  if (/^\/app(\/|$)/.test(location.pathname)) void visitorLayout()
+  else if (/^\/admin(\/|$)/.test(location.pathname)) void adminLayout()
   else if (/^\/staff(\/|$)/.test(location.pathname)) void staffLayout()
 }
 
@@ -80,12 +78,12 @@ const router = createBrowserRouter([
   { path: '/', element: <RolePicker /> },
   {
     path: '/app',
-    element: <VisitorLayout />,
+    lazy: visitorLayout,
     hydrateFallbackElement: <Loading />,
     children: [
-      { index: true, element: <Home /> },
-      { path: 'e/:slug', element: <EventDetail /> },
-      { path: 'e/:slug/s/:sessionId', element: <SeatSelect /> },
+      { index: true, lazy: screen('home') },
+      { path: 'e/:slug', lazy: screen('event') },
+      { path: 'e/:slug/s/:sessionId', lazy: screen('seat') },
       { path: 'checkout/:orderId', lazy: screen('checkout') },
       { path: 'orders/:orderId', lazy: screen('order') },
       { path: 'pass', lazy: screen('pass') },

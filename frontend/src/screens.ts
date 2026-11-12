@@ -1,10 +1,13 @@
 /**
- * The visitor screens reached by tapping through the app, each its own chunk (Beranda, the event page and the seat map,
- * where links land, ship with the app). The router loads one when it is navigated to and keeps the current screen up
- * meanwhile, as a native app does. main.tsx starts the first screen's chunk while the data boots, and the shell fetches
+ * The visitor screens, each its own chunk, so the landing page ships none of them (Beranda, the event page and the seat
+ * map too). The router loads one when it is navigated to and keeps the current screen up meanwhile, as a native app
+ * does. main.tsx starts the first screen's chunk while the data boots, and the shell fetches
  * the rest once the page has loaded and the phone is idle, so every later screen opens at once.
  */
 const load = {
+  home: () => import('@/pages/visitor/Home'),
+  event: () => import('@/pages/visitor/EventDetail'),
+  seat: () => import('@/pages/visitor/SeatSelect'),
   checkout: () => import('@/pages/visitor/Checkout'),
   order: () => import('@/pages/visitor/OrderStatus'),
   pass: () => import('@/pages/visitor/MyPass'),
@@ -20,6 +23,9 @@ type ScreenName = keyof typeof load
 export const screen = (name: ScreenName) => () => load[name]().then((m) => ({ Component: m.default }))
 
 const ROUTES: Array<[RegExp, ScreenName]> = [
+  [/^\/app\/?$/, 'home'],
+  [/^\/app\/e\/[^/]+\/?$/, 'event'],
+  [/^\/app\/e\/[^/]+\/s\/[^/]+\/?$/, 'seat'],
   [/^\/app\/checkout\//, 'checkout'],
   [/^\/app\/orders\//, 'order'],
   [/^\/app\/pass\/?$/, 'pass'],

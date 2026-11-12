@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { Inbox } from 'lucide-react'
 import { api } from '@/api'
+import { useMedia } from '@/components/admin/hooks'
 import { QueueRow, ReviewPanel } from '@/components/admin/ReceiptReview'
 import { BackHeader, EmptyState } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
@@ -20,7 +21,9 @@ export default function DeskReceipts() {
   // the open receipt lives in the URL, so the header back and the phone's back button return to the queue
   const openId = params.get('order')
   const items = q.data ?? []
-  const current = items.find((i) => i.order.id === openId)
+  // on a laptop the queue and the open receipt sit side by side, so the first one is open from the start
+  const wide = useMedia('(min-width: 1024px)')
+  const current = items.find((i) => i.order.id === openId) ?? (wide ? items[0] : undefined)
   // the next receipt (or the queue) starts at its top, not where the last long panel was scrolled to
   useEffect(() => {
     window.scrollTo({ top: 0 })
@@ -40,13 +43,17 @@ export default function DeskReceipts() {
 
   const toList = useBack(listUrl)
   // the desk serves the visitor standing at it: after a decision, back to the queue to pick the next one
-  const next = () => toList()
+  // side by side the queue is already on screen: the next receipt in it opens beside it
+  const next = () => (wide ? open(null, true) : toList())
 
   return (
-    <div className="pb-24">
-      <BackHeader to={current ? listUrl : `/staff${eventId ? `?event=${eventId}` : ''}`} title={current ? 'Verifikasi struk' : undefined} />
-      <div className="space-y-4 px-4 pt-1">
-        {!current && (
+    <div className="pb-24 lg:pb-12">
+      {/* the laptop top bar leads back to the sessions, and the queue stays beside the receipt */}
+      <div className="contents lg:hidden">
+        <BackHeader to={current ? listUrl : `/staff${eventId ? `?event=${eventId}` : ''}`} title={current ? 'Verifikasi struk' : undefined} />
+      </div>
+      <div className="space-y-4 px-4 pt-1 lg:mx-auto lg:max-w-6xl lg:px-8 lg:pt-6">
+        {(!current || wide) && (
           <div>
             <h1 className="font-poster text-[2.4rem] leading-[0.95] uppercase">Struk di desk</h1>
             <p className="mt-1 text-sm text-muted-foreground">Cocokkan struk kertasnya dengan foto dan cek otomatis, lalu putuskan. Keputusan tercatat atas namamu.</p>
@@ -61,7 +68,7 @@ export default function DeskReceipts() {
             <Skeleton className="h-24 rounded-[1.4rem]" />
             <Skeleton className="h-24 rounded-[1.4rem]" />
           </div>
-        ) : current ? (
+        ) : current && !wide ? (
           <div className="space-y-2">
             <ReviewPanel key={current.order.id} item={current} onDone={next} review={(id, d, r) => api.staff.reviewReceipt(id, d, r)} />
           </div>
@@ -70,16 +77,24 @@ export default function DeskReceipts() {
             Struk dari pengunjung kategori Tukar Struk muncul di sini sampai panitia atau petugas memutuskan.
           </EmptyState>
         ) : (
-          <>
-            <p className="px-1 text-sm font-semibold text-muted-foreground">{items.length} struk menunggu keputusan</p>
-            <ul className="flex flex-col gap-2" aria-label="Antrean struk">
-              {items.map((it) => (
-                <li key={it.order.id}>
-                  <QueueRow item={it} active={false} onOpen={() => open(it.order.id, false)} />
-                </li>
-              ))}
-            </ul>
-          </>
+          <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
+            <div className="space-y-2 lg:sticky lg:top-[calc(var(--spacing-desk-bar)+1rem)] lg:max-h-[calc(100dvh-var(--spacing-desk-bar)-2rem)] lg:overflow-y-auto lg:p-1">
+              <p className="px-1 text-sm font-semibold text-muted-foreground">{items.length} struk menunggu keputusan</p>
+              <ul className="flex flex-col gap-2" aria-label="Antrean struk">
+                {items.map((it) => (
+                  <li key={it.order.id}>
+                    {/* side by side, picking another receipt swaps the pane instead of stacking history */}
+                    <QueueRow item={it} active={wide && current?.order.id === it.order.id} onOpen={() => open(it.order.id, wide)} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {wide && current && (
+              <div className="min-w-0">
+                <ReviewPanel key={current.order.id} item={current} onDone={next} review={(id, d, r) => api.staff.reviewReceipt(id, d, r)} />
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

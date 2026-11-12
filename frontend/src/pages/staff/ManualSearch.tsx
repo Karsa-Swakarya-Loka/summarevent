@@ -50,7 +50,9 @@ export default function ManualSearch() {
   const session = ctx.session
 
   return (
-    <div className="pb-24">
+    <div className="pb-24 lg:pb-12">
+      {/* on a laptop the top bar leads back to the sessions; the scan link moves beside the search */}
+      <div className="contents lg:hidden">
       <BackHeader
         to="/staff"
         title={session && ctx.event ? <span className="block truncate text-sm text-muted-foreground">{sessionName(session)} · {ctx.event.title}</span> : undefined}
@@ -60,6 +62,7 @@ export default function ManualSearch() {
           </Link>
         }
       />
+      </div>
 
       {ctx.notFound ? (
         <div className="p-4">
@@ -68,7 +71,21 @@ export default function ManualSearch() {
           </EmptyState>
         </div>
       ) : (
-        <div className="px-4 pt-1">
+        <div className="px-4 pt-1 lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-8 lg:px-8 lg:pt-6">
+          <div className="lg:sticky lg:top-[calc(var(--spacing-desk-bar)+1.5rem)]">
+          {session && ctx.event && (
+            <div className="mb-3 hidden items-center gap-3 lg:flex">
+              <p className="min-w-0 flex-1 text-sm leading-snug">
+                <span className="block truncate font-semibold">{sessionName(session)}</span>
+                <span className="block truncate text-muted-foreground">{ctx.event.title}</span>
+              </p>
+              <Button asChild variant="outline" className="h-11 shrink-0">
+                <Link to={`/staff/scan/${sessionId}`}>
+                  <ScanLine className="size-5" aria-hidden /> Scan
+                </Link>
+              </Button>
+            </div>
+          )}
           <h1 className="font-poster text-[2.4rem] leading-[0.95] uppercase">Cari tiket manual</h1>
           <p className="mt-1 text-sm text-muted-foreground">Untuk QR yang tidak terbaca atau HP pengunjung yang mati.</p>
           <form role="search" onSubmit={(e) => e.preventDefault()} className="mt-4">
@@ -114,8 +131,9 @@ export default function ManualSearch() {
               <span className="flex-1">{checkin.error}</span>
             </div>
           )}
+          </div>
 
-          <div className="mt-5" aria-live="polite" aria-busy={stale}>
+          <div className="mt-5 lg:mt-0" aria-live="polite" aria-busy={stale}>
             {!searching ? (
               <Note
                 art="search"
@@ -139,7 +157,7 @@ export default function ManualSearch() {
             ) : (
               <>
                 <p className="mb-2 px-1 text-sm font-semibold text-muted-foreground">{stale ? 'Mencari…' : `${rows.length} tiket ditemukan${rows.length >= 30 ? ' · 30 teratas, perjelas pencarian' : ''}`}</p>
-                <ul className="space-y-3">
+                <ul className="space-y-3 lg:space-y-2.5">
                   {rows.map((row) => (
                     <TicketRow key={row.ticket.id} row={row} sessionId={sessionId} disabled={checkin.pending} onCheckin={() => void checkin.submit(row.ticket.id, true)} />
                   ))}
@@ -182,8 +200,8 @@ function TicketRow({ row, sessionId, disabled, onCheckin }: { row: TicketSearchR
   const ready = ticket.status === 'ACTIVE' && !otherSession
   const name = ticket.attendeeName || order.buyerName
   return (
-    <li className="overflow-hidden rounded-[1.4rem] bg-card shadow-xs" data-ticket={ticket.code}>
-      <div className="flex items-stretch">
+    <li className="overflow-hidden rounded-[1.4rem] bg-card shadow-xs lg:flex lg:items-center" data-ticket={ticket.code}>
+      <div className="flex items-stretch lg:min-w-0 lg:flex-1 lg:self-stretch">
         <div className="flex w-[5.5rem] shrink-0 flex-col items-center justify-center border-r border-dashed border-ink/15 bg-muted/60 px-2 py-3 text-center">
           <span className="text-xs font-semibold text-muted-foreground">{ticket.seatLabel ? 'Kursi' : 'Area'}</span>
           <span className={cn('mt-0.5 font-poster leading-none', ticket.seatLabel ? 'text-[2rem]' : 'text-base leading-tight uppercase')}>{ticket.seatLabel ?? category.name}</span>
@@ -211,7 +229,7 @@ function TicketRow({ row, sessionId, disabled, onCheckin }: { row: TicketSearchR
           </p>
         </div>
       </div>
-      <div className="px-3.5 pb-3.5">
+      <div className="px-3.5 pb-3.5 lg:w-48 lg:shrink-0 lg:py-3.5">
         <Button className="h-12 w-full text-base" variant={ready ? 'default' : 'outline'} disabled={disabled} onClick={onCheckin}>
           {ready ? 'Check-in' : 'Periksa tiket'}
         </Button>

@@ -106,6 +106,17 @@ export const RECEIPT_TONE: Record<ReceiptStatus, Tone> = {
   REJECTED: 'invalid',
 }
 
+/** Whether a session's check-in window is open right now (petugas home). */
+export type CheckinWindowState = 'NOT_YET' | 'OPEN' | 'CLOSED'
+
+export const CHECKIN_WINDOW_LABEL: Record<CheckinWindowState, string> = {
+  NOT_YET: 'Check-in belum dibuka',
+  OPEN: 'Check-in dibuka',
+  CLOSED: 'Check-in ditutup',
+}
+
+export const CHECKIN_WINDOW_TONE: Record<CheckinWindowState, Tone> = { NOT_YET: 'info', OPEN: 'valid', CLOSED: 'neutral' }
+
 export const CHECKIN_TONE: Record<CheckinResult, Tone> = {
   VALID: 'valid',
   ALREADY_USED: 'invalid',

@@ -246,6 +246,10 @@ const screens = [
   [phone, '/staff/search/ses_sk_demo'],
   [phone, '/staff/search/ses_sk_demo', rinaAfterCheckin],
   [phone, '/staff/receipts'],
+  // the petugas desk console on a laptop: top bar, sessions beside the event list, queue beside the receipt
+  [laptop, '/staff'],
+  [laptop, '/staff/search/ses_sk_demo'],
+  [laptop, '/staff/receipts'],
   [phone, '/admin/mulai'],
   [phone, '/admin/masuk'],
   [phone, '/admin'],

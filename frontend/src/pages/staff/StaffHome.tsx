@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { LogOut, ReceiptText, ScanLine, Search, Ticket } from 'lucide-react'
 import { api, type EventSummary, type SessionSummary } from '@/api'
@@ -9,25 +9,34 @@ import { EmptyState, StatusBadge } from '@/components/common/bits'
 import { DemoMenu } from '@/components/common/DemoMenu'
 import { Illustration } from '@/components/common/Illustration'
 import { Poster } from '@/components/common/Poster'
+import { useMedia } from '@/components/admin/hooks'
 import { clearOfflineManifests } from '@/components/staff/offline'
-import { scannableEvents, sessionName, sessionWindow, WINDOW_LABEL, type WindowState } from '@/components/staff/session'
-import { SectionLabel } from '@/components/visitor/Common'
-import { SettingsGroup, SettingsRow } from '@/components/visitor/SettingsList'
+import { scannableEvents, sessionName, sessionWindow } from '@/components/staff/session'
+import { SettingsRow } from '@/components/visitor/SettingsList'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { Tone } from '@/domain/labels'
+import { CHECKIN_WINDOW_LABEL, CHECKIN_WINDOW_TONE } from '@/domain/labels'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
 import { fmtDateTime, fmtRange, fmtShortDate, fmtTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-const WINDOW_TONE: Record<WindowState, Tone> = { NOT_YET: 'info', OPEN: 'valid', CLOSED: 'neutral' }
+/** Section title: plain words, the same weight as the rest of the screen. */
+function Heading({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <h2 id={id} className="px-1 text-lg leading-tight font-bold">
+      {children}
+    </h2>
+  )
+}
 
 /** PT-01: pick the event and the session that is running, then scan or search. */
 export default function StaffHome() {
   // StaffLayout only renders its pages for a signed-in petugas
   const [user, setUser] = useState(() => api.currentUser('STAFF'))
   const navigate = useNavigate()
+  // on a laptop the sessions take the wide column and the rest stays beside them
+  const wide = useMedia('(min-width: 1024px)')
 
   const events = useLive(() => api.listEvents(), [])
   const now = useNow(30_000)
@@ -40,10 +49,12 @@ export default function StaffHome() {
   const firstName = user?.name.split(' (')[0] ?? 'Petugas'
 
   return (
-    <div className="pb-24">
-      <header className="relative overflow-hidden bg-brand px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-6 text-white">
+    <div className="pb-24 lg:pb-12">
+      <header className="relative overflow-hidden bg-brand px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-6 text-white lg:px-0 lg:py-5 lg:[@media(max-height:640px)]:py-3">
         <div className="seat-dots absolute inset-0 text-white/10" aria-hidden />
-        <div className="relative flex items-center gap-1">
+        <div className="relative lg:mx-auto lg:max-w-6xl lg:px-8">
+        {/* on a laptop the top bar carries Demo and Keluar */}
+        <div className="relative flex items-center gap-1 lg:hidden">
           <BrandLockup inverted className="mr-auto h-6 min-w-0" />
           {/* the demo shortcuts live in the bar, never floating over a session's Mulai scan */}
           <DemoMenu variant="bar" className="text-white hover:bg-white/10" />
@@ -59,16 +70,17 @@ export default function StaffHome() {
             <LogOut className="size-4" aria-hidden /> Keluar
           </button>
         </div>
-        <div className="relative mt-4 flex items-end justify-between gap-2">
+        <div className="relative mt-4 flex items-end justify-between gap-2 lg:mt-0 lg:items-center">
           <div className="min-w-0">
-            <p className="text-[0.7rem] font-bold tracking-[0.18em] text-white/75 uppercase">Petugas check-in</p>
-            <h1 className="mt-1 font-poster text-[2.4rem] leading-[0.95] text-balance uppercase">Halo, {firstName}</h1>
+            <p className="text-sm font-semibold text-white/80 lg:[@media(max-height:640px)]:sr-only">Petugas check-in</p>
+            <h1 className="mt-1 font-poster text-[2.4rem] leading-[0.95] text-balance uppercase lg:text-[2.6rem] lg:[@media(max-height:640px)]:mt-0 lg:[@media(max-height:640px)]:text-[2.2rem]">Halo, {firstName}</h1>
           </div>
-          <Illustration name="camera" className="-mb-3 w-24 shrink-0" enter={0.15} />
+          <Illustration name="camera" className="-mb-3 w-24 shrink-0 lg:-my-2 lg:mr-6 lg:w-20 lg:[@media(max-height:640px)]:w-14" enter={0.15} />
+        </div>
         </div>
       </header>
 
-      <div className="space-y-6 px-4 pt-5">
+      <div className="space-y-6 px-4 pt-5 lg:mx-auto lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:items-start lg:gap-x-8 lg:space-y-0 lg:px-8 lg:pt-6 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:[@media(max-height:640px)]:pt-4">
         {events.error && !events.data ? (
           <EmptyState title="Daftar event belum bisa dimuat" action={<Button className="h-11" onClick={events.reload}>Coba lagi</Button>}>
             {errorMessage(events.error)}
@@ -85,8 +97,9 @@ export default function StaffHome() {
           </EmptyState>
         ) : (
           <>
+            <div className="space-y-6">
             <section aria-labelledby="pick-event" className="space-y-2.5">
-              <SectionLabel id="pick-event">Event</SectionLabel>
+              <Heading id="pick-event">Pilih event</Heading>
               <div role="radiogroup" aria-labelledby="pick-event" className="divide-y overflow-hidden rounded-[1.4rem] bg-card shadow-xs">
                 {list.map((e) => (
                   <EventOption key={e.event.id} summary={e} checked={e.event.id === selected.event.id} onSelect={() => setParams({ event: e.event.id }, { replace: true })} />
@@ -94,28 +107,37 @@ export default function StaffHome() {
               </div>
             </section>
 
-            <section aria-labelledby="pick-session" className="space-y-2.5">
-              <SectionLabel id="pick-session">Sesi</SectionLabel>
-              <div className="space-y-3">
+            {wide && <DeskReceiptsLink eventId={selected.event.id} />}
+            {wide && <DemoNote user={user} onSwitch={setUser} />}
+            </div>
+
+            <section aria-labelledby="pick-session" className="space-y-2.5 lg:col-start-2 lg:row-start-1">
+              <Heading id="pick-session">Pilih sesi</Heading>
+              <div className="space-y-3 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] lg:gap-4 lg:space-y-0">
                 {sortSessions(selected, now).map((s) => (
                   <SessionCard key={s.id} summary={selected} session={s} now={now} />
                 ))}
               </div>
             </section>
 
-            <DeskReceiptsLink eventId={selected.event.id} />
-
-            {/* everything only a judge needs, together: the always-open session, the scan tools, another petugas */}
-            <section aria-label="Demo" className="rounded-2xl bg-accent px-4 py-3 text-sm text-accent-foreground">
-              <p>
-                Demo: <b>Sesi Demo Juri</b> selalu berlangsung, dan di layar scan ada <b>Alat demo</b> untuk mencoba tanpa HP kedua.
-              </p>
-              <StaffSwitcher userId={user?.id ?? null} onSwitch={setUser} />
-            </section>
+            {!wide && <DeskReceiptsLink eventId={selected.event.id} />}
+            {!wide && <DemoNote user={user} onSwitch={setUser} />}
           </>
         )}
       </div>
     </div>
+  )
+}
+
+/** Everything only a judge needs, together: the always-open session, the scan tools, another petugas. */
+function DemoNote({ user, onSwitch }: { user: User | null; onSwitch: (u: User) => void }) {
+  return (
+    <section aria-label="Demo" className="rounded-2xl bg-accent px-4 py-3 text-sm text-accent-foreground">
+      <p>
+        Demo: <b>Sesi Demo Juri</b> selalu berlangsung, dan di layar scan ada <b>Alat demo</b> untuk mencoba tanpa HP kedua.
+      </p>
+      <StaffSwitcher userId={user?.id ?? null} onSwitch={onSwitch} />
+    </section>
   )
 }
 
@@ -162,16 +184,18 @@ function DeskReceiptsLink({ eventId }: { eventId: string }) {
   const pending = useLive(() => api.staff.listReceipts(eventId).then((r) => r.length), [eventId])
   const n = pending.data ?? 0
   return (
-    <SettingsGroup id="desk-receipts" title="Struk di desk">
-      <SettingsRow
-        icon={<ReceiptText />}
-        tint={n ? 'bg-[#ffe7a3] text-ink' : 'bg-muted text-ink'}
-        title="Verifikasi struk di desk"
-        sub="Cocokkan struk kertas, lalu setujui atau minta revisi"
-        right={n ? <StatusBadge tone="warn">{n} menunggu</StatusBadge> : undefined}
-        to={`/staff/receipts?event=${eventId}`}
-      />
-    </SettingsGroup>
+    <section aria-labelledby="desk-receipts" className="space-y-2.5">
+      <Heading id="desk-receipts">Struk di desk</Heading>
+      <ul className="overflow-hidden rounded-[1.4rem] bg-card shadow-xs">
+        <SettingsRow
+          icon={<ReceiptText />}
+          tint={n ? 'bg-[#ffe7a3] text-ink' : 'bg-muted text-ink'}
+          title="Verifikasi struk"
+          sub={pending.error && pending.data === undefined ? 'Antrean belum bisa dimuat, buka untuk mencoba lagi' : pending.data === undefined ? 'Memuat antrean…' : n ? `${n} struk menunggu keputusan` : 'Belum ada struk yang menunggu'}
+          to={`/staff/receipts?event=${eventId}`}
+        />
+      </ul>
+    </section>
   )
 }
 
@@ -210,16 +234,16 @@ function SessionCard({ summary, session, now }: { summary: EventSummary; session
   const pct = counter.data?.capacity ? Math.min(100, Math.round((counter.data.checkedIn / counter.data.capacity) * 100)) : 0
   const windowText =
     w.state === 'NOT_YET'
-      ? `Check-in dibuka ${fmtDateTime(w.open.toISOString())}`
+      ? `Dibuka ${fmtDateTime(w.open.toISOString())}`
       : w.state === 'OPEN'
-        ? `Check-in sampai ${fmtTime(w.close.toISOString())} WIB`
-        : `Check-in ditutup ${fmtDateTime(w.close.toISOString())}`
+        ? `Sampai ${fmtTime(w.close.toISOString())} WIB`
+        : `Ditutup ${fmtDateTime(w.close.toISOString())}`
 
   return (
     <article className={cn('overflow-hidden rounded-[1.4rem] bg-card shadow-xs', live && 'ring-2 ring-ink')} aria-label={`${sessionName(s)}${live ? ', sedang berlangsung' : ''}`} data-session={session.id}>
       <div className={cn('flex flex-wrap items-center gap-1.5 px-4 pt-3', live && 'seat-dots bg-brand-soft py-2.5 text-brand/25')}>
         {live && <StatusBadge tone="brand">Sedang berlangsung</StatusBadge>}
-        <StatusBadge tone={WINDOW_TONE[w.state]}>{WINDOW_LABEL[w.state]}</StatusBadge>
+        <StatusBadge tone={CHECKIN_WINDOW_TONE[w.state]}>{CHECKIN_WINDOW_LABEL[w.state]}</StatusBadge>
       </div>
       <div className="p-4 pt-3">
         <h3 className="font-poster text-[1.7rem] leading-[0.95] text-balance uppercase">{sessionName(s)}</h3>
@@ -229,10 +253,10 @@ function SessionCard({ summary, session, now }: { summary: EventSummary; session
         <div className="mt-3 rounded-2xl bg-muted/60 px-3.5 py-3">
           <div className="flex items-end justify-between gap-3">
             <p className="leading-none">
-              <span className="block text-[0.62rem] font-bold tracking-[0.16em] text-muted-foreground uppercase">Hadir</span>
-              <span className="mt-1 block font-poster text-3xl tabular-nums">
+              <span className="block text-sm font-semibold text-muted-foreground">Hadir</span>
+              <span className="mt-1 block font-poster text-3xl tabular-nums" data-testid="home-attendance">
                 {counter.data ? counter.data.checkedIn : '–'}
-                <span className="text-base text-muted-foreground"> / {counter.data ? counter.data.capacity : '–'}</span>
+                <span className="font-sans text-sm font-semibold text-muted-foreground"> dari {counter.data ? counter.data.capacity : '–'} tiket</span>
               </span>
             </p>
             <p className="max-w-[55%] text-right text-xs text-muted-foreground">{windowText}</p>

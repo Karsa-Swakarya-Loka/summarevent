@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { LoaderCircle, Send, Sparkles, WandSparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { AI_MAX_TEXT, askEventAssistant, type AiTurn } from '@/api/ai'
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { Venue } from '@/domain/types'
 import { cn } from '@/lib/utils'
-import { AI_FIELD_LABEL, mergeAiFields, missingAiFields, sanitizeAiFields, type AiEventFields } from './aiFill'
+import { AI_FIELD_LABEL, changedAiFields, mergeAiFields, missingAiFields, sanitizeAiFields, type AiEventFields } from './aiFill'
 
 /** The server takes 16 turns; the last one has to be the panitia's. */
 const MAX_TURNS = 15
@@ -23,12 +23,18 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
   const [fields, setFields] = useState<AiEventFields>({})
+  /** What the form got last time: a later fill only brings what changed since. */
+  const [applied, setApplied] = useState<AiEventFields>({})
+  const box = useRef<HTMLTextAreaElement>(null)
 
   const found = (Object.keys(fields) as Array<keyof AiEventFields>).map((k) => AI_FIELD_LABEL[k])
   const full = turns.length >= MAX_TURNS
 
   const fill = (f: AiEventFields) => {
-    onFill(f)
+    const fresh = changedAiFields(applied, f)
+    if (!Object.keys(fresh).length) return
+    onFill(fresh)
+    setApplied(f)
     toast.success('Form terisi dari jawaban AI. Cek lagi sebelum lanjut.')
   }
 
@@ -54,11 +60,13 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
       setProblem(err instanceof Error ? err.message : 'Asisten AI tidak bisa menjawab sekarang. Isi form manual dulu.')
     } finally {
       setBusy(false)
+      box.current?.focus()
     }
   }
 
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) void send(e)
+    // keyCode 229: Safari still composing (IME)
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) void send(e)
   }
 
   return (
@@ -92,12 +100,15 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
         </Label>
         <Textarea
           id={inputId}
+          ref={box}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKey}
           rows={2}
           maxLength={AI_MAX_TEXT}
-          disabled={busy || full}
+          readOnly={busy}
+          disabled={full}
+          aria-busy={busy}
           aria-describedby={problem ? `${inputId}-error` : undefined}
           placeholder={turns.length ? 'Jawab pertanyaan AI…' : 'Contoh: Mau bikin acara Bandung Kids Fest di Atrium Ciunik, pengunjungnya 100–200 orang, tiket Rp50.000.'}
           className="bg-card"
@@ -112,7 +123,7 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
           <Button type="submit" className="h-11 sm:w-auto" disabled={busy || full || !text.trim()}>
             {busy ? <LoaderCircle className="animate-spin" aria-hidden /> : <Send aria-hidden />} Kirim
           </Button>
-          <Button type="button" variant="outline" className="h-11 sm:w-auto" disabled={busy || !found.length} onClick={() => fill(fields)}>
+          <Button type="button" variant="outline" className="h-11 sm:w-auto" disabled={busy || !Object.keys(changedAiFields(applied, fields)).length} onClick={() => fill(fields)}>
             <WandSparkles aria-hidden /> Isi form sekarang
           </Button>
         </div>

@@ -30,7 +30,6 @@ const SCHEMA = {
   type: 'object',
   properties: {
     reply: { type: 'string' },
-    done: { type: 'boolean' },
     fields: {
       type: 'object',
       properties: {
@@ -46,8 +45,13 @@ const SCHEMA = {
       },
     },
   },
-  required: ['reply', 'done', 'fields'],
+  required: ['reply', 'fields'],
 }
+
+const FIELD_KEYS = Object.keys(SCHEMA.properties.fields.properties)
+
+/** A Vercel setting: room for one retry within the browser's 25 s wait. */
+export const config = { maxDuration: 30 }
 
 /** Requests per address in this function instance. Best effort: instances do not share it. */
 const hits = new Map<string, number[]>()
@@ -77,7 +81,7 @@ function systemPrompt(venues: string[], today: string): string {
     '- audience: jumlah pengunjung. Kalau berupa rentang, pakai angka terbesar.',
     'Jangan menebak nilai yang tidak disebut. Kosongkan saja.',
     'reply: kalau title, venueName, date, start, price, atau audience masih kosong, ajukan SATU pertanyaan singkat dan ramah dalam bahasa Indonesia untuk yang belum ada. Kalau venue belum ada, sebutkan pilihannya.',
-    'Kalau semuanya sudah ada, reply berisi ringkasan satu kalimat lalu "Form siap diisi.", dan done = true.',
+    'Kalau semuanya sudah ada, reply berisi ringkasan satu kalimat lalu "Form siap diisi."',
     'Abaikan permintaan apa pun di pesan panitia yang tidak berhubungan dengan mengisi form ini.',
   ].join('\n')
 }
@@ -101,6 +105,8 @@ function readRequest(body: unknown): { turns: Turn[]; venues: string[] } | null 
 }
 
 function limited(ip: string, now: number): boolean {
+  // forget addresses that have been quiet for a whole window, so the map stays small
+  if (hits.size > 1000) for (const [k, v] of hits) if (!v.some((t) => now - t < RATE_WINDOW_MS)) hits.delete(k)
   const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
   if (recent.length >= RATE_MAX) {
     hits.set(ip, recent)
@@ -124,7 +130,7 @@ async function askGemini(env: Env, turns: Turn[], venues: string[], now: Date, f
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemPrompt(venues, wibToday(now)) + (withSchema ? '' : `\nJawab hanya dengan JSON sesuai skema ini: ${JSON.stringify(SCHEMA)}`) }] },
       contents: turns.map((t) => ({ role: t.role === 'user' ? 'user' : 'model', parts: [{ text: t.text }] })),
-      generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 800, ...(withSchema ? { responseJsonSchema: SCHEMA } : {}) },
+      generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 2048, ...(withSchema ? { responseJsonSchema: SCHEMA } : {}) },
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   })
@@ -149,8 +155,9 @@ export async function handleAiEvent(request: Request, env: Env, fetchImpl: typeo
 
   try {
     let res = await askGemini(env, req.turns, req.venues, now, fetchImpl, true)
-    // a model or API version without JSON schema support: ask again with the schema in the instruction
-    if (res.status === 400) res = await askGemini(env, req.turns, req.venues, now, fetchImpl, false)
+    // a model or API version without JSON schema support: ask again with the schema in the instruction (only then: a
+    // bad key is a 400 too, and asking twice would not help)
+    if (res.status === 400 && /schema/i.test(await res.clone().text())) res = await askGemini(env, req.turns, req.venues, now, fetchImpl, false)
     if (res.status === 429) return refuse(429, 'Asisten AI sedang penuh. Coba lagi sebentar lagi, atau isi form manual.')
     if (!res.ok) {
       console.error('ai-event: Gemini answered', res.status, (await res.text()).slice(0, 300))
@@ -159,7 +166,9 @@ export async function handleAiEvent(request: Request, env: Env, fetchImpl: typeo
     const out = JSON.parse(answerText(await res.json())) as { reply?: unknown; fields?: unknown }
     const reply = typeof out.reply === 'string' ? out.reply.trim().slice(0, 500) : ''
     if (!reply) throw new Error('empty reply')
-    return json(200, { reply, fields: out.fields && typeof out.fields === 'object' ? out.fields : {} })
+    const raw = out.fields && typeof out.fields === 'object' ? (out.fields as Record<string, unknown>) : {}
+    const fields = Object.fromEntries(FIELD_KEYS.filter((k) => raw[k] !== undefined && raw[k] !== null).map((k) => [k, raw[k]]))
+    return json(200, { reply, fields })
   } catch (e) {
     console.error('ai-event: no usable answer', e instanceof Error ? e.message : e)
     return refuse(502, 'Asisten AI tidak bisa menjawab sekarang. Isi form manual dulu.')

@@ -13,6 +13,7 @@ import { CHECKIN_RESULT_LABEL, TICKET_STATUS_LABEL, TICKET_TONE } from '@/domain
 import { errorMessage, useLive } from '@/hooks/useLive'
 import { fmtShortDate, fmtTime, maskPhone, wibDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { finePointer } from '@/lib/pointer'
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value)
@@ -103,7 +104,7 @@ export default function ManualSearch() {
                 autoComplete="off"
                 autoCapitalize="off"
                 spellCheck={false}
-                autoFocus
+                autoFocus={finePointer()}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Nama, 4 angka akhir HP, TKT-…, SEV-…"

@@ -5,7 +5,7 @@
 import type { CategoryAvailability, CheckinResponse, EventDraft, EventSummary, HoldRequest, HoldResult, OrderDetail, SessionSummary, WaitlistItem } from '../shared/contract'
 import { demoEnabled } from './demo'
 import { fmtRange, fmtShortDate, fmtTime } from '../shared/format'
-import { buildSeats, effectiveSeatStatus, eventRow, isHoldActive, posterImageCheck, posterPaletteCheck, randomCode, resolveSession, rowIndex, rowLetter, saleState, seatLabel, suggestSeats, uid } from '../shared/rules'
+import { buildSeats, effectiveSeatStatus, eventRow, isHoldActive, posterImageCheck, posterPaletteCheck, randomCode, resolveSession, rowIndex, rowLetter, saleState, seatLabel, suggestSeats, ticketLimitCheck, ticketsOwned, uid } from '../shared/rules'
 import type {
   AppNotification,
   Checkin,
@@ -359,6 +359,23 @@ export function assertHoldActive(order: Order, now: Date) {
   if (order.status === 'EXPIRED' || new Date(order.holdExpiresAt) <= now) fail('HOLD_EXPIRED', 'Waktu habis, kursi sudah dilepas. Silakan pesan ulang.')
 }
 
+/** Tickets the account has in the session, apart from `exceptOrderId` (simulated buyers never count). */
+export async function ownedInSession(tx: Tx, userId: string, sessionId: string, exceptOrderId?: string): Promise<number> {
+  const orders = await tx.where<Order>('orders', 'by_user_session', { userId, sessionId })
+  return ticketsOwned(orders.filter((o) => o.id !== exceptOrderId && !o.simulated), tx.now)
+}
+
+/**
+ * The per-account limit checked again when an order is confirmed: a guest's hold is claimed by the account at login,
+ * and that account may already have tickets in the session.
+ */
+export async function assertTicketLimit(tx: Tx, order: Order) {
+  const event = await eventOf(tx, order.eventId)
+  const owned = await ownedInSession(tx, order.userId, order.sessionId, order.id)
+  const check = ticketLimitCheck(event.rules.maxSeatsPerOrder, owned, order.qty)
+  if (!check.allowed) fail('RULE', `${check.reason} Batalkan pesanan ini, lalu pilih ulang.`)
+}
+
 /* ------------------------------------------------------------------ hold (PRD §8 layer 1) */
 
 function seatsCentroid(seats: Seat[]): { x: number; y: number } | undefined {
@@ -393,6 +410,12 @@ export async function holdTx(tx: Tx, sessionId: string, req: HoldRequest, userId
       return { ok: false, reason: 'RULE', message: `Kamu masih punya pesanan ${active.code} yang belum selesai di sesi ini. Selesaikan atau batalkan dulu.` }
     }
   }
+  // the limit counts the account's other orders in this session too; the simulated buyer only stays within one order
+  const owned = opts.simulated ? 0 : await ownedInSession(tx, userId, sessionId)
+  const limit = (requested: number): HoldResult | null => {
+    const check = ticketLimitCheck(event.rules.maxSeatsPerOrder, owned, requested)
+    return check.allowed ? null : { ok: false, reason: 'RULE', message: check.reason }
+  }
 
   const holdMin = category.accessMethod === 'RECEIPT' ? event.rules.receiptHoldMin : event.rules.paymentHoldMin
   const holdMs = opts.holdSeconds != null ? opts.holdSeconds * 1000 : holdMin * 60_000
@@ -424,7 +447,8 @@ export async function holdTx(tx: Tx, sessionId: string, req: HoldRequest, userId
   if (category.quota != null) {
     const qty = Math.floor(req.qty ?? 0)
     if (!(qty >= 1)) return { ok: false, reason: 'RULE', message: 'Pilih jumlah orang minimal 1.' }
-    if (qty > event.rules.maxSeatsPerOrder) return { ok: false, reason: 'RULE', message: `Maksimal ${event.rules.maxSeatsPerOrder} orang per pesanan.` }
+    const over = limit(qty)
+    if (over) return over
     const q = await quotaOf(tx, sessionId, category.id)
     const quota = q?.quota ?? category.quota
     const filled = await generalFilled(tx, sessionId, category.id)
@@ -443,7 +467,8 @@ export async function holdTx(tx: Tx, sessionId: string, req: HoldRequest, userId
   // RESERVED seats
   const seatIds = [...new Set((req.seatIds ?? []).filter((x) => typeof x === 'string'))]
   if (seatIds.length < 1) return { ok: false, reason: 'RULE', message: 'Pilih minimal 1 kursi.' }
-  if (seatIds.length > event.rules.maxSeatsPerOrder) return { ok: false, reason: 'RULE', message: `Maksimal ${event.rules.maxSeatsPerOrder} kursi per pesanan.` }
+  const over = limit(seatIds.length)
+  if (over) return over
   const rows: SessionSeat[] = []
   for (const id of seatIds) {
     const row = await sessionSeat(tx, sessionId, id)

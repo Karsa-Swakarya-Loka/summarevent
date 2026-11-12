@@ -469,7 +469,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
     accessMethod: 'RECEIPT',
     price: 0,
     quota: 12,
-    description: '12 anak per sesi, maks 4 per pesanan',
+    description: '12 anak per sesi, maks 4 per akun',
     receiptRules: defaultReceiptRules(excluded),
   })
   db.events.push(e3)

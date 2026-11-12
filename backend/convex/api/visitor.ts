@@ -2,11 +2,12 @@
 import type { EventDetail, HoldResult, PassItem, ReceiptInput, SeatMapData } from '../shared/contract'
 import { ORDER_STATUS_LABEL } from '../shared/labels'
 import { fmtTime, isValidPhone, normalizePhone, rupiahPlain } from '../shared/format'
-import { attendeeEditPolicy, checkReceiptRules, effectiveSeatStatus, eventRow, profileChanges, randomCode, receiptChecksPass, suggestSeats, uid, visitorCancelPolicy } from '../shared/rules'
+import { attendeeEditPolicy, checkReceiptRules, effectiveSeatStatus, eventRow, profileChanges, randomCode, receiptChecksPass, suggestSeats, ticketLimitCheck, uid, visitorCancelPolicy } from '../shared/rules'
 import type { AppNotification, EventItem, Order, Payment, Receipt, Role, SessionSeat, Ticket, TicketCategory, User, WaitlistEntry } from '../shared/types'
 import { ANONYMOUS, guestOf, issueToken, ownerId, visitorId, visitorUser, type Req } from '../lib/auth'
 import {
   assertHoldActive,
+  assertTicketLimit,
   bonusPlacesLeft,
   categoriesOf,
   categoryOf,
@@ -23,6 +24,7 @@ import {
   notifyWaitlist,
   orderDetail,
   orderOf,
+  ownedInSession,
   pushNote,
   quotaOf,
   receiptsOf,
@@ -330,6 +332,8 @@ export async function simulatePayment(tx: Tx, req: Req) {
   const held = (await tx.where<SessionSeat>('sessionSeats', 'by_order', { orderId: order.id })).filter((s) => s.status === 'HELD').length
   const needSeats = order.items.filter((i) => i.seatId).length
   if (held < needSeats) fail('HOLD_EXPIRED', 'Waktu habis, kursi sudah dilepas. Pembayaran dibatalkan.')
+  // a throw rolls the whole mutation back, so a refused order records no payment
+  await assertTicketLimit(tx, order)
   await confirmOrder(tx, order, b.method)
   return { order, paymentStatus: 'SUCCESS', message: 'Pembayaran berhasil.' }
 }
@@ -341,6 +345,7 @@ export async function confirmFree(tx: Tx, req: Req) {
   if (order.status === 'EXPIRED') assertHoldActive(order, tx.now)
   if (order.paymentMethod !== 'FREE' || order.status !== 'AWAITING_PAYMENT') fail('BAD_STATE', 'Pesanan ini bukan kategori gratis.')
   assertHoldActive(order, tx.now)
+  await assertTicketLimit(tx, order)
   await confirmOrder(tx, order, 'FREE')
   return order
 }
@@ -391,6 +396,7 @@ export async function submitReceipts(tx: Tx, req: Req, photo: { storageIds: Arra
   assertHoldActive(order, tx.now)
   const current = await receiptsOf(tx, order.id)
   if (current.some((r) => r.status === 'PENDING')) fail('BAD_STATE', 'Struk sudah dikirim dan sedang diverifikasi panitia.')
+  await assertTicketLimit(tx, order)
   const inputs = receiptInputs(req.body?.receipts, true)
   const existing = await relatedReceipts(tx, inputs)
   const { checks, total } = checkReceiptRules(inputs, { rules: category.receiptRules, tenants: await tenantsAll(tx), existing, orderId: order.id, now: tx.now })
@@ -487,7 +493,9 @@ export async function joinWaitlist(tx: Tx, req: Req) {
   const category: TicketCategory = await categoryOf(tx, categoryId)
   if (category.eventId !== event.id) fail('BAD_REQUEST', 'Kategori bukan milik event ini.')
   const n = Math.floor(Number(req.body?.qty))
-  if (!(n >= 1) || n > event.rules.maxSeatsPerOrder) fail('RULE', `Pilih 1 sampai ${event.rules.maxSeatsPerOrder} orang.`)
+  if (!(n >= 1)) fail('RULE', 'Pilih jumlah orang minimal 1.')
+  const limit = ticketLimitCheck(event.rules.maxSeatsPerOrder, await ownedInSession(tx, user.id, sessionId), n)
+  if (!limit.allowed) fail('RULE', limit.reason)
   if ((await freePlaces(tx, sessionId, categoryId)) >= n) fail('RULE', `Masih ada tempat ${category.name} untuk ${n} orang. Pesan langsung saja.`)
   let entry = (await tx.where<WaitlistEntry>('waitlist', 'by_line', { sessionId, categoryId, status: 'WAITING' })).find((w) => w.userId === user.id)
   if (entry) entry.qty = n

@@ -110,6 +110,47 @@ export function saleState(category: TicketCategory, session: Session, now: Date)
   return { open: true }
 }
 
+/* ---------------- Purchase limit (per account, per session) ---------------- */
+
+type OwnedOrder = Pick<Order, 'status' | 'qty' | 'holdExpiresAt'>
+
+/**
+ * Tickets an account already has in one session: confirmed orders, plus pending ones whose hold still runs. Pass only
+ * that account's orders for that session; cancelled, expired and rejected orders give their places back.
+ */
+export function ticketsOwned(orders: OwnedOrder[], now: Date): number {
+  return orders.reduce((n, o) => {
+    if (o.status === 'CONFIRMED') return n + o.qty
+    const pending = o.status === 'AWAITING_PAYMENT' || o.status === 'AWAITING_VERIFICATION'
+    return pending && new Date(o.holdExpiresAt).getTime() > now.getTime() ? n + o.qty : n
+  }, 0)
+}
+
+export interface TicketAllowance {
+  /** The event's limit, `event.rules.maxSeatsPerOrder`. */
+  max: number
+  owned: number
+  /** How many more this account may take in this session. */
+  left: number
+}
+
+/**
+ * The limit holds per account per session, across every order and category, so a second order cannot get around it.
+ * It keeps a few people from taking a whole row before others get a chance.
+ */
+export function ticketAllowance(max: number, owned: number): TicketAllowance {
+  return { max, owned, left: Math.max(0, max - owned) }
+}
+
+/** Whether `requested` more tickets fit in the allowance, with a message that says what still can be done. */
+export function ticketLimitCheck(max: number, owned: number, requested: number): Policy {
+  const { left } = ticketAllowance(max, owned)
+  if (requested <= left) return { allowed: true }
+  if (owned === 0) return { allowed: false, reason: `Maksimal ${max} tiket per akun di sesi ini.` }
+  if (left === 0) return { allowed: false, reason: `Kamu sudah punya ${owned} tiket di sesi ini, batasnya ${max} per akun.` }
+  return { allowed: false, reason: `Kamu sudah punya ${owned} tiket di sesi ini. Batasnya ${max} per akun, jadi tinggal ${left} lagi.` }
+}
+
 /* ---------------- Seat suggestions ---------------- */
 
 interface SeatView {

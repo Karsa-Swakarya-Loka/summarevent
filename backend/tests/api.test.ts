@@ -67,6 +67,30 @@ describe('holds and payment (PRD §8)', () => {
   })
 })
 
+describe('ticket limit per account per session', () => {
+  it('counts every order of the account in the session, and is checked again when a claimed guest order is paid', async () => {
+    const galih = await otpLogin('081200000017', 'guest_galih1')
+    const as = { token: galih.token, guestId: 'guest_galih1', params: { id: 'ses_sk_16' } }
+    const first = await write('createHold', req({ ...as, body: { categoryId: 'cat_reg', seatIds: ['lay_ciunik:J2', 'lay_ciunik:J3', 'lay_ciunik:J4'] } }))
+    expect(first.ok).toBe(true)
+    const paid = await write('simulatePayment', req({ ...as, params: { id: first.order.id }, body: { method: 'SIM_QRIS', outcome: 'SUCCESS', idempotencyKey: 'k-limit1' } }))
+    expect(paid.paymentStatus).toBe('SUCCESS')
+    // a second order in any category of the session counts the first one
+    const two = await write('createHold', req({ ...as, body: { categoryId: 'cat_reg', seatIds: ['lay_ciunik:J6', 'lay_ciunik:J7'] } }))
+    expect(two).toMatchObject({ ok: false, reason: 'RULE', message: expect.stringMatching(/tinggal 1 lagi/) })
+    expect(await write('createHold', req({ ...as, body: { categoryId: 'cat_fest', qty: 2 } }))).toMatchObject({ ok: false, reason: 'RULE' })
+
+    // a guest in another browser holds two seats, then signs in as Galih: the claimed order is refused at payment
+    const guest = await write('createHold', req({ guestId: 'guest_galih2', params: { id: 'ses_sk_16' }, body: { categoryId: 'cat_reg', seatIds: ['lay_ciunik:J9', 'lay_ciunik:J10'] } }))
+    expect(guest.ok).toBe(true)
+    const again = await otpLogin('081200000017', 'guest_galih2')
+    const pay = write('simulatePayment', req({ token: again.token, guestId: 'guest_galih2', params: { id: guest.order.id }, body: { method: 'SIM_QRIS', outcome: 'SUCCESS', idempotencyKey: 'k-limit2' } }))
+    expect(await code(pay)).toBe('RULE')
+    const detail = await read('getOrder', req({ token: again.token, guestId: 'guest_galih2', params: { id: guest.order.id } }))
+    expect(detail.order.status).toBe('AWAITING_PAYMENT')
+  })
+})
+
 describe('check-in', () => {
   it('VALID once, then ALREADY_USED; a forged QR is INVALID; admin pages need the admin token', async () => {
     const rina = await write('demoLogin', req({ body: { role: 'VISITOR' } }))

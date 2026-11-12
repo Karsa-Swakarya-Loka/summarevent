@@ -52,6 +52,8 @@ import {
   saleState,
   seatLabel,
   suggestSeats,
+  ticketLimitCheck,
+  ticketsOwned,
   uid,
   visitorCancelPolicy,
 } from '@/domain/rules'
@@ -451,6 +453,25 @@ function seatsCentroid(seats: Seat[]): { x: number; y: number } | undefined {
   return { x: seats.reduce((s, x) => s + x.x, 0) / seats.length, y: seats.reduce((s, x) => s + x.y, 0) / seats.length }
 }
 
+/** Tickets the account has in the session, apart from `exceptOrderId` (simulated buyers never count). */
+function ownedInSession(db: Db, userId: string, sessionId: string, now: Date, exceptOrderId?: string): number {
+  return ticketsOwned(
+    db.orders.filter((o) => o.userId === userId && o.sessionId === sessionId && o.id !== exceptOrderId && !o.simulated),
+    now,
+  )
+}
+
+/**
+ * The per-account limit checked again when an order is confirmed: a guest's hold is claimed by the account at login,
+ * and that account may already have tickets in the session.
+ */
+function assertTicketLimit(db: Db, order: Order, now: Date) {
+  const event = eventOf(db, order.eventId)
+  const owned = ownedInSession(db, order.userId, order.sessionId, now, order.id)
+  const check = ticketLimitCheck(event.rules.maxSeatsPerOrder, owned, order.qty)
+  if (!check.allowed) throw new ApiError('RULE', `${check.reason} Batalkan pesanan ini, lalu pilih ulang.`)
+}
+
 /** Core hold logic (PRD §8 layer 1): all-or-nothing. Runs inside a transaction. */
 function holdTx(db: Db, now: Date, sessionId: string, req: HoldRequest, userId: string, opts: { simulated?: boolean; holdSeconds?: number } = {}): HoldResult {
   const rawSession = must(byId(db.sessions, sessionId), 'Sesi')
@@ -474,6 +495,12 @@ function holdTx(db: Db, now: Date, sessionId: string, req: HoldRequest, userId: 
     if (active) {
       return { ok: false, reason: 'RULE', message: `Kamu masih punya pesanan ${active.code} yang belum selesai di sesi ini. Selesaikan atau batalkan dulu.` }
     }
+  }
+  // the limit counts the account's other orders in this session too; the simulated buyer only stays within one order
+  const owned = opts.simulated ? 0 : ownedInSession(db, userId, sessionId, now)
+  const limit = (requested: number): HoldResult | null => {
+    const check = ticketLimitCheck(event.rules.maxSeatsPerOrder, owned, requested)
+    return check.allowed ? null : { ok: false, reason: 'RULE', message: check.reason }
   }
 
   const holdMin = category.accessMethod === 'RECEIPT' ? event.rules.receiptHoldMin : event.rules.paymentHoldMin
@@ -506,7 +533,8 @@ function holdTx(db: Db, now: Date, sessionId: string, req: HoldRequest, userId: 
   if (category.quota != null) {
     const qty = Math.floor(req.qty ?? 0)
     if (qty < 1) return { ok: false, reason: 'RULE', message: 'Pilih jumlah orang minimal 1.' }
-    if (qty > event.rules.maxSeatsPerOrder) return { ok: false, reason: 'RULE', message: `Maksimal ${event.rules.maxSeatsPerOrder} orang per pesanan.` }
+    const over = limit(qty)
+    if (over) return over
     const q = db.quotas.find((x) => x.sessionId === sessionId && x.categoryId === category.id)
     const quota = q?.quota ?? category.quota
     const filled = generalFilled(db, sessionId, category.id, now)
@@ -525,7 +553,8 @@ function holdTx(db: Db, now: Date, sessionId: string, req: HoldRequest, userId: 
   // RESERVED seats
   const seatIds = [...new Set(req.seatIds ?? [])]
   if (seatIds.length < 1) return { ok: false, reason: 'RULE', message: 'Pilih minimal 1 kursi.' }
-  if (seatIds.length > event.rules.maxSeatsPerOrder) return { ok: false, reason: 'RULE', message: `Maksimal ${event.rules.maxSeatsPerOrder} kursi per pesanan.` }
+  const over = limit(seatIds.length)
+  if (over) return over
   const rows = seatIds.map((id) => db.sessionSeats.find((x) => x.sessionId === sessionId && x.seatId === id))
   if (rows.some((r) => !r)) throw new ApiError('BAD_REQUEST', 'Kursi tidak dikenal.')
   if (rows.some((r) => r!.categoryId !== category.id)) {
@@ -1036,6 +1065,7 @@ export function createMockApi(): Api {
         const held = db.sessionSeats.filter((s) => s.orderId === order.id && s.status === 'HELD').length
         const needSeats = order.items.filter((i) => i.seatId).length
         if (held < needSeats) throw new ApiError('HOLD_EXPIRED', 'Waktu habis, kursi sudah dilepas. Pembayaran dibatalkan.')
+        assertTicketLimit(db, order, now)
         await confirmOrder(db, order, req.method, now)
         return { order, paymentStatus: 'SUCCESS' as const, message: 'Pembayaran berhasil.' }
       })
@@ -1048,6 +1078,7 @@ export function createMockApi(): Api {
         if (order.status === 'EXPIRED') assertHoldActive(order, now)
         if (order.paymentMethod !== 'FREE' || order.status !== 'AWAITING_PAYMENT') throw new ApiError('BAD_STATE', 'Pesanan ini bukan kategori gratis.')
         assertHoldActive(order, now)
+        assertTicketLimit(db, order, now)
         await confirmOrder(db, order, 'FREE', now)
         return order
       })
@@ -1072,6 +1103,7 @@ export function createMockApi(): Api {
         assertHoldActive(order, now)
         const current = db.receipts.filter((r) => r.orderId === orderId)
         if (current.some((r) => r.status === 'PENDING')) throw new ApiError('BAD_STATE', 'Struk sudah dikirim dan sedang diverifikasi panitia.')
+        assertTicketLimit(db, order, now)
         const { checks, total } = checkReceiptRules(inputs, { rules: category.receiptRules, tenants: db.tenants, existing: db.receipts, orderId, now })
         if (!receiptChecksPass(checks)) return { ok: false, checks, total, order, receipts: current }
         // replace an earlier set that needed revision
@@ -1159,7 +1191,9 @@ export function createMockApi(): Api {
         const category = categoryOf(db, categoryId)
         if (category.eventId !== event.id) throw new ApiError('BAD_REQUEST', 'Kategori bukan milik event ini.')
         const n = Math.floor(qty)
-        if (n < 1 || n > event.rules.maxSeatsPerOrder) throw new ApiError('RULE', `Pilih 1 sampai ${event.rules.maxSeatsPerOrder} orang.`)
+        if (n < 1) throw new ApiError('RULE', 'Pilih jumlah orang minimal 1.')
+        const limit = ticketLimitCheck(event.rules.maxSeatsPerOrder, ownedInSession(db, userId, sessionId, now), n)
+        if (!limit.allowed) throw new ApiError('RULE', limit.reason)
         if (freePlaces(db, sessionId, categoryId, now) >= n) throw new ApiError('RULE', `Masih ada tempat ${category.name} untuk ${n} orang. Pesan langsung saja.`)
         let entry = db.waitlist.find((w) => w.userId === userId && w.sessionId === sessionId && w.categoryId === categoryId && w.status === 'WAITING')
         if (entry) entry.qty = n

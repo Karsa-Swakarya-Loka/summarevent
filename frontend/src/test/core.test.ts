@@ -10,7 +10,7 @@ import { PERSONA_ID, buildSeed } from '@/api/mock/seed'
 import { DEMO_PASSWORD } from '@/lib/demoAccounts'
 import { makeQrToken, verifyQrToken } from '@/domain/qr'
 import { parseReceiptText } from '@/domain/ocr'
-import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, eventRow, passwordCheck, posterImageCheck, posterInk, posterPaletteCheck, POSTER_IMAGE_MAX, profileChanges, resolveSession, saleState, suggestSeats } from '@/domain/rules'
+import { AVATAR_MAX, LOGIN_MAX_FAILS, buildSeats, checkinWindow, checkReceiptRules, effectiveSeatStatus, eventRow, passwordCheck, posterImageCheck, posterInk, posterPaletteCheck, POSTER_IMAGE_MAX, profileChanges, resolveSession, saleState, suggestSeats, ticketAllowance, ticketLimitCheck, ticketsOwned } from '@/domain/rules'
 import type { EventDraft } from '@/api/contract'
 import { posterColors } from '@/components/common/posterThemes'
 import { scrubToView } from '@/components/landing/crumple'
@@ -64,7 +64,7 @@ describe('seat holds (PRD §8)', () => {
   })
 
   it('QA-02: overlapping multi-seat requests never leave a partial hold', async () => {
-    asVisitor('u_dodi')
+    asVisitor('u_euis')
     const a = api.createHold(SESSION, { categoryId: 'cat_reg', seatIds: [seatId('I5'), seatId('I6')] })
     asVisitor('u_bayu')
     const b = api.createHold(SESSION, { categoryId: 'cat_reg', seatIds: [seatId('I6'), seatId('I7')] })
@@ -142,9 +142,83 @@ describe('seat holds (PRD §8)', () => {
   it('GENERAL categories respect the quota', async () => {
     asVisitor('u_rudi')
     const r = await api.createHold(SESSION, { categoryId: 'cat_fest', qty: 5 })
-    expect(r.ok).toBe(false) // max 4 per order
+    expect(r.ok).toBe(false) // max 4 per account per session
     const ok = await api.createHold(SESSION, { categoryId: 'cat_fest', qty: 4 })
     expect(ok.ok).toBe(true)
+  })
+})
+
+describe('purchase limit per account per session', () => {
+  const now = new Date('2026-11-10T10:00:00Z')
+  const later = new Date(now.getTime() + 60_000).toISOString()
+  const earlier = new Date(now.getTime() - 60_000).toISOString()
+
+  it('counts confirmed orders and running holds, not expired, cancelled or rejected ones', () => {
+    const owned = ticketsOwned(
+      [
+        { status: 'CONFIRMED', qty: 2, holdExpiresAt: earlier },
+        { status: 'AWAITING_PAYMENT', qty: 1, holdExpiresAt: later },
+        { status: 'AWAITING_VERIFICATION', qty: 3, holdExpiresAt: earlier },
+        { status: 'CANCELLED', qty: 4, holdExpiresAt: later },
+        { status: 'EXPIRED', qty: 4, holdExpiresAt: later },
+        { status: 'REJECTED', qty: 4, holdExpiresAt: later },
+      ],
+      now,
+    )
+    expect(owned).toBe(3)
+  })
+
+  it('says how many are left, or that the limit is reached', () => {
+    expect(ticketAllowance(4, 1)).toEqual({ max: 4, owned: 1, left: 3 })
+    expect(ticketAllowance(4, 6).left).toBe(0)
+    expect(ticketLimitCheck(4, 0, 4)).toEqual({ allowed: true })
+    expect(ticketLimitCheck(4, 0, 5)).toEqual({ allowed: false, reason: 'Maksimal 4 tiket per akun di sesi ini.' })
+    expect(ticketLimitCheck(4, 3, 2)).toEqual({ allowed: false, reason: 'Kamu sudah punya 3 tiket di sesi ini. Batasnya 4 per akun, jadi tinggal 1 lagi.' })
+    expect(ticketLimitCheck(4, 4, 1)).toEqual({ allowed: false, reason: 'Kamu sudah punya 4 tiket di sesi ini, batasnya 4 per akun.' })
+  })
+
+  async function buy(user: string, seats: string[]) {
+    asVisitor(user)
+    const r = await api.createHold(SESSION, { categoryId: 'cat_reg', seatIds: seats.map(seatId) })
+    if (!r.ok) throw new Error(r.message)
+    await api.simulatePayment(r.order.id, { method: 'SIM_QRIS', outcome: 'SUCCESS', idempotencyKey: `k-${r.order.id}` })
+    return r.order.id
+  }
+
+  it('a second order cannot go past the limit, in any category of the session', async () => {
+    await buy('u_galih', ['J2', 'J3', 'J4'])
+    const two = await api.createHold(SESSION, { categoryId: 'cat_reg', seatIds: [seatId('J6'), seatId('J7')] })
+    expect(two).toMatchObject({ ok: false, reason: 'RULE', message: expect.stringMatching(/tinggal 1 lagi/) })
+    const fest = await api.createHold(SESSION, { categoryId: 'cat_fest', qty: 2 })
+    expect(fest.ok).toBe(false)
+    const one = await api.createHold(SESSION, { categoryId: 'cat_fest', qty: 1 })
+    expect(one.ok).toBe(true)
+    // another session of the same event has its own limit (Galih already has 2 there)
+    const other = await api.createHold('ses_sk_13', { categoryId: 'cat_fest', qty: 2 })
+    expect(other.ok).toBe(true)
+  })
+
+  it('a cancelled order gives its places back to the allowance', async () => {
+    const id = await buy('u_galih', ['J2', 'J3', 'J4', 'J5'])
+    expect((await api.createHold(SESSION, { categoryId: 'cat_fest', qty: 1 })).ok).toBe(false)
+    await api.cancelOrder(id)
+    expect((await api.createHold(SESSION, { categoryId: 'cat_fest', qty: 4 })).ok).toBe(true)
+  })
+
+  it('a guest hold claimed by an account that already has tickets is refused at payment', async () => {
+    await buy('u_galih', ['J2', 'J3', 'J4'])
+    asVisitor('guest_limit')
+    const r = await api.createHold(SESSION, { categoryId: 'cat_reg', seatIds: [seatId('J6'), seatId('J7')] })
+    if (!r.ok) throw new Error(r.message)
+    // signing in claims the guest's order for the account
+    await transaction((db) => {
+      db.orders.find((o) => o.id === r.order.id)!.userId = 'u_galih'
+    })
+    asVisitor('u_galih')
+    await expect(api.simulatePayment(r.order.id, { method: 'SIM_QRIS', outcome: 'SUCCESS', idempotencyKey: 'k-claimed' })).rejects.toThrow(/tinggal 1 lagi/)
+    const db = readDb()!
+    expect(db.orders.find((o) => o.id === r.order.id)!.status).toBe('AWAITING_PAYMENT')
+    expect(db.payments.some((p) => p.idempotencyKey === 'k-claimed')).toBe(false)
   })
 })
 
@@ -344,7 +418,7 @@ describe('order changes and waiting list (PV-12, PV-13, PV-14)', () => {
     asVisitor('u_rina')
     const rina = readDb()!.orders.find((o) => o.userId === 'u_rina' && o.sessionId === DEMO && o.status === 'CONFIRMED')!
     await expect(api.cancelOrder(rina.id)).rejects.toThrow(/berlangsung/)
-    const id = await confirmedOrder('u_dodi', ['J4'])
+    const id = await confirmedOrder('u_euis', ['J4'])
     await transaction((db) => {
       for (const t of db.tickets) if (t.orderId === id) t.status = 'USED'
     })

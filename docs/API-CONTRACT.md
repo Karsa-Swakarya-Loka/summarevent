@@ -129,7 +129,19 @@ kode yang memanggilnya:
 5. **Idempotency key.** Pembayaran dengan key yang sama selalu menghasilkan satu pembayaran.
 - Hold: 10 menit (bayar), 30 menit (tukar struk). Job tiap 1 menit mengubah pesanan lewat waktu jadi `EXPIRED` dan melepas kursi; query baca tetap memakai lazy expiry.
 - Kategori tanpa nomor kursi: `filled + qty <= quota` dihitung dari pesanan CONFIRMED + pesanan menunggu yang hold-nya masih aktif.
-- Satu akun maksimal satu pesanan **menunggu** per sesi. Maks kursi per pesanan dari `event.rules.maxSeatsPerOrder`.
+- Satu akun maksimal satu pesanan **menunggu** per sesi.
+- **Batas tiket per akun per sesi.** `event.rules.maxSeatsPerOrder` (namanya tetap, supaya bentuk data tidak berubah)
+  adalah batas **per akun per sesi**, bukan per pesanan: jumlah tiket di pesanan `CONFIRMED` ditambah pesanan menunggu
+  yang hold-nya masih aktif, di semua kategori sesi itu, ditambah yang diminta, tidak boleh lebih dari batas. Pesanan
+  `CANCELLED`, `EXPIRED`, dan `REJECTED` tidak dihitung, dan pembeli simulasi tidak punya batas akun. Aturannya
+  `ticketsOwned` dan `ticketLimitCheck` di `domain/rules.ts`, pesannya ikut dari sana. Dicek di:
+  - `POST /sessions/:id/holds` dan `/holds/auto` → `200 { ok: false, reason: 'RULE', message }`, misalnya
+    "Kamu sudah punya 3 tiket di sesi ini. Batasnya 4 per akun, jadi tinggal 1 lagi."
+  - `POST /orders/:id/payments/simulate`, `POST /orders/:id/confirm`, dan `POST /orders/:id/receipts` → `400 RULE`
+    dengan pesan yang sama plus "Batalkan pesanan ini, lalu pilih ulang." Ini menangkap pesanan tamu yang diklaim saat
+    login oleh akun yang sudah punya tiket di sesi itu. Pengecekan ada di dalam transaksi yang sama dengan konfirmasi,
+    jadi tidak ada pembayaran yang tercatat kalau ditolak.
+  - `POST /sessions/:id/waitlist` → `400 RULE` kalau `qty` melebihi sisa jatah akun.
 - Pembayaran memakai `idempotencyKey` unik; permintaan ulang dengan key yang sama mengembalikan hasil yang sama.
 - Satu tiket = satu kursi = satu QR. Token QR: `SEV1.<ticketId>.<qrVersion>.<HMAC-SHA256 base64url, 22 char>`, dengan secret yang hanya ada di server.
 - Check-in mengunci tiketnya di dalam transaksi, jadi dua petugas yang memindai QR yang sama berbarengan hanya menghasilkan satu `VALID`. Urutan cek: token valid → tiket ada & versi cocok → tidak dibatalkan → event sama → belum dipakai (kecuali boleh keluar-masuk) → sesi sama → di dalam jendela check-in.

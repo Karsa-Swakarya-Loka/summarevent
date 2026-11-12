@@ -194,7 +194,7 @@ Jalur paling cepat kalau waktunya mepet: halaman awal → **Masuk sebagai pengun
 | Angka | Sumber |
 | --- | --- |
 | 102 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
-| 58 layar lolos WCAG 2.1 AA, semua target sentuh di HP minimal 44 px | Suite `a11y.mjs` |
+| 61 layar lolos WCAG 2.1 AA, semua target sentuh di HP minimal 44 px | Suite `a11y.mjs` |
 | Lighthouse HP: performa 90–92, aksesibilitas dan best practices 100 | Build produksi, simulasi HP lambat |
 | Muatan awal halaman 274 KB (gzip) | Build produksi |
 

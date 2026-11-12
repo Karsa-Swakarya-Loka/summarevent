@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["e2e/*.mjs", "scripts/*.mjs", "public/sw.js"],
+  "entry": ["e2e/*.mjs", "scripts/*.mjs", "public/sw.js", "api/*.ts"],
   "ignore": ["src/components/ui/**", "src/components/stickers/fun.ts", "src/components/stickers/motions.ts"],
   "ignoreDependencies": ["axe-core"],
   "ignoreBinaries": ["cwebp"],

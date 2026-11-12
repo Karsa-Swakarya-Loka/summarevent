@@ -136,6 +136,14 @@ Variabel saat build, semuanya opsional:
 | `VITE_LIVE_URL` | Alamat versi live, diizinkan di Content-Security-Policy build. Halaman awal tidak menautkannya. |
 | `VITE_DEMO_URL` | Alamat versi demo, ditawarkan saat versi live tidak bisa menghubungi servernya. Default `https://summarevent.vercel.app`. |
 
+Asisten **Isi cepat dengan AI** di wizard buat event memakai fungsi Vercel `frontend/api/ai-event.ts`. Kuncinya disimpan di Environment Variables proyek Vercel, bukan di `.env` yang ikut ke browser:
+
+| Variabel (Vercel) | Fungsi |
+| --- | --- |
+| `GEMINI_API_KEY` | Kunci Gemini API dari Google AI Studio. Tanpa ini, asisten menjawab "Asisten AI belum dipasang" dan form tetap bisa diisi manual. |
+| `GEMINI_MODEL` | Opsional. Default `gemini-3.5-flash-lite`. |
+| `AI_ALLOWED_ORIGINS` | Opsional. Asal yang boleh memanggil asisten, dipisah koma. Default `https://summarevent.vercel.app,https://summarevent-live.vercel.app`. |
+
 ## Struktur
 
 ```text

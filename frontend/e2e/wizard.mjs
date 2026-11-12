@@ -158,6 +158,37 @@ console.log('QA-11 reason:', (await notYet.count()) ? await notYet.first().inner
 if (!(await notYet.count())) errors.push('QA-11: pesan "Penjualan Tukar Struk dibuka …" tidak muncul')
 if (await holdBtn.isEnabled()) errors.push('QA-11: tombol Pesan aktif di luar periode penjualan')
 await shot('8-visitor-not-on-sale', false)
+// AD-01 with AI: the assistant asks for what is missing, then fills the form. Gemini is stood in for here, so the
+// test checks the app, not the model: the first answer asks for the date, the second has everything.
+await page.route('**/api/ai-event', async (route) => {
+  const { messages } = route.request().postDataJSON()
+  const first = messages.length === 1
+  await route.fulfill({
+    json: first
+      ? { reply: 'Siap. Acaranya tanggal berapa, jam berapa?', fields: { title: 'Bandung Kids Fest', venueName: 'Atrium Cibadak', price: 50000, audience: 200 } }
+      : { reply: 'Bandung Kids Fest, Atrium Cibadak, 28 November 09.30. Form siap diisi.', fields: { title: 'Bandung Kids Fest', venueName: 'Atrium Cibadak', price: 50000, audience: 200, date: '2026-11-28', start: '09:30', description: 'Festival anak dan keluarga di Atrium Cibadak.' } },
+  })
+})
+await page.goto(BASE + '/admin/events/new', { waitUntil: 'networkidle' })
+const ai = page.getByRole('region', { name: 'Isi cepat dengan AI' })
+await ai.getByRole('textbox', { name: 'Pesan untuk AI' }).fill('Mau bikin Bandung Kids Fest di Atrium Cibadak, pengunjung 100-200 orang, tiket 50 ribu')
+await ai.getByRole('button', { name: 'Kirim' }).click()
+await ai.getByText('Acaranya tanggal berapa').waitFor()
+await ai.getByRole('textbox', { name: 'Pesan untuk AI' }).fill('Sabtu 28 November jam setengah 10 pagi')
+await ai.getByRole('textbox', { name: 'Pesan untuk AI' }).press('Enter')
+await ai.getByText('Form siap diisi').waitFor()
+await page.getByText(/Form terisi dari jawaban AI/).first().waitFor({ timeout: 5000 }).catch(() => errors.push('AI: form tidak terisi otomatis setelah semua terjawab'))
+const aiTitle = await page.getByRole('textbox', { name: 'Judul event' }).inputValue()
+console.log('ai filled title:', aiTitle)
+if (aiTitle !== 'Bandung Kids Fest') errors.push(`AI: judul terisi "${aiTitle}"`)
+const venueText = await page.getByText('Atrium Cibadak').count()
+if (!venueText) errors.push('AI: venue Atrium Cibadak tidak terpilih')
+await shot('9-ai-filled')
+await next()
+const price = await page.getByLabel('Harga per kursi').first().inputValue().catch(() => '')
+console.log('ai filled price:', price)
+if (price.replace(/\D/g, '') !== '50000') errors.push(`AI: harga kategori pertama "${price}"`)
+await page.unroute('**/api/ai-event')
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no console errors')
 if (errors.length) process.exitCode = 1
 await browser.close()

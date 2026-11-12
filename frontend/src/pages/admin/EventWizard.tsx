@@ -15,6 +15,8 @@ import { StepLayout } from '@/components/admin/wizard/StepLayout'
 import { StepReview } from '@/components/admin/wizard/StepReview'
 import { StepSessions } from '@/components/admin/wizard/StepSessions'
 import { distributeRows, emptyForm, fromDraft, seatCategories, STEPS, toDraft, validate, type StepId, type WizardForm } from '@/components/admin/wizard/model'
+import { AiEventAssistant } from '@/components/admin/wizard/AiEventAssistant'
+import { applyAiFields } from '@/components/admin/wizard/aiFill'
 import { StatusBadge } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -298,6 +300,7 @@ export default function EventWizard() {
       />
       <Stepper step={step} onPick={goTo} skipped={skipped} issuesByStep={issuesByStep} />
 
+      {step === 'info' && !editing && <AiEventAssistant venues={venues} onFill={(fields) => update((f) => applyAiFields(f, fields, venues))} />}
       {step === 'info' && <StepInfo form={form} update={update} err={err} venues={venues} layoutLocked={layoutLocked} editing={editing} />}
       {step === 'kategori' && <StepCategories form={form} update={update} err={err} tenants={tenants} />}
       {step === 'denah' && <StepLayout form={form} update={update} err={err} locked={layoutLocked} />}

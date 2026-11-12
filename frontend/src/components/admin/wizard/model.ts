@@ -330,7 +330,7 @@ export function validate(form: WizardForm, venues: Venue[]): Issue[] {
   const img = posterImageCheck(form.posterImage)
   if (!img.ok) add('info', 'posterImage', img.reason)
   const r = form.rules
-  if (!intIn(r.maxSeatsPerOrder, 1, 10)) add('info', 'rules.maxSeatsPerOrder', 'Isi angka 1–10 kursi per pesanan.')
+  if (!intIn(r.maxSeatsPerOrder, 1, 10)) add('info', 'rules.maxSeatsPerOrder', 'Isi angka 1–10 tiket per akun per sesi.')
   if (!intIn(r.paymentHoldMin, 3, 60)) add('info', 'rules.paymentHoldMin', 'Isi 3–60 menit. Disarankan 10 menit.')
   if (!intIn(r.receiptHoldMin, 5, 180)) add('info', 'rules.receiptHoldMin', 'Isi 5–180 menit. Disarankan 30 menit supaya panitia sempat cek struk.')
   if (!intIn(r.checkinOpenMin, 0, 240)) add('info', 'rules.checkinOpenMin', 'Isi 0–240 menit sebelum sesi mulai.')

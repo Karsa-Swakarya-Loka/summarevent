@@ -162,13 +162,13 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
       >
         {!showRules && (
           <p className="text-sm text-muted-foreground">
-            Maks {rules.maxSeatsPerOrder} kursi per pesanan · tahan bayar {rules.paymentHoldMin} menit · tahan struk {rules.receiptHoldMin} menit · check-in dibuka {rules.checkinOpenMin} menit sebelum mulai · {rules.transferable ? 'bisa dipindahtangankan' : 'tidak dipindahtangankan'} · {rules.reentryAllowed ? 'boleh keluar-masuk' : 'sekali masuk'}
+            Maks {rules.maxSeatsPerOrder} tiket per akun per sesi · tahan bayar {rules.paymentHoldMin} menit · tahan struk {rules.receiptHoldMin} menit · check-in dibuka {rules.checkinOpenMin} menit sebelum mulai · {rules.transferable ? 'bisa dipindahtangankan' : 'tidak dipindahtangankan'} · {rules.reentryAllowed ? 'boleh keluar-masuk' : 'sekali masuk'}
           </p>
         )}
         <div id="rules-body" hidden={!showRules}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field id="rule-max" label="Maks kursi per pesanan" error={err('rules.maxSeatsPerOrder')}>
-              <NumberInput id="rule-max" value={rules.maxSeatsPerOrder} min={1} max={10} suffix="kursi" invalid={!!err('rules.maxSeatsPerOrder')} onChange={(n) => setRule('maxSeatsPerOrder', n)} />
+            <Field id="rule-max" label="Maks tiket per akun per sesi" error={err('rules.maxSeatsPerOrder')}>
+              <NumberInput id="rule-max" value={rules.maxSeatsPerOrder} min={1} max={10} suffix="tiket" invalid={!!err('rules.maxSeatsPerOrder')} onChange={(n) => setRule('maxSeatsPerOrder', n)} />
             </Field>
             <Field id="rule-pay" label="Waktu tahan bayar" error={err('rules.paymentHoldMin')} hint="Kursi ditahan selama pembayaran.">
               <NumberInput id="rule-pay" value={rules.paymentHoldMin} min={3} max={60} suffix="menit" invalid={!!err('rules.paymentHoldMin')} onChange={(n) => setRule('paymentHoldMin', n)} />

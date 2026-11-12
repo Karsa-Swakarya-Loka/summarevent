@@ -69,7 +69,7 @@ export function StepReview({ form, venues, issues, goTo }: { form: WizardForm; v
             <div>
               <dt className="text-xs text-muted-foreground">Aturan</dt>
               <dd className="font-medium">
-                Maks {form.rules.maxSeatsPerOrder} kursi/pesanan · tahan bayar {form.rules.paymentHoldMin} mnt · tahan struk {form.rules.receiptHoldMin} mnt
+                Maks {form.rules.maxSeatsPerOrder} tiket per akun per sesi · tahan bayar {form.rules.paymentHoldMin} mnt · tahan struk {form.rules.receiptHoldMin} mnt
               </dd>
             </div>
             <div>

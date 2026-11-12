@@ -35,6 +35,9 @@ const WHEN: Array<{ key: When; label: string }> = [
   { key: 'WEEK', label: 'Minggu ini' },
 ]
 
+/** A status card's place in the row: two share the width, more scroll sideways. */
+const CARD_SLOT = 'flex min-w-[9.75rem] flex-1 shrink-0 animate-rise'
+
 /** "Rp300rb" */
 const shortRupiah = (n: number) => (n % 1000 === 0 ? `Rp${n / 1000}rb` : `Rp${new Intl.NumberFormat('id-ID').format(n)}`)
 
@@ -146,22 +149,22 @@ export default function Home() {
         aria-label="Ringkasan"
       >
         {pending.map((d) => (
-          <li key={d.order.id} className="animate-rise">
+          <li key={d.order.id} className={CARD_SLOT}>
             <StatusCard to={continuePath(d)} tint="orange" icon={<Hourglass />} label={pendingTitle(d, true)} value={<Countdown to={d.order.holdExpiresAt} className="[&_svg]:hidden" />} />
           </li>
         ))}
-        <li className="animate-rise [animation-delay:60ms]">
+        <li className={cn(CARD_SLOT, '[animation-delay:60ms]')}>
           {user ? (
             <StatusCard to="/app/pass" tint="green" icon={<Ticket />} label="Tiket aktif" value={`${activeTickets} e‑ticket`} />
           ) : (
             <StatusCard to="/app/masuk" tint="green" icon={<UserRound />} label="Belum masuk" value="Masuk" />
           )}
         </li>
-        <li className="animate-rise [animation-delay:120ms]">
+        <li className={cn(CARD_SLOT, '[animation-delay:120ms]')}>
           <StatusCard onClick={showToday} tint="yellow" icon={<CalendarDays />} label="Hari ini" value={`${todaySessions} sesi`} />
         </li>
         {user && (
-          <li className="animate-rise [animation-delay:180ms]">
+          <li className={cn(CARD_SLOT, '[animation-delay:180ms]')}>
             <StatusCard to="/app/inbox" tint="blue" icon={<MessageCircle />} label="Pesan" value={unread ? `${unread} baru` : 'Tak ada yang baru'} />
           </li>
         )}
@@ -295,7 +298,7 @@ function StatusCard({ to, onClick, tint, icon, label, value }: { to?: string; on
       </span>
     </>
   )
-  const cls = 'flex w-[10.5rem] shrink-0 items-center gap-3 rounded-[1.4rem] bg-card p-3 shadow-[0_12px_28px_-16px_rgb(35_31_32/0.45)] transition active:scale-[0.97] lg:w-full lg:gap-4 lg:p-4'
+  const cls = 'flex w-full items-center gap-3 rounded-[1.4rem] bg-card p-3 shadow-[0_12px_28px_-16px_rgb(35_31_32/0.45)] transition active:scale-[0.97] lg:gap-4 lg:p-4'
   return to ? (
     <Link to={to} className={cls}>
       {body}

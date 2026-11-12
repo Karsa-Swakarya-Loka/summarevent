@@ -2,7 +2,7 @@
 // Usage: dev server running (npm run dev), then node e2e/visitor.mjs [paid|receipt|free|conflict|expire|waitlist|manage|bonus|profile|ocr|swipe|all]
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import { chromium } from 'playwright-core'
-import { skipIntro } from './skip-intro.mjs'
+import { asRina, frontRole, skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 const OUT = path.join(process.env.E2E_OUT || 'e2e/out', 'visitor')
@@ -380,13 +380,11 @@ if (only === 'all' || only === 'swipe') {
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 10000 })
   await page.waitForTimeout(1500)
   const cta = await page.getByRole('button', { name: 'Masuk sebagai pengunjung' }).boundingBox()
-  // a short swipe (about a fifth of the screen) from the button moves the fan one poster and does not press the button
-  await swipe(cta.x + cta.width / 2, cta.x + cta.width / 2 - 80, cta.y + cta.height / 2)
-  check(new URL(page.url()).pathname === '/' && (await page.getByText('Dashboard, event, denah, struk, dan kehadiran').isVisible()), 'kipas bergeser satu poster dari tombolnya')
-  await page.getByRole('button', { name: 'Poster sebelumnya' }).click()
-  await page.waitForTimeout(900)
-  await page.getByRole('button', { name: 'atau masuk sebagai Rina (akun contoh)' }).click()
-  await page.waitForURL(/\/app\/pass$/)
+  // a swipe from the button past half a poster moves the fan one poster (it stops on the poster in front when the
+  // finger lifts) and does not press the button
+  await swipe(cta.x + cta.width / 2 + 60, cta.x + cta.width / 2 - 120, cta.y + cta.height / 2)
+  check(new URL(page.url()).pathname === '/' && (await frontRole(page)) === 'Petugas', 'kipas bergeser satu poster dari tombolnya')
+  await asRina(page)
   const first = await page.locator('a[href^="/app/pass/"]').first().getAttribute('href')
   await page.locator(`a[href="${first}"]`).click()
   await page.waitForURL((u) => u.pathname === first)

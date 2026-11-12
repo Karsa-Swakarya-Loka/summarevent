@@ -133,8 +133,8 @@ Variabel saat build, semuanya opsional:
 | --- | --- |
 | `VITE_API_URL` | Alamat backend. Kalau diisi, app memakai backend bersama, bukan mock di browser. |
 | `VITE_LIVE_HOSTS` | Host yang otomatis memakai backend di `/api` host itu sendiri, dipisah koma. |
-| `VITE_LIVE_URL` | Alamat versi live. Versi demo mengecek `/api/health`-nya dan menautkannya saat sehat. |
-| `VITE_DEMO_URL` | Alamat versi demo untuk tautan balik dari versi live. Default `https://summarevent.vercel.app`. |
+| `VITE_LIVE_URL` | Alamat versi live, diizinkan di Content-Security-Policy build. Halaman awal tidak menautkannya. |
+| `VITE_DEMO_URL` | Alamat versi demo, ditawarkan saat versi live tidak bisa menghubungi servernya. Default `https://summarevent.vercel.app`. |
 
 ## Struktur
 

@@ -34,7 +34,7 @@ export function TeamSlide({ open }: { open: boolean }) {
   if (!failed) return <p role="status" className="grid h-full place-items-center text-sm text-[#fbf3e4]">{open ? 'Memuat poster tim…' : ''}</p>
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col justify-center px-6 text-[#fbf3e4]">
-      <h2 className="font-poster text-[clamp(2.4rem,6vw,4.5rem)] leading-[0.95] uppercase">Lima orang, satu pass</h2>
+      <h2 className="font-poster text-[clamp(2.4rem,6vw,4.5rem)] leading-[0.95] uppercase">Tim Summarevent</h2>
       <ul className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2">
         {TEAM.map((m) => (
           <li key={m.name} className="flex items-baseline justify-between gap-4 border-b border-white/15 pb-2">

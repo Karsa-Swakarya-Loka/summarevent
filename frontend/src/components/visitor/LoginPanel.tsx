@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react'
-import { Smartphone, UserRound } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, ApiError } from '@/api'
 import type { User } from '@/domain/types'
@@ -132,41 +132,31 @@ export function LoginPanel({
           {signUp && (
             <div className="space-y-1.5">
               <Label htmlFor={`${id}-signup-name`}>Nama lengkap</Label>
-              <div className="relative">
-                <UserRound className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                <Input
-                  ref={nameRef}
-                  id={`${id}-signup-name`}
-                  autoComplete="name"
-                  placeholder="mis. Rina Kartika"
-                  className="h-14 bg-card pl-11 text-base"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  aria-invalid={nameError || undefined}
-                />
-              </div>
+              <Input
+                ref={nameRef}
+                id={`${id}-signup-name`}
+                autoComplete="name"
+                placeholder="mis. Rina Kartika"
+                className="h-14 bg-card text-base"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                aria-invalid={nameError || undefined}
+              />
             </div>
           )}
           <div className="space-y-1.5">
             <Label htmlFor={`${id}-phone`}>Nomor HP</Label>
-            <div className="relative">
-              <Smartphone className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-              <Input
-                id={`${id}-phone`}
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="0812 3456 7890"
-                className="h-14 bg-card pl-11 text-base"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                aria-invalid={(!!error && !nameError) || undefined}
-                aria-describedby={`${id}-phone-hint`}
-              />
-            </div>
-            <p id={`${id}-phone-hint`} className="text-xs text-muted-foreground">
-              Kode OTP tampil di layar (simulasi).
-            </p>
+            <Input
+              id={`${id}-phone`}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="0812 3456 7890"
+              className="h-14 bg-card text-base"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              aria-invalid={(!!error && !nameError) || undefined}
+            />
           </div>
           {error && <FormError>{error}</FormError>}
           <Button type="submit" className="h-14 w-full text-base" disabled={busy}>

@@ -121,8 +121,8 @@ const cards = [
     alt: 'Satu QR untuk tiap kursi: e-ticket hitam kursi G5 dengan QR dan talon, di dalam HP',
     shot: () =>
       capture('tiket', async (page) => {
-        await page.goto(BASE + '/', { waitUntil: 'networkidle' })
-        await page.getByRole('button', { name: /sebagai Rina/ }).click()
+        await page.goto(BASE + '/app/masuk?next=%2Fapp%2Fpass', { waitUntil: 'networkidle' })
+        await page.getByRole('button', { name: /Masuk sebagai Rina/ }).filter({ visible: true }).first().click()
         await page.locator('article[aria-label^="E-ticket"] a').first().click()
         await page.getByRole('button', { name: /Perbesar QR/ }).waitFor()
         await page.waitForTimeout(2600) // the QR assembles, then reads valid

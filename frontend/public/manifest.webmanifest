@@ -1,7 +1,7 @@
 {
   "name": "Summarevent",
   "short_name": "Summarevent",
-  "description": "Satu pass untuk semua event Summarecon Mall Bandung: pilih kursi, bayar atau tukar struk, dapat e-ticket QR.",
+  "description": "Tiket event Summarecon Mall Bandung: pilih kursi, bayar atau tukar struk, dapat e-ticket QR.",
   "lang": "id",
   "start_url": "/app",
   "scope": "/",

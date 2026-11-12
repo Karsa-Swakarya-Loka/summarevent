@@ -7,13 +7,15 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
-import { AuthArt } from '@/components/common/AuthArt'
-import { Illustration } from '@/components/common/Illustration'
+import { AuthArt, AuthTile } from '@/components/common/AuthArt'
 import { Button } from '@/components/ui/button'
 import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { useVisitor } from '@/components/visitor/hooks'
+import { SimTag } from '@/components/visitor/Common'
 import { errorMessage } from '@/hooks/useLive'
+import { setOnboardingDone } from '@/lib/intro'
 import { safeNext } from '@/lib/safeNext'
+import { cn } from '@/lib/utils'
 
 const COPY = {
   masuk: {
@@ -36,6 +38,7 @@ const COPY = {
 
 // what the visitor gets, as on the visitor's onboarding; shown on the green half on a laptop
 const POINTS = ['Pilih kursimu sendiri', 'Bayar, gratis, atau tukar struk', 'Satu QR untuk masuk']
+const NOTE = 'Di demo ini, kode OTP tampil di layar.'
 
 /** Only paths inside the visitor app, so ?next= cannot send anyone elsewhere. */
 function nextScreen(raw: string | null): string {
@@ -59,6 +62,8 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
     setDemoBusy(true)
     try {
       const u = await api.demoLogin('VISITOR')
+      // the sample account is the shortcut past the intro, so Beranda must not send her back to it
+      setOnboardingDone(true, 'visitor')
       toast.success(`Masuk sebagai ${u.name} (data contoh).`)
       done()
     } catch (e) {
@@ -68,14 +73,20 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
     }
   }
 
-  // the sample account: under the form on a phone, on the green half on a laptop (only one of the two is ever shown)
+  // the sample account, laid out like the panitia's and petugas' demo account: under the form on a phone, at the foot
+  // of the green half on a laptop (only one of the two is ever shown)
   const demo = (variant: 'outline' | 'secondary', className: string) => (
-    <div className={className}>
-      <p className="font-semibold">Akun contoh yang sudah punya tiket</p>
-      <Button variant={variant} className="mt-3 h-11 w-full" onClick={() => void loginAsPersona()} disabled={demoBusy}>
-        Masuk sebagai Rina (akun contoh)
+    <section aria-label="Akun contoh" className={cn('flex items-center gap-3 rounded-2xl border border-dashed py-2.5 pr-2.5 pl-4 text-sm', className)}>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-2 font-semibold">
+          <SimTag /> Akun contoh
+        </p>
+        <p className="mt-1 text-xs leading-relaxed">Rina Kartika, sudah punya e-ticket</p>
+      </div>
+      <Button variant={variant} className="h-11 shrink-0 px-4" onClick={() => void loginAsPersona()} disabled={demoBusy} aria-label="Masuk sebagai Rina (akun contoh)">
+        Masuk
       </Button>
-    </div>
+    </section>
   )
 
   return (
@@ -89,12 +100,9 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
 
         {/* on a short laptop screen the spacing follows the height, and once the code has arrived the lead and the switch give way */}
         <main className="group/auth flex-1 px-6 pb-10 lg:w-[27rem] lg:flex-none lg:px-0 lg:pt-14 lg:pb-[clamp(0.5rem,6dvh,3rem)]">
-          <div className="relative mx-auto grid size-36 place-items-center overflow-hidden rounded-[2rem] bg-brand-soft lg:hidden">
-            <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
-            <Illustration name={c.art} className="relative w-28 animate-pop" />
-          </div>
-          <h1 className="mt-6 animate-rise text-center font-poster text-[2.5rem] leading-[0.95] text-balance uppercase lg:mt-0 lg:text-left lg:text-[clamp(2rem,6.5dvh,2.75rem)]">{c.title}</h1>
-          <p className="mt-1.5 animate-rise text-center text-base text-muted-foreground [animation-delay:60ms] lg:text-left lg:[@media(max-height:600px)]:group-has-[[data-testid=sim-otp]]/auth:hidden">{c.lead}</p>
+          <AuthTile art={c.art} />
+          <h1 className="mt-2 animate-rise font-poster text-[2.5rem] leading-[0.95] text-balance uppercase max-lg:text-center lg:mt-0 lg:text-[clamp(2rem,6.5dvh,2.75rem)]">{c.title}</h1>
+          <p className="mt-1.5 animate-rise text-base text-muted-foreground [animation-delay:60ms] max-lg:text-center lg:[@media(max-height:600px)]:group-has-[[data-testid=sim-otp]]/auth:hidden">{c.lead}</p>
 
           <LoginPanel key={mode} mode={mode} className="mt-7 lg:mt-[clamp(1rem,3dvh,1.75rem)]" onSuccess={done} />
 
@@ -105,13 +113,16 @@ export default function Auth({ mode }: { mode: 'masuk' | 'daftar' }) {
             </Link>
           </p>
 
-          {mode === 'masuk' && demo('outline', 'mt-4 rounded-2xl border border-dashed border-ink/25 p-4 text-sm lg:hidden')}
+          {mode === 'masuk' && demo('outline', 'mt-5 border-ink/25 lg:hidden')}
+
+          <p className="mt-4 text-center text-xs text-muted-foreground lg:hidden">{NOTE}</p>
         </main>
       </div>
 
       {/* after the form in the page order, so Tab reaches the form first; drawn as the left half */}
       <AuthArt art={c.art} label="Pengunjung SUMMABA" lines={POINTS}>
-        {mode === 'masuk' && demo('secondary', 'max-w-md rounded-2xl border border-dashed border-white/40 p-4 text-sm')}
+        {mode === 'masuk' && demo('secondary', 'mb-4 max-w-md border-white/40')}
+        <p className="text-sm text-white/75">{NOTE}</p>
       </AuthArt>
     </div>
   )

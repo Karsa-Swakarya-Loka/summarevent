@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
  */
 export function AuthArt({ art, label, lines, children }: { art: ArtName; label?: string; lines?: ReadonlyArray<string>; children?: ReactNode }) {
   return (
-    <aside className="sticky top-0 hidden h-dvh overflow-hidden bg-brand lg:order-first px-12 py-[clamp(1.75rem,6dvh,3rem)] text-white lg:flex lg:flex-col">
+    <aside className="sticky top-0 hidden h-dvh overflow-hidden bg-brand px-12 py-[clamp(1.75rem,6dvh,3rem)] text-white lg:order-first lg:flex lg:flex-col">
       <div className="seat-dots pointer-events-none absolute inset-0 text-white/[0.08]" aria-hidden />
       <CoBrand tone="light" className="relative" />
       <div className={cn('relative flex min-h-0 flex-1 flex-col justify-center py-[3dvh]', !lines && 'items-center')}>
@@ -30,5 +30,19 @@ export function AuthArt({ art, label, lines, children }: { art: ArtName; label?:
       </div>
       {children && <div className="relative">{children}</div>}
     </aside>
+  )
+}
+
+/**
+ * The phone's counterpart of AuthArt: the screen's sticker on a small seat-dot tile above the title, the same on every
+ * sign-in, sign-up and password screen. On a short phone the form comes first, so the tile gives way; on a laptop the
+ * green half carries the sticker instead.
+ */
+export function AuthTile({ art }: { art: ArtName }) {
+  return (
+    <div className="relative mx-auto mb-6 grid size-28 place-items-center overflow-hidden rounded-[1.75rem] bg-brand-soft lg:hidden [@media(max-height:780px)]:hidden">
+      <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
+      <Illustration name={art} className="relative w-22 animate-pop" />
+    </div>
   )
 }

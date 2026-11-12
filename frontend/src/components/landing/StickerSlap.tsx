@@ -1,6 +1,6 @@
 /**
  * Sticker Slap: the landing page as a loud, friendly studio footer. A cream frame, a green panel with the three roles
- * as columns, and a giant fat script wordmark sinking into the bottom edge with die-cut stickers slapped all over it.
+ * as columns, and a fat script wordmark, whole, along the bottom with die-cut stickers slapped on it.
  *
  * The storyboard, once per visit: the panel grows out of the frame and its corners settle; the column tags pop and
  * the lines rise out of their masks; the wordmark writes itself in one continuous marker stroke (t-crosses and
@@ -13,6 +13,7 @@
  */
 import * as React from 'react'
 import { Link } from 'react-router'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { clamp, layoutScript, round, starPath, stickerSpots, type Spot } from './script'
 
 
@@ -43,7 +44,7 @@ export interface StickerSlapProps {
   badge?: { label: string; href?: string; to?: string; title?: string }
   /** What sits in the middle of the top bar. */
   centre?: React.ReactNode
-  /** The info menu in the top-right corner, behind a toggle that morphs between hamburger and close. */
+  /** The info menu behind the toggle in the top-right corner, as a dialog (a sheet on a phone) over the page. */
   menu?: React.ReactNode
   menuLabel?: string
   /** Two tabs on a notch cut into the panel's top edge, switching what sits above the wordmark. */
@@ -64,8 +65,6 @@ export interface StickerSlapProps {
   className?: string
 }
 
-/** How far below the baseline the panel edge cuts the wordmark, in script units. */
-const CUT = -1.2
 const STROKE = 3.3
 /** The script leans: tan(9°). */
 const SLANT = 0.1584
@@ -75,7 +74,7 @@ const CSS =
   ':where(.ssf) *,:where(.ssf) *::before,:where(.ssf) *::after{box-sizing:border-box}' +
   ':where(.ssf) button{appearance:none;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer}' +
   ':where(.ssf) a{color:inherit;text-decoration:none}' +
-  ':where(.ssf-top,.ssf-menu) :is(ul,p,h2,dl,dd){margin:0;padding:0;list-style:none;font:inherit}' +
+  ':where(.ssf-top) :is(ul,p,h2,dl,dd){margin:0;padding:0;list-style:none;font:inherit}' +
   '.ssf svg{display:block;max-width:none;overflow:visible}' +
   '.ssf :focus-visible{outline:2.5px solid var(--ssf-accent);outline-offset:3px;border-radius:6px}' +
   '.ssf-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}' +
@@ -98,16 +97,6 @@ const CSS =
   '.ssf-burger[aria-expanded="true"] i:nth-child(2){opacity:0;transform:scaleX(.2)}' +
   '.ssf-burger[aria-expanded="true"] i:nth-child(3){transform:rotate(-45deg)}' +
   // the menu under it
-  '.ssf-menu{position:absolute;right:0;top:calc(100% + 10px);z-index:20;width:max-content;max-width:min(22rem,calc(100cqw - 24px));padding:14px 16px;border-radius:18px;background:var(--ssf-paper);color:var(--ssf-ink);box-shadow:0 0 0 4px #fff,0 18px 40px rgba(10,30,16,.3);transform-origin:95% 0;animation:ssf-popin .45s cubic-bezier(.2,1.5,.3,1)}' +
-  '.ssf-mhead{font-size:15px;font-weight:800;letter-spacing:-.01em}' +
-  '.ssf-mnote{margin-top:2px;max-width:30ch;font-size:12.5px;line-height:1.45;opacity:.78}' +
-  '.ssf-msep{height:1.5px;margin:10px 0;border-radius:2px;background:color-mix(in oklab,var(--ssf-ink) 14%,transparent)}' +
-  '.ssf-mi{display:flex;align-items:center;gap:10px;width:calc(100% + 20px);min-height:44px;margin:0 -10px;padding:0 10px;border-radius:12px;font-size:14px;font-weight:600;text-align:left;transition:background .2s}' +
-  '.ssf-mi:hover{background:color-mix(in oklab,var(--ssf-ink) 7%,transparent)}' +
-  '.ssf-mi svg{width:18px;height:18px;flex:none}' +
-  '.ssf-mcred{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin-top:6px;font-size:12.5px;line-height:1.35}' +
-  '.ssf-mcred dt{font-weight:600;opacity:.74}' +
-  '.ssf-mcred dd{margin:0;font-weight:700}' +
   // panel
   '.ssf-panel{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;overflow:hidden;overflow:clip;border-radius:clamp(14px,1.8cqw,24px);background:var(--ssf-panel);color:var(--ssf-cream);transform-origin:50% 100%}' +
   // the notch: two tabs on a tongue of paper hanging from the frame into the panel, with a pill that slides
@@ -118,12 +107,11 @@ const CSS =
   '.ssf-notch button{position:relative;z-index:1;flex:1 1 0;min-height:44px;min-width:7.5rem;padding:0 18px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;color:var(--ssf-ink);transition:color .3s}' +
   '.ssf-notch button[aria-selected="true"]{color:var(--ssf-paper)}' +
   '.ssf-notch-pill{position:absolute;z-index:0;top:5px;bottom:6px;left:5px;width:calc((100% - 12px) / 2);border-radius:999px;background:var(--ssf-ink);transition:transform .5s cubic-bezier(.2,1.2,.3,1)}' +
-  // the stickers stand up off the wordmark, so the slides end a little above it: nothing they hold sits under a sticker
-  '.ssf-slides{position:relative;z-index:2;flex:1 1 0;min-height:300px;display:grid;grid-auto-flow:column;grid-auto-columns:100%;padding-top:64px;padding-bottom:clamp(20px,4.6svh,44px);transition:transform .65s cubic-bezier(.2,.9,.2,1)}' +
+  '.ssf-slides{position:relative;z-index:2;flex:1 1 0;min-height:300px;display:grid;grid-auto-flow:column;grid-auto-columns:100%;padding-top:64px;transition:transform .65s cubic-bezier(.2,.9,.2,1)}' +
   '.ssf-slide{min-width:0;min-height:0;height:100%}' +
   // the wordmark stage
   '.ssf-stage{position:relative;z-index:1;margin-top:auto;width:min(100%,calc(var(--ssf-wmh) * var(--ssf-ar)));align-self:center;padding:0 clamp(6px,.8cqw,12px)}' +
-  '.ssf-stage-in{position:relative;container-type:inline-size;margin-bottom:var(--ssf-sink,0)}' +
+  '.ssf-stage-in{position:relative;container-type:inline-size}' +
   '.ssf-wm-btn{display:block;width:100%;border-radius:0 !important;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
   '.ssf-wm{width:100%;height:auto;color:var(--ssf-cream)}' +
   '.ssf-wm path{fill:none;stroke:currentColor;stroke-width:' + STROKE + ';stroke-linecap:round;stroke-linejoin:round}' +
@@ -141,9 +129,8 @@ const CSS =
   '.ssf-sheen{transform:translateX(-130%);transition:transform 0s}' +
   '.ssf-st-btn:hover .ssf-sheen{transform:translateX(130%);transition:transform .9s cubic-bezier(.4,0,.2,1)}' +
   '.ssf-ring{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:2px solid var(--ssf-cream);opacity:0;pointer-events:none}' +
-  '@container (max-width: 760px){.ssf-top{padding-bottom:14px}.ssf-slides{padding-top:60px;min-height:260px}.ssf-stage{width:100%}.ssf-stage-in{margin-bottom:0}.ssf-st:not(:nth-of-type(2)):not(:nth-of-type(5)){display:none}.ssf-st{translate:-50% -78%}.ssf-wm-btn{min-height:44px;display:flex;align-items:flex-end}}' +
+  '@container (max-width: 760px){.ssf-top{padding-bottom:14px}.ssf-slides{padding-top:60px;min-height:260px}.ssf-stage{width:min(165%,calc(var(--ssf-wmh) * var(--ssf-ar)));max-width:none;margin-left:-6%}}' +
   '@keyframes ssf-rewrite{0%{stroke-dashoffset:var(--l,120px)}100%{stroke-dashoffset:0}}' +
-  '@keyframes ssf-popin{from{opacity:0;transform:translateY(10px) scale(.7) rotate(4deg)}}' +
   // the storyboard: everything above is the finished state; motion only adds the way in
   '@media (prefers-reduced-motion: no-preference){' +
   '.ssf-panel{scale:calc(.9 + .1 * var(--ssf-sp,1));border-radius:calc(clamp(14px,1.8cqw,24px) + (1 - var(--ssf-sp,1)) * 60px)}' +
@@ -209,7 +196,7 @@ const stickerArt = (kind: StickerKind, text?: string): { shape: React.ReactNode;
           <>
             <path d={BURST} fill="#f26f22" />
             <path d={starPath(13, 44, 33, 60, 60, 0.2, 4)} fill="#f9a61b" />
-            <ScriptText text={text ?? 'ayo!'} cx={60} cy={58} w={62} color="#231f20" stroke={3.4} />
+            <ScriptText text={text ?? 'hayu!'} cx={60} cy={58} w={62} color="#231f20" stroke={3.4} />
           </>
         ),
       }
@@ -305,7 +292,6 @@ export function StickerSlap({
 }: StickerSlapProps) {
   const rootRef = React.useRef<HTMLElement>(null)
   const stageRef = React.useRef<HTMLDivElement>(null)
-  const cornerRef = React.useRef<HTMLDivElement>(null)
   const [seen, setSeen] = React.useState(false)
   const [run, setRun] = React.useState(0)
   const [open, setOpen] = React.useState(false)
@@ -319,7 +305,6 @@ export function StickerSlap({
   const vbY = word.top - pad
   const vbW = Math.max(word.width, 1) + 2.8 + pad * 2 - word.top * SLANT
   const vbH = word.bottom + pad - vbY
-  const cutH = CUT - vbY
 
   const spots = React.useMemo(() => stickerSpots(word, stickers.length, 3), [word, stickers.length])
   const drawDur = clamp(0.7 + word.width / 45, 1.1, 2.6)
@@ -393,23 +378,6 @@ export function StickerSlap({
       removeEventListener('resize', onScroll)
     }
   }, [])
-
-  // the menu closes on a tap outside it or Escape
-  React.useEffect(() => {
-    if (!open) return
-    const onDown = (e: PointerEvent) => {
-      if (!cornerRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('pointerdown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
 
   const raise = (i: number) => setOrder((o) => [...o.filter((k) => k !== i), i])
   const putAt = (i: number, p: Placed) => setMoved((m) => ({ ...m, [i]: p }))
@@ -499,7 +467,7 @@ export function StickerSlap({
     '--ssf-accent': accent,
     '--ssf-sans': 'var(--font-sans)',
     '--ssf-wmh': wordmarkMaxHeight,
-    '--ssf-ar': String(round(vbW / cutH)),
+    '--ssf-ar': String(round(vbW / vbH)),
     minHeight: height,
   } as React.CSSProperties
 
@@ -539,19 +507,20 @@ export function StickerSlap({
           <span />
         )}
         <div className="ssf-mid">{centre}</div>
-        <div className="ssf-corner" ref={cornerRef}>
+        <div className="ssf-corner">
           {menu && (
             <>
-              <button type="button" className="ssf-burger" aria-label={menuLabel} aria-expanded={open} aria-controls="ssf-menu" onClick={() => setOpen((o) => !o)}>
+              <button type="button" className="ssf-burger" aria-label={menuLabel} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
                 <i aria-hidden="true" />
                 <i aria-hidden="true" />
                 <i aria-hidden="true" />
               </button>
-              {open && (
-                <div id="ssf-menu" className="ssf-menu" role="region" aria-label={menuLabel}>
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="sm:max-w-sm sm:p-5">
+                  <DialogTitle className="sr-only">{menuLabel}</DialogTitle>
                   {menu}
-                </div>
-              )}
+                </DialogContent>
+              </Dialog>
             </>
           )}
         </div>
@@ -571,7 +540,7 @@ export function StickerSlap({
         {children}
 
         <div className="ssf-stage">
-          <div className="ssf-stage-in" ref={stageRef} style={{ '--ssf-sink': round(-((vbH - cutH) / vbW) * 100) + '%' } as React.CSSProperties}>
+          <div className="ssf-stage-in" ref={stageRef}>
             <button type="button" className="ssf-wm-btn" onClick={replay} aria-label={'Tulis ulang ' + wordmark}>
               <svg key={run} className="ssf-wm" viewBox={[vbX, vbY, vbW, vbH].map(round).join(' ')} aria-hidden="true" focusable="false">
                 <g transform="skewX(-9)">

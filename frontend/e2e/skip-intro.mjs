@@ -20,17 +20,25 @@ export async function signIn(page, role, base = process.env.BASE || 'http://loca
   await page.waitForURL((url) => url.pathname.startsWith(`/${area}`) && !url.pathname.endsWith('/masuk'))
 }
 
+/** Rina, the visitor persona with tickets: the sample account on the visitor's sign-in, straight on to Pass Saya. */
+export async function asRina(page) {
+  const base = new URL(page.url()).origin
+  await page.goto(`${base}/app/masuk?next=${encodeURIComponent('/app/pass')}`, { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: /Masuk sebagai Rina/ }).filter({ visible: true }).first().click()
+  await page.waitForURL(/\/app\/pass/)
+}
+
+/** The role picker's fan: the poster in front is the one with the highest stacking order. */
+export const frontRole = (page) => page.evaluate(() => [...document.querySelectorAll('.af-cartel')].find((c) => c.style.zIndex === '30')?.querySelector('h2')?.textContent)
+
 /**
- * The role picker is a fan of posters: only the one in the centre is fully in front, so a suite brings the poster it
- * wants to the centre (by the legend's title) before pressing the action printed on it.
+ * The role picker is a fan of posters where only the one in front is whole: a suite brings the poster it wants to the
+ * front with the arrows before pressing an action printed on it.
  */
 export async function toPoster(page, title) {
-  const legend = page.locator('.af-datos b')
-  for (let i = 0; i < 6; i++) {
-    if ((await legend.innerText()).trim().toLowerCase() === title.toLowerCase()) break
+  for (let i = 0; i < 3 && (await frontRole(page)) !== title; i++) {
     await page.getByRole('button', { name: 'Poster berikutnya' }).click()
-    await page.waitForTimeout(350)
+    // the fan settles before the next press
+    await page.waitForTimeout(550)
   }
-  // the springs settle before the poster is pressed
-  await page.waitForTimeout(900)
 }

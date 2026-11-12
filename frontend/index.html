@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Summarevent · Satu pass untuk semua event SUMMABA</title>
+    <title>Summarevent · Tiket event Summarecon Mall Bandung</title>
     <meta name="description" content="Prototype ticketing Summarecon Mall Bandung: pilih kursi dari denah, bayar (simulasi) atau tukar struk belanja, dan dapat e-ticket QR." />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -16,13 +16,13 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Summarevent" />
     <meta property="og:locale" content="id_ID" />
-    <meta property="og:title" content="Summarevent · Satu pass untuk semua event SUMMABA" />
+    <meta property="og:title" content="Summarevent · Tiket event Summarecon Mall Bandung" />
     <meta property="og:description" content="Pilih kursi langsung dari denah. Bayar (simulasi), daftar gratis, atau tukar struk belanja, lalu dapat e-ticket QR." />
     <meta property="og:url" content="https://summarevent.vercel.app/" />
     <meta property="og:image" content="https://summarevent.vercel.app/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Summarevent: satu pass untuk semua event Summarecon Mall Bandung" />
+    <meta property="og:image:alt" content="Summarevent, tiket event Summarecon Mall Bandung" />
     <meta name="twitter:card" content="summary_large_image" />
     <style>
       /* Splash (motion graphic): the two seat blocks of the logo lock together, a dot walks the S aisle to its seat,
@@ -59,7 +59,17 @@
       #splash .sp-role:empty { display: none; }
       #splash .sp-co { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom)); left: 50%; translate: -50% 0; padding: 7px 12px; border-radius: 12px; background: #fff; box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); animation: sp-fade 0.5s 1.38s ease-out both; }
       #splash .sp-co img { display: block; height: 22px; width: auto; }
-      .no-splash #splash { display: none; }
+      /* Later loads in a session: a short loader (the logo at rest, breathing, with a bar) until the fonts are in (src/lib/splash.ts). */
+      .no-splash #splash { background: #006426; }
+      .no-splash #splash::before, .no-splash #splash .sp-co, .no-splash #splash .sp-word, .no-splash #splash .sp-tag, .no-splash #splash .sp-role, .no-splash #splash .sp-walk { display: none; }
+      .no-splash #splash .sp-mark { width: 72px; height: 72px; animation: sp-breathe 0.9s ease-in-out infinite alternate; }
+      .no-splash #splash .sp-a, .no-splash #splash .sp-b { animation: none; }
+      .no-splash #splash .sp-aisle { animation: none; stroke-dashoffset: 0; }
+      .no-splash #splash .sp-stage::after { content: ""; width: 40px; height: 4px; border-radius: 2px; background: #fff6e6; opacity: 0.5; animation: sp-bar 0.9s ease-in-out infinite; }
+      .no-splash #splash.sp-done { transition-duration: 0.2s; }
+      @keyframes sp-breathe { from { transform: scale(0.94); } to { transform: scale(1); } }
+      @keyframes sp-bar { 0%, 100% { transform: scaleX(0.35); } 50% { transform: scaleX(1); } }
+      @media (prefers-reduced-motion: reduce) { .no-splash #splash .sp-mark, .no-splash #splash .sp-stage::after { animation: none; } }
       #splash.sp-done { opacity: 0; visibility: hidden; }
       #splash.sp-done .sp-stage { transform: scale(1.06); }
       @keyframes sp-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -119,9 +129,8 @@
       ;(function () {
         var el = document.getElementById('splash')
         window.__splashTpl = el.cloneNode(true)
-        if (document.documentElement.classList.contains('no-splash')) return el.remove()
         var role = /^\/(app|admin|staff)(\/|$)/.exec(location.pathname)
-        if (role) el.querySelector('.sp-role').textContent = { app: 'Pengunjung', admin: 'Panitia', staff: 'Petugas' }[role[1]]
+        if (role && !document.documentElement.classList.contains('no-splash')) el.querySelector('.sp-role').textContent = { app: 'Pengunjung', admin: 'Panitia', staff: 'Petugas' }[role[1]]
         window.__splashAt = performance.now()
         el.addEventListener('click', function () {
           if (window.__splashSkip) window.__splashSkip()

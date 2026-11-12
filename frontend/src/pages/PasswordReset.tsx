@@ -9,23 +9,27 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft, Eye, EyeOff, LoaderCircle, MailCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
-import { AuthArt } from '@/components/common/AuthArt'
-import { Illustration } from '@/components/common/Illustration'
+import { AuthArt, AuthTile } from '@/components/common/AuthArt'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SimTag } from '@/components/visitor/Common'
 import { passwordCheck, PASSWORD_MIN } from '@/domain/rules'
 import { errorMessage } from '@/hooks/useLive'
+import { finePointer } from '@/lib/pointer'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const RESET_POINTS = ['Link reset lewat email', 'Berlaku 30 menit', 'Sekali pakai']
+const RESET_NOTE = 'Di demo ini, link reset tampil di layar.'
 
 function Frame({ title, lead, back, children }: { title: string; lead: string; back: string; children: React.ReactNode }) {
   const navigate = useNavigate()
   return (
     <div className="flex min-h-dvh justify-center bg-background lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" data-shell="intro">
-      {/* on a laptop the padlock moves to the green half and the form takes the other */}
-      <AuthArt art="padlock" />
+      {/* on a laptop the green half as on the panitia and petugas sign-in: the padlock, who this is for, and the demo note */}
+      <AuthArt art="padlock" label="Panitia & petugas SUMMABA" lines={RESET_POINTS}>
+        <p className="text-sm text-white/75">{RESET_NOTE}</p>
+      </AuthArt>
       <div className="flex w-full max-w-md flex-col lg:relative lg:min-h-dvh lg:max-w-none lg:items-center lg:justify-center">
         <header className="px-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:absolute lg:top-0 lg:left-0 lg:px-6 lg:pt-5">
           <Button variant="ghost" className="size-11 rounded-full" aria-label="Kembali" onClick={() => navigate(back)}>
@@ -33,13 +37,11 @@ function Frame({ title, lead, back, children }: { title: string; lead: string; b
           </Button>
         </header>
         <main className="flex-1 px-6 pb-10 lg:w-[27rem] lg:flex-none lg:px-0 lg:pt-14 lg:pb-[clamp(1.25rem,6dvh,3rem)]">
-          <div className="relative mx-auto grid size-36 place-items-center overflow-hidden rounded-[2rem] bg-brand-soft lg:hidden">
-            <div className="seat-dots absolute inset-0 text-brand/15" aria-hidden />
-            <Illustration name="padlock" className="relative w-28 animate-pop" />
-          </div>
-          <h1 className="mt-6 animate-rise text-center font-poster text-[2.5rem] leading-[0.95] text-balance uppercase lg:mt-0 lg:text-left lg:text-[clamp(2rem,6.5dvh,2.75rem)]">{title}</h1>
-          <p className="mt-1.5 animate-rise text-center text-base text-muted-foreground [animation-delay:60ms] lg:text-left">{lead}</p>
+          <AuthTile art="padlock" />
+          <h1 className="mt-2 animate-rise font-poster text-[2.5rem] leading-[0.95] text-balance uppercase max-lg:text-center lg:mt-0 lg:text-[clamp(2rem,6.5dvh,2.75rem)]">{title}</h1>
+          <p className="mt-1.5 animate-rise text-base text-muted-foreground [animation-delay:60ms] max-lg:text-center">{lead}</p>
           {children}
+          <p className="mt-6 text-center text-xs text-muted-foreground lg:hidden">{RESET_NOTE}</p>
         </main>
       </div>
     </div>
@@ -104,6 +106,7 @@ export function ForgotPassword() {
               inputMode="email"
               autoComplete="username"
               autoCapitalize="none"
+              autoFocus={finePointer()}
               placeholder="nama@contoh.id"
               className="h-14 bg-card text-base"
               value={email}
@@ -179,6 +182,7 @@ export function ResetPassword() {
               id={`${id}-password`}
               type={show ? 'text' : 'password'}
               autoComplete="new-password"
+              autoFocus={finePointer()}
               className="h-14 bg-card pr-14 text-base"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

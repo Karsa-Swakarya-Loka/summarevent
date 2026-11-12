@@ -20,7 +20,7 @@ import { TEAM, type TeamIcon, type TeamMember } from './team'
 
 const list = TEAM
 const n = list.length
-const TITLE = ['Lima orang,', 'satu pass']
+const TITLE = ['Tim', 'kami']
 /** Printed upside down along the top of every poster. */
 const BRAND = 'Tim Summarevent'
 /** Printed vertically down the left edge of every poster. */

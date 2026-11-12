@@ -1,7 +1,8 @@
 /*
  * Afiche: a fan of tall posters, adapted from «Afiche» by Moxen (moxen.cl/recursos, licence in docs/lisensi/moxen-afiche.txt).
  * Three posters, one per role, each in one colour that reads against the green panel: cream, ink, amber. Shapes, a
- * sticker at rest and one huge word in Anton. The measures use cqw (the poster is its own container), so a poster
+ * sticker at rest, one huge word in Anton spanning the poster (fan.ts fits it), and the one action, which names the
+ * role. The measures are in hundredths of the poster's width (--u), so a poster
  * reads the same at any size. Only transform and opacity animate; Afiche.tsx drives them with springs.
  */
 .af-escena {
@@ -20,6 +21,10 @@
   -webkit-user-select: none;
   touch-action: pan-y;
 }
+/* until fan.ts has sized and placed the posters for this scene, nothing of the fan shows */
+.af-escena:not([data-ready]) > * {
+  visibility: hidden;
+}
 .af-abanico {
   position: absolute;
   inset: 0;
@@ -33,30 +38,19 @@
   height: calc(var(--af-w) * 1.4);
   margin: calc(var(--af-w) * -0.7) 0 0 calc(var(--af-w) / -2);
   container-type: inline-size;
-  /* from the poster's own width: cqw on the container itself measures the page, which made the corners deep enough on a
-     wide screen to crowd the labels */
-  border-radius: calc(var(--af-w) * 0.05);
+  /* one hundredth of the poster's width, set by fan.ts through --af-w. Measures use this rather than cqw: Chrome can
+     leave cqw at a poster's previous size for a while after a resize, and the huge word then spills or shrinks. */
+  --u: calc(var(--af-w) / 100);
+  border-radius: calc(3.2 * var(--u));
   overflow: hidden;
   isolation: isolate;
   will-change: transform;
-  cursor: pointer;
   background: var(--fondo);
   color: var(--tinta);
   font-family: var(--font-sans);
   box-shadow:
     0 1px 0 rgb(255 255 255 / 0.4) inset,
-    0 30px 50px -22px rgba(var(--af-shadow), 0.75),
-    0 8px 16px -8px rgba(var(--af-shadow), 0.5);
-}
-.af-cartel::after {
-  /* the veil over the posters behind the open one */
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 9;
-  pointer-events: none;
-  background: var(--af-green);
-  opacity: var(--vel, 0);
+    0 18px 28px -16px rgba(var(--af-shadow), 0.7);
 }
 .af-cartel > * {
   position: absolute;
@@ -65,7 +59,9 @@
 .af-palabra {
   font-family: var(--font-poster);
   font-weight: 400;
-  font-size: 40cqw;
+  /* --fit stretches every word to the poster's width (fan.ts) */
+  left: calc(6 * var(--u));
+  font-size: calc(calc(40 * var(--u)) * var(--fit, 1));
   line-height: 0.82;
   letter-spacing: -0.005em;
   text-transform: uppercase;
@@ -74,82 +70,43 @@
 .af-palabra span {
   display: inline-block;
 }
-.af-arriba {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-poster);
-  font-size: 4.2cqw;
-  line-height: 1;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
 .af-pie {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2.5cqw;
-  font-size: max(4cqw, 12px);
-  line-height: 1.2;
+  left: calc(5 * var(--u));
+  right: calc(5 * var(--u));
+  bottom: calc(5 * var(--u));
+  z-index: 2;
+  display: grid;
+  gap: calc(2 * var(--u));
 }
-.af-pie em {
-  font-style: normal;
-  font-weight: 500;
-}
-.af-pie em b {
-  font-family: var(--font-poster);
-  font-weight: 400;
-  font-size: 2.2em;
-  line-height: 0.8;
-  margin-right: 0.25em;
-  vertical-align: -0.1em;
-}
-/* the poster's own action: the one control inside it, so it is reachable without opening the poster */
+/* the poster's two actions, the same on every poster: Masuk filled, Daftar outlined */
 .af-cta {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4em;
   min-height: 44px;
-  padding: 0 1.1em;
-  border: 0;
+  padding: 0 0.8em;
+  border: 2px solid var(--cta-bg);
   border-radius: 999px;
   background: var(--cta-bg);
   color: var(--cta-fg);
-  font: 700 max(4.6cqw, 13px) / 1.1 var(--font-sans);
+  font: 700 max(calc(4.3 * var(--u)), 12px) / 1.1 var(--font-sans);
   letter-spacing: -0.01em;
+  white-space: nowrap;
   cursor: pointer;
   transition: transform 0.35s var(--af-curve);
 }
-.af-cta:hover {
-  transform: translateY(-2px);
+.af-cta-2 {
+  background: transparent;
+  color: var(--tinta);
 }
-.af-cta:disabled {
-  cursor: progress;
-  opacity: 0.7;
+@media (hover: hover) {
+  .af-cta:hover {
+    transform: translateY(-2px);
+  }
 }
-.af-cta:focus-visible,
-.af-link:focus-visible {
+.af-cta:focus-visible {
   outline: 3px solid var(--af-amber);
   outline-offset: 3px;
-}
-/* a second, quieter way in under the action (the visitor persona) */
-.af-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin: -1cqw 0 -3cqw;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: 600 max(3.8cqw, 12px) / 1.2 var(--font-sans);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  cursor: pointer;
-  opacity: 0.85;
-}
-.af-link:hover {
-  opacity: 1;
 }
 .af-stiker {
   pointer-events: none;
@@ -166,35 +123,23 @@
   --cta-fg: var(--af-cream);
 }
 .af-crema .af-sol {
-  right: 8cqw;
-  top: 15cqw;
-  width: 30cqw;
-  height: 30cqw;
+  right: calc(8 * var(--u));
+  top: calc(8 * var(--u));
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
   border-radius: 50%;
   background: var(--af-amber);
 }
 .af-crema .af-stiker {
-  left: 2cqw;
-  top: 10cqw;
-  width: 54cqw;
+  left: calc(2 * var(--u));
+  top: calc(10 * var(--u));
+  width: calc(54 * var(--u));
   rotate: -6deg;
 }
-.af-crema .af-arriba {
-  left: 7cqw;
-  right: 7cqw;
-  top: 6cqw;
-}
 .af-crema .af-palabra {
-  left: 5cqw;
-  /* the action and the second way in keep their pixel height, so on a small poster the word stays clear of them */
-  bottom: max(54cqw, 99px);
-  font-size: 41cqw;
+  /* above the two actions, which keep their pixel height */
+  bottom: calc(calc(11 * var(--u)) + 88px);
   color: var(--af-green);
-}
-.af-crema .af-pie {
-  left: 7cqw;
-  right: 7cqw;
-  bottom: 6cqw;
 }
 
 /* 2 · ink: the word in cream on black, arches in amber and cream, the notes */
@@ -204,58 +149,45 @@
   --cta-bg: var(--af-cream);
   --cta-fg: var(--af-ink);
 }
-.af-negro .af-arriba {
-  left: 7cqw;
-  right: 7cqw;
-  top: 6cqw;
-  opacity: 0.75;
-}
 .af-negro .af-palabra {
-  left: 5cqw;
-  top: 13cqw;
-  font-size: 42cqw;
+  top: calc(8 * var(--u));
   color: var(--af-cream);
 }
 .af-arcos {
-  left: 10cqw;
-  right: 10cqw;
-  top: 52cqw;
-  bottom: 42cqw;
+  left: calc(10 * var(--u));
+  right: calc(10 * var(--u));
+  top: calc(52 * var(--u));
+  /* clear of the two actions */
+  bottom: calc(calc(10 * var(--u)) + 88px);
 }
 .af-arcos i {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  border-radius: 100cqw 100cqw 0 0;
+  border-radius: calc(100 * var(--u)) calc(100 * var(--u)) 0 0;
 }
 .af-arcos i:nth-child(1) {
   top: 0;
   background: var(--af-amber);
 }
 .af-arcos i:nth-child(2) {
-  top: 14cqw;
-  left: 12cqw;
-  right: 12cqw;
+  top: calc(14 * var(--u));
+  left: calc(12 * var(--u));
+  right: calc(12 * var(--u));
   background: var(--af-cream);
 }
 .af-arcos i:nth-child(3) {
-  top: 28cqw;
-  left: 24cqw;
-  right: 24cqw;
+  top: calc(28 * var(--u));
+  left: calc(24 * var(--u));
+  right: calc(24 * var(--u));
   background: var(--af-ink);
 }
 .af-negro .af-stiker {
-  right: -2cqw;
-  top: 44cqw;
-  width: 46cqw;
+  right: calc(-2 * var(--u));
+  top: calc(44 * var(--u));
+  width: calc(46 * var(--u));
   rotate: 8deg;
-}
-.af-negro .af-pie {
-  z-index: 2;
-  left: 7cqw;
-  right: 7cqw;
-  bottom: 6cqw;
 }
 
 /* 3 · amber: the word in ink, half circles that repeat, the camera */
@@ -265,109 +197,72 @@
   --cta-bg: var(--af-ink);
   --cta-fg: var(--af-cream);
 }
-.af-ambar .af-arriba {
-  left: 7cqw;
-  right: 7cqw;
-  top: 6cqw;
-}
 .af-ambar .af-palabra {
-  left: 6cqw;
-  top: 13cqw;
-  font-size: 46cqw;
+  top: calc(8 * var(--u));
   color: var(--af-ink);
 }
 .af-medios {
   left: 0;
   right: 0;
-  top: 54cqw;
-  bottom: 42cqw;
+  top: calc(54 * var(--u));
+  /* clear of the two actions */
+  bottom: calc(calc(10 * var(--u)) + 88px);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(2, 1fr);
 }
 .af-medios i {
   background: var(--af-ink);
-  border-radius: 100cqw 100cqw 0 0;
-  margin: 0 5cqw;
+  border-radius: calc(100 * var(--u)) calc(100 * var(--u)) 0 0;
+  margin: 0 calc(5 * var(--u));
   align-self: end;
   height: 100%;
 }
 .af-medios i:nth-child(2n) {
   background: var(--af-cream);
-  border-radius: 0 0 100cqw 100cqw;
+  border-radius: 0 0 calc(100 * var(--u)) calc(100 * var(--u));
   align-self: start;
 }
 .af-ambar .af-stiker {
-  right: 3cqw;
-  top: 40cqw;
-  width: 44cqw;
+  right: calc(3 * var(--u));
+  top: calc(40 * var(--u));
+  width: calc(44 * var(--u));
   rotate: -6deg;
   z-index: 2;
 }
-.af-ambar .af-pie {
-  left: 7cqw;
-  right: 7cqw;
-  bottom: 6cqw;
-  z-index: 2;
-}
 
-/* opening a poster: the letters climb in one by one, then the lines */
-.af-cartel.af-abierto .af-palabra span {
-  animation: af-letra 0.85s var(--af-curve) both;
-  animation-delay: calc(var(--i) * 55ms + 120ms);
-}
-.af-cartel.af-abierto .af-pie,
-.af-cartel.af-abierto .af-arriba {
-  animation: af-sube 0.8s var(--af-curve) both;
-  animation-delay: 0.35s;
-}
-@keyframes af-letra {
-  from {
-    transform: translateY(70%) rotate(9deg);
-    opacity: 0;
-  }
-}
-@keyframes af-sube {
-  from {
-    transform: translateY(5cqw);
-    opacity: 0;
-  }
-}
-
-/* the legend: the poster in the centre, and the arrows */
-.af-leyenda {
+/* under the fan, at the front poster's two edges: the round arrows (fan.ts centres the poster and these together) */
+.af-flechas {
   position: absolute;
   z-index: 3;
   left: 50%;
-  bottom: 0;
+  top: calc(50% - 32px + var(--af-w) * 0.7 + 20px);
+  /* as wide as the poster, wider when the role's name needs it: the title never runs under an arrow */
+  width: max-content;
+  min-width: var(--af-w);
+  gap: 14px;
   transform: translateX(-50%);
   display: flex;
-  align-items: center;
-  gap: 14px;
-  color: var(--af-cream);
+  justify-content: space-between;
 }
-.af-datos {
+.af-rol {
+  align-self: center;
   margin: 0;
-  min-width: 0;
-  width: min(300px, calc(100vw - 150px));
-  text-align: center;
-  display: grid;
-  gap: 2px;
-}
-.af-datos b {
   font-family: var(--font-poster);
-  font-weight: 400;
-  font-size: clamp(22px, 3.6vh, 30px);
+  font-size: clamp(24px, 7vw, 34px);
   line-height: 1;
-  letter-spacing: 0.03em;
   text-transform: uppercase;
+  color: var(--af-cream);
+  animation: af-rol-in 0.24s var(--af-curve) both;
 }
-.af-datos span {
-  font-size: clamp(13px, 1.9vh, 15px);
-  opacity: 0.85;
+@keyframes af-rol-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 .af-flecha {
-  flex: 0 0 44px;
+  flex: none;
   width: 44px;
   height: 44px;
   border: 0;
@@ -377,8 +272,8 @@
   place-items: center;
   background: var(--af-cream);
   color: var(--af-ink);
-  box-shadow: 0 14px 24px -12px rgba(var(--af-shadow), 0.8);
-  transition: transform 0.4s var(--af-curve);
+  box-shadow: 0 10px 18px -10px rgba(var(--af-shadow), 0.8);
+  transition: transform 0.3s var(--af-curve);
 }
 .af-flecha svg {
   width: 22px;
@@ -392,29 +287,35 @@
 .af-flecha:active {
   transform: scale(0.92);
 }
-@media (hover: hover) {
-  .af-flecha:hover {
-    transform: scale(1.1);
-  }
-}
 .af-flecha:focus-visible {
   outline: 3px solid var(--af-amber);
   outline-offset: 3px;
 }
-/* a small poster keeps its word, its action and the second way in; the numbered line goes */
-@container (max-width: 240px) {
-  .af-pie em {
-    display: none;
+/*
+ * A laptop window that is wide but short (1366x768 and 1920x1080 at 125-150 % scaling, a window snapped to half the
+ * screen): the header and the wordmark get compact so the posters keep a size their two actions fit, and below
+ * 600 px of height the page scrolls a little instead of shrinking the posters until their labels spill out.
+ */
+@media (min-width: 700px) and (max-height: 760px) {
+  .sev-landing {
+    min-height: max(100svh, 600px) !important;
+    --ssf-wmh: clamp(60px, 13svh, 200px) !important;
+  }
+  .sev-landing .ssf-top {
+    padding-top: 8px;
+    padding-bottom: 10px;
+  }
+  .sev-landing .ssf-badge {
+    width: 54px;
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .af-cartel.af-abierto .af-palabra span,
-  .af-cartel.af-abierto .af-pie,
-  .af-cartel.af-abierto .af-arriba {
-    animation: none;
-  }
   .af-flecha,
   .af-cta {
     transition: none;
+  }
+  .af-rol {
+    animation: none;
   }
 }

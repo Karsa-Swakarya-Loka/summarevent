@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Staff (petugas) QA walk-through. Usage: node scripts/tmp/staff-qa.mjs [outDir]
 import { chromium } from 'playwright-core'
-import { signIn, skipIntro, toPoster } from './skip-intro.mjs'
+import { asRina, signIn, skipIntro } from './skip-intro.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -137,8 +137,7 @@ await shot(page, '12-search-empty')
 
 // 9b. Rina's own phone after the gate: her tickets are used and Pass Saya thanks her for coming
 await page.goto(BASE + '/', { waitUntil: 'networkidle' })
-await toPoster(page, 'Pengunjung')
-await page.getByRole('button', { name: /sebagai Rina/ }).click()
+await asRina(page)
 await page.waitForURL(/\/app\/pass/)
 const thanks = page.getByRole('region', { name: 'Sudah check-in' })
 const thanked = await thanks.waitFor({ timeout: 8000 }).then(() => true, () => false)

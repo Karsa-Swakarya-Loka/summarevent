@@ -13,14 +13,14 @@ Cara menguji Summarevent sesuai peran masing-masing: **Shelvia** untuk user test
 | [summarevent.vercel.app](https://summarevent.vercel.app) | Per browser. Tiap HP dan laptop punya data contohnya sendiri. | Tes sendiri, user testing, demo ke juri |
 | [summarevent-live.vercel.app](https://summarevent-live.vercel.app) | Bersama, di server Convex. Semua HP melihat data yang sama. | Uji dua HP: rebutan kursi, struk disetujui panitia di laptop lain, scan petugas di HP lain |
 
-Badge di pojok kiri atas halaman awal menulis **demo** atau **live**.
+Halaman awal punya satu pintu masuk: tiap poster peran berisi **Masuk sebagai …** (langsung ke halaman masuk) dan **Daftar sebagai …** (pengenalan dulu, lalu daftar). Badge **demo** di pojok kiri atas hanya penanda, tidak menautkan versi lain; versi live dikenali dari alamatnya.
 
 ### Akun
 
 | Peran | Cara masuk |
 | --- | --- |
 | Pengunjung | Nomor HP apa saja yang diawali 08. Kode OTP muncul di layar, tekan **Isi otomatis**. |
-| Pengunjung contoh (Rina) | Di halaman awal, **masuk sebagai Rina (akun contoh)**. Akunnya sudah punya e-ticket, struk yang sedang dicek, dan pesan. |
+| Pengunjung contoh (Rina) | Halaman awal → poster Pengunjung → **Masuk sebagai pengunjung** → **Akun contoh** → **Masuk**. Akunnya sudah punya e-ticket, struk yang sedang dicek, dan pesan. |
 | Panitia | `panitia@summarevent.test`, kata sandi `summaba2026`, atau tekan **Isi otomatis** |
 | Petugas | `desk.atrium@summarevent.test`, `pintu.utara@summarevent.test`, atau `atrium.cibadak@summarevent.test`, kata sandi `summaba2026` |
 
@@ -177,12 +177,12 @@ Tujuannya menunjukkan inti lomba, yaitu pemilihan kursi dan pencegahan pesanan g
 
 ### Alur demo lima menit
 
-Jalur paling cepat kalau waktunya mepet: di halaman awal, **masuk sebagai Rina (akun contoh)**. Tanpa pengenalan dan tanpa OTP, akunnya sudah punya e-ticket.
+Jalur paling cepat kalau waktunya mepet: halaman awal → **Masuk sebagai pengunjung** → **Akun contoh** → **Masuk** (Rina). Tanpa pengenalan dan tanpa OTP, akunnya sudah punya e-ticket.
 
 | Menit | Yang ditunjukkan | Yang ditekankan |
 | --- | --- | --- |
-| 0–1 | Halaman awal → **Masuk sebagai pengunjung** → **Lewati** (pengenalan muncul di HP atau browser baru) → Pentas Musikal Sangkuriang sesi 16.00 → **Reguler** → **Pilihkan 2 kursi berdampingan** → **Pesan 2 kursi** | Kursi dipilih langsung dari denah dan ditahan 10 menit |
-| 1–2 | Masuk dengan nomor HP (OTP simulasi), **Bayar Rp100.000** (simulasi) → **Lihat e-ticket** | Satu QR bertanda tangan untuk tiap kursi, tersimpan di Pass Saya |
+| 0–1 | Halaman awal → **Daftar sebagai pengunjung** → **Lewati** pengenalan → daftar dengan nama dan nomor HP (OTP simulasi, **Isi otomatis**) → Pentas Musikal Sangkuriang sesi 16.00 → **Reguler** → **Pilihkan 2 kursi berdampingan** → **Pesan 2 kursi** | Kursi dipilih langsung dari denah dan ditahan 10 menit |
+| 1–2 | **Bayar Rp100.000** (simulasi) → **Lihat e-ticket** | Satu QR bertanda tangan untuk tiap kursi, tersimpan di Pass Saya |
 | 2–3 | Kembali ke denah → **Uji rebutan kursi** → saran kursi terdekat, lalu **Kenapa satu kursi tidak bisa terjual dua kali?** | Pencegahan pesanan ganda: kursi ditahan sekaligus, terlihat oleh semua, dicek ulang saat konfirmasi |
 | 3–4 | Kategori **Tukar Struk** → **Isi struk contoh** → **Kirim struk** → **Demo → Masuk sebagai Panitia** → **Verifikasi struk** → **Setujui** | Belanja di tenant SUMMABA bisa jadi tiket, dicek otomatis lalu oleh panitia |
 | 4–5 | Panitia: dashboard dan peta kursi live. Lalu **Demo → Masuk sebagai Petugas** → **Sesi Demo Juri** → **Mulai scan** → **Alat demo** → **Ambil tiket contoh** → **Valid**, lalu **Scan ulang tiket tadi** → **Sudah digunakan** | Satu sistem untuk tiga peran, dan hasil scan terbaca dari satu meter |

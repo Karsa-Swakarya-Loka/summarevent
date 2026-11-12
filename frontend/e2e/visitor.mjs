@@ -1,5 +1,5 @@
 // Visitor flows: paid, receipt, free, conflict (+ expire).
-// Usage: dev server running (npm run dev), then node e2e/visitor.mjs [paid|receipt|free|conflict|expire|waitlist|manage|bonus|profile|ocr|swipe|all]
+// Usage: dev server running (npm run dev), then node e2e/visitor.mjs [paid|receipt|free|conflict|limit|expire|waitlist|manage|bonus|profile|ocr|swipe|all]
 // Env: BASE (default http://localhost:5173), E2E_OUT (default e2e/out), CHROME_PATH (installed Chrome).
 import { chromium } from 'playwright-core'
 import { asRina, frontRole, skipIntro } from './skip-intro.mjs'
@@ -200,6 +200,42 @@ if (only === 'all' || only === 'conflict') {
   await page.getByRole('button', { name: /^Pesan( \d+)? (kursi|tiket)$/ }).click()
   await page.waitForURL(/\/checkout\//)
   console.log('hold after move OK')
+  await ctx.close()
+}
+
+if (only === 'all' || only === 'limit') {
+  // the purchase limit holds per account per session: taps stop at 4 seats, and a second order cannot go past it
+  const ctx = await browser.newContext(mobile)
+  await skipIntro(ctx)
+  const page = await newPage(ctx, 'limit')
+  await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16', { waitUntil: 'networkidle' })
+  await pickCategory(page, 'Reguler')
+  await page.waitForTimeout(900)
+  const allowance = page.getByTestId('ticket-allowance')
+  if (!/^0 dari maks\. 4 tiket per akun di sesi ini$/.test(await allowance.innerText())) errors.push(`penghitung jatah sebelum memilih: "${await allowance.innerText()}"`)
+  const freeSeat = page.getByRole('button', { name: /^Baris [A-Z]+ nomor \d+, Reguler, tersedia$/ })
+  for (let i = 0; i < 5; i++) {
+    await freeSeat.first().press('Enter')
+    await page.waitForTimeout(200)
+  }
+  await page.getByText(/Maksimal 4 kursi per akun di sesi ini/).first().waitFor()
+  // one toast, however many taps go past the limit
+  const toasts = await page.getByText(/Maksimal 4 kursi per akun di sesi ini/).count()
+  if (toasts !== 1) errors.push(`pesan batas kursi muncul ${toasts} kali, seharusnya 1`)
+  if (!/^4 dari maks\. 4 tiket/.test(await allowance.innerText())) errors.push(`penghitung jatah setelah 5 ketukan: "${await allowance.innerText()}"`)
+  console.log('limit: taps stop at 4 seats with the reason')
+  await shot(page, 'l1-limit-taps', false)
+  await page.getByRole('button', { name: 'Pesan 4 kursi' }).click()
+  await page.waitForURL(/\/checkout\//)
+  await login(page, '081299990012', 'Lia Batas')
+  await page.getByRole('button', { name: /^Bayar Rp/ }).click()
+  await page.waitForURL(/\/orders\//)
+  await page.goto(BASE + '/app/e/pentas-musikal-sangkuriang/s/ses_sk_16?c=cat_reg', { waitUntil: 'networkidle' })
+  await page.getByText('Kamu sudah punya 4 tiket di sesi ini').waitFor()
+  await page.getByRole('link', { name: 'Buka Pass Saya' }).waitFor()
+  if (await page.getByRole('button', { name: /^Pesan( \d+)? (kursi|tiket)$/ }).count()) errors.push('batas tiket tercapai, tapi tombol Pesan masih ada')
+  console.log('limit: a second order in the same session is refused before it starts')
+  await shot(page, 'l2-limit-reached', false)
   await ctx.close()
 }
 

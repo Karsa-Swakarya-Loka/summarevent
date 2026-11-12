@@ -288,7 +288,7 @@ function terms(d: EventDetailData): string[] {
   const methods = new Set(d.categories.map((c) => c.accessMethod))
   const out: string[] = []
   const unit = d.event.seatingMode === 'RESERVED' ? 'kursi' : 'orang'
-  out.push(`Maksimal ${rules.maxSeatsPerOrder} ${unit} per pesanan, satu e-ticket QR per ${unit === 'kursi' ? 'kursi' : 'orang'}.`)
+  out.push(`Maksimal ${rules.maxSeatsPerOrder} tiket per akun di tiap sesi, dihitung dari semua pesananmu. Satu e-ticket QR per ${unit}.`)
   if (methods.has('PAID') || methods.has('FREE')) out.push(`${unit === 'kursi' ? 'Kursi' : 'Tempat'} ditahan ${rules.paymentHoldMin} menit untuk ${methods.has('PAID') ? 'bayar' : 'konfirmasi'}.`)
   if (methods.has('RECEIPT')) out.push(`${unit === 'kursi' ? 'Kursi' : 'Tempat'} ditahan ${rules.receiptHoldMin} menit selama struk diverifikasi panitia.`)
   out.push(`Check-in dibuka ${rules.checkinOpenMin} menit sebelum mulai${rules.checkinCloseMin === 0 ? ', ditutup saat sesi selesai' : ''}.`)

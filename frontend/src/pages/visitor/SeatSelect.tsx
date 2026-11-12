@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { BellRing, ChevronRight, FlaskConical, Gift, Hourglass, LoaderCircle, TriangleAlert, WandSparkles, Zap } from 'lucide-react'
+import { BellRing, ChevronRight, FlaskConical, Gift, Hourglass, LoaderCircle, Ticket, TriangleAlert, WandSparkles, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { CategoryAvailability, SeatMapData } from '@/api/contract'
@@ -16,7 +16,7 @@ import { DeskHead, LoadError, PhoneOnly, QtyStepper } from '@/components/visitor
 import { cachedSeatMap, forgetSeatMap, loadSeatMap } from '@/components/visitor/prefetch'
 import { continuePath, isPendingOrder, pendingTitle, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen, tapSeat } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
-import { saleState, seatLabel } from '@/domain/rules'
+import { saleState, seatLabel, ticketAllowance, ticketLimitCheck, ticketsOwned } from '@/domain/rules'
 import type { Seat, SeatStatus, TicketCategory } from '@/domain/types'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
 import { fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
@@ -142,7 +142,14 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
   const bonusLeft = category ? (data.bonus.find((b) => b.categoryId === category.id)?.left ?? 0) : 0
   const myEntry = (myWaitlist.data ?? []).find((w) => w.sessionId === sessionId && w.categoryId === category?.id && w.status === 'WAITING')
 
-  const pending = (mine.data ?? []).find((d) => d.order.sessionId === sessionId && isPendingOrder(d.order) && !d.order.simulated)
+  const myOrders = (mine.data ?? []).filter((d) => d.order.sessionId === sessionId && !d.order.simulated)
+  const pending = myOrders.find((d) => isPendingOrder(d.order))
+  // the limit holds per account per session: tickets already bought or held here count against it
+  const allowance = ticketAllowance(max, ticketsOwned(myOrders.map((d) => d.order), now))
+  const limitReached = !!mine.data && allowance.left === 0 && !pending
+  // how many seats (or people) this order may still have, and the people count kept inside it
+  const cap = Math.max(1, allowance.left)
+  const people = Math.min(qty, cap)
 
   // A selected seat was taken by someone else in a refresh → release it and tell the visitor.
   useEffect(() => {
@@ -166,7 +173,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         : `Penjualan ${category?.name} untuk sesi ini sudah ditutup.`
       : null
 
-  const generalMax = soldOut ? max : Math.max(1, Math.min(max, catAvail?.available ?? max))
+  const generalMax = soldOut ? cap : Math.max(1, Math.min(cap, catAvail?.available ?? cap))
 
   const pickCategory = (id: string) => {
     if (id === categoryId) {
@@ -178,8 +185,8 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
     setRuleError(null)
     const c = categories.find((x) => x.id === id)
     if (c?.quota != null) {
-      const av = availability.find((a) => a.categoryId === id)?.available ?? max
-      setQty((q) => Math.max(1, Math.min(q, max, av)))
+      const av = availability.find((a) => a.categoryId === id)?.available ?? cap
+      setQty((q) => Math.max(1, Math.min(q, cap, av)))
     }
     setParams(
       (p) => {
@@ -202,6 +209,11 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
     setRuleError(null)
     const picking = selected.includes(seat.id)
     if (!picking && status !== 'AVAILABLE') return
+    if (!picking && limitReached) {
+      const check = ticketLimitCheck(max, allowance.owned, 1)
+      if (!check.allowed) toast.info(check.reason, { id: 'seat-limit' })
+      return
+    }
     if (!picking && cat.id !== categoryId) {
       haptic()
       pickCategory(cat.id)
@@ -210,9 +222,15 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
       return
     }
     // the people count follows the seats tapped, so "Pesan 1 kursi" never sits beside "2 orang"
-    const tap = tapSeat(selected, seat.id, qty, max)
+    const tap = tapSeat(selected, seat.id, people, cap)
     if (tap.full) {
-      toast.info(`Maksimal ${max} kursi per pesanan. Ketuk kursi pilihanmu dulu untuk melepasnya.`)
+      // one toast at a time, however fast the taps come
+      toast.info(
+        allowance.owned
+          ? `Sisa jatahmu di sesi ini ${allowance.left} kursi. Ketuk kursi pilihanmu dulu untuk melepasnya.`
+          : `Maksimal ${max} kursi per akun di sesi ini. Ketuk kursi pilihanmu dulu untuk melepasnya.`,
+        { id: 'seat-limit' },
+      )
       return
     }
     haptic()
@@ -226,9 +244,9 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
     setBusy('suggest')
     setRuleError(null)
     try {
-      const ids = await api.suggestSeats(sessionId, category.id, qty)
-      if (ids.length < qty) {
-        toast.error(`Sisa kursi ${category.name} tidak cukup untuk ${qty} orang. Kurangi jumlah orang atau pilih kategori lain.`)
+      const ids = await api.suggestSeats(sessionId, category.id, people)
+      if (ids.length < people) {
+        toast.error(`Sisa kursi ${category.name} tidak cukup untuk ${people} orang. Kurangi jumlah orang atau pilih kategori lain.`)
         return
       }
       haptic()
@@ -236,7 +254,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
       setSelected(ids)
       setZoomNonce((n) => n + 1)
       const seats = ids.map((id) => seatById.get(id)).filter((s): s is Seat => !!s)
-      if (!seatsAdjacent(seats)) toast.info(`Tidak ada ${qty} kursi berdampingan di ${category.name}. Ini kursi terdekat yang masih kosong.`)
+      if (!seatsAdjacent(seats)) toast.info(`Tidak ada ${people} kursi berdampingan di ${category.name}. Ini kursi terdekat yang masih kosong.`)
     } catch (e) {
       toast.error(errorMessage(e))
     } finally {
@@ -250,7 +268,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
     setRuleError(null)
     holdingRef.current = true
     try {
-      const res = await api.createHold(sessionId, isGeneral ? { categoryId: category.id, qty } : { categoryId: category.id, seatIds: selected })
+      const res = await api.createHold(sessionId, isGeneral ? { categoryId: category.id, qty: people } : { categoryId: category.id, seatIds: selected })
       if (res.ok) {
         haptic('success')
         navigate(`/app/checkout/${res.order.id}`)
@@ -274,10 +292,10 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
 
   const moveToSuggested = () => {
     if (!conflict) return
-    const ok = conflict.suggestions.filter((id) => ssById.get(id)?.status === 'AVAILABLE').slice(0, max)
+    const ok = conflict.suggestions.filter((id) => ssById.get(id)?.status === 'AVAILABLE').slice(0, cap)
     setSelected(ok)
     setConflict(null)
-    if (ok.length > qty) setQty(ok.length)
+    if (ok.length > people) setQty(ok.length)
     setZoomNonce((n) => n + 1)
   }
 
@@ -319,7 +337,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
     if (!category) return
     setBusy('waitlist')
     try {
-      const w = await api.joinWaitlist(sessionId, category.id, qty)
+      const w = await api.joinWaitlist(sessionId, category.id, people)
       toast.success(`Kamu masuk daftar tunggu ${category.name}, urutan ke-${w.position}.`, { description: 'Kami kabari lewat WhatsApp (simulasi) begitu ada tempat lepas.' })
     } catch (e) {
       toast.error(errorMessage(e))
@@ -347,22 +365,26 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
 
   // ---- summary for the bottom sheet
   const labels = selected.map(labelOf)
-  const count = isGeneral ? qty : selected.length
+  const count = isGeneral ? people : selected.length
   const total = category ? category.price * count : 0
   const totalText = !category ? '' : category.accessMethod === 'FREE' ? 'Gratis' : rupiahPlain(total)
   const holdMin = category?.accessMethod === 'RECEIPT' ? rules.receiptHoldMin : rules.paymentHoldMin
   // what the hold is for, so "ditahan" is not read as already held
   const holdFor = category?.accessMethod === 'RECEIPT' ? 'kirim struk' : category?.accessMethod === 'FREE' ? 'konfirmasi' : 'bayar'
-  const summary = soldOut && category
+  const summary = limitReached
+    ? `Sudah ${allowance.owned} dari maks. ${max} tiket`
+    : soldOut && category
     ? `${category.name} habis`
     : !category
     ? 'Pilih kategori dulu'
     : isGeneral
-      ? `${qty} orang · ${category.name}`
+      ? `${people} orang · ${category.name}`
       : count
         ? `${count} kursi · ${seatRangeLabel(labels)} · ${category.name}`
         : 'Belum ada kursi dipilih'
-  const subline = pending
+  const subline = limitReached
+    ? 'Tiketmu ada di Pass Saya.'
+    : pending
     ? pending.order.status === 'AWAITING_VERIFICATION'
       ? 'Pesan lagi setelah struk selesai dicek.'
       : 'Selesaikan pesanan ini dulu sebelum memesan lagi.'
@@ -379,12 +401,22 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
       : isGeneral
         ? `Tanpa nomor kursi · setelah pesan, ditahan ${holdMin} menit`
         : count
-          ? count < qty
-            ? `Ketuk ${qty - count} kursi lagi untuk ${qty} orang.`
+          ? count < people
+            ? `Ketuk ${people - count} kursi lagi untuk ${people} orang.`
             : `Setelah pesan, ditahan ${holdMin} menit untuk ${holdFor}`
           : 'Ketuk kursi di denah'
-  const generalShort = isGeneral && catAvail && !soldOut ? catAvail.available < qty : false
-  const canHold = !!category && !closedReason && !pending && (isGeneral ? !generalShort && qty >= 1 : selected.length > 0) && busy !== 'hold'
+  const generalShort = isGeneral && catAvail && !soldOut ? catAvail.available < people : false
+  const canHold = !!category && !closedReason && !pending && !limitReached && (isGeneral ? !generalShort && people >= 1 : selected.length > 0) && busy !== 'hold'
+  // the allowance counter under the map: the limit is per account per session, so it counts earlier orders too
+  const allowanceNote =
+    !pending && !limitReached ? (
+      <p className="flex items-center gap-1.5 px-4 pt-2.5 text-xs font-semibold lg:px-0" data-testid="ticket-allowance">
+        <Ticket className="size-4 shrink-0" aria-hidden />
+        {allowance.owned
+          ? `${count} dari sisa ${allowance.left} tiket · kamu sudah punya ${allowance.owned} di sesi ini`
+          : `${count} dari maks. ${max} tiket per akun di sesi ini`}
+      </p>
+    ) : null
 
   return (
     // on a laptop: the map fills the left, categories, the summary and the action stand in a column on the right
@@ -418,16 +450,26 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
           </Link>
         )}
 
+        {limitReached && (
+          <div className="flex items-start gap-3 rounded-xl border bg-card p-3 text-sm">
+            <Ticket className="mt-0.5 size-5 shrink-0" aria-hidden />
+            <p>
+              <span className="block font-bold">Kamu sudah punya {allowance.owned} tiket di sesi ini</span>
+              <span className="text-muted-foreground">Itu batas {max} tiket per akun. Untuk ganti kursi, batalkan tiketnya dulu dari Pass Saya.</span>
+            </p>
+          </div>
+        )}
+
         <CategoryLegend categories={categories} availability={availability} activeId={categoryId} onPick={pickCategory} chips className="lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0" />
 
-        {category && !isGeneral && hasLayout && (
+        {category && !isGeneral && hasLayout && !limitReached && (
           <div className="flex items-stretch gap-2">
-            <QtyStepper value={qty} max={max} onChange={changeQty} label="Jumlah orang" />
+            <QtyStepper value={people} max={cap} onChange={changeQty} label="Jumlah orang" />
             <Button variant="outline" className="h-auto min-h-12 flex-1 gap-2 px-3 text-left text-sm leading-tight whitespace-normal" onClick={() => void autoPick()} disabled={busy === 'suggest' || !!closedReason}>
               {busy === 'suggest' ? <LoaderCircle className="size-5 animate-spin" /> : <WandSparkles className="size-5" />}
               <span>
-                Pilihkan {qty} kursi
-                {qty > 1 && (
+                Pilihkan {people} kursi
+                {people > 1 && (
                   <>
                     {' '}
                     <span className="whitespace-nowrap">berdampingan</span>
@@ -480,6 +522,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
               }
             />
           </div>
+          {allowanceNote}
           <StatusLegend
             className="gap-x-3 gap-y-1.5 px-4 pt-2.5 text-[0.72rem] lg:gap-x-5 lg:px-0 lg:pt-3 lg:text-xs"
             showPriority
@@ -488,7 +531,10 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
           <DoubleBookingButton className="mx-4 self-start lg:mx-0" />
         </>
       ) : category && isGeneral ? (
-        <GeneralPanel category={category} available={catAvail?.available ?? 0} total={catAvail?.total ?? 0} qty={qty} max={generalMax} onQty={changeQty} disabled={!!closedReason} />
+        <>
+          <GeneralPanel category={category} available={catAvail?.available ?? 0} total={catAvail?.total ?? 0} qty={people} max={generalMax} onQty={changeQty} disabled={!!closedReason || limitReached} />
+          {allowanceNote}
+        </>
       ) : !hasLayout ? (
         <p className="mx-4 mt-4 rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground lg:mx-0 lg:mt-0">Event ini tanpa nomor kursi. Pilih kategori di atas.</p>
       ) : null}
@@ -533,18 +579,22 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         <div aria-live="polite">
           {/* the summary has the bar's full width: beside the price it broke after a separator on a 360 px phone */}
           <p className={cn('font-bold', count ? 'text-base' : 'text-sm')}>
-            {category && <span className="mr-1.5 inline-block size-3 rounded-[4px] align-middle" style={{ background: category.color }} aria-hidden />}
+            {category && !limitReached && <span className="mr-1.5 inline-block size-3 rounded-[4px] align-middle" style={{ background: category.color }} aria-hidden />}
             {summary}
           </p>
           <div className="flex items-end justify-between gap-3">
             <p className={cn('min-w-0 text-xs', closedReason ? 'font-semibold text-[#a11b1b]' : 'text-muted-foreground')}>{subline}</p>
-            {category && count > 0 && !soldOut && category.accessMethod !== 'RECEIPT' && <p className="shrink-0 text-2xl leading-none font-extrabold tabular-nums">{totalText}</p>}
+            {category && count > 0 && !soldOut && !limitReached && category.accessMethod !== 'RECEIPT' && <p className="shrink-0 text-2xl leading-none font-extrabold tabular-nums">{totalText}</p>}
           </div>
         </div>
         <div className="mt-3 flex items-stretch gap-2">
           {pending ? (
             <Button asChild className="h-14 flex-1 text-base">
               <Link to={continuePath(pending)}>{pending.order.status === 'AWAITING_VERIFICATION' ? 'Lihat pesananmu' : 'Lanjutkan pesananmu'}</Link>
+            </Button>
+          ) : limitReached ? (
+            <Button asChild variant="outline" className="h-14 flex-1 text-base">
+              <Link to="/app/pass">Buka Pass Saya</Link>
             </Button>
           ) : soldOut && !closedReason ? (
             myEntry ? (
@@ -555,13 +605,13 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
             ) : (
               <Button className="h-14 flex-1 gap-2 text-base" onClick={() => (user ? void joinWaitlist() : setAskLogin(true))} disabled={busy === 'waitlist'}>
                 {busy === 'waitlist' ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <BellRing className="size-5" aria-hidden />}
-                Masuk daftar tunggu ({qty} orang)
+                Masuk daftar tunggu ({people} orang)
               </Button>
             )
           ) : (
             <Button className="h-14 flex-1 gap-2 text-base" disabled={!canHold} onClick={() => void hold()}>
               {busy === 'hold' && <LoaderCircle className="size-5 animate-spin" aria-hidden />}
-              {isGeneral ? `Pesan ${qty} tiket` : selected.length ? `Pesan ${selected.length} kursi` : 'Pesan kursi'}
+              {isGeneral ? `Pesan ${people} tiket` : selected.length ? `Pesan ${selected.length} kursi` : 'Pesan kursi'}
             </Button>
           )}
         </div>

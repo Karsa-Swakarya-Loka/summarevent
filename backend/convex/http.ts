@@ -138,8 +138,17 @@ function cors(req: Request): Record<string, string> {
   }
 }
 
-function json(req: Request, status: number, body: string): Response {
-  return new Response(body, { status, headers: { ...cors(req), 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } })
+function json(req: Request, status: number, body: string, cache = 'no-store'): Response {
+  return new Response(body, { status, headers: { ...cors(req), 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': cache } })
+}
+
+/**
+ * Reads that answer the same for every caller (no token or guest id involved), so the Vercel edge in front may keep
+ * them a few seconds: the event pages open faster on a phone, and seat counts are at most a few seconds old.
+ */
+const PUBLIC_READS: Record<string, string> = {
+  listEvents: 'public, s-maxage=5, stale-while-revalidate=30',
+  getEvent: 'public, s-maxage=5, stale-while-revalidate=30',
 }
 
 function errorResponse(req: Request, code: string, message: string, details?: unknown, status?: number): Response {
@@ -339,7 +348,7 @@ const handle = httpAction(async (ctx, req) => {
   const r = { auth, params, query, body: body ?? null }
 
   try {
-    if (route.kind === 'read') return json(req, 200, await ctx.runQuery(internal.rpc.read, { op: route.op, req: r }))
+    if (route.kind === 'read') return json(req, 200, await ctx.runQuery(internal.rpc.read, { op: route.op, req: r }), PUBLIC_READS[route.op])
     if (route.kind === 'write') {
       const out = await withRetry(() => ctx.runMutation(internal.rpc.write, { op: route.op, req: r }))
       if (out.startsWith(REFUSED_PREFIX)) {

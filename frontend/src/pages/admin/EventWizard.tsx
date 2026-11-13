@@ -300,7 +300,12 @@ export default function EventWizard() {
       />
       <Stepper step={step} onPick={goTo} skipped={skipped} issuesByStep={issuesByStep} />
 
-      {step === 'info' && !editing && <AiEventAssistant venues={venues} onFill={(fields) => update((f) => applyAiFields(f, fields, venues, tenants))} />}
+      {/* kept mounted on every step, so the conversation and what it already filled survive a look at the other steps */}
+      {!editing && (
+        <div hidden={step !== 'info'}>
+          <AiEventAssistant venues={venues} onFill={(fields) => update((f) => applyAiFields(f, fields, venues, tenants))} />
+        </div>
+      )}
       {step === 'info' && <StepInfo form={form} update={update} err={err} venues={venues} layoutLocked={layoutLocked} editing={editing} />}
       {step === 'kategori' && <StepCategories form={form} update={update} err={err} tenants={tenants} />}
       {step === 'denah' && <StepLayout form={form} update={update} err={err} locked={layoutLocked} />}

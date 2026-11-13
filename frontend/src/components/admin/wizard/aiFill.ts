@@ -174,9 +174,18 @@ export function mergeAiFields(prev: AiEventFields, next: AiEventFields): AiEvent
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 
-/** Only what changed since the form was last filled, so a second fill does not undo what the panitia typed since. */
+/** Fields worked out from each other: seats per category follow the seating mode, quotas follow the visitors. */
+const LINKED = ['seatingMode', 'categories', 'audience'] as const
+
+/**
+ * Only what changed since the form was last filled, so a second fill does not undo what the panitia typed since. When
+ * the seating mode, the categories or the visitors change, all three go together, because the categories are built
+ * from the other two.
+ */
 export function changedAiFields(applied: AiEventFields, now: AiEventFields): AiEventFields {
-  return Object.fromEntries(Object.entries(now).filter(([k, v]) => !same(applied[k as keyof AiEventFields], v))) as AiEventFields
+  const changed = Object.fromEntries(Object.entries(now).filter(([k, v]) => !same(applied[k as keyof AiEventFields], v))) as AiEventFields
+  if (LINKED.some((k) => k in changed)) for (const k of LINKED) if (now[k] !== undefined) (changed as Record<string, unknown>)[k] = now[k]
+  return changed
 }
 
 /** A category is complete when it says what a ticket costs, and how many places it has when it has no seat numbers. */

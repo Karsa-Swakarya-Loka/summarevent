@@ -12,6 +12,8 @@ export interface AiAnswer {
   reply: string
   /** Untrusted: check with sanitizeAiFields before use. */
   fields: unknown
+  /** Venue names offered as one-tap answers after "Maksudnya …?". Untrusted: only names in the venue list are shown. */
+  suggest: string[]
 }
 
 export const AI_MAX_TEXT = 600
@@ -32,9 +34,10 @@ export async function askEventAssistant(messages: AiTurn[], venues: string[], kn
   } catch {
     throw new Error('Asisten AI tidak terhubung. Cek koneksi, atau isi form manual.')
   }
-  const body = (await res.json().catch(() => null)) as { reply?: unknown; fields?: unknown; error?: unknown } | null
+  const body = (await res.json().catch(() => null)) as { reply?: unknown; fields?: unknown; suggest?: unknown; error?: unknown } | null
   if (!res.ok || !body || typeof body.reply !== 'string') {
     throw new Error(typeof body?.error === 'string' ? body.error : 'Asisten AI belum tersedia di sini. Isi form manual dulu.')
   }
-  return { reply: body.reply, fields: body.fields ?? {} }
+  const suggest = Array.isArray(body.suggest) ? body.suggest.filter((s): s is string => typeof s === 'string').slice(0, 12) : []
+  return { reply: body.reply, fields: body.fields ?? {}, suggest }
 }

@@ -26,6 +26,8 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
   const [fields, setFields] = useState<AiEventFields>({})
   /** What the form got last time: a later fill only brings what changed since. */
   const [applied, setApplied] = useState<AiEventFields>({})
+  /** Venues offered after "Maksudnya …?", answered with one tap. */
+  const [choices, setChoices] = useState<string[]>([])
   const box = useRef<HTMLTextAreaElement>(null)
 
   const found = (Object.keys(fields) as Array<keyof AiEventFields>).map((k) => AI_FIELD_LABEL[k])
@@ -39,13 +41,15 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
     toast.success('Form terisi dari jawaban AI. Cek lagi sebelum lanjut.')
   }
 
-  const send = async (e?: FormEvent) => {
+  const send = async (e?: FormEvent, said?: string) => {
     e?.preventDefault()
-    const message = text.trim()
+    const message = (said ?? text).trim()
     if (!message || busy) return
     const next: AiTurn[] = [...turns, { role: 'user', text: message }]
+    const typed = text
     setTurns(next)
-    setText('')
+    if (said === undefined) setText('')
+    setChoices([])
     setBusy(true)
     setProblem(null)
     try {
@@ -57,11 +61,12 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
       const merged = mergeAiFields(fields, sanitizeAiFields(answer.fields, venues))
       setTurns([...next, { role: 'ai', text: answer.reply }])
       setFields(merged)
+      setChoices(answer.suggest.filter((s) => venues.some((v) => v.name === s)))
       if (!missingAiFields(merged).length) fill(merged)
     } catch (err) {
       // the message stays in the box, so nothing typed is lost
       setTurns(turns)
-      setText(message)
+      setText(said === undefined ? message : typed)
       setProblem(err instanceof Error ? err.message : 'Asisten AI tidak bisa menjawab sekarang. Isi form manual dulu.')
     } finally {
       setBusy(false)
@@ -97,6 +102,16 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
           )}
         </ol>
       </div>
+
+      {!busy && choices.length > 0 && (
+        <div role="group" aria-label="Pilih venue" className="mt-2 flex flex-wrap gap-2">
+          {choices.map((name) => (
+            <Button key={name} type="button" variant="outline" className="h-11 bg-card" onClick={() => void send(undefined, `Venuenya ${name}.`)}>
+              {name}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {found.length > 0 && (
         <p className="mt-3 text-xs text-muted-foreground">

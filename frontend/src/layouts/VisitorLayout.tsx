@@ -150,7 +150,7 @@ function DeskBar() {
                     end={end}
                     aria-current={on ? 'page' : undefined}
                     className={cn(
-                      'flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition',
+                      'flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition',
                       on ? 'bg-ink text-white' : 'text-ink/70 hover:bg-ink/5 hover:text-ink',
                     )}
                   >

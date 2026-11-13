@@ -42,7 +42,7 @@ export function parseReceiptText(text: string, tenants: Tenant[]): ReceiptReadin
   const onTop = tenants.filter((t) => norm(t.name).length >= 4 && head.includes(norm(t.name))).map((t) => t.id)
   if (onTop.length) out.headTenantIds = onTop
 
-  const no = /(?:no\.?\s*(?:struk|nota|transaksi)|invoice|nota)\s*[:#]?\s*([A-Z0-9][A-Z0-9-]{4,})/i.exec(flat) ?? /\b(INV[\s-]?\d{4,})\b/i.exec(flat)
+  const no = /(?:no\.?\s*(?:struk|nota|transaksi)|invoice|nota)\s*[:#]?\s*((?=[A-Z-]*\d)[A-Z0-9][A-Z0-9-]{4,})/i.exec(flat) ?? /\b(INV[\s-]?\d{4,})\b/i.exec(flat)
   if (no) out.receiptNo = no[1].replace(/[\s-]/g, '').toUpperCase()
 
   const totalLine = lines.find((l) => /\btotal\b/i.test(l) && !/sub\s*-?\s*total/i.test(l))

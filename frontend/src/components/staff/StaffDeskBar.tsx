@@ -1,4 +1,4 @@
-import { Link, NavLink, useLocation, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { LogOut, ReceiptText, ScanLine } from 'lucide-react'
 import { api } from '@/api'
 import { BrandLockup } from '@/components/common/Brand'
@@ -31,15 +31,14 @@ export function StaffDeskBar() {
               const active = on(path)
               return (
                 <li key={to}>
-                  <NavLink
+                  <Link
                     to={to}
-                    end
                     aria-current={active ? 'page' : undefined}
                     className={cn('flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold whitespace-nowrap transition', active ? 'bg-ink text-white' : 'text-ink/70 hover:bg-ink/5 hover:text-ink')}
                   >
                     <Icon className="size-4" aria-hidden />
                     {label}
-                  </NavLink>
+                  </Link>
                 </li>
               )
             })}

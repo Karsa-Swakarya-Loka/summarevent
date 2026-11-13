@@ -1,9 +1,10 @@
 /** AD-01 with AI: the event assistant's server function and how its answer fills the wizard. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { handleAiEvent } from '../../api/ai-event'
+import { checkVenue, editDistance, handleAiEvent, inventedAudience, matchVenue } from '../../api/ai-event'
 import { aiKnown, applyAiFields, changedAiFields, mergeAiFields, missingAiFields, sanitizeAiFields } from '@/components/admin/wizard/aiFill'
 import { emptyForm, validate } from '@/components/admin/wizard/model'
 import type { Venue } from '@/domain/types'
+import type { AiEventFields } from '@/components/admin/wizard/aiFill'
 
 const TODAY = '2026-11-12'
 const venues: Venue[] = [
@@ -101,6 +102,20 @@ describe('AI answer → wizard fields', () => {
     expect(changedAiFields(b, { ...b })).toEqual({})
   })
 
+  it('a later "ganti bernomor" or a new number of visitors rebuilds the categories from all three', () => {
+    const bebas: AiEventFields = { title: 'Kids Fest', venueId: 'v_cibadak', seatingMode: 'GENERAL', categories: [{ name: 'Reguler', method: 'PAID', price: 50_000, quota: 30 }, { name: 'Anak', method: 'FREE' }], audience: 120 }
+    let form = applyAiFields(emptyForm(venues), bebas, venues)
+    expect(form.categories.map((c) => [c.name, c.noSeat, c.quota])).toEqual([['Reguler', true, 30], ['Anak', true, 60]])
+    // only the mode changes in the conversation
+    const seated: AiEventFields = { ...bebas, seatingMode: 'RESERVED' }
+    form = applyAiFields(form, changedAiFields(bebas, seated), venues)
+    expect(form.categories.every((c) => !c.noSeat)).toBe(true)
+    // only the visitors change: a quota the panitia stated stays
+    const more: AiEventFields = { ...bebas, audience: 200 }
+    form = applyAiFields(applyAiFields(emptyForm(venues), bebas, venues), changedAiFields(bebas, more), venues)
+    expect(form.categories.map((c) => c.quota)).toEqual([30, 100])
+  })
+
   it('fills a form that passes the wizard checks for info, categories and sessions', () => {
     const form = emptyForm(venues)
     const f = sanitizeAiFields(answer, venues, TODAY)
@@ -134,6 +149,59 @@ describe('AI answer → wizard fields', () => {
     expect(big.layout.rows * big.layout.seatsPerRow).toBeLessThanOrEqual(200)
     const shaped = { ...form, layout: { ...form.layout, blocked: ['A1'] } }
     expect(applyAiFields(shaped, { audience: 50 }, venues).layout).toEqual(shaped.layout)
+  })
+})
+
+describe('venue check: "Maksudnya …?"', () => {
+  const names = ['Atrium Ciunik', 'Sawarga Courtyard', 'Atrium Cileutik', 'Atrium Cibadak']
+  const user = (text: string) => [{ role: 'user' as const, text }]
+
+  it('measures typos, a swap of two letters counting once', () => {
+    expect(editDistance('cibadek', 'cibadak')).toBe(1)
+    expect(editDistance('cibdaak', 'cibadak')).toBe(1)
+    expect(editDistance('faris', 'paris')).toBe(1)
+  })
+
+  it('finds the venue, the venues a typo may mean, or nothing', () => {
+    expect(matchVenue('Cibadak', names)).toEqual({ exact: 'Atrium Cibadak', near: [] })
+    expect(matchVenue('atrium cibadak lantai 1', names)).toEqual({ exact: 'Atrium Cibadak', near: [] })
+    expect(matchVenue('Cibadek', names)).toEqual({ near: ['Atrium Cibadak'] })
+    expect(matchVenue('Ciunk', names)).toEqual({ near: ['Atrium Ciunik'] })
+    expect(matchVenue('Sawarga Cortyard', names)).toEqual({ exact: 'Sawarga Courtyard', near: [] })
+    expect(matchVenue('Atrium', names)).toEqual({ near: ['Atrium Ciunik', 'Atrium Cileutik', 'Atrium Cibadak'] })
+    expect(matchVenue('Faris', names)).toEqual({ near: [] })
+    expect(matchVenue('Paris Van Java', names)).toEqual({ near: [] })
+  })
+
+  it('keeps a venue the panitia typed, kept from before, or chose from the offer', () => {
+    const f = (venueName: string) => ({ venueName })
+    let fields: Record<string, unknown> = f('Atrium Cibadak (kapasitas 300)')
+    expect(checkVenue(fields, undefined, names, user('di cibadak ya'), {})).toBeNull()
+    expect(fields.venueName).toBe('Atrium Cibadak')
+    fields = f('Atrium Cibadak')
+    expect(checkVenue(fields, undefined, names, user('jam 7 malam'), { venueName: 'Atrium Cibadak' })).toBeNull()
+    fields = f('Atrium Cibadak')
+    const offer = [...user('di cibadek'), { role: 'ai' as const, text: 'Venue "cibadek" tidak ada di daftar SUMMABA. Maksudnya Atrium Cibadak?' }, ...user('iya')]
+    expect(checkVenue(fields, undefined, names, offer, {})).toBeNull()
+    expect(fields.venueName).toBe('Atrium Cibadak')
+    // a venue the model invented is dropped
+    fields = f('Hall Paris')
+    expect(checkVenue(fields, undefined, names, user('acara fashion'), {})).toBeNull()
+    expect(fields).toEqual({})
+  })
+
+  it('asks when the model corrected a typo on its own, quoting what was typed', () => {
+    const fields: Record<string, unknown> = { venueName: 'Atrium Ciunik' }
+    expect(checkVenue(fields, undefined, names, user('Workshop melukis di Ciunk'), {})).toEqual({ ask: 'Venue "Ciunk" tidak ada di daftar SUMMABA. Maksudnya Atrium Ciunik?', suggest: ['Atrium Ciunik'] })
+    expect(fields).toEqual({})
+  })
+
+  it('knows a capacity is not a number of visitors, unless the panitia said it', () => {
+    const list = ['Atrium Cibadak (kapasitas 300)']
+    expect(inventedAudience({ audience: 300 }, list, user('kids fest'), {})).toBe(true)
+    expect(inventedAudience({ audience: 300 }, list, user('sekitar 300 orang'), {})).toBe(false)
+    expect(inventedAudience({ audience: 300 }, list, user('kids fest'), { audience: 300 })).toBe(false)
+    expect(inventedAudience({ audience: 250 }, list, user('kids fest'), {})).toBe(false)
   })
 })
 
@@ -209,19 +277,54 @@ describe('POST /api/ai-event', () => {
     const badKey = vi.fn(async () => new Response('API key not valid', { status: 400 }))
     expect((await handleAiEvent(call(ok), env, badKey as unknown as typeof fetch)).status).toBe(502)
     expect(badKey).toHaveBeenCalledTimes(1)
-    const busy = vi.fn(async () => new Response('quota', { status: 429 })) as unknown as typeof fetch
-    expect((await handleAiEvent(call(ok), env, busy)).status).toBe(429)
+    // out of quota on both models
+    const busy = vi.fn(async () => new Response('quota', { status: 429 }))
+    expect((await handleAiEvent(call(ok), env, busy as unknown as typeof fetch)).status).toBe(503)
+    expect(busy).toHaveBeenCalledTimes(2)
     const junk = vi.fn(async () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'not json' }] } }] }))) as unknown as typeof fetch
     const res = await handleAiEvent(call(ok), env, junk)
     expect(res.status).toBe(502)
     expect((await res.json()).error).toMatch(/Isi form manual/)
   })
 
-  it('limits one address to 20 questions per 5 minutes', async () => {
+  it('never fills a venue the panitia mistyped: it asks "Maksudnya …?" and offers the venue to tap', async () => {
+    const said = (text: string) => ({ ...ok, messages: [{ role: 'user', text }], known: {} })
+    // the model quietly corrected the typo
+    const fixed = vi.fn(async () => gemini({ reply: 'Tanggal berapa acaranya?', venueAsked: 'Cibadek', fields: { title: 'Bandung Kids Fest', venueName: 'Atrium Cibadak' } })) as unknown as typeof fetch
+    let body = await (await handleAiEvent(call(said('Bandung Kids Fest di Atrium Cibadek')), env, fixed)).json()
+    expect(body.fields).toEqual({ title: 'Bandung Kids Fest' })
+    expect(body.reply).toBe('Venue "Cibadek" tidak ada di daftar SUMMABA. Maksudnya Atrium Cibadak?\n\nTanggal berapa acaranya?')
+    expect(body.suggest).toEqual(['Atrium Cibadak'])
+    // a place that is not a SUMMABA venue at all
+    const paris = vi.fn(async () => gemini({ reply: 'Tanggal berapa?', venueAsked: 'Faris', fields: { title: 'Pekan Mode' } })) as unknown as typeof fetch
+    body = await (await handleAiEvent(call(said('Pekan Mode di Faris')), env, paris)).json()
+    expect(body.reply).toMatch(/^"Faris" tidak ada di daftar venue SUMMABA\. Pilih salah satu: Atrium Ciunik, Atrium Cileutik atau Atrium Cibadak\./)
+    expect(body.suggest).toEqual(['Atrium Ciunik', 'Atrium Cileutik', 'Atrium Cibadak'])
+    // the panitia taps the offered venue: now it is filled, with no question
+    const tapped = vi.fn(async () => gemini({ reply: 'Siap.', venueAsked: 'Atrium Cibadak', fields: { venueName: 'Atrium Cibadak' } })) as unknown as typeof fetch
+    body = await (await handleAiEvent(call(said('Venuenya Atrium Cibadak.')), env, tapped)).json()
+    expect(body).toEqual({ reply: 'Siap.', fields: { venueName: 'Atrium Cibadak' } })
+  })
+
+  it('drops a number of visitors the model took from the venue capacity', async () => {
+    const guessed = vi.fn(async () => gemini({ reply: 'Form siap diisi.', fields: { title: 'Kids Fest', venueName: 'Atrium Cibadak', audience: 300 } })) as unknown as typeof fetch
+    const body = await (await handleAiEvent(call({ ...ok, venues: venues.map((v) => `${v.name} (kapasitas ${v.capacity})`), known: {} }), env, guessed)).json()
+    expect(body.fields).toEqual({ title: 'Kids Fest', venueName: 'Atrium Cibadak' })
+    expect(body.reply).toBe('Berapa perkiraan jumlah pengunjung per sesi?')
+  })
+
+  it('takes back a long reply of its own in the next question', async () => {
+    const long = 'Mohon lengkapi: ' + 'x'.repeat(700)
+    const fetchImpl = vi.fn(async () => gemini({ reply: 'Siap.', fields: {} })) as unknown as typeof fetch
+    const res = await handleAiEvent(call({ ...ok, messages: [{ role: 'user', text: 'Kids fest' }, { role: 'ai', text: long }, { role: 'user', text: 'Sabtu depan' }] }), env, fetchImpl)
+    expect(res.status).toBe(200)
+  })
+
+  it('limits one address to 40 questions per 5 minutes', async () => {
     const fetchImpl = vi.fn(async () => gemini({ reply: 'Ok.', done: false, fields: {} })) as unknown as typeof fetch
     const same = { 'x-forwarded-for': '192.0.2.7' }
     const now = new Date('2026-11-12T12:00:00Z')
-    for (let i = 0; i < 20; i++) expect((await handleAiEvent(call(ok, same), env, fetchImpl, now)).status).toBe(200)
+    for (let i = 0; i < 40; i++) expect((await handleAiEvent(call(ok, same), env, fetchImpl, now)).status).toBe(200)
     expect((await handleAiEvent(call(ok, same), env, fetchImpl, now)).status).toBe(429)
     expect((await handleAiEvent(call(ok, same), env, fetchImpl, new Date(now.getTime() + 5 * 60_000 + 1))).status).toBe(200)
   })

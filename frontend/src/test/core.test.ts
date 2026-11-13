@@ -509,6 +509,9 @@ describe('bonus, staff accounts, desk review, OCR (AD-12, AD-13, PT-06, PV-16)',
     expect(parseReceiptText(text, db.tenants)).toEqual({ tenantId: 't_mainan', headTenantIds: ['t_mainan'], receiptNo: 'INV713128', amount: 200_000, receiptDate: '2026-11-02', receiptTime: '21:40' })
     expect(parseReceiptText('SUBTOTAL 50.000\nGrand total: 75.000', db.tenants).amount).toBe(75_000)
     expect(parseReceiptText('foto buram', db.tenants)).toEqual({})
+    // a heading like "NOTA PENJUALAN" is not a receipt number; the number below it is
+    expect(parseReceiptText('NOTA PENJUALAN\nNo. Nota: 88123\nTOTAL 350.000', db.tenants).receiptNo).toBe('88123')
+    expect(parseReceiptText('NOTA PENJUALAN\nTOTAL 350.000', db.tenants).receiptNo).toBeUndefined()
   })
 
   it('AD-07: the AI cross-check flags typed fields the photo does not show', () => {

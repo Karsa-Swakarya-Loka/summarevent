@@ -3,7 +3,7 @@
 @source not "../scripts";
 @source not "../e2e";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import "./styles/shadcn-tailwind.css";
 @import "@fontsource-variable/plus-jakarta-sans";
 @import "@fontsource/anton/latin-400.css";
 

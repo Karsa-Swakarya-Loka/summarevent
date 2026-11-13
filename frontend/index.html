@@ -24,6 +24,9 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Summarevent, tiket event Summarecon Mall Bandung" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"WebApplication","name":"Summarevent","url":"https://summarevent.vercel.app/","inLanguage":"id","applicationCategory":"EntertainmentApplication","operatingSystem":"Web, Android, iOS","description":"Tiket event Summarecon Mall Bandung: pilih kursi dari denah, bayar (simulasi), daftar gratis, atau tukar struk belanja, lalu dapat e-ticket QR.","offers":{"@type":"Offer","price":0,"priceCurrency":"IDR"},"creator":{"@type":"Organization","name":"Tim Summarevent"}}
+    </script>
     <style>
       /* Splash (motion graphic): the two seat blocks of the logo lock together, a dot walks the S aisle to its seat,
          then the wordmark rises. Once per session for the web and once for each role, which it names; skipped on tap,
@@ -71,6 +74,8 @@
       @keyframes sp-bar { 0%, 100% { transform: scaleX(0.35); } 50% { transform: scaleX(1); } }
       @media (prefers-reduced-motion: reduce) { .no-splash #splash .sp-mark, .no-splash #splash .sp-stage::after { animation: none; } }
       #splash.sp-done { opacity: 0; visibility: hidden; }
+      .web-start #splash { background: #fbfaf7; cursor: default; transition-duration: 0.12s; }
+      .web-start #splash > *, .web-start #splash::before { display: none; }
       #splash.sp-done .sp-stage { transform: scale(1.06); }
       @keyframes sp-fade { from { opacity: 0; } to { opacity: 1; } }
       @keyframes sp-out { to { opacity: 0; } }
@@ -95,6 +100,9 @@
         var role = /^\/(app|admin|staff)(\/|$)/.exec(location.pathname)
         var key = 'summarevent:splash' + (role ? ':' + role[1] : '')
         var skip = false
+        // in a browser tab the page itself comes first: a plain cover the colour of the page, lifted as soon as the
+        // page has painted in its own fonts. The motion plays in the installed app, and when a role is entered.
+        var web = !(window.matchMedia && matchMedia('(display-mode: standalone)').matches) && navigator.standalone !== true
         try {
           if (sessionStorage.getItem(key)) skip = true
           else {
@@ -102,7 +110,8 @@
             sessionStorage.setItem('summarevent:splash', '1')
           }
         } catch (e) {}
-        if (skip) document.documentElement.classList.add('no-splash')
+        if (web) document.documentElement.classList.add('web-start')
+        else if (skip) document.documentElement.classList.add('no-splash')
       })()
     </script>
   </head>

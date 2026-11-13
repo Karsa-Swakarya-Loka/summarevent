@@ -1,0 +1,15 @@
+# Summarevent
+
+> Tiket event Summarecon Mall Bandung (SUMMABA) dengan pemilihan kursi. Pengunjung memilih kursi langsung dari denah, membayar (simulasi), daftar gratis, atau menukar struk belanja di tenant SUMMABA, lalu mendapat e-ticket QR. Panitia membuat event dan memantau penjualan; petugas memindai e-ticket di pintu.
+
+Prototype untuk Bandung Build Challenge 2026 oleh Tim Summarevent. Pembayaran, OTP, WhatsApp, dan email disimulasikan.
+
+## Halaman utama
+
+- [Halaman awal](https://summarevent.vercel.app/): pilih peran pengunjung, panitia, atau petugas
+- [Beranda pengunjung](https://summarevent.vercel.app/app): daftar event yang sedang dijual
+- [Pentas Musikal Keluarga "Sangkuriang"](https://summarevent.vercel.app/app/e/pentas-musikal-sangkuriang): contoh event dengan denah kursi
+
+## Kode sumber
+
+- [Repositori GitHub](https://github.com/Karsa-Swakarya-Loka/summarevent)

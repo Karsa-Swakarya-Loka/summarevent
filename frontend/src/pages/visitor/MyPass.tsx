@@ -20,6 +20,7 @@ import { TICKET_STATUS_LABEL } from '@/domain/labels'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
 import { fmtDate, fmtTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { useDocumentTitle } from '@/lib/seo'
 
 interface Group {
   orderId: string
@@ -48,6 +49,7 @@ function timing(item: PassItem, now: Date): { text: string; live: boolean; ended
 }
 
 export default function MyPass() {
+  useDocumentTitle('Pass Saya')
   const { user, refresh } = useVisitor()
   const tickets = useLive(() => api.myTickets(), [user?.id])
   const orders = useLive(() => api.myOrders(), [user?.id])

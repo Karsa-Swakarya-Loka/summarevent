@@ -53,7 +53,7 @@ if (!(await orders.getByRole('button', { name: '2', exact: true }).getAttribute(
 await page.getByRole('button', { name: /ganti event$/ }).first().click()
 const tree = page.getByRole('tree', { name: 'Pilih event' })
 await tree.waitFor()
-if (!(await tree.getByRole('treeitem', { name: /Sesi Demo Juri/ }).count())) errors.push('switcher: sesi event yang dipantau tidak terbuka di pohon')
+if (!(await tree.getByRole('treeitem', { name: /Sesi Hari Ini/ }).count())) errors.push('switcher: sesi event yang dipantau tidak terbuka di pohon')
 await tree.getByRole('treeitem', { name: /Konser Akustik Sawarga/ }).click()
 await page.waitForURL(/event=evt_akustik/)
 await page.getByRole('region', { name: 'Pesanan terbaru' }).getByText('Konser Akustik Sawarga').waitFor({ timeout: 8000 })

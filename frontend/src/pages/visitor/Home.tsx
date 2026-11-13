@@ -27,6 +27,7 @@ import { fmtDate, fmtShortDate } from '@/lib/format'
 import { onboardingDone } from '@/lib/intro'
 import { readSeen } from '@/lib/seen'
 import { cn } from '@/lib/utils'
+import { useDocumentTitle } from '@/lib/seo'
 
 type When = 'ALL' | 'TODAY' | 'WEEK'
 const WHEN: Array<{ key: When; label: string }> = [
@@ -42,6 +43,7 @@ const CARD_SLOT = 'flex min-w-[9.75rem] flex-1 shrink-0 animate-rise'
 const shortRupiah = (n: number) => (n % 1000 === 0 ? `Rp${n / 1000}rb` : `Rp${new Intl.NumberFormat('id-ID').format(n)}`)
 
 export default function Home() {
+  useDocumentTitle('Beranda')
   const { user } = useVisitor()
   const events = useLive(() => api.listEvents(), [])
   const orders = useLive(() => api.myOrders(), [user?.id])
@@ -183,7 +185,7 @@ export default function Home() {
                   art="kursi"
                   tint="bg-brand-soft"
                   title="Pilih kursi sendiri"
-                  sub="Sesi demo sedang berlangsung"
+                  sub="Sedang berlangsung, bisa langsung check-in"
                   chip={
                     <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-bold text-[#0b6b35]">
                       <span className="size-1.5 rounded-full bg-status-valid" aria-hidden /> Live
@@ -390,7 +392,7 @@ function availabilityOf(e: EventSummary, now: Date): { label: string; tone: Tone
 function dateLabelOf(e: EventSummary, today = false) {
   // under "Hari ini" an event is listed for its session running today, so that is the date it shows
   const live = today ? e.sessions.find((s) => s.demoLive) : undefined
-  if (live) return `Hari ini · ${live.label ?? 'Sesi demo'}`
+  if (live) return `Hari ini · ${live.label ?? 'Sedang berlangsung'}`
   const realSessions = e.sessions.filter((s) => !s.demoLive)
   const sameDay = fmtDate(e.event.startAt, { day: 'numeric', month: 'short' }) === fmtDate(e.event.endAt, { day: 'numeric', month: 'short' })
   const day = sameDay ? fmtDate(e.event.startAt, { weekday: 'long', day: 'numeric', month: 'long' }) : `${fmtShortDate(e.event.startAt)} – ${fmtShortDate(e.event.endAt)}`

@@ -134,10 +134,10 @@ export function LoadError({ error, onRetry, backTo = '/app', backLabel = 'Kembal
                 <Link to={backTo}>{backLabel}</Link>
               </Button>
             )}
-            {/* live version without its server: the demo still works on its own */}
+            {/* without its server: the backup version still works on its own */}
             {apiMode === 'live' && (
               <Button asChild variant={showBack ? 'outline' : 'default'} className="h-11">
-                <a href={DEMO_URL}>Buka versi demo</a>
+                <a href={DEMO_URL}>Buka versi cadangan</a>
               </Button>
             )}
           </div>

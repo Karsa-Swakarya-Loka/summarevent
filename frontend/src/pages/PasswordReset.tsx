@@ -20,7 +20,7 @@ import { finePointer } from '@/lib/pointer'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const RESET_POINTS = ['Link reset lewat email', 'Berlaku 30 menit', 'Sekali pakai']
-const RESET_NOTE = 'Di demo ini, link reset tampil di layar.'
+const RESET_NOTE = 'Simulasi: link reset juga tampil di layar.'
 
 function Frame({ title, lead, back, children }: { title: string; lead: string; back: string; children: React.ReactNode }) {
   const navigate = useNavigate()

@@ -25,7 +25,7 @@ Semuanya berakhir di satu e-ticket QR, dibuka dari satu link, tanpa memasang apl
 
 > [!NOTE]
 > **Prototype untuk Bandung Build Challenge 2026**, tema *Event Ticketing System* dengan fokus pemilihan kursi.
-> Versi demo jalan penuh di browser dengan data contoh, jadi tiap juri punya datanya sendiri. Versi live di [summarevent-live.vercel.app](https://summarevent-live.vercel.app) memakai backend bersama di Convex untuk uji dua HP. Pembayaran, OTP, WhatsApp, dan email disimulasikan di keduanya.
+> [summarevent.vercel.app](https://summarevent.vercel.app) memakai backend bersama di Convex, jadi semua HP melihat data yang sama (rebutan kursi bisa diuji dengan dua HP). Pembayaran, OTP, WhatsApp, dan email disimulasikan. Versi cadangan di [summarevent-cadangan.vercel.app](https://summarevent-cadangan.vercel.app) menyimpan data contoh di browser masing-masing, untuk dipakai kalau server atau jaringan bermasalah.
 
 <p align="center">
   <img src="docs/gambar/promo-1-denah.webp" width="24%" alt="Pilih kursimu sendiri: denah Sangkuriang diperbesar ke kategori Reguler dengan dua kursi terpilih, di dalam HP" />
@@ -54,7 +54,7 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 - **Sambutan yang bergerak, per role.** Splash menghidupkan logo Lorong: dua bloknya mengunci, lalu satu titik menyusuri lorong S. Splash muncul saat web dibuka, lalu sekali per sesi untuk tiap role yang dimasuki (Pengunjung, Panitia, Petugas) dengan nama rolenya, dan bisa diketuk untuk dilewati.
   - Tiap role punya pengenalan tiga langkah, sekali per HP.
   - Pengunjung **Masuk** atau **Daftar** dengan OTP simulasi yang bisa diisi otomatis.
-  - Panitia dan petugas masuk dengan email dan kata sandi, lengkap dengan lupa kata sandi dan link reset sekali pakai (di versi demo link-nya tampil di layar; akun demonya bisa diisi otomatis). Petugas baru mendapat undangan ke emailnya untuk membuat kata sandi.
+  - Panitia dan petugas masuk dengan email dan kata sandi, lengkap dengan lupa kata sandi dan link reset sekali pakai (link-nya juga tampil di layar sebagai simulasi; akun contohnya bisa diisi otomatis). Petugas baru mendapat undangan ke emailnya untuk membuat kata sandi.
   - Ilustrasi isometrik bergerak mengisi layar kosong dan momen sukses. Semua gerak berhenti kalau HP diatur untuk mengurangi gerakan.
 - **Terasa seperti aplikasi di HP.**
   - Layar yang dibuka bergeser masuk dari kanan, dan tombol kembali menggeser dari kiri.
@@ -72,9 +72,9 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 2. Pilih **Reguler**, ketuk **Pilihkan 2 kursi berdampingan**, lalu **Pesan 2 kursi**. Kursinya ditahan 10 menit.
 3. Masuk dengan nomor HP apa saja (kode OTP tampil di layar), lalu tekan **Bayar Rp100.000** (simulasi). Ketuk **Lihat e-ticket**.
 4. Kembali ke denah dan tekan **Uji rebutan kursi**: pembeli simulasi menang sepersekian detik lebih dulu, dan kamu ditawari kursi terdekat.
-5. Lewat tombol **Demo**, pindah langsung ke **Panitia** (verifikasi struk, peta kursi live, unduh CSV) dan **Petugas** (*Sesi Demo Juri* → **Mulai scan** → **Alat demo** → **Ambil tiket contoh**). Dari halaman awal, keduanya melewati splash, pengenalan, dan login email: tekan **Isi otomatis** untuk akun demonya.
+5. Lewat tombol **Pintasan**, pindah langsung ke **Panitia** (verifikasi struk, peta kursi live, unduh CSV) dan **Petugas** (*Sesi Hari Ini* → **Mulai scan** → **Alat uji** → **Ambil tiket contoh**). Dari halaman awal, keduanya melewati pengenalan dan login email: tekan **Isi otomatis** untuk akun contohnya.
 
-**Reset data demo** di menu halaman awal mengembalikan semua data contoh. Di versi live, reset menghapus data bersama, jadi kabari tim dulu.
+**Reset data contoh** di menu halaman awal mengembalikan semua data contoh. Datanya dipakai bersama, jadi reset menghapus pesanan semua orang: kabari tim dulu.
 
 ## Panduan tes tim
 
@@ -83,7 +83,7 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 | Siapa | Bagian | Isinya |
 | --- | --- | --- |
 | Shelvia | [User testing dan UX](docs/PANDUAN-TES.md#shelvia-user-testing-dan-ux) | Skrip sesi, 14 tugas untuk pengunjung, panitia, dan petugas, apa yang dicatat, dan cara melapor temuan |
-| Said | [QA sistem](docs/PANDUAN-TES.md#said-qa-sistem) | Tes otomatis ke versi demo dan live, cek manual tiap aturan, dan format laporan bug |
+| Said | [QA sistem](docs/PANDUAN-TES.md#said-qa-sistem) | Tes otomatis ke versi utama dan cadangan, cek manual tiap aturan, dan format laporan bug |
 | Awwal | [Demo dan pitch](docs/PANDUAN-TES.md#awwal-demo-dan-pitch) | Link untuk juri, alur demo lima menit, angka untuk slide, dan catatan untuk deck |
 
 ## Cara kerja
@@ -103,7 +103,7 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 - **Aturan bisnis murni.** Hold, kuota, aturan struk, check-in, dan transisi status ada di `src/domain/rules.ts` dengan unit test. Alur per endpoint ada di `src/api/mock/adapter.ts`, dan file itu jadi acuan port untuk backend.
 - **Rebutan kursi tanpa server.** Setiap tulisan di mock berjalan dalam transaksi yang memegang Web Lock lintas tab. Dua tab yang menahan kursi yang sama di saat bersamaan dilayani bergiliran, dan hanya satu yang menang.
 - **Satu kosakata status.** Label pesanan, kursi, dan tiket datang dari `src/domain/labels.ts`, jadi pengunjung, panitia, dan petugas membaca status yang sama persis.
-- **QR yang tidak bisa ditebak.** Token berisi id tiket, versi, dan tanda tangan HMAC-SHA256. Di demo kuncinya ada di bundle karena datanya contoh; backend menandatanganinya di server.
+- **QR yang tidak bisa ditebak.** Token berisi id tiket, versi, dan tanda tangan HMAC-SHA256. Di versi cadangan kuncinya ada di bundle karena datanya contoh; backend menandatanganinya di server.
 - **Denah SVG.** Ringan di 4G, bisa digeser dan dicubit, dan tiap kursi adalah tombol berlabel ("Baris C nomor 8, Tukar Struk, tersedia") yang bisa dipilih dengan keyboard.
 
 ## Mulai lokal
@@ -119,7 +119,7 @@ npm run dev        # http://localhost:5173
 
 | Perintah | Fungsi |
 | --- | --- |
-| `npm run dev` | Server development, versi demo dengan data di browser |
+| `npm run dev` | Server development, dengan data di browser |
 | `npm run typecheck` | Cek tipe TypeScript |
 | `npm run lint` | oxlint |
 | `npm test` | Unit test logika inti (Vitest) |
@@ -134,7 +134,7 @@ Variabel saat build, semuanya opsional:
 | `VITE_API_URL` | Alamat backend. Kalau diisi, app memakai backend bersama, bukan mock di browser. |
 | `VITE_LIVE_HOSTS` | Host yang otomatis memakai backend di `/api` host itu sendiri, dipisah koma. |
 | `VITE_LIVE_URL` | Alamat versi live, diizinkan di Content-Security-Policy build. Halaman awal tidak menautkannya. |
-| `VITE_DEMO_URL` | Alamat versi demo, ditawarkan saat versi live tidak bisa menghubungi servernya. Default `https://summarevent.vercel.app`. |
+| `VITE_DEMO_URL` | Alamat versi cadangan (data di browser), ditawarkan saat aplikasi tidak bisa menghubungi servernya. Default `https://summarevent-cadangan.vercel.app`. |
 
 Asisten **Isi cepat dengan AI** di wizard buat event memakai fungsi Vercel `frontend/api/ai-event.ts`. Kuncinya disimpan di Environment Variables proyek Vercel, bukan di `.env` yang ikut ke browser:
 
@@ -143,7 +143,7 @@ Asisten **Isi cepat dengan AI** di wizard buat event memakai fungsi Vercel `fron
 | `GEMINI_API_KEY` | Kunci Gemini API dari Google AI Studio. Tanpa ini, asisten menjawab "Asisten AI belum dipasang" dan form tetap bisa diisi manual. |
 | `GEMINI_MODEL` | Opsional. Default `gemini-3.5-flash-lite`. |
 | `GEMINI_FALLBACK_MODEL` | Opsional. Model cadangan saat model utama sedang penuh atau lambat. Default `gemini-flash-lite-latest`. |
-| `AI_ALLOWED_ORIGINS` | Opsional. Asal yang boleh memanggil asisten, dipisah koma. Default `https://summarevent.vercel.app,https://summarevent-live.vercel.app`. |
+| `AI_ALLOWED_ORIGINS` | Opsional. Asal yang boleh memanggil asisten, dipisah koma. Default ketiga host Summarevent. |
 
 ## Struktur
 
@@ -181,21 +181,22 @@ Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. T
 
 ## Keamanan dan privasi
 
-- **Data contoh saja.** Nama, nomor HP, tenant, pesanan, dan struk di demo semuanya fiktif, dan struk contoh bertanda "STRUK CONTOH". Tidak ada data kartu atau rekening yang diminta.
-- **Tanpa server di versi demo.** Semua data tinggal di browser pengunjung dan hilang lewat **Reset data demo**.
-- **Versi live untuk uji, bukan data asli.** Kode OTP dan akun demo masih tampil di layar, jadi siapa pun bisa masuk dengan nomor HP mana pun. Pakai nama dan nomor contoh. Sebelum dipakai sungguhan, OTP harus dikirim lewat WhatsApp atau SMS dan login demo dimatikan.
+- **Data contoh saja.** Nama, nomor HP, tenant, pesanan, dan struk di data contoh semuanya fiktif, dan struk contoh bertanda "STRUK CONTOH". Tidak ada data kartu atau rekening yang diminta.
+- **Tanpa server di versi cadangan.** Semua data tinggal di browser pengunjung dan hilang lewat **Reset data contoh**.
+- **Prototype, bukan data asli.** Kode OTP dan akun contoh masih tampil di layar, jadi siapa pun bisa masuk dengan nomor HP mana pun. Pakai nama dan nomor contoh. Sebelum dipakai sungguhan, OTP harus dikirim lewat WhatsApp atau SMS dan login akun contoh dimatikan.
 - **Tiket.** Tiap QR bertanda tangan, jadi QR palsu ditolak saat scan. Layar tiket mengingatkan agar foto QR tidak diunggah ke media sosial.
 - **Foto.** Foto struk dan foto profil digambar ulang di browser sebelum dikirim, jadi data lokasi di dalam foto ikut terbuang.
 - **Data pengunjung di sisi panitia.** Nomor HP di daftar pesanan disamarkan. Di CSV, isi yang diawali `=`, `+`, `-`, atau `@` diberi tanda petik di depannya supaya tidak dijalankan sebagai rumus di Excel atau Sheets.
 - **HP petugas.** Data untuk scan offline menyimpan sidik SHA-256 tiap QR, bukan QR-nya, dan dihapus saat petugas keluar.
-- **Header keamanan.** Halaman tidak bisa dibingkai situs lain, jenis berkas tidak ditebak browser, dan hanya kamera (untuk scanner petugas) yang boleh dipakai.
+- **Header keamanan.** HTTPS wajib (HSTS dengan preload), Content-Security-Policy membatasi skrip ke situs ini sendiri, halaman tidak bisa dibingkai situs lain, jenis berkas tidak ditebak browser, dan hanya kamera (untuk scanner petugas) yang boleh dipakai. Mozilla HTTP Observatory memberi nilai A+ (125/100, 12 dari 12 tes lolos).
+- **Dependency.** `npm audit` menemukan 0 kerentanan di frontend dan backend.
 - **Tanpa pelacak.** Tidak ada cookie pelacak atau analitik pihak ketiga.
 
 ## Deploy
 
 | Bagian | Di mana | Catatan |
 | --- | --- | --- |
-| Frontend | Vercel, folder `frontend/` | `vercel deploy --prod` dari `frontend/`. Satu deployment melayani dua host: [summarevent.vercel.app](https://summarevent.vercel.app) memakai mock di browser, dan [summarevent-live.vercel.app](https://summarevent-live.vercel.app) memakai backend lewat `/api` miliknya, yang diteruskan `vercel.json` ke Convex. Host live disebut di `VITE_LIVE_HOSTS` di `.env.production`. |
+| Frontend | Vercel, folder `frontend/` | `vercel deploy --prod` dari `frontend/`. Satu deployment melayani tiga host: [summarevent.vercel.app](https://summarevent.vercel.app) dan [summarevent-live.vercel.app](https://summarevent-live.vercel.app) memakai backend lewat `/api` miliknya, yang diteruskan `vercel.json` ke Convex, sedangkan [summarevent-cadangan.vercel.app](https://summarevent-cadangan.vercel.app) memakai mock di browser. Host yang memakai backend disebut di `VITE_LIVE_HOSTS` di `.env.production` dan di env project Vercel. |
 | Backend | Convex, dikelola tim backend | Di [`backend/`](backend/README.md), mengikuti [kontrak API](docs/API-CONTRACT.md). Frontend cukup di-build dengan `VITE_API_URL` yang menunjuk ke `https://<deployment>.convex.site/api`. |
 | Diagram arsitektur | GitHub Pages dari `main` `/docs` | [karsa-swakarya-loka.github.io/summarevent/arsitektur.html](https://karsa-swakarya-loka.github.io/summarevent/arsitektur.html) |
 

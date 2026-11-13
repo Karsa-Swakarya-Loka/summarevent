@@ -28,19 +28,34 @@ function fresh<T>(store: Map<string, Entry<T>>, key: string, maxAge: number): T 
 export const cachedEvent = (slug: string): EventDetail | undefined => fresh(events, slug, EVENT_FRESH_MS)
 export const cachedSeatMap = (sessionId: string): SeatMapData | undefined => fresh(maps, sessionId, MAP_FRESH_MS)
 
+/** Requests on their way: a screen opening while its prefetch is still out waits for that answer instead of asking twice. */
+const pending = new Map<string, Promise<unknown>>()
+
+function shared<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const out = pending.get(key) as Promise<T> | undefined
+  if (out) return out
+  const p = load().finally(() => pending.delete(key))
+  pending.set(key, p)
+  return p
+}
+
 /** The event page's fetch; every answer is kept for the next time the page opens. */
 export function loadEvent(slug: string): Promise<EventDetail> {
-  return api.getEvent(slug).then((data) => {
-    events.set(slug, { at: Date.now(), data })
-    return data
-  })
+  return shared(`e:${slug}`, () =>
+    api.getEvent(slug).then((data) => {
+      events.set(slug, { at: Date.now(), data })
+      return data
+    }),
+  )
 }
 
 export function loadSeatMap(sessionId: string): Promise<SeatMapData> {
-  return api.getSeatMap(sessionId).then((data) => {
-    maps.set(sessionId, { at: Date.now(), data })
-    return data
-  })
+  return shared(`s:${sessionId}`, () =>
+    api.getSeatMap(sessionId).then((data) => {
+      maps.set(sessionId, { at: Date.now(), data })
+      return data
+    }),
+  )
 }
 
 function once(key: string, cached: unknown, load: () => Promise<unknown>) {

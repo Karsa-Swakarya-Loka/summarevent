@@ -21,19 +21,19 @@ const watch = (page, tag) => {
   page.on('console', (m) => m.type() === 'error' && !/Failed to load resource: the server responded with a status of 4\d\d/.test(m.text()) && errors.push(`[${tag}] console: ${m.text()}`))
   page.on('pageerror', (e) => errors.push(`[${tag}] pageerror: ${e.message}`))
 }
-// after a reload in the same session the splash's motion stays away; at most the plain cover waits for the fonts
-const quiet = (page) => page.evaluate(() => !document.getElementById('splash') || document.documentElement.classList.contains('no-splash'))
+// a load in a browser tab never plays the motion: at most the plain cover in the page colour waits for the fonts
+const quiet = (page) => page.evaluate(() => !document.getElementById('splash') || /\b(no-splash|web-start)\b/.test(document.documentElement.className))
 const shot = (page, name) => page.screenshot({ path: path.join(OUT, `${name}.png`) })
 // the splash names the role being entered; on a real network the name is written a moment after the splash paints
 const roleNamed = (page, name) => page.locator('#splash .sp-role', { hasText: name }).waitFor({ timeout: 3000 }).then(() => true, () => false)
 
-// 1. Splash: shows on the first visit, fades out on its own, and stays away for the rest of the session
+// 1. First visit in a browser tab: the page comes first, under a plain cover that lifts on its own
 const ctx = await browser.newContext(phone)
 const page = await ctx.newPage()
 watch(page, 'visitor')
 await page.goto(BASE + '/', { waitUntil: 'commit' })
 const splash = page.locator('#splash')
-check((await splash.count()) === 1, 'splash tidak muncul di kunjungan pertama')
+check((await splash.count()) === 0 || (await quiet(page)), 'kunjungan pertama di browser memutar animasi splash')
 await page.waitForTimeout(900)
 await shot(page, '01-splash')
 const gone = await splash.waitFor({ state: 'detached', timeout: 5000 }).then(() => true, () => false)
@@ -41,7 +41,7 @@ check(gone, 'splash tidak hilang sendiri dalam 5 detik')
 await page.getByRole('button', { name: /Masuk sebagai pengunjung/ }).waitFor()
 await page.reload({ waitUntil: 'domcontentloaded' })
 check(await quiet(page), 'splash muncul lagi di sesi yang sama')
-console.log('splash: shown once, then gone')
+console.log('first visit: plain cover, then gone')
 
 // 2. Daftar on the visitor poster plays that role's splash, named, then the three steps, then signing up
 await page.getByRole('button', { name: 'Daftar sebagai pengunjung' }).click()
@@ -81,13 +81,12 @@ check(await quiet(page), 'splash pengunjung muncul lagi di sesi yang sama')
 console.log('daftar: Sinta Maharani signed up and is on Beranda')
 await ctx.close()
 
-// 4. Panitia, straight to /admin: the splash named Panitia, their three steps, then the email sign-in
+// 4. Panitia, straight to /admin: the page comes first (plain cover), their three steps, then the email sign-in
 const adminCtx = await browser.newContext({ viewport: { width: 1366, height: 900 } })
 const admin = await adminCtx.newPage()
 watch(admin, 'admin')
 await admin.goto(BASE + '/admin', { waitUntil: 'commit' })
-await admin.locator('#splash').waitFor({ timeout: 3000 })
-check(await roleNamed(admin, 'Panitia'), 'splash panitia tidak menyebut perannya')
+check(await quiet(admin), 'membuka /admin langsung memutar animasi splash')
 await admin.locator('#splash').waitFor({ state: 'detached', timeout: 5000 })
 await admin.waitForURL(/\/admin\/mulai/)
 const adminTitles = []

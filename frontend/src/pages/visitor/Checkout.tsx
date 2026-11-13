@@ -202,7 +202,7 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
     <div className="space-y-1 pt-1">
       <div className="flex items-center gap-2 rounded-2xl border border-dashed border-ink/25 p-1.5 pl-3">
         <span className="flex flex-1 items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-          <FlaskConical className="size-3.5" aria-hidden /> Demo
+          <FlaskConical className="size-3.5" aria-hidden /> Simulasi
         </span>
         {user && access === 'PAID' && (
           <DemoButton label="Simulasikan bayar gagal" busy={busy === 'pay-fail'} disabled={!!busy} onClick={() => void pay('FAIL')}>

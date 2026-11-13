@@ -51,7 +51,7 @@ export default function RolePicker() {
   const reset = async () => {
     if (live && !window.confirm('Data ini dipakai bersama semua HP. Reset akan menghapus pesanan dan check-in dari semua HP. Lanjut?')) return
     await api.demo.reset()
-    toast.success('Data demo dikembalikan ke awal.')
+    toast.success('Data contoh dikembalikan ke awal.')
   }
 
   const poster = (role: IntroRole, spec: Omit<PosterSpec, 'key' | 'actions'>): PosterSpec => ({
@@ -85,8 +85,8 @@ export default function RolePicker() {
         className="sev-landing"
         wordmarkMaxHeight="clamp(84px, 16svh, 200px)"
         badge={{
-          label: 'demo',
-          title: 'Demo: pembayaran, OTP, dan WA/email disimulasikan.',
+          label: live ? 'live' : 'demo',
+          title: live ? 'Terhubung ke server Summarevent. Pembayaran, OTP, dan WA/email masih simulasi.' : 'Versi cadangan: data tersimpan di browser ini. Pembayaran, OTP, dan WA/email disimulasikan.',
         }}
         centre={
           <>
@@ -97,12 +97,12 @@ export default function RolePicker() {
         menu={
           <div className="grid gap-3 text-ink">
             <div>
-              <p className="text-base font-extrabold">Demo</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">Pembayaran, OTP, dan WA/email disimulasikan.</p>
+              <p className="text-base font-extrabold">{live ? 'Prototype' : 'Versi cadangan'}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{live ? 'Terhubung ke server. Pembayaran, OTP, dan WA/email masih simulasi.' : 'Data tersimpan di browser ini. Pembayaran, OTP, dan WA/email disimulasikan.'}</p>
             </div>
             <div className="-mx-2.5 grid border-y py-1.5">
               <button type="button" className={MENU_ITEM} onClick={() => void reset()}>
-                <RotateCcw aria-hidden /> Reset data demo
+                <RotateCcw aria-hidden /> Reset data contoh
               </button>
             </div>
             <div>

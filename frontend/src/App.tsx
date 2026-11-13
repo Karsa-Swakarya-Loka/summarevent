@@ -1,7 +1,8 @@
 import { lazy, Suspense, type ComponentType } from 'react'
-import { createBrowserRouter, RouterProvider } from 'react-router'
+import { createBrowserRouter, redirect, RouterProvider } from 'react-router'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Toaster } from '@/components/ui/sonner'
+import { onboardingDone } from '@/lib/intro'
 import { roleSplash } from '@/lib/splash'
 import NotFound from '@/pages/NotFound'
 import RolePicker from '@/pages/RolePicker'
@@ -81,7 +82,8 @@ const router = createBrowserRouter([
     lazy: visitorLayout,
     hydrateFallbackElement: <Loading />,
     children: [
-      { index: true, lazy: screen('home') },
+      // a first visit goes to the pengenalan before Beranda renders or fetches anything, so nothing paints twice
+      { index: true, loader: () => (onboardingDone() ? null : redirect('/app/mulai')), lazy: screen('home') },
       { path: 'e/:slug', lazy: screen('event') },
       { path: 'e/:slug/s/:sessionId', lazy: screen('seat') },
       { path: 'checkout/:orderId', lazy: screen('checkout') },

@@ -5,8 +5,8 @@ import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
 
 /**
- * Preload the display font (Anton). The first screens set their titles in it, and without a preload the browser only
- * finds the file once the page has rendered, so the largest text would paint twice and late.
+ * Preload the two faces of the first screen (Anton for titles, Plus Jakarta Sans for the rest). Without a preload the
+ * browser only finds them once the stylesheet has been read, so the largest text would paint twice and late.
  */
 function preloadDisplayFont(): Plugin {
   let base = '/'
@@ -19,8 +19,8 @@ function preloadDisplayFont(): Plugin {
     transformIndexHtml: {
       order: 'post',
       handler(_html, ctx) {
-        const file = Object.keys(ctx.bundle ?? {}).find((f) => /anton-latin-400-normal[^/]*\.woff2$/.test(f))
-        return file ? [{ tag: 'link', attrs: { rel: 'preload', href: base + file, as: 'font', type: 'font/woff2', crossorigin: '' }, injectTo: 'head' }] : []
+        const files = Object.keys(ctx.bundle ?? {}).filter((f) => /(anton-latin-400-normal|plus-jakarta-sans-latin-wght-normal)[^/]*\.woff2$/.test(f))
+        return files.map((file) => ({ tag: 'link', attrs: { rel: 'preload', href: base + file, as: 'font', type: 'font/woff2', crossorigin: '' }, injectTo: 'head' as const }))
       },
     },
   }

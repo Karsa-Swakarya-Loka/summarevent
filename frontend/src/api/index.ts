@@ -7,7 +7,6 @@
  */
 import type { Api } from './contract'
 import { createHttpApi } from './http'
-import { createMockApi, ensureMockDb, startMockMaintenance } from './mock/adapter'
 
 const LIVE_HOSTS = ((import.meta.env.VITE_LIVE_HOSTS as string | undefined) ?? '')
   .split(',')
@@ -17,17 +16,32 @@ const LIVE_HOSTS = ((import.meta.env.VITE_LIVE_HOSTS as string | undefined) ?? '
 const host = typeof location !== 'undefined' ? location.hostname : ''
 const baseUrl = (import.meta.env.VITE_API_URL as string | undefined) || (LIVE_HOSTS.includes(host) ? '/api' : undefined)
 
-export const api: Api = baseUrl ? createHttpApi(baseUrl) : createMockApi()
+/** The in-browser version, loaded by bootApi() only where it is used, so the server version never downloads it. */
+let mock: Api | null = null
+
+function lazyMock(): Api {
+  return new Proxy({} as Api, {
+    get(_, prop) {
+      if (prop === 'mode') return 'mock'
+      if (!mock) throw new Error('The in-browser API is used before bootApi() finished.')
+      return Reflect.get(mock, prop)
+    },
+  })
+}
+
+export const api: Api = baseUrl ? createHttpApi(baseUrl) : lazyMock()
 
 /** "live" = shared backend, "demo" = data per browser. */
 export const apiMode: 'live' | 'demo' = api.mode === 'http' ? 'live' : 'demo'
 
-/** The demo version, offered when the live version cannot reach its server (LoadError). */
-export const DEMO_URL = (import.meta.env.VITE_DEMO_URL as string | undefined) ?? 'https://summarevent.vercel.app'
+/** The backup version (data in the browser), offered when the app cannot reach its server (LoadError). */
+export const DEMO_URL = (import.meta.env.VITE_DEMO_URL as string | undefined) ?? 'https://summarevent-cadangan.vercel.app'
 
 /** Call once at startup. */
 export async function bootApi(): Promise<void> {
-  if (api.mode === 'mock') {
+  if (api.mode === 'mock' && !mock) {
+    const { createMockApi, ensureMockDb, startMockMaintenance } = await import('./mock/adapter')
+    mock = createMockApi()
     await ensureMockDb()
     startMockMaintenance()
   }

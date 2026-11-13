@@ -278,7 +278,7 @@ export function StickerSlap({
   badge,
   centre,
   menu,
-  menuLabel = 'Info dan pengaturan demo',
+  menuLabel = 'Info dan pengaturan',
   notch,
   children,
   stickers,

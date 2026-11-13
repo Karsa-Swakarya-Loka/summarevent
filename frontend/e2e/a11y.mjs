@@ -37,7 +37,7 @@ const seatTarget = async (page) => {
 }
 
 const openDemoMenu = async (page) => {
-  await page.getByRole('button', { name: 'Menu demo' }).click()
+  await page.getByRole('button', { name: 'Menu pintasan' }).click()
   await page.getByRole('menu').waitFor()
 }
 
@@ -63,7 +63,7 @@ const receiptForm = async (page) => {
 }
 
 const scanResult = async (page) => {
-  await page.getByRole('button', { name: /Alat demo/ }).click()
+  await page.getByRole('button', { name: /Alat uji/ }).click()
   await page.getByRole('button', { name: 'Ambil tiket contoh' }).click()
   await page.locator('section[data-result]').waitFor()
 }
@@ -132,8 +132,8 @@ const wizardCategories = async (page) => {
 
 // the landing's menu: the demo's controls and the credits
 const infoMenu = async (page) => {
-  await page.getByRole('button', { name: 'Info dan pengaturan demo' }).click()
-  await page.getByRole('dialog', { name: 'Info dan pengaturan demo' }).waitFor()
+  await page.getByRole('button', { name: 'Info dan pengaturan' }).click()
+  await page.getByRole('dialog', { name: 'Info dan pengaturan' }).waitFor()
 }
 
 // the team slide: the posters load on demand, and the legend comes in once the first one has landed

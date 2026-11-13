@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import { FlaskConical, Play, RotateCcw, ScanLine, Store, UserRound } from 'lucide-react'
+import { Play, RotateCcw, ScanLine, Store, UserRound, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiMode } from '@/api'
 import { Button } from '@/components/ui/button'
@@ -36,7 +36,7 @@ export function DemoMenu({ className, variant = 'float' }: { className?: string;
     setBusy(true)
     try {
       await api.demo.reset()
-      toast.success('Data demo sudah dikembalikan ke awal.')
+      toast.success('Data contoh sudah dikembalikan ke awal.')
       setConfirm(false)
       navigate('/')
     } finally {
@@ -62,16 +62,16 @@ export function DemoMenu({ className, variant = 'float' }: { className?: string;
                     : 'fixed z-40 flex h-11 items-center gap-1.5 rounded-full bg-ink/90 px-3 text-xs font-semibold text-white shadow-lg ring-1 ring-white/10 backdrop-blur hover:bg-ink',
               className,
             )}
-            aria-label="Menu demo"
+            aria-label="Menu pintasan"
             {...(variant === 'bar' ? { 'data-demo-header': '' } : variant === 'float' ? { 'data-demo-float': '' } : {})}
           >
-            <FlaskConical className={variant === 'docked' ? 'size-5 text-brand-orange' : variant === 'row' ? 'size-[1.125rem]' : 'size-4'} aria-hidden />
+            <Zap className={variant === 'docked' ? 'size-5 text-brand-orange' : variant === 'row' ? 'size-[1.125rem]' : 'size-4'} aria-hidden />
             {/* in an app bar on a narrow phone the flask alone leaves the title its room */}
-            <span className={cn(variant === 'bar' && 'max-[379px]:sr-only')}>Demo</span>
+            <span className={cn(variant === 'bar' && 'max-[379px]:sr-only')}>Pintasan</span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align={variant === 'bar' ? 'end' : 'start'} side={variant === 'row' ? 'top' : undefined} className="w-60">
-          <DropdownMenuLabel>{apiMode === 'live' ? 'Versi live (data bersama)' : 'Mode demo juri'}</DropdownMenuLabel>
+          <DropdownMenuLabel>{apiMode === 'live' ? 'Akun contoh siap pakai' : 'Versi cadangan (data di browser ini)'}</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => void go('VISITOR')}>
             <UserRound /> Masuk sebagai Pengunjung
           </DropdownMenuItem>
@@ -92,7 +92,7 @@ export function DemoMenu({ className, variant = 'float' }: { className?: string;
             <Play /> Lihat pengenalan lagi
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onClick={() => setConfirm(true)}>
-            <RotateCcw /> Reset data demo
+            <RotateCcw /> Reset data contoh
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -100,10 +100,10 @@ export function DemoMenu({ className, variant = 'float' }: { className?: string;
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset data demo?</DialogTitle>
+            <DialogTitle>Reset data contoh?</DialogTitle>
             <DialogDescription>
               {apiMode === 'live'
-                ? 'Versi live dipakai bersama: semua pesanan, struk, dan check-in dari semua HP dihapus, lalu data contoh dimuat ulang. Setelah itu kamu perlu masuk lagi.'
+                ? 'Data ini dipakai bersama: semua pesanan, struk, dan check-in dari semua HP dihapus, lalu data contoh dimuat ulang. Setelah itu kamu perlu masuk lagi.'
                 : 'Semua pesanan, struk, dan check-in yang dibuat di browser ini dihapus, lalu data contoh dimuat ulang. Setelah itu kamu perlu masuk lagi.'}
             </DialogDescription>
           </DialogHeader>

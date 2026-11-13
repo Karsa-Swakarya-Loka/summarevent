@@ -42,7 +42,7 @@ const COPY = {
 } as const
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const NOTE = 'Di demo ini, email undangan dan link reset tampil di layar.'
+const NOTE = 'Simulasi: email undangan dan link reset juga tampil di layar.'
 
 export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
   const id = useId()
@@ -80,10 +80,10 @@ export default function RoleSignIn({ role }: { role: 'ADMIN' | 'STAFF' }) {
 
   // the demo account: under the form on a phone, at the foot of the green half on a laptop (only one is ever shown)
   const demoAccount = (variant: 'outline' | 'secondary', className: string) => (
-    <section aria-label="Akun demo" className={cn('flex items-center gap-3 rounded-2xl border border-dashed py-2.5 pr-2.5 pl-4 text-sm', className)}>
+    <section aria-label="Akun contoh" className={cn('flex items-center gap-3 rounded-2xl border border-dashed py-2.5 pr-2.5 pl-4 text-sm', className)}>
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-2 font-semibold">
-          <SimTag /> Akun demo
+          <SimTag /> Akun contoh
         </p>
         <dl className="mt-1 font-mono text-xs leading-relaxed">
           <dt className="sr-only">Email</dt>

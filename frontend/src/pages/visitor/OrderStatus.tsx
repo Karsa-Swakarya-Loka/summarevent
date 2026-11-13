@@ -139,7 +139,7 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
         <p className="text-sm text-muted-foreground">Hasilnya dikirim lewat WhatsApp (simulasi), dan halaman ini ikut berubah.</p>
         <ReceiptList detail={detail} />
         <Button variant="outline" className="h-12 w-full" onClick={() => void approveAsPanitia()}>
-          <FlaskConical className="size-4" aria-hidden /> Demo: setujui sebagai panitia
+          <FlaskConical className="size-4" aria-hidden /> Pintasan: setujui sebagai panitia
         </Button>
       </>
     )

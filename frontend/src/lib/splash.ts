@@ -4,7 +4,8 @@
  * plain cream cover instead, so a reload never shows the page in a fallback font and then reflowing: it lifts as soon
  * as the fonts are in (at once when they are cached, at most FONT_WAIT_MS on a slow network).
  *
- * It plays once per session for the web, and once per session for each role, which it names. Opening a role's page
+ * In a browser tab the first load gets a plain cover in the page colour instead (index.html adds `web-start`); the
+ * motion plays in the installed app, and once per session for each role, which it names. Opening a role's page
  * directly is decided in index.html; entering a role from inside the app (the role picker) plays it from here.
  */
 declare global {
@@ -48,6 +49,22 @@ const seenKey = (scope: Scope) => `summarevent:splash:${scope}`
 export function endSplash() {
   const el = document.getElementById('splash')
   if (!el) return
+  const root = document.documentElement
+  if (root.classList.contains('web-start')) {
+    // a browser tab: no motion and no minimum time, the cover lifts as soon as the page has painted in its fonts
+    void fontsReady.then(() =>
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          el.classList.add('sp-done')
+          window.setTimeout(() => {
+            el.remove()
+            root.classList.remove('web-start')
+          }, 140)
+        }),
+      ),
+    )
+    return
+  }
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
   const quiet = document.documentElement.classList.contains('no-splash')
   const shown = performance.now() - (window.__splashAt ?? 0)
@@ -90,7 +107,7 @@ export function roleSplash(pathname: string) {
   const label = el.querySelector('.sp-role')
   if (label) label.textContent = ROLE_LABEL[scope]
   // a skipped first splash left the page marked so; the copy has to show
-  document.documentElement.classList.remove('no-splash')
+  document.documentElement.classList.remove('no-splash', 'web-start')
   document.body.append(el)
   window.__splashAt = performance.now()
   el.addEventListener('click', () => window.__splashSkip?.())

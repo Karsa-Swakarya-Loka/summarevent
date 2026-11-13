@@ -61,7 +61,8 @@ export default function Onboarding({ role }: { role: IntroRole }) {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const [step, setStep] = useState(0)
-  const [dir, setDir] = useState(1)
+  // 0 until the first move: the first step is simply there (its text is the page's largest paint), later ones slide in
+  const [dir, setDir] = useState(0)
   const swipeFrom = useRef<number | null>(null)
   const steps = STEPS[role]
   const last = step === steps.length - 1
@@ -153,7 +154,7 @@ export default function Onboarding({ role }: { role: IntroRole }) {
             </div>
           </div>
 
-          <div className="mt-6 shrink-0 animate-slide-in lg:col-start-2 lg:row-start-3 lg:mt-0 lg:w-[27rem] lg:justify-self-center" aria-live="polite">
+          <div className={cn('mt-6 shrink-0 lg:col-start-2 lg:row-start-3 lg:mt-0 lg:w-[27rem] lg:justify-self-center', dir !== 0 && 'animate-slide-in')} aria-live="polite">
             <p className="sr-only">
               Langkah {step + 1} dari {steps.length}
             </p>

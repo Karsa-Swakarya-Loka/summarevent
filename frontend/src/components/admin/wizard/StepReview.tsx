@@ -120,7 +120,7 @@ export function StepReview({ form, venues, issues, goTo }: { form: WizardForm; v
               <li key={s.key} className="flex flex-wrap justify-between gap-2">
                 <span className="font-medium">{s.label.trim() || `Sesi ${i + 1}`}</span>
                 <span className="text-muted-foreground">
-                  {s.demoLive ? 'Selalu berlangsung (demo)' : s.date && s.start ? `${fmtShortDate(wibIso(s.date, s.start))}, ${s.start.replace(':', '.')}–${s.end.replace(':', '.')} WIB` : '–'}
+                  {s.demoLive ? 'Selalu berlangsung (uji coba)' : s.date && s.start ? `${fmtShortDate(wibIso(s.date, s.start))}, ${s.start.replace(':', '.')}–${s.end.replace(':', '.')} WIB` : '–'}
                 </span>
               </li>
             ))}

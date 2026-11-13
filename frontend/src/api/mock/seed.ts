@@ -317,10 +317,10 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
     db.users.push(u)
     return u
   }
-  person(DEMO_ADMIN_ID, 'Tim Event SUMMABA (demo)', '081100000001', 'ADMIN')
-  person(DEMO_STAFF_ID, 'Petugas Desk Atrium (demo)', '081100000002', 'STAFF')
-  person('u_staff_utara', 'Petugas Pintu Utara (demo)', '081100000003', 'STAFF')
-  person('u_staff_cibadak', 'Petugas Atrium Cibadak (demo)', '081100000004', 'STAFF')
+  person(DEMO_ADMIN_ID, 'Tim Event SUMMABA', '081100000001', 'ADMIN')
+  person(DEMO_STAFF_ID, 'Petugas Desk Atrium', '081100000002', 'STAFF')
+  person('u_staff_utara', 'Petugas Pintu Utara', '081100000003', 'STAFF')
+  person('u_staff_cibadak', 'Petugas Atrium Cibadak', '081100000004', 'STAFF')
   // panitia and petugas sign in with email + kata sandi; the demo password is kept as its hash, as a server would
   const demoHash = await sha256Hex(`pw:${DEMO_PASSWORD}`)
   for (const u of db.users) if (u.role !== 'VISITOR') db.passwords.push({ userId: u.id, hash: demoHash, fails: [] })
@@ -405,7 +405,7 @@ export async function buildSeed(now: Date = new Date()): Promise<Db> {
   db.events.push(e1)
   const s1: Session = { id: 'ses_sk_13', eventId: e1.id, label: 'Sesi 1', startAt: wib('2026-11-21', '13:00'), endAt: wib('2026-11-21', '14:00') }
   const s2: Session = { id: 'ses_sk_16', eventId: e1.id, label: 'Sesi 2', startAt: wib('2026-11-21', '16:00'), endAt: wib('2026-11-21', '17:00') }
-  const s3: Session = { id: 'ses_sk_demo', eventId: e1.id, label: 'Sesi Demo Juri', startAt: e1.startAt, endAt: e1.endAt, demoLive: true }
+  const s3: Session = { id: 'ses_sk_demo', eventId: e1.id, label: 'Sesi Hari Ini', startAt: e1.startAt, endAt: e1.endAt, demoLive: true }
   db.sessions.push(s1, s2, s3)
   for (const s of [s1, s2, s3]) addSessionInventory(ctx, e1, s, seats1, [vip, struk, reg, fest])
 

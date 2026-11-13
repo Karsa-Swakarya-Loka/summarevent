@@ -15,6 +15,7 @@ import { saleState } from '@/domain/rules'
 import { useLive, useNow } from '@/hooks/useLive'
 import { fmtDate, fmtRange, fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
 import { useBack } from '@/lib/navStack'
+import { eventJsonLd, useDocumentTitle } from '@/lib/seo'
 import { cn } from '@/lib/utils'
 
 export default function EventDetail() {
@@ -22,6 +23,7 @@ export default function EventDetail() {
   const navigate = useNavigate()
   const q = useLive(() => loadEvent(slug), [slug], { initial: cachedEvent(slug) })
   const [picked, setPicked] = useState<string | null>(() => recallSession(slug))
+  useDocumentTitle(q.data?.event.title)
 
   if (q.loading && !q.data) return <PageSkeleton hero />
   if (!q.data) {
@@ -34,10 +36,21 @@ export default function EventDetail() {
   }
   const d = q.data
 
-  return <Detail d={d} picked={picked} onPick={(id) => {
-    setPicked(id)
-    rememberSession(slug, id)
-  }} onGo={(id) => navigate(`/app/e/${slug}/s/${id}`)} />
+  return (
+    <>
+      {/* schema.org Event for search results: date, place, and price per session */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: eventJsonLd(d, location.origin) }} />
+      <Detail
+        d={d}
+        picked={picked}
+        onPick={(id) => {
+          setPicked(id)
+          rememberSession(slug, id)
+        }}
+        onGo={(id) => navigate(`/app/e/${slug}/s/${id}`)}
+      />
+    </>
+  )
 }
 
 function sessionOpen(d: EventDetailData, s: SessionSummary, now: Date): { open: boolean; reason?: string } {
@@ -209,7 +222,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                       <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                         {s.demoLive ? (
                           <span className="inline-flex items-center gap-1 font-semibold text-[#c2410c]">
-                            <Radio className="size-3.5" aria-hidden /> Sesi demo
+                            <Radio className="size-3.5" aria-hidden /> Sedang berlangsung
                           </span>
                         ) : (
                           <>
@@ -237,7 +250,7 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
             </section>
 
             <section aria-labelledby="kat-title" className="lg:col-start-1 lg:row-start-3">
-              <SectionTitle right={selected && <span className="text-xs text-muted-foreground">Sisa untuk {selected.demoLive ? 'sesi demo' : fmtTime(selected.startAt)}</span>}>
+              <SectionTitle right={selected && <span className="text-xs text-muted-foreground">Sisa untuk {selected.demoLive ? 'sesi ini' : fmtTime(selected.startAt)}</span>}>
                 <span id="kat-title">Kategori & harga</span>
               </SectionTitle>
               <CategoryLegend categories={categories} availability={selected?.availability} className="grid-cols-1 lg:grid-cols-2" />

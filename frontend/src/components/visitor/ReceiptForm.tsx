@@ -304,7 +304,7 @@ export function ReceiptForm({
         {/* no SUMMABA receipt at hand: a filled sample, or a sample photo for the automatic reading */}
         <div className="rounded-2xl border border-dashed border-ink/25 p-1.5">
           <p className="flex items-center gap-1.5 px-1.5 pt-1 pb-1.5 text-xs font-semibold text-muted-foreground">
-            <FlaskConical className="size-3.5" aria-hidden /> Demo · tanpa struk asli
+            <FlaskConical className="size-3.5" aria-hidden /> Coba tanpa struk asli
           </p>
           <div className="grid grid-cols-2 gap-1.5">
             <button

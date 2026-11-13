@@ -38,7 +38,7 @@ async function capture(name, steps) {
   await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 59, bottom: 34, left: 0, right: 0 } })
   await steps(page)
   // the demo switcher and the toasts are for judges, not for the poster
-  await page.addStyleTag({ content: 'button[aria-label="Menu demo"], [data-sonner-toaster] { display: none !important; }' })
+  await page.addStyleTag({ content: 'button[aria-label="Menu pintasan"], [data-sonner-toaster] { display: none !important; }' })
   await page.waitForTimeout(900)
   const file = path.join(tmp, `${name}.png`)
   await page.screenshot({ path: file })
@@ -143,7 +143,7 @@ const cards = [
         // the sample ticket is picked at random; a seat number reads better on a poster than "Tanpa nomor kursi"
         for (let i = 0; i < 8; i++) {
           const sample = page.getByRole('button', { name: 'Ambil tiket contoh' })
-          if (!(await sample.isVisible())) await page.getByRole('button', { name: /Alat demo/ }).click()
+          if (!(await sample.isVisible())) await page.getByRole('button', { name: /Alat uji/ }).click()
           await sample.click()
           const result = page.locator('section[data-result]')
           await result.waitFor()

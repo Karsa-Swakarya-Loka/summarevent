@@ -429,12 +429,12 @@ function BottomBar({
   }
 
   const resetDemo = async () => {
-    if (apiMode === 'live' && !window.confirm('Versi live dipakai bersama. Reset menghapus pesanan dan check-in dari semua HP. Lanjut?')) return
+    if (apiMode === 'live' && !window.confirm('Data ini dipakai bersama. Reset menghapus pesanan dan check-in dari semua HP. Lanjut?')) return
     setBusy(true)
     try {
       await api.demo.reset()
       // the reset signs everyone out; the sign-in page brings the petugas back to this scanner
-      toast.success('Data demo kembali ke awal. Masuk lagi untuk lanjut scan.')
+      toast.success('Data contoh kembali ke awal. Masuk lagi untuk lanjut scan.')
     } catch (e) {
       setNote(errorMessage(e))
     } finally {
@@ -452,13 +452,13 @@ function BottomBar({
           <Search className="size-5" aria-hidden /> Cari manual
         </Link>
         <button type="button" onClick={toggle} aria-expanded={open} aria-controls="demo-tools" className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-white/12 text-lg font-bold ring-1 ring-white/25">
-          <FlaskConical className="size-5" aria-hidden /> Alat demo
+          <FlaskConical className="size-5" aria-hidden /> Alat uji
           <ChevronDown className={cn('size-5', open && 'rotate-180')} aria-hidden />
         </button>
       </div>
 
       {open && (
-        <section id="demo-tools" aria-label="Alat demo" className="mt-3 rounded-2xl bg-white/5 p-3 ring-1 ring-white/15">
+        <section id="demo-tools" aria-label="Alat uji" className="mt-3 rounded-2xl bg-white/5 p-3 ring-1 ring-white/15">
           <p className="text-sm text-white/80">Tanpa HP kedua: tiket contoh diperiksa lewat alur check-in yang sama dengan kamera.</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button type="button" className={tool} disabled={disabled} onClick={() => void demo('session')}>
@@ -479,7 +479,7 @@ function BottomBar({
           </p>
           {exhausted && (
             <button type="button" className={cn(tool, 'mt-2 w-full')} disabled={busy} onClick={() => void resetDemo()}>
-              <RotateCcw className="size-5 shrink-0" aria-hidden /> Reset data demo
+              <RotateCcw className="size-5 shrink-0" aria-hidden /> Reset data contoh
             </button>
           )}
           {showPaste && <PasteForm onSubmit={onSubmit} pending={pending} compact className="mt-2" />}

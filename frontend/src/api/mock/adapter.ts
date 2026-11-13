@@ -106,7 +106,7 @@ export function ensureMockDb(): Promise<void> {
 
 function snap(): Db {
   const db = readDb()
-  if (!db) throw new ApiError('NOT_READY', 'Data demo sedang disiapkan, coba lagi.')
+  if (!db) throw new ApiError('NOT_READY', 'Data sedang disiapkan, coba lagi.')
   return db
 }
 

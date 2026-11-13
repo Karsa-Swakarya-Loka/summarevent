@@ -5,13 +5,23 @@
       "has": [
         {
           "type": "host",
+          "value": "summarevent.vercel.app"
+        }
+      ],
+      "destination": "https://good-gnu-186.convex.site/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "has": [
+        {
+          "type": "host",
           "value": "summarevent-live.vercel.app"
         }
       ],
       "destination": "https://good-gnu-186.convex.site/api/:path*"
     },
     {
-      "source": "/((?!assets/|brand/|.*\\.(?:js|css|png|svg|ico|webmanifest|txt)$).*)",
+      "source": "/((?!assets/|brand/|tim/|\\.well-known/|.*\\.(?:js|css|png|svg|ico|webmanifest|txt|xml|json|webp|woff2|wasm)$).*)",
       "destination": "/index.html"
     }
   ],

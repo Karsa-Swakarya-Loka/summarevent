@@ -38,7 +38,7 @@ const COPY = {
 
 // what the visitor gets, as on the visitor's onboarding; shown on the green half on a laptop
 const POINTS = ['Pilih kursimu sendiri', 'Bayar, gratis, atau tukar struk', 'Satu QR untuk masuk']
-const NOTE = 'Di demo ini, kode OTP tampil di layar.'
+const NOTE = 'Simulasi: kode OTP tampil di layar, tidak dikirim lewat SMS.'
 
 /** Only paths inside the visitor app, so ?next= cannot send anyone elsewhere. */
 function nextScreen(raw: string | null): string {

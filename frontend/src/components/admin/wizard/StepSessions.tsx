@@ -50,7 +50,7 @@ export function StepSessions({ form, update, err }: StepProps) {
                 id={id('demo')}
                 checked={s.demoLive}
                 onChange={(v) => set(s.key, { demoLive: v })}
-                title="Sesi demo (selalu berlangsung)"
+                title="Sesi uji coba (selalu berlangsung)"
                 description="Untuk uji coba scan kapan saja. Jam sesi otomatis mengikuti waktu sekarang."
               />
             </div>

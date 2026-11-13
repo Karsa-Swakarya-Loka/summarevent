@@ -22,12 +22,18 @@ import { errorMessage, useLive, useNow } from '@/hooks/useLive'
 import { fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
 import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils'
+import { useDocumentTitle } from '@/lib/seo'
 
-/** What a poll can change on screen: a seat status, a quota, or anything else the version counts. */
-const mapKey = (m: SeatMapData) => `${m.version}|${m.sessionSeats.map((s) => s.status[0]).join('')}|${m.quotas.map((q) => q.filled).join(',')}`
+/**
+ * What a poll can change on screen: a seat status, a quota, the waitlist and bonus counts, and the session or
+ * categories (sale times, prices), which the backend's version does not count.
+ */
+const mapKey = (m: SeatMapData) =>
+  `${m.version}|${m.sessionSeats.map((s) => s.status[0]).join('')}|${m.quotas.map((q) => q.filled).join(',')}|${JSON.stringify([m.waitlist, m.bonus, m.session, m.categories])}`
 const sameMap = (a: SeatMapData, b: SeatMapData) => mapKey(a) === mapKey(b)
 
 export default function SeatSelect() {
+  useDocumentTitle('Pilih kursi')
   const { slug = '', sessionId = '' } = useParams()
   // a poll that changes nothing keeps the same data, so the map does not re-render under a finger every 3 s
   const map = useLive(() => loadSeatMap(sessionId), [sessionId], { intervalMs: 3000, initial: cachedSeatMap(sessionId), same: sameMap })

@@ -132,9 +132,9 @@ export default function StaffHome() {
 /** Everything only a judge needs, together: the always-open session, the scan tools, another petugas. */
 function DemoNote({ user, onSwitch }: { user: User | null; onSwitch: (u: User) => void }) {
   return (
-    <section aria-label="Demo" className="rounded-2xl bg-accent px-4 py-3 text-sm text-accent-foreground">
+    <section aria-label="Uji coba" className="rounded-2xl bg-accent px-4 py-3 text-sm text-accent-foreground">
       <p>
-        Demo: <b>Sesi Demo Juri</b> selalu berlangsung, dan di layar scan ada <b>Alat demo</b> untuk mencoba tanpa HP kedua.
+        Uji coba: <b>Sesi Hari Ini</b> selalu berlangsung, dan di layar scan ada <b>Alat uji</b> untuk mencoba tanpa HP kedua.
       </p>
       <StaffSwitcher userId={user?.id ?? null} onSwitch={onSwitch} />
     </section>

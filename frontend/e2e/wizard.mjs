@@ -30,7 +30,8 @@ await signIn(page, 'ADMIN', BASE)
 const t0 = Date.now()
 await page.goto(BASE + '/admin/events/new', { waitUntil: 'networkidle' })
 await page.waitForTimeout(800)
-const TITLE = 'Teater Boneka Si Kabayan'
+// a title of its own per run: on the live version the edge may still list the event of a run before the last reset
+const TITLE = `Teater Boneka Si Kabayan ${Date.now().toString(36).slice(-4).toUpperCase()}`
 await page.getByRole('textbox', { name: 'Judul event' }).fill(TITLE)
 await page.getByRole('textbox', { name: 'Deskripsi' }).fill('Pertunjukan boneka 45 menit tentang Si Kabayan. Cocok untuk anak 3 tahun ke atas.')
 // the poster in the panitia's own colours: navy with an amber accent

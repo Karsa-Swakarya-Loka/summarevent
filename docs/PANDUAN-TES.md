@@ -194,10 +194,13 @@ Jalur paling cepat kalau waktunya mepet: halaman awal → **Masuk sebagai pengun
 
 | Angka | Sumber |
 | --- | --- |
-| 111 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
+| 114 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
 | 61 layar lolos WCAG 2.1 AA, semua target sentuh di HP minimal 44 px | Suite `a11y.mjs` |
-| Lighthouse HP: performa 90–92, aksesibilitas dan best practices 100 | Build produksi, simulasi HP lambat |
-| Muatan awal halaman 274 KB (gzip) | Build produksi |
+| Lighthouse 13.6: 100 untuk Performance, Accessibility, Best Practices, dan SEO di halaman awal, Beranda, masuk panitia, dan masuk petugas, HP dan laptop. Halaman event 98 di HP. CLS 0 di semua halaman | `npx lighthouse@13.6.0 https://summarevent.vercel.app/` (tambah `--preset=desktop` untuk laptop), 13 November 2026 |
+| Mozilla HTTP Observatory A+ (135/100, 12 dari 12 tes) | [developer.mozilla.org/observatory](https://developer.mozilla.org/en-US/observatory/analyze?host=summarevent.vercel.app) |
+| OWASP ZAP baseline: 0 FAIL, 0 risiko tinggi, 62 pemeriksaan lolos | `docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t https://summarevent.vercel.app` |
+| `npm audit`: 0 kerentanan | `npm audit` di `frontend/` dan `backend/` |
+| Muatan awal: halaman awal 277 KB, Beranda 347 KB (terkompresi, termasuk font dan gambar) | Lighthouse, 13 November 2026 |
 
 ### Untuk deck dan PRD
 

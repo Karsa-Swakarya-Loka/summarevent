@@ -188,7 +188,7 @@ Perilaku baru disertai test: aturan di unit test, alur pengguna di end-to-end. T
 - **Foto.** Foto struk dan foto profil digambar ulang di browser sebelum dikirim, jadi data lokasi di dalam foto ikut terbuang.
 - **Data pengunjung di sisi panitia.** Nomor HP di daftar pesanan disamarkan. Di CSV, isi yang diawali `=`, `+`, `-`, atau `@` diberi tanda petik di depannya supaya tidak dijalankan sebagai rumus di Excel atau Sheets.
 - **HP petugas.** Data untuk scan offline menyimpan sidik SHA-256 tiap QR, bukan QR-nya, dan dihapus saat petugas keluar.
-- **Header keamanan.** HTTPS wajib (HSTS dengan preload), Content-Security-Policy membatasi skrip ke situs ini sendiri, halaman tidak bisa dibingkai situs lain, jenis berkas tidak ditebak browser, dan hanya kamera (untuk scanner petugas) yang boleh dipakai. Mozilla HTTP Observatory memberi nilai A+ (125/100, 12 dari 12 tes lolos).
+- **Header keamanan.** HTTPS wajib (HSTS dengan preload), Content-Security-Policy membatasi skrip ke situs ini sendiri, halaman tidak bisa dibingkai situs lain, jenis berkas tidak ditebak browser, dan hanya kamera (untuk scanner petugas) yang boleh dipakai. Mozilla HTTP Observatory memberi nilai A+ (135/100, 12 dari 12 tes lolos), dan pemindaian OWASP ZAP baseline tidak menemukan temuan gagal atau berisiko tinggi.
 - **Dependency.** `npm audit` menemukan 0 kerentanan di frontend dan backend.
 - **Tanpa pelacak.** Tidak ada cookie pelacak atau analitik pihak ketiga.
 

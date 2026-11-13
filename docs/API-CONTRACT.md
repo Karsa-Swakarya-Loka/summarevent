@@ -47,7 +47,7 @@ login, bukan error), lalu klien mengirim ulang dengan `name`.
 
 | Method | Path | Fungsi |
 | --- | --- | --- |
-| GET | `/events` | `EventSummary[]` (event PUBLISHED + venue + kategori + sesi beserta ketersediaan per kategori) |
+| GET | `/events` | `EventSummary[]` (event PUBLISHED + venue + kategori + sesi beserta ketersediaan per kategori). Jawaban `/events` dan `/events/:slug` sama untuk semua pemanggil, jadi dikirim dengan `Cache-Control: public, s-maxage=5, stale-while-revalidate=30` dan boleh disimpan edge Vercel; ketersediaan di sana bisa telat sampai ±35 detik, sedangkan denah (`/sessions/:id/seats`) selalu baru. |
 | GET | `/events/:slug` | `EventDetail` (+ daftar tenant) |
 | GET | `/sessions/:id/seats?since=:version` | `SeatMapData`. Hold kedaluwarsa dilaporkan `AVAILABLE` (lazy expiry). `orderId` hanya diisi untuk hold milik peminta. Termasuk `waitlist: [{ categoryId, waiting }]` dan `bonus: [{ categoryId, left }]`. Frontend polling tiap 3 detik. |
 | GET | `/sessions/:id/suggest?category_id=&qty=` | `string[]` seatId — saran kursi berdampingan terbaik (tanpa menahan) |

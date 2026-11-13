@@ -30,6 +30,14 @@
       "source": "/(.*)",
       "headers": [
         {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'sha256-AEbz8CZSKGAUZolZ7+zemwB1Kv+oAp7h/W42fP12HYI=' 'sha256-ZZcksN1kP6UwzOqiMCfdwiMxrnk7k6DrJ6m+Ik3w044=' 'sha256-GCtqlahTBkJnGrDzpUEKtqJCSnh5XQWv8ECRCy64QcU=' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://good-gnu-186.convex.site https://good-gnu-186.convex.cloud https://summarevent-live.vercel.app; font-src 'self' data:; connect-src 'self' https://good-gnu-186.convex.site https://good-gnu-186.convex.cloud https://cdn.jsdelivr.net https://tessdata.projectnaptha.com https://summarevent-live.vercel.app; worker-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
         },
@@ -43,11 +51,28 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(self), microphone=(), geolocation=()"
+          "value": "camera=(self), microphone=(), geolocation=(), payment=(), usb=()"
         },
         {
-          "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "credentialless"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://summarevent.vercel.app"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },

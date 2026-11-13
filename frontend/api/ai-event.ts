@@ -210,9 +210,6 @@ export function matchVenue(asked: string, names: string[]): { exact?: string; ne
   const exact = names.filter((name) => letters(name) === n || n.includes(letters(name)) || own.get(name)!.some((w) => typed.includes(w)))
   if (exact.length === 1) return { exact: exact[0], near: [] }
   if (exact.length > 1) return { near: exact }
-  // a word several venues share ("Atrium"): every venue with it
-  const sharing = names.filter((name) => wordsOf(name).some((w) => typed.includes(letters(w))))
-  if (sharing.length) return { near: sharing }
   let best = Infinity
   let near: string[] = []
   for (const name of names) {
@@ -223,7 +220,41 @@ export function matchVenue(asked: string, names: string[]): { exact?: string; ne
     if (score < best) [best, near] = [score, [name]]
     else if (score === best && score < Infinity) near.push(name)
   }
-  return { near: best < Infinity ? near : [] }
+  if (best < Infinity) return { near }
+  // only a word several venues share ("Atrium"): every venue with it
+  return { near: names.filter((name) => wordsOf(name).some((w) => typed.includes(letters(w)))) }
+}
+
+/**
+ * The model's reply without what it said about the venue, which the app now asks itself: sentences and numbered items
+ * that name a venue, the place typed, or "venue" go, and the numbered list is counted again.
+ */
+export function withoutVenueTalk(reply: string, names: string[], typed?: string): string {
+  const about = (t: string) => /\bvenue\b|tempat acara/i.test(t) || names.some((n) => t.includes(n)) || (!!typed && letters(t).includes(letters(typed)))
+  let n = 0
+  const lines = reply
+    .split('\n')
+    .map((line) =>
+      line
+        // numbered items written on one line: "… 1. Pilih venue … 2. Tanggal …"
+        .split(/\s(?=\d+\.\s)/)
+        .map((item) =>
+          item
+            .split(/(?<=[.!?:])\s+/)
+            .filter((sentence) => !about(sentence))
+            .join(' ')
+            .replace(/^Selain itu,\s*/i, '')
+            .trim(),
+        )
+        .filter((item) => item && !/^\d+\.$/.test(item))
+        .map((item) => (/^\d+\.\s/.test(item) ? item.replace(/^\d+\./, `${++n}.`) : item))
+        .join(' '),
+    )
+  return lines
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .replace(/^\p{Ll}/u, (c) => c.toUpperCase())
 }
 
 /** The word the panitia typed that is closest to a venue's own words ("Cibadek" for Atrium Cibadak). */
@@ -385,9 +416,8 @@ export async function handleAiEvent(request: Request, env: Env, fetchImpl: typeo
     }
     if (venue) {
       reply = reply.replace(/\s*Form siap diisi\.?/i, '').trim()
-      // the model may already have asked the same thing
-      const asked = /maksud/i.test(reply) && venue.suggest.every((s) => reply.includes(s))
-      if (!asked) reply = [venue.ask, reply].filter(Boolean).join('\n\n')
+      // the app asks about the venue itself; whatever the model said about it would only repeat or contradict that
+      reply = [venue.ask, withoutVenueTalk(reply, req.venues.map((v) => parseVenue(v).name), typeof out.venueAsked === 'string' ? out.venueAsked : undefined)].filter(Boolean).join('\n\n')
     }
     return json(200, { reply: reply.slice(0, MAX_REPLY), fields, ...(venue ? { suggest: venue.suggest } : {}) })
   } catch (e) {

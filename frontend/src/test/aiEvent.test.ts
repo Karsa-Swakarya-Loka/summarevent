@@ -1,6 +1,6 @@
 /** AD-01 with AI: the event assistant's server function and how its answer fills the wizard. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { checkVenue, editDistance, handleAiEvent, inventedAudience, matchVenue } from '../../api/ai-event'
+import { checkVenue, editDistance, handleAiEvent, inventedAudience, matchVenue, withoutVenueTalk } from '../../api/ai-event'
 import { aiKnown, applyAiFields, changedAiFields, mergeAiFields, missingAiFields, sanitizeAiFields } from '@/components/admin/wizard/aiFill'
 import { emptyForm, validate } from '@/components/admin/wizard/model'
 import type { Venue } from '@/domain/types'
@@ -166,6 +166,8 @@ describe('venue check: "Maksudnya …?"', () => {
     expect(matchVenue('Cibadak', names)).toEqual({ exact: 'Atrium Cibadak', near: [] })
     expect(matchVenue('atrium cibadak lantai 1', names)).toEqual({ exact: 'Atrium Cibadak', near: [] })
     expect(matchVenue('Cibadek', names)).toEqual({ near: ['Atrium Cibadak'] })
+    // the typo wins over "Atrium", which three venues share
+    expect(matchVenue('Atrium Cibadek', names)).toEqual({ near: ['Atrium Cibadak'] })
     expect(matchVenue('Ciunk', names)).toEqual({ near: ['Atrium Ciunik'] })
     expect(matchVenue('Sawarga Cortyard', names)).toEqual({ exact: 'Sawarga Courtyard', near: [] })
     expect(matchVenue('Atrium', names)).toEqual({ near: ['Atrium Ciunik', 'Atrium Cileutik', 'Atrium Cibadak'] })
@@ -194,6 +196,20 @@ describe('venue check: "Maksudnya …?"', () => {
     const fields: Record<string, unknown> = { venueName: 'Atrium Ciunik' }
     expect(checkVenue(fields, undefined, names, user('Workshop melukis di Ciunk'), {})).toEqual({ ask: 'Venue "Ciunk" tidak ada di daftar SUMMABA. Maksudnya Atrium Ciunik?', suggest: ['Atrium Ciunik'] })
     expect(fields).toEqual({})
+  })
+
+  it('takes out what the model itself said about the venue, and counts the list again', () => {
+    // real answers from Gemini, 13 Nov 2026
+    expect(
+      withoutVenueTalk(
+        'Maaf, venue Atrium Cibadek tidak ada di daftar kami. Pilihan venue yang tersedia adalah Atrium Ciunik, Sawarga Courtyard, Atrium Cileutik, dan Atrium Cibadak. Selain itu, mohon lengkapi informasi berikut:\n1. Pilih mode kursi: bernomor atau bebas?\n2. Tanggal dan jam acara.',
+        names,
+        'Atrium Cibadek',
+      ),
+    ).toBe('Mohon lengkapi informasi berikut:\n1. Pilih mode kursi: bernomor atau bebas?\n2. Tanggal dan jam acara.')
+    expect(
+      withoutVenueTalk('Halo! Untuk melanjutkan, mohon lengkapi: 1. Pilih venue yang tersedia: Atrium Ciunik, Sawarga Courtyard. 2. Pilih mode kursi: bernomor atau bebas. 3. Tanggal dan jam acara.', names, 'faris'),
+    ).toBe('Halo! Untuk melanjutkan, mohon lengkapi: 1. Pilih mode kursi: bernomor atau bebas. 2. Tanggal dan jam acara.')
   })
 
   it('knows a capacity is not a number of visitors, unless the panitia said it', () => {

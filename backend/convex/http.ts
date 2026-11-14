@@ -302,6 +302,18 @@ const LIMITS: Record<string, number> = {
 const LIMIT_WINDOW_MS = 10 * 60_000
 
 /**
+ * RATE_LIMIT_SCALE multiplies every limit above, for a day when many people share one address (a booth on mall Wi-Fi):
+ * `npx convex env set RATE_LIMIT_SCALE 5`, and `env remove` afterwards. Changing it needs no deploy. Unset, or not a
+ * number from 1 to 20, means 1.
+ */
+function limitFor(op: string): number | undefined {
+  const base = LIMITS[op]
+  if (base == null) return undefined
+  const scale = Number(process.env.RATE_LIMIT_SCALE)
+  return Number.isFinite(scale) && scale >= 1 && scale <= 20 ? Math.round(base * scale) : base
+}
+
+/**
  * The caller's address; none means the check is skipped. Through the live host's /api rewrite every request reaches
  * Convex from a Vercel server, so x-forwarded-for names Vercel and all visitors would share one limit: Vercel puts the
  * visitor in x-vercel-forwarded-for (checked on summarevent-live, 2026-11-08). A direct caller could set that header
@@ -324,7 +336,7 @@ const handle = httpAction(async (ctx, req) => {
   const { route, params } = found
   // demo routes (and the demo sign-in) exist only on a deployment that turns the demo on (lib/demo.ts)
   if ((route.pattern.startsWith('/demo/') || route.pattern === '/auth/demo-login') && !demoEnabled()) return errorResponse(req, 'FORBIDDEN', 'Fitur demo dimatikan di server ini.')
-  const limit = LIMITS[route.op]
+  const limit = limitFor(route.op)
   const ip = limit ? clientIp(req) : null
   if (limit && ip && !(await ctx.runMutation(internal.rpc.rateHit, { key: `${route.op}:${ip}`, limit, windowMs: LIMIT_WINDOW_MS }))) {
     return errorResponse(req, 'RATE_LIMIT', 'Terlalu banyak permintaan dari jaringan ini. Coba lagi beberapa menit lagi.')

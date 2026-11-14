@@ -14,7 +14,7 @@ Cara menguji Summarevent sesuai peran masing-masing: **Shelvia** untuk user test
 | [summarevent-live.vercel.app](https://summarevent-live.vercel.app) | Sama dengan link utama (alamat lama, tetap jalan). | Uji terima otomatis |
 | [summarevent-cadangan.vercel.app](https://summarevent-cadangan.vercel.app) | Per browser. Tiap HP dan laptop punya data contohnya sendiri. | Cadangan kalau server atau Wi-Fi bermasalah, tes sendiri tanpa mengganggu data bersama |
 
-Halaman awal punya satu pintu masuk: tiap poster peran berisi **Masuk sebagai …** (langsung ke halaman masuk) dan **Daftar sebagai …** (pengenalan dulu, lalu daftar). Badge di pojok kiri atas hanya penanda: **live** di link utama, **demo** di versi cadangan.
+Halaman awal punya satu pintu masuk: tiap poster peran berisi **Masuk sebagai …** (langsung ke halaman masuk) dan **Daftar sebagai …** (pengenalan dulu, lalu daftar). Mengetuk badan poster hanya membukanya (posternya membesar); yang membawa masuk tetap kedua tombol itu. Badge di pojok kiri atas hanya penanda: **live** di link utama, **demo** di versi cadangan.
 
 ### Akun
 
@@ -127,7 +127,7 @@ git clone https://github.com/Karsa-Swakarya-Loka/summarevent.git
 cd summarevent/frontend
 npm install
 npm run typecheck && npm run lint && npm test                  # tipe, lint, unit test
-BASE=https://summarevent-cadangan.vercel.app npm run e2e        # 9 suite end-to-end + aksesibilitas di versi cadangan
+BASE=https://summarevent-cadangan.vercel.app npm run e2e        # 9 suite end-to-end, termasuk aksesibilitas, di versi cadangan
 cd ../backend && npm install && npm test && npm run check-domain # unit test backend, aturan sama dengan frontend
 ```
 
@@ -143,8 +143,11 @@ BASE=https://summarevent-live.vercel.app API_URL=https://good-gnu-186.convex.sit
 
 | Area | Langkah | Hasil yang benar |
 | --- | --- | --- |
+| Poster halaman awal | Ketuk badan poster (bukan tombolnya), lalu ketuk lagi. Buka lagi, lalu tutup dengan ketuk di luar poster, **Esc** di laptop, atau geser ke samping. Buka sekali lagi dan tekan panah di bawah kipas. | Poster membesar dan tetap utuh, huruf judulnya naik satu per satu, poster di sampingnya menyingkir di bawah lapisan hijau. Ketuk lagi, ketuk di luar, Esc, dan geser menutupnya. Panah memindahkan poster yang terbuka ke poster berikutnya. Tulisan summarevent di bawah selebar panel dan terpotong tepi bawah di laptop, utuh di HP. |
+| Hitung mundur Sorotan | Beranda (`/app`) → kartu di **Sorotan** | Tiap kartu menulis **Mulai dalam** atau **Berakhir dalam** dengan ubin HARI, JAM, MNT, DTK yang detiknya berjalan. Sangkuriang (**Sesi Hari Ini** selalu berlangsung) menulis **Berakhir dalam** dan chip **Berlangsung**. |
 | Rebutan kursi | Versi live, dua browser, kursi yang sama, tekan **Pesan** hampir bersamaan | Hanya satu yang berhasil. Yang lain melihat "baru saja dipilih orang lain" dan saran kursi terdekat. |
 | Waktu tahan | Di checkout, **Simulasi → Waktu habis** | Tertulis **Waktu tahan habis**, kursinya kembali **Tersedia** di denah |
+| Hitung mundur checkout | **Pesan 2 kursi**, lihat app bar checkout. Tinggalkan sampai sisa waktunya di bawah 2 menit. Lalu buka pesanan yang belum selesai dari Beranda, Pass Saya, dan status pesanannya. | App bar menulis **Kursi ditahan** dan mm:dd dengan cincin yang menyusut (kategori tanpa nomor kursi: **Tempat ditahan**), lalu merah di 2 menit terakhir. Kartu pesanan menulis **Bayar dalam**, **Konfirmasi dalam**, **Kirim dalam**, atau **Ditahan**; status pesanan menampilkan ubin **Kursi … ditahan selama**. Kata "Sisa" tidak pernah dipakai untuk waktu. |
 | Pembayaran | **Bayar gagal**, lalu bayar lagi, lalu ketuk **Bayar** dua kali cepat | Gagal tidak menerbitkan tiket. Ketukan ganda tetap satu pembayaran. |
 | Tukar struk | Struk di bawah Rp300.000, struk Bazaar Atrium, tanggal kemarin, jam setelah 22.00, nomor struk yang sama dua kali, struk keempat | Tiap kasus ditolak dengan alasannya, dan **Kirim struk** tidak aktif |
 | Gratis dan kuota | Festival melebihi sisa tempat | Diminta mengurangi jumlah orang |
@@ -156,6 +159,7 @@ BASE=https://summarevent-live.vercel.app API_URL=https://good-gnu-186.convex.sit
 | Panitia | Tolak atau minta revisi struk tanpa alasan, **Tandai lunas** | Alasan wajib. Tandai lunas meminta konfirmasi dulu. |
 | Cek silang AI | Pengunjung: **Isi struk contoh**, lalu ubah **Nominal** jadi Rp900.000 dan **Kirim struk**. Panitia: **Verifikasi struk** → buka struk itu → **Bandingkan foto dengan isian** | Nominal ditandai **Beda**, bagian lain **Sama**. Pertama kali butuh internet untuk mengunduh model baca. |
 | Isi cepat dengan AI | Panitia → **Buat event**. Di kartu **Isi cepat dengan AI** tulis "Mau bikin Bandung Kids Fest" saja, **Kirim**, lalu jawab pertanyaannya. Coba juga satu pesan lengkap: "Bandung Kids Fest di Atrium Cibadak, kursi bernomor, Sabtu 28 November jam 10–12 dan 15–17, VIP 100 ribu, Reguler 50 ribu, Tukar Struk min belanja 300 ribu, sekitar 200 orang", lalu koreksi "ganti venue ke Atrium Ciunik" | AI menanyakan semua yang kurang sekaligus dan menerima koreksi. Setelah lengkap, Info, Kategori, Denah, dan Sesi terisi dan event bisa langsung dipublikasikan. Tanpa `GEMINI_API_KEY` di Vercel muncul "Asisten AI belum dipasang". |
+| Jadwal sesi | Panitia → **Buat event** → langkah **Sesi**: isi **Tanggal**, **Jam mulai**, dan **Jam selesai**. Lalu di langkah **Kategori** ubah **Penjualan dibuka** jadi setelah sesi itu, dan kembali ke **Sesi**. | Di bawah tiap sesi ada **Jadwal sesi ini (WIB)**: **Tiket dibuka** dengan nama kategori dan jam buka sampai tutup, **Check-in di pintu**, dan **Sesi berlangsung** dengan durasinya. Penjualan yang dibuka setelah tutup ditandai merah: "Tutup sebelum dibuka." **Sesi uji coba** yang dinyalakan menampilkan catatan bahwa jamnya ikut waktu sekarang. |
 | CSV | Di status pesanan, **Ubah nama peserta** jadi `=1+1`. Lalu panitia **Unduh data peserta** dan buka di Excel atau Sheets. | Tampil sebagai teks berawalan tanda petik, bukan angka 2 |
 | Akses | Buka `/admin` dan `/staff` tanpa masuk. Masuk dengan sandi salah. Coba lupa sandi untuk email yang tidak ada. | Diarahkan ke halaman masuk. Pesan salahnya sama untuk email dan sandi. Lupa sandi tidak memberi tahu email itu terdaftar atau tidak. |
 | Petugas nonaktif | Panitia → Petugas → **Nonaktifkan**, lalu petugas itu masuk | Ditolak |
@@ -184,7 +188,7 @@ Jalur paling cepat kalau waktunya mepet: halaman awal → **Masuk sebagai pengun
 
 | Menit | Yang ditunjukkan | Yang ditekankan |
 | --- | --- | --- |
-| 0–1 | Halaman awal → **Daftar sebagai pengunjung** → **Lewati** pengenalan → daftar dengan nama dan nomor HP (OTP simulasi, **Isi otomatis**) → Pentas Musikal Sangkuriang sesi 16.00 → **Reguler** → **Pilihkan 2 kursi berdampingan** → **Pesan 2 kursi** | Kursi dipilih langsung dari denah dan ditahan 10 menit |
+| 0–1 | Halaman awal → **Daftar sebagai pengunjung** → **Lewati** pengenalan → daftar dengan nama dan nomor HP (OTP simulasi, **Isi otomatis**) → Pentas Musikal Sangkuriang sesi 16.00 → **Reguler** → **Pilihkan 2 kursi berdampingan** → **Pesan 2 kursi** | Kursi dipilih langsung dari denah dan ditahan 10 menit, terlihat dari **Kursi ditahan** di app bar |
 | 1–2 | **Bayar Rp100.000** (simulasi) → **Lihat e-ticket** | Satu QR bertanda tangan untuk tiap kursi, tersimpan di Pass Saya |
 | 2–3 | Kembali ke denah → **Uji rebutan kursi** → saran kursi terdekat, lalu **Kenapa satu kursi tidak bisa terjual dua kali?** | Pencegahan pesanan ganda: kursi ditahan sekaligus, terlihat oleh semua, dicek ulang saat konfirmasi |
 | 3–4 | Kategori **Tukar Struk** → **Isi struk contoh** → **Kirim struk** → **Pintasan → Masuk sebagai Panitia** → **Verifikasi struk** → **Bandingkan foto dengan isian** → **Setujui** | Belanja di tenant SUMMABA bisa jadi tiket. AI membaca foto struk dan mencocokkannya dengan isian, lalu panitia memutuskan |
@@ -196,7 +200,8 @@ Jalur paling cepat kalau waktunya mepet: halaman awal → **Masuk sebagai pengun
 | --- | --- |
 | 122 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
 | 61 layar lolos WCAG 2.1 AA, semua target sentuh di HP minimal 44 px | Suite `a11y.mjs` |
-| Lighthouse 13.6: 100 untuk Performance, Accessibility, Best Practices, dan SEO di halaman awal, Beranda, masuk panitia, dan masuk petugas, HP dan laptop. Halaman event 98 di HP. CLS 0 di semua halaman | `npx lighthouse@13.6.0 https://summarevent.vercel.app/` (tambah `--preset=desktop` untuk laptop), 13 November 2026 |
+| Lighthouse 13.6, 14 November 2026 setelah deploy terakhir: Beranda 100 untuk Performance, Accessibility, Best Practices, dan SEO di HP dan laptop. Halaman awal 100 di laptop, 98–100 di HP (berbeda tiap pengukuran) | `npx lighthouse@13.6.0 https://summarevent.vercel.app/` dan `…/app` untuk Beranda (tambah `--preset=desktop` untuk laptop) |
+| Lighthouse 13.6, 13 November 2026: 100 di keempat kategori untuk masuk panitia dan masuk petugas, HP dan laptop. Halaman event 98 di HP. CLS 0 di semua halaman | Perintah yang sama |
 | Mozilla HTTP Observatory A+ (135/100, 12 dari 12 tes) | [developer.mozilla.org/observatory](https://developer.mozilla.org/en-US/observatory/analyze?host=summarevent.vercel.app) |
 | OWASP ZAP baseline: 0 FAIL, 0 risiko tinggi, 62 pemeriksaan lolos | `docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t https://summarevent.vercel.app` |
 | `npm audit`: 0 kerentanan | `npm audit` di `frontend/` dan `backend/` |

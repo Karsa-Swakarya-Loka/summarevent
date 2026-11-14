@@ -43,15 +43,16 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
 - **Denah yang terbaca tanpa menebak.** Warna menandai kategori, bentuk menandai status: tersedia, pilihanmu, sedang dipesan, terjual, tidak dijual, prioritas difabel. Memilih kategori membesarkan denah sampai tiap kursi jadi target sentuh 44 px, dan **Pilihkan N kursi berdampingan** memilih kursi terbaik dalam sekali ketuk.
 - **Satu kursi, satu pemesan.** Semua kursi pesanan ditahan sekaligus atau tidak sama sekali, dengan hitung mundur 10 menit (30 menit untuk tukar struk). Yang kalah rebutan langsung mendapat saran kursi terdekat, bukan pesan error.
 - **Tiga cara masuk di satu denah.** Bayar lewat QRIS atau Virtual Account, daftar gratis, atau tukar struk belanja di tenant SUMMABA dengan cek aturan otomatis dan baca struk dari foto (OCR di browser).
-- **Checkout dua langkah.** Masuk dengan nomor HP, lalu bayar, kirim struk, atau konfirmasi gratis. Slip pesanan di atas, hitung mundur di app bar, dan tombol utama menempel di bawah. Tukar struk menampilkan meteran menuju belanja minimal dan cek syarat langsung.
+- **Checkout dua langkah.** Masuk dengan nomor HP, lalu bayar, kirim struk, atau konfirmasi gratis. Slip pesanan di atas, hitung mundur **Kursi ditahan** dengan cincin yang menyusut di app bar (merah di 2 menit terakhir), dan tombol utama menempel di bawah. Tukar struk menampilkan meteran menuju belanja minimal dan cek syarat langsung.
 - **E-ticket QR.** Tiap kursi dapat satu QR bertanda tangan, plus konfirmasi dan pengingat H-1 lewat WhatsApp dan email. Pass Saya berisi tiket hitam kecil, satu per kursi. Mengetuknya membuka tiket di layarnya sendiri, lengkap dengan talon (sobekan):
   - Tiket baru menyusun QR aslinya seperti sedang dibaca scanner, lalu tervalidasi garis hijau.
   - Setelah dipindai petugas, talonnya robek dan jatuh sendiri, seperti disobek di pintu masuk. Sebelum itu talonnya diam, jadi tiket yang masih berlaku tidak bisa tersobek tanpa sengaja.
   - Tiket bisa dibatalkan dengan refund sampai 24 jam sebelum sesi, dan nama peserta bisa diganti.
-- **Panitia.** Dashboard dengan sidebar mengambang, pencarian ⌘K, dan pemilih event berbentuk pohon (event dan sesinya; sesi membuka peta kursi live): sesi dan kehadirannya, pendapatan dan tiket per hari, check-in per jam dengan sel yang bisa disorot, angka ringkas, dan pesanan terbaru dengan filter, halaman, dan aksi Tandai lunas. Lalu wizard event (info, gambar poster milik panitia atau tema poster dengan warna pilihannya, kategori, denah dari template, sesi, publish), peta kursi live, pesanan dan peserta, verifikasi struk, unduh CSV, akun petugas, serta link dan poster QR untuk dibagikan.
-- **Petugas.** Hasil scan Valid, Sudah digunakan, atau Tidak valid yang terbaca dari 1 meter, dengan bunyi dan getar berbeda. Ada cari tiket manual, check-in rombongan, dan verifikasi struk kertas di desk.
+- **Panitia.** Dashboard dengan sidebar mengambang, pencarian ⌘K, dan pemilih event berbentuk pohon (event dan sesinya; sesi membuka peta kursi live): sesi dan kehadirannya, pendapatan dan tiket per hari, check-in per jam dengan sel yang bisa disorot, angka ringkas, dan pesanan terbaru dengan filter, halaman, dan aksi Tandai lunas. Lalu wizard event (info, gambar poster milik panitia atau tema poster dengan warna pilihannya, kategori, denah dari template, sesi dengan jadwal jam WIB nyata untuk penjualan, check-in, dan durasi, lalu publikasi), peta kursi live, pesanan dan peserta, verifikasi struk, unduh CSV, akun petugas, serta link dan poster QR untuk dibagikan.
+- **Petugas.** Hasil scan Valid (hijau), Sudah digunakan atau Tidak valid (merah), dan Sesi lain atau Di luar jam check-in (kuning) yang terbaca dari 1 meter, dengan bunyi dan getar berbeda. Ada cari tiket manual, check-in rombongan, dan verifikasi struk kertas di desk.
 - **Daftar tunggu dan bonus.** Kategori yang habis menawarkan daftar tunggu dengan kabar otomatis, dan N pembeli pertama bisa mendapat bonus.
 - **Sambutan yang bergerak, per role.** Splash menghidupkan logo Lorong: dua bloknya mengunci, lalu satu titik menyusuri lorong S. Splash muncul saat web dibuka, lalu sekali per sesi untuk tiap role yang dimasuki (Pengunjung, Panitia, Petugas) dengan nama rolenya, dan bisa diketuk untuk dilewati.
+  - Halaman awal berisi kipas poster, satu per role. Mengetuk poster membukanya: posternya membesar, huruf judulnya naik, dan poster di sampingnya menyingkir. Ketuk lagi, ketuk di luar, Esc, atau geser menutupnya.
   - Tiap role punya pengenalan tiga langkah, sekali per HP.
   - Pengunjung **Masuk** atau **Daftar** dengan OTP simulasi yang bisa diisi otomatis.
   - Panitia dan petugas masuk dengan email dan kata sandi, lengkap dengan lupa kata sandi dan link reset sekali pakai (link-nya juga tampil di layar sebagai simulasi; akun contohnya bisa diisi otomatis). Petugas baru mendapat undangan ke emailnya untuk membuat kata sandi.
@@ -61,16 +62,16 @@ Hari ini, masuk ke event SUMMABA bisa lewat banyak jalan: tiket di platform luar
   - App bar menempel di atas dengan judul besar yang mengecil saat di-scroll.
   - Dialog naik dari bawah sebagai sheet yang bisa ditarik turun.
   - Tab bar hanya ada di empat tab utama, dan tombol utama selalu dalam jangkauan jempol.
-  - Beranda dibuka dengan panggung SUMMABA bergambar, kartu status, pintasan, dan sorotan yang bisa digeser. Akun berbentuk profil dengan baris pengaturan, dan foto, nama, serta email bisa diubah di Profil.
+  - Beranda dibuka dengan panggung SUMMABA bergambar, kartu status, pintasan, dan sorotan yang bisa digeser, masing-masing dengan hitung mundur live ke sesi berikutnya, atau ke akhir sesi yang sedang berlangsung. Akun berbentuk profil dengan baris pengaturan, dan foto, nama, serta email bisa diubah di Profil.
   - Pesan tampil seperti aplikasi chat: daftar pesan, lalu tiap WhatsApp atau email terbuka di layarnya sendiri.
   - Di Android, mengetuk kursi memberi getaran halus.
 - **PWA.** Bisa dipasang di layar utama, dengan notifikasi perangkat selama app terbuka.
 
 ## Coba dalam dua menit
 
-1. Buka [summarevent.vercel.app](https://summarevent.vercel.app), pilih **Pengunjung**, ikuti atau **Lewati** pengenalan tiga langkah, lalu pilih *Pentas Musikal Keluarga "Sangkuriang"* sesi 16.00.
-2. Pilih **Reguler**, ketuk **Pilihkan 2 kursi berdampingan**, lalu **Pesan 2 kursi**. Kursinya ditahan 10 menit.
-3. Masuk dengan nomor HP apa saja (kode OTP tampil di layar), lalu tekan **Bayar Rp100.000** (simulasi). Ketuk **Lihat e-ticket**.
+1. Buka [summarevent.vercel.app](https://summarevent.vercel.app), tekan **Daftar sebagai pengunjung**, ikuti atau **Lewati** pengenalan tiga langkah, lalu daftar dengan nama dan nomor HP apa saja (kode OTP tampil di layar, tekan **Isi otomatis**). Pilih *Pentas Musikal Keluarga "Sangkuriang"* sesi 16.00.
+2. Pilih **Reguler**, ketuk **Pilihkan 2 kursi berdampingan**, lalu **Pesan 2 kursi**. Kursinya ditahan 10 menit, dan hitung mundurnya tampil di app bar.
+3. Tekan **Bayar Rp100.000** (simulasi), lalu ketuk **Lihat e-ticket**.
 4. Kembali ke denah dan tekan **Uji rebutan kursi**: pembeli simulasi menang sepersekian detik lebih dulu, dan kamu ditawari kursi terdekat.
 5. Lewat tombol **Pintasan**, pindah langsung ke **Panitia** (verifikasi struk, peta kursi live, unduh CSV) dan **Petugas** (*Sesi Hari Ini* → **Mulai scan** → **Alat uji** → **Ambil tiket contoh**). Dari halaman awal, keduanya melewati pengenalan dan login email: tekan **Isi otomatis** untuk akun contohnya.
 

@@ -148,6 +148,7 @@ BASE=https://summarevent-live.vercel.app API_URL=https://good-gnu-186.convex.sit
 | Rebutan kursi | Versi live, dua browser, kursi yang sama, tekan **Pesan** hampir bersamaan | Hanya satu yang berhasil. Yang lain melihat "baru saja dipilih orang lain" dan saran kursi terdekat. |
 | Waktu tahan | Di checkout, **Simulasi → Waktu habis** | Tertulis **Waktu tahan habis**, kursinya kembali **Tersedia** di denah |
 | Hitung mundur checkout | **Pesan 2 kursi**, lihat app bar checkout. Tinggalkan sampai sisa waktunya di bawah 2 menit. Lalu buka pesanan yang belum selesai dari Beranda, Pass Saya, dan status pesanannya. | App bar menulis **Kursi ditahan** dan mm:dd dengan cincin yang menyusut (kategori tanpa nomor kursi: **Tempat ditahan**), lalu merah di 2 menit terakhir. Kartu pesanan menulis **Bayar dalam**, **Konfirmasi dalam**, **Kirim dalam**, atau **Ditahan**; status pesanan menampilkan ubin **Kursi … ditahan selama**. Kata "Sisa" tidak pernah dipakai untuk waktu. |
+| Pelacak pesanan dan jatah tiket | Di denah pilih **Reguler**, ketuk kursi satu per satu sampai 4. Pesan dan bayar, lalu buka status pesanannya. | Di bawah denah ada 4 segmen yang terisi sesuai kursi yang diketuk, di samping teks **… dari maks. 4 tiket per akun di sesi ini**. Status pesanan menampilkan **Kursi ditahan → Dibayar → E-ticket terbit → Check-in**, dengan langkah yang sudah lewat bertanda centang dan Check-in sebagai langkah berikutnya. |
 | Pembayaran | **Bayar gagal**, lalu bayar lagi, lalu ketuk **Bayar** dua kali cepat | Gagal tidak menerbitkan tiket. Ketukan ganda tetap satu pembayaran. |
 | Tukar struk | Struk di bawah Rp300.000, struk Bazaar Atrium, tanggal kemarin, jam setelah 22.00, nomor struk yang sama dua kali, struk keempat | Tiap kasus ditolak dengan alasannya, dan **Kirim struk** tidak aktif |
 | Gratis dan kuota | Festival melebihi sisa tempat | Diminta mengurangi jumlah orang |
@@ -198,7 +199,7 @@ Jalur paling cepat kalau waktunya mepet: halaman awal → **Masuk sebagai pengun
 
 | Angka | Sumber |
 | --- | --- |
-| 122 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
+| 125 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
 | 61 layar lolos WCAG 2.1 AA, semua target sentuh di HP minimal 44 px | Suite `a11y.mjs` |
 | Lighthouse 13.6, 14 November 2026 setelah deploy terakhir: Beranda 100 untuk Performance, Accessibility, Best Practices, dan SEO di HP dan laptop. Halaman awal 100 di laptop, 98–100 di HP (berbeda tiap pengukuran) | `npx lighthouse@13.6.0 https://summarevent.vercel.app/` dan `…/app` untuk Beranda (tambah `--preset=desktop` untuk laptop) |
 | Lighthouse 13.6, 13 November 2026: 100 di keempat kategori untuk masuk panitia dan masuk petugas, HP dan laptop. Halaman event 98 di HP. CLS 0 di semua halaman | Perintah yang sama |

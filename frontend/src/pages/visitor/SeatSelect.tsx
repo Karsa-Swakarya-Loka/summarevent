@@ -421,6 +421,12 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
         {allowance.owned
           ? `${count} dari sisa ${allowance.left} tiket · kamu sudah punya ${allowance.owned} di sesi ini`
           : `${count} dari maks. ${max} tiket per akun di sesi ini`}
+        {/* the same allowance as a meter: tickets already owned, the seats picked now, and what is left */}
+        <span className="ml-auto flex shrink-0 gap-1" aria-hidden>
+          {Array.from({ length: Math.min(max, 10) }, (_, i) => (
+            <span key={i} className={cn('h-2 w-3.5 rounded-full transition-colors duration-300', i < allowance.owned ? 'bg-ink/60' : i < allowance.owned + count ? 'bg-brand' : 'bg-foreground/12')} />
+          ))}
+        </span>
       </p>
     ) : null
 

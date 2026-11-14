@@ -167,24 +167,34 @@ export function QtyStepper({
   unit?: string
   className?: string
 }) {
+  // the value shown last, to know which way the number rolls (state set while rendering, React's pattern for this)
+  const [shown, setShown] = useState(value)
+  const [roll, setRoll] = useState<'up' | 'down' | null>(null)
+  if (value !== shown) {
+    setShown(value)
+    setRoll(value < shown ? 'down' : 'up')
+  }
   return (
     <div className={cn('flex items-center gap-1 rounded-xl border bg-card p-1', className)} role="group" aria-label={label}>
       <button
         type="button"
-        className="flex size-11 items-center justify-center rounded-lg text-foreground hover:bg-muted disabled:opacity-35"
+        className="flex size-11 items-center justify-center rounded-lg text-foreground transition-transform hover:bg-muted active:scale-90 disabled:opacity-35"
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={value <= min}
         aria-label={`Kurangi ${label.toLowerCase()}`}
       >
         <Minus className="size-5" />
       </button>
-      <output className="min-w-12 text-center leading-none" aria-live="polite">
-        <span className="block text-xl font-extrabold tabular-nums">{value}</span>
+      <output className="min-w-12 overflow-hidden text-center leading-none" aria-live="polite">
+        {/* the number rolls in from below when it goes up and from above when it goes down */}
+        <span key={value} className={cn('block text-xl font-extrabold tabular-nums', roll && 'animate-roll')} style={{ '--roll-from': roll === 'down' ? '-60%' : '60%' } as React.CSSProperties}>
+          {value}
+        </span>
         <span className="text-[0.65rem] text-muted-foreground">{unit}</span>
       </output>
       <button
         type="button"
-        className="flex size-11 items-center justify-center rounded-lg text-foreground hover:bg-muted disabled:opacity-35"
+        className="flex size-11 items-center justify-center rounded-lg text-foreground transition-transform hover:bg-muted active:scale-90 disabled:opacity-35"
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={value >= max}
         aria-label={`Tambah ${label.toLowerCase()}`}

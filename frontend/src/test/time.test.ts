@@ -2,7 +2,7 @@
 // counts to the end of the running session or the start of the next one.
 import { describe, expect, it } from 'vitest'
 import { countdownUnits, fmtDuration, fmtLeft, fmtRelDay } from '@/lib/format'
-import { eventClock, holdLabel } from '@/components/visitor/helpers'
+import { eventClock, holdLabel, orderSteps } from '@/components/visitor/helpers'
 
 const MIN = 60_000
 const HOUR = 60 * MIN
@@ -62,5 +62,23 @@ describe('hold countdown label', () => {
     expect(holdLabel(d('AWAITING_PAYMENT', { paymentMethod: 'FREE', totalAmount: 0 }))).toBe('Konfirmasi dalam')
     expect(holdLabel(d('AWAITING_VERIFICATION', {}, [{ status: 'PENDING' }]))).toBe('Ditahan')
     expect(holdLabel(d('AWAITING_VERIFICATION', {}, [{ status: 'NEEDS_REVISION' }]))).toBe('Kirim dalam')
+  })
+})
+
+describe('order tracker', () => {
+  const o = (status: string, extra: Record<string, unknown> = {}, tickets: Array<{ status: string }> = []) =>
+    ({ order: { status, paymentMethod: 'SIM_QRIS', totalAmount: 100000, items: [{ seatLabel: 'G3' }], ...extra }, tickets }) as never
+  const states = (d: never) => orderSteps(d)?.map((s) => `${s.label}:${s.state}`)
+  it('walks held, paid, e-ticket, check-in', () => {
+    expect(states(o('AWAITING_PAYMENT'))).toEqual(['Kursi ditahan:done', 'Dibayar:current', 'E-ticket terbit:todo', 'Check-in:todo'])
+    expect(states(o('CONFIRMED', {}, [{ status: 'ACTIVE' }]))).toEqual(['Kursi ditahan:done', 'Dibayar:done', 'E-ticket terbit:done', 'Check-in:current'])
+    expect(states(o('CONFIRMED', {}, [{ status: 'USED' }, { status: 'USED' }]))?.every((x) => x.endsWith(':done'))).toBe(true)
+  })
+  it('names the second stop after the way in', () => {
+    expect(orderSteps(o('AWAITING_VERIFICATION', { paymentMethod: 'RECEIPT', totalAmount: 0 }))?.[1].label).toBe('Struk dicek')
+    expect(orderSteps(o('AWAITING_PAYMENT', { paymentMethod: 'FREE', totalAmount: 0, items: [{ seatLabel: null }] }))?.map((s) => s.label).slice(0, 2)).toEqual(['Tempat ditahan', 'Dikonfirmasi'])
+  })
+  it('shows no way for an order that ended without tickets', () => {
+    for (const st of ['EXPIRED', 'CANCELLED', 'REJECTED']) expect(orderSteps(o(st))).toBeNull()
   })
 })

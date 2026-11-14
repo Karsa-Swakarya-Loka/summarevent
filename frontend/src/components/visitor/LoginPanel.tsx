@@ -230,7 +230,7 @@ export function LoginPanel({
               onClick={() => void request()}
               disabled={busy || resendIn > 0}
             >
-              {resendIn > 0 ? `Kirim ulang dalam 0:${String(resendIn).padStart(2, '0')}` : 'Kirim ulang kode'}
+              {resendIn > 0 ? `Kirim ulang dalam ${resendIn} dtk` : 'Kirim ulang kode'}
             </button>
           </div>
         </form>

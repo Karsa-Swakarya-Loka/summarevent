@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DeskHead, LoadError, PageSkeleton, PhoneOnly } from '@/components/visitor/Common'
 import { OrderSummary } from '@/components/visitor/OrderSummary'
+import { OrderTracker } from '@/components/visitor/OrderTracker'
 import { StatusHero } from '@/components/visitor/StatusHero'
 import { pendingTitle, seatRangeLabel } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
@@ -206,6 +207,7 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-x-12">
         <div className="space-y-4 p-4 pb-10 lg:p-0">
           {hero}
+          <OrderTracker detail={detail} />
           {after}
           <OrderSummary detail={detail} className="lg:hidden" />
         </div>

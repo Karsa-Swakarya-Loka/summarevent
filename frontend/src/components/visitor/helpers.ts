@@ -126,6 +126,26 @@ export function eventClock(sessions: Array<Pick<Session, 'startAt' | 'endAt'>>, 
   return next ? { label: 'Mulai dalam', to: next.startAt, live: false } : null
 }
 
+export type StepState = 'done' | 'current' | 'todo'
+
+/**
+ * The way of an order, for the tracker on its status page: held, paid (or receipt checked, or confirmed), e-ticket
+ * issued, checked in. Each step is done, the current one, or still to come; an order that ended without tickets
+ * (expired, cancelled, rejected) has no way to show.
+ */
+export function orderSteps(d: Pick<OrderDetail, 'order' | 'tickets'>): Array<{ label: string; state: StepState }> | null {
+  const { order, tickets } = d
+  const seats = order.items.some((i) => i.seatLabel)
+  const free = order.paymentMethod === 'FREE' || order.totalAmount === 0
+  const receipt = order.status === 'AWAITING_VERIFICATION' || order.paymentMethod === 'RECEIPT'
+  const labels = [seats ? 'Kursi ditahan' : 'Tempat ditahan', receipt ? 'Struk dicek' : free ? 'Dikonfirmasi' : 'Dibayar', 'E-ticket terbit', 'Check-in']
+  let at: number
+  if (order.status === 'AWAITING_PAYMENT' || order.status === 'AWAITING_VERIFICATION') at = 1
+  else if (order.status === 'CONFIRMED') at = tickets.length > 0 && tickets.every((t) => t.status === 'USED') ? 4 : 3
+  else return null
+  return labels.map((label, i) => ({ label, state: i < at ? 'done' : i === at ? 'current' : 'todo' }))
+}
+
 /** What the hold countdown of a waiting order counts down to, as the words before the time ("Bayar dalam 09:52"). */
 export function holdLabel(d: Pick<OrderDetail, 'order' | 'receipts'>): string {
   const { order, receipts } = d

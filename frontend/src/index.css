@@ -164,6 +164,7 @@
   --animate-pop: pop 0.45s var(--ease-pop) both;
   --animate-slide-in: slide-in 0.42s var(--ease-soft) both;
   --animate-drop-in: drop-in 0.5s var(--ease-pop) both;
+  --animate-roll: roll 0.32s var(--ease-pop) both;
 
   @keyframes rise {
     from { opacity: 0; transform: translateY(14px); }
@@ -175,6 +176,11 @@
   }
   @keyframes slide-in {
     from { opacity: 0; transform: translateX(var(--slide-from, 32px)); }
+    to { opacity: 1; transform: none; }
+  }
+  /* a number rolling in from below (up) or above (down, --roll-from: -60%), as in a counter */
+  @keyframes roll {
+    from { opacity: 0; transform: translateY(var(--roll-from, 60%)); }
     to { opacity: 1; transform: none; }
   }
   @keyframes drop-in {

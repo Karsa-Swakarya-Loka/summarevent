@@ -59,6 +59,54 @@ function countdownParts(ms: number): { d: number; h: number; m: number; s: numbe
   return { d: Math.floor(t / 86400), h: Math.floor((t % 86400) / 3600), m: Math.floor((t % 3600) / 60), s: t % 60 }
 }
 
+/**
+ * The units of a time left, from the largest that is not zero, for the tiles of a countdown: days, hours, minutes and
+ * seconds when a day or more is left, then hours (when any), minutes and seconds. Seconds always tick, so the clock
+ * reads as live.
+ */
+export function countdownUnits(ms: number): Array<{ value: number; unit: 'hari' | 'jam' | 'mnt' | 'dtk' }> {
+  const { d, h, m, s } = countdownParts(ms)
+  const all = [
+    { value: d, unit: 'hari' as const },
+    { value: h, unit: 'jam' as const },
+    { value: m, unit: 'mnt' as const },
+    { value: s, unit: 'dtk' as const },
+  ]
+  const first = d > 0 ? 0 : h > 0 ? 1 : 2
+  return all.slice(first)
+}
+
+/**
+ * A time left in words, never a bare "09:52": "2 hari 5 jam", "5 jam 12 mnt", "9 mnt 05 dtk", "45 dtk". With
+ * `seconds: false` the minutes are the smallest unit ("9 mnt", and "< 1 mnt" in the last minute).
+ */
+export function fmtLeft(ms: number, { seconds = true }: { seconds?: boolean } = {}): string {
+  const { d, h, m, s } = countdownParts(ms)
+  if (d > 0) return h ? `${d} hari ${h} jam` : `${d} hari`
+  if (h > 0) return `${h} jam ${m} mnt`
+  if (!seconds) return m > 0 ? `${m} mnt` : '< 1 mnt'
+  if (m > 0) return `${m} mnt ${String(s).padStart(2, '0')} dtk`
+  return `${s} dtk`
+}
+
+/** A day said the way people say it: "Hari ini", "Besok", "Lusa", else "Sab, 21 Nov" (WIB days). */
+export function fmtRelDay(iso: string, now: Date = new Date()): string {
+  const day = (d: Date) => Date.parse(wibDate(d) + 'T00:00:00Z')
+  const diff = Math.round((day(new Date(iso)) - day(now)) / 86_400_000)
+  if (diff === 0) return 'Hari ini'
+  if (diff === 1) return 'Besok'
+  if (diff === 2) return 'Lusa'
+  if (diff === -1) return 'Kemarin'
+  return fmtShortDate(iso)
+}
+
+/** How long a stretch of time lasts: "1 jam", "1 jam 30 mnt", "45 mnt", "2 hari". */
+export function fmtDuration(ms: number): string {
+  const { d, h, m } = countdownParts(ms)
+  const parts = [d && `${d} hari`, h && `${h} jam`, m && `${m} mnt`].filter(Boolean)
+  return parts.length ? parts.join(' ') : '0 mnt'
+}
+
 export function fmtCountdown(ms: number): string {
   const { d, h, m, s } = countdownParts(ms)
   const pad = (n: number) => String(n).padStart(2, '0')

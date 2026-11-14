@@ -115,7 +115,7 @@ export function AiEventAssistant({ venues, onFill }: { venues: Venue[]; onFill: 
 
       {found.length > 0 && (
         <p className="mt-3 text-xs text-muted-foreground">
-          Sudah ditangkap: {found.join(', ')}.{missing.length > 0 && <> Masih perlu: <span className="font-semibold text-foreground">{missing.join(', ')}</span>.</>}
+          Sudah dicatat: {found.join(', ')}.{missing.length > 0 && <> Masih perlu: <span className="font-semibold text-foreground">{missing.join(', ')}</span>.</>}
         </p>
       )}
 

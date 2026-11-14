@@ -8,7 +8,7 @@ import { Link, Navigate } from 'react-router'
 import { Bell, CalendarDays, Hourglass, MapPin, MessageCircle, Ticket, UserRound } from 'lucide-react'
 import { api } from '@/api'
 import type { EventSummary } from '@/api/contract'
-import { Countdown, EmptyState, StatusBadge } from '@/components/common/bits'
+import { Countdown, EmptyState, StatusBadge, TimeTiles } from '@/components/common/bits'
 import { Illustration } from '@/components/common/Illustration'
 import { Poster } from '@/components/common/Poster'
 import { POSTER_THEMES } from '@/components/common/posterThemes'
@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError } from '@/components/visitor/Common'
 import { StageScene } from '@/components/visitor/StageScene'
 import { UserAvatar } from '@/components/visitor/UserAvatar'
-import { continuePath, eventInRange, isPendingOrder, pendingTitle, placeUnit, priceHint, wibTodayRange, wibWeekRange } from '@/components/visitor/helpers'
+import { continuePath, eventClock, eventInRange, holdLabel, isPendingOrder, pendingTitle, placeUnit, priceHint, wibTodayRange, wibWeekRange } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { prefetchEvent, whenIdle } from '@/components/visitor/prefetch'
 import type { Tone } from '@/domain/labels'
@@ -152,7 +152,7 @@ export default function Home() {
       >
         {pending.map((d) => (
           <li key={d.order.id} className={CARD_SLOT}>
-            <StatusCard to={continuePath(d)} tint="orange" icon={<Hourglass />} label={pendingTitle(d, true)} value={<Countdown to={d.order.holdExpiresAt} className="[&_svg]:hidden" />} />
+            <StatusCard to={continuePath(d)} tint="orange" icon={<Hourglass />} label={pendingTitle(d, true)} value={<Countdown to={d.order.holdExpiresAt} from={d.order.createdAt} label={holdLabel(d)} className="text-[0.95rem]" />} />
           </li>
         ))}
         <li className={cn(CARD_SLOT, '[animation-delay:60ms]')}>
@@ -415,7 +415,7 @@ function SpotCard({ e, now }: { e: EventSummary; now: Date }) {
   return (
     <Link
       to={`/app/e/${e.event.slug}`}
-      className="group relative block h-64 overflow-hidden rounded-[1.6rem] shadow-md shadow-ink/10 transition-transform duration-200 active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="group relative block h-72 overflow-hidden rounded-[1.6rem] shadow-md shadow-ink/10 transition-transform duration-200 active:scale-[0.98] focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <Poster theme={e.event.posterTheme} palette={e.event.posterPalette} image={e.event.posterImage} title={e.event.title} bare className="absolute inset-0 transition-transform duration-700 ease-(--ease-soft) group-hover:scale-[1.04]" />
       <div className="absolute inset-0 bg-linear-to-t from-ink/90 via-ink/25 to-transparent" aria-hidden />
@@ -430,8 +430,26 @@ function SpotCard({ e, now }: { e: EventSummary; now: Date }) {
         <p className="mt-1.5 flex items-center gap-1.5 text-xs text-white/85">
           <MapPin className="size-3.5 shrink-0" aria-hidden /> {e.venue.name}
         </p>
+        <EventClock e={e} />
       </div>
     </Link>
+  )
+}
+
+/** The live clock of a spotlight card: when the running session ends, or when the next one starts, ticking. */
+function EventClock({ e }: { e: EventSummary }) {
+  const now = useNow(1000)
+  const clock = eventClock(e.sessions, now)
+  if (!clock) return null
+  return (
+    <div className="mt-3 flex items-end justify-between gap-2">
+      <TimeTiles to={clock.to} label={clock.label} tone="ink" />
+      {clock.live && (
+        <span className="mb-1 flex shrink-0 items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-ink">
+          <span className="size-1.5 animate-pulse rounded-full bg-status-invalid" aria-hidden /> Berlangsung
+        </span>
+      )}
+    </div>
   )
 }
 

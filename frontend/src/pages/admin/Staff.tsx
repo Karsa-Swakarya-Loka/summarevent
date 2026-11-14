@@ -53,7 +53,7 @@ export default function Staff() {
     setBusy(s.id)
     try {
       await api.admin.setStaffActive(s.id, !s.active)
-      toast.success(s.active ? `${s.name} dinonaktifkan. Akun ini tidak bisa scan lagi.` : `${s.name} aktif lagi.`)
+      toast.success(s.active ? `${s.name} dinonaktifkan dan tidak bisa masuk ke aplikasi petugas.` : `${s.name} aktif lagi.`)
     } catch (err) {
       toast.error(errorMessage(err))
     } finally {
@@ -66,7 +66,7 @@ export default function Staff() {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <PageHeader title="Petugas" description="Akun untuk scan QR di pintu masuk dan verifikasi struk di desk. Setiap scan tercatat atas nama petugasnya." />
+      <PageHeader title="Petugas" description="Akun untuk scan QR di pintu masuk dan memeriksa struk di desk. Setiap scan tercatat atas nama petugasnya." />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <SectionCard title={`${list.length} akun petugas`} description={staff.data ? `${active} aktif` : undefined}>
           {staff.error && !staff.data ? (
@@ -75,7 +75,7 @@ export default function Staff() {
             <ListSkeleton rows={3} />
           ) : !list.length ? (
             <EmptyState icon={<Users />} title="Belum ada akun petugas">
-              Tambahkan petugas pertama lewat formulir di samping.
+              Tambahkan petugas pertama lewat form Tambah petugas.
             </EmptyState>
           ) : (
             <ul className="divide-y">

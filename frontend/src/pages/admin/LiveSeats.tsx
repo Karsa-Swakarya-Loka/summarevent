@@ -63,7 +63,7 @@ export default function LiveSeats() {
     setBusy(true)
     try {
       const res = await api.demo.fakeBuyer(sessionId)
-      toast(`Pembeli lain (simulasi) sedang memesan ${res.seatLabels.join(', ')}.`, { description: 'Kursinya jadi “Sedang dipesan” selama 60 detik, lalu kembali Tersedia.' })
+      toast(`Simulasi: orang lain sedang memesan ${res.seatLabels.join(', ')}.`, { description: 'Kursinya jadi “Sedang dipesan” selama 60 detik, lalu kembali Tersedia.' })
     } catch (e) {
       toast.error(errorMessage(e))
     } finally {
@@ -184,7 +184,7 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       <SectionCard
         title={sessionLabel(data.session)}
-        description={hasMap ? `${totals.total} kursi dijual · ${totals.available} tersedia · ${totals.held} sedang dipesan · ${totals.sold} terjual` : 'Event tanpa nomor kursi, pantau kuota di samping.'}
+        description={hasMap ? `${totals.total} kursi dijual · ${totals.available} tersedia · ${totals.held} sedang dipesan · ${totals.sold} terjual` : 'Event ini tanpa nomor kursi. Lihat sisa kuota di bagian Per kategori.'}
         actions={
           <Button variant="outline" size="lg" className="border-dashed" onClick={onFakeBuyer} disabled={busy || !hasMap}>
             {busy ? <LoaderCircle className="animate-spin" /> : <FlaskConical />} Simulasikan pembeli lain
@@ -249,9 +249,9 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
                     )}
                     {status === 'HELD' && ss?.holdExpiresAt && (
                       <>
-                        <dt className="text-muted-foreground">Ditahan s.d.</dt>
+                        <dt className="text-muted-foreground">Ditahan sampai</dt>
                         <dd className="flex flex-wrap items-center gap-2 font-medium">
-                          {fmtTime(ss.holdExpiresAt)} WIB <Countdown to={ss.holdExpiresAt} className="text-xs text-muted-foreground" />
+                          {fmtTime(ss.holdExpiresAt)} WIB <Countdown to={ss.holdExpiresAt} label="lepas dalam" className="text-xs text-muted-foreground" />
                         </dd>
                       </>
                     )}
@@ -330,7 +330,7 @@ function LiveBody({ data, orders, busy, onFakeBuyer }: { data: SeatMapData; orde
                     <span className={cn('block h-full rounded-full', filled >= quota ? 'bg-status-invalid' : 'bg-foreground/55')} style={{ width: `${quota ? Math.min(100, (filled / quota) * 100) : 0}%` }} />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground tabular-nums">{filled}</span> terisi (terjual + sedang dipesan) ·{' '}
+                    <span className="font-semibold text-foreground tabular-nums">{filled}</span> terisi (terjual dan sedang dipesan) ·{' '}
                     <span className="font-semibold text-foreground tabular-nums">{Math.max(0, quota - filled)}</span> sisa
                   </p>
                   <WaitingNote count={data.waitlist.find((w) => w.categoryId === c.id)?.waiting ?? 0} />

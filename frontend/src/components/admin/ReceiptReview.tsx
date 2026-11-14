@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils'
 
 const REASONS: Record<Exclude<ReviewDecision, 'APPROVE'>, string[]> = {
   NEEDS_REVISION: ['Foto buram', 'Nominal tidak terbaca', 'Tanggal struk tidak sesuai'],
-  REJECT: ['Struk duplikat', 'Bukan tenant SUMMABA', 'Struk terpotong / dicoret'],
+  REJECT: ['Struk duplikat', 'Bukan tenant SUMMABA', 'Struk terpotong atau dicoret'],
 }
 
 
@@ -54,11 +54,11 @@ export function QueueRow({ item, active, onOpen }: { item: ReceiptQueueItem; act
           <span className="font-bold tabular-nums">{rupiahPlain(total)}</span>
           <span className="text-xs text-muted-foreground"> · {item.siblings.length} struk</span>
         </span>
-        {canDecide(item) ? <span className="text-xs text-muted-foreground">Ditahan <Countdown to={item.order.holdExpiresAt} /></span> : <span className="text-xs text-muted-foreground">{fmtTime(item.receipt.createdAt)}</span>}
+        {canDecide(item) ? <Countdown to={item.order.holdExpiresAt} from={item.order.createdAt} label="Kursi lepas dalam" className="text-xs text-muted-foreground" /> : <span className="text-xs text-muted-foreground">{fmtTime(item.receipt.createdAt)}</span>}
       </div>
       {canDecide(item) && (failing || dup) && (
         <div className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-[#a11b1b]">
-          <TriangleAlert className="size-3.5" aria-hidden /> {dup ? 'Kemungkinan struk duplikat' : 'Ada syarat belum terpenuhi'}
+          <TriangleAlert className="size-3.5" aria-hidden /> {dup ? 'Foto mirip struk lain' : 'Ada syarat yang belum terpenuhi'}
         </div>
       )}
     </button>
@@ -141,7 +141,7 @@ export function ReviewPanel({
         decidable ? (
           <span className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted-foreground sm:flex-col sm:items-end">
             Kursi ditahan sampai {fmtTime(item.order.holdExpiresAt)} WIB
-            <Countdown to={item.order.holdExpiresAt} className="text-base text-foreground" />
+            <Countdown to={item.order.holdExpiresAt} from={item.order.createdAt} label="Lepas dalam" className="text-base text-foreground" />
           </span>
         ) : undefined
       }
@@ -172,7 +172,7 @@ export function ReviewPanel({
               ))}
             </div>
           )}
-          <p className="text-xs text-muted-foreground">{finePointer() ? 'Scroll untuk memperbesar, klik dua kali untuk zoom cepat.' : 'Cubit untuk memperbesar, ketuk dua kali untuk zoom cepat.'}</p>
+          <p className="text-xs text-muted-foreground">{finePointer() ? 'Gulir atau klik dua kali untuk memperbesar.' : 'Cubit atau ketuk dua kali untuk memperbesar.'}</p>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
@@ -279,7 +279,7 @@ export function ReviewPanel({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Tetap setujui?</DialogTitle>
-            <DialogDescription>Cek otomatis menemukan syarat yang belum terpenuhi:</DialogDescription>
+            <DialogDescription>Struk ini belum memenuhi syarat berikut:</DialogDescription>
           </DialogHeader>
           <ul className="flex flex-col gap-1 text-sm text-[#a11b1b]">
             {failing.map((c, i) => (
@@ -349,7 +349,7 @@ export function ReviewPanel({
                   rows={3}
                   maxLength={200}
                 />
-                <p className="text-xs text-muted-foreground">Wajib diisi, supaya pengunjung tahu harus apa.</p>
+                <p className="text-xs text-muted-foreground">Wajib diisi. Alasan ini yang dibaca pengunjung.</p>
               </div>
               <DialogFooter className="gap-2">
                 <Button

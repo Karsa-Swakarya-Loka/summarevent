@@ -40,7 +40,7 @@ export function ShareEventPanel({ event, className }: { event: Pick<EventItem, '
     } catch {
       const input = document.getElementById(`share-url-${event.slug}`) as HTMLInputElement | null
       input?.select()
-      toast.error('Browser menolak menyalin otomatis. Link sudah ditandai, tekan Ctrl+C / ⌘C.')
+      toast.error('Link belum tersalin. Link sudah ditandai, tekan Ctrl+C (⌘C di Mac).')
     }
   }
 
@@ -111,7 +111,7 @@ export function ShareEventPanel({ event, className }: { event: Pick<EventItem, '
             </a>
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">Tempel QR di poster atau unggah link ke Instagram. Pengunjung langsung masuk ke halaman event.</p>
+        <p className="text-xs text-muted-foreground">Tempel QR di poster atau pasang link di bio dan story Instagram. Pengunjung langsung masuk ke halaman event.</p>
       </div>
     </div>
   )

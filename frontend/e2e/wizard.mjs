@@ -67,7 +67,7 @@ await page.waitForTimeout(300)
 await cats.nth(1).fill('Tukar Struk')
 const method2 = page.getByRole('radiogroup').filter({ has: page.getByRole('radio', { name: 'Tukar Struk' }) }).nth(1)
 await method2.getByRole('radio', { name: 'Tukar Struk' }).click()
-await page.getByRole('button', { name: 'Pakai preset umum mal' }).click()
+await page.getByRole('button', { name: 'Pakai aturan standar mal' }).click()
 // QA-11: the Tukar Struk category only goes on sale in 3 days
 const wibDay = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d)
 await page.getByLabel('Penjualan dibuka').nth(1).fill(`${wibDay(new Date(Date.now() + 3 * 86_400_000))}T10:00`)

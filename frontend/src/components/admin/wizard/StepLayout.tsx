@@ -144,13 +144,13 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
           <Lock className="mt-0.5 size-4 shrink-0" aria-hidden />
           <div>
             <div className="font-semibold">Denah terkunci</div>
-            Event ini sudah punya pesanan, jadi denah tidak bisa diubah supaya kursi pembeli tidak berpindah. Info, harga, dan sesi tetap bisa diubah.
+            Sudah ada pesanan, jadi denah tidak bisa diubah supaya kursi pemesan tidak berpindah. Info, harga, dan sesi tetap bisa diubah.
           </div>
         </div>
       )}
       <div className="grid gap-4 xl:grid-cols-[400px_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-4">
-          <SectionCard title="Ukuran denah" description="Mulai dari template, lalu sesuaikan.">
+          <SectionCard title="Ukuran denah" description="Pilih ukuran yang paling mirip, lalu sesuaikan jumlah baris dan kursinya.">
             <div className="mb-4 flex flex-wrap gap-2">
               {LAYOUT_TEMPLATES.map((t) => (
                 <Button
@@ -185,7 +185,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                 disabled={locked}
                 onChange={(v) => setLayout((l) => ({ ...l, aisleAfter: v ? Math.max(1, Math.floor((l.seatsPerRow || 2) / 2)) : null }))}
                 title="Ada lorong di tengah"
-                description="Kursi di kiri dan kanan lorong tidak dihitung berdampingan."
+                description="Kursi yang dipisah lorong tidak dianggap bersebelahan."
               />
               {L.aisleAfter != null && (
                 <Field id="lay-aisle" label="Lorong setelah kursi ke-" error={err('layout.aisleAfter')}>
@@ -210,7 +210,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                   setSellDraft(null)
                 }}
               >
-                <Field id="lay-sell" label="Kursi dijual per sesi" hint={maxSeats ? 'Kursi paling belakang ditutup duluan.' : 'Atur kategori per baris dulu.'}>
+                <Field id="lay-sell" label="Kursi dijual per sesi" hint={maxSeats ? 'Kalau angkanya dikurangi, kursi paling belakang dan paling pinggir ditutup lebih dulu.' : 'Atur kategori per baris dulu.'}>
                   <NumberInput id="lay-sell" min={0} max={maxSeats} value={sellDraft ?? totalSellable} suffix={`dari ${maxSeats}`} disabled={locked || !maxSeats} onChange={sellTo} />
                 </Field>
               </div>
@@ -259,7 +259,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                           disabled={locked}
                           onChange={(row) => setLayout((l) => ({ ...l, ranges: l.ranges.map((x) => (x.key === rg.key ? { ...x, from: row } : x)) }))}
                         />
-                        <span className="text-xs text-muted-foreground">s/d</span>
+                        <span className="text-xs text-muted-foreground">sampai</span>
                         <RowSelect
                           label={`Sampai baris (rentang ${i + 1})`}
                           value={rg.to}
@@ -314,12 +314,12 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
 
         <SectionCard
           title="Pratinjau denah"
-          description="Persis seperti yang dilihat pengunjung. Pilih kursi untuk menandainya."
+          description="Persis seperti yang dilihat pengunjung. Ketuk kursi untuk menandainya."
           className="min-w-0"
         >
           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
             <span className="text-sm font-semibold" id="seat-mode-label">
-              Pilih kursi untuk:
+              Ketuk kursi untuk:
             </span>
             <div role="radiogroup" aria-labelledby="seat-mode-label" className="inline-grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
               {(
@@ -411,7 +411,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                 <span className="font-semibold tabular-nums">{L.blocked.length}</span>
                 {L.blocked.length > 0 && !locked && (
                   <button type="button" className="-my-2 min-h-9 px-1 text-xs font-semibold text-brand hover:underline pointer-coarse:min-h-11" onClick={() => setLayout((l) => ({ ...l, blocked: [] }))}>
-                    Kosongkan
+                    Jual semua lagi
                   </button>
                 )}
               </div>
@@ -423,7 +423,7 @@ export function StepLayout({ form, update, err, locked }: StepProps & { locked: 
                 <span className="font-semibold tabular-nums">{L.priority.length}</span>
                 {L.priority.length > 0 && !locked && (
                   <button type="button" className="-my-2 min-h-9 px-1 text-xs font-semibold text-brand hover:underline pointer-coarse:min-h-11" onClick={() => setLayout((l) => ({ ...l, priority: [] }))}>
-                    Kosongkan
+                    Hapus semua
                   </button>
                 )}
               </div>

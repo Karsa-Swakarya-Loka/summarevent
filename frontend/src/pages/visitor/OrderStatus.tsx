@@ -8,7 +8,7 @@ import { Ban, FlaskConical, Gift, PencilLine, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/api'
 import type { OrderDetail } from '@/api/contract'
-import { BackHeader, Countdown, StatusBadge } from '@/components/common/bits'
+import { BackHeader, StatusBadge, TimeTiles } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -218,10 +218,7 @@ function StatusBody({ detail }: { detail: OrderDetail }) {
 function HoldLine({ detail, what }: { detail: OrderDetail; what: string }) {
   const { order } = detail
   return (
-    <p className="flex items-center justify-center gap-2">
-      <span>{what} ditahan</span>
-      <Countdown to={order.holdExpiresAt} className="rounded-full bg-ink px-2.5 py-0.5 text-sm text-white [&_svg]:size-3.5" />
-    </p>
+    <TimeTiles to={order.holdExpiresAt} label={`${what} ditahan selama`} className="mx-auto items-center" />
   )
 }
 

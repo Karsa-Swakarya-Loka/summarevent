@@ -11,9 +11,9 @@ import { emptyReceiptRules, newCategory, presetReceiptRules, seatCounts, type Ca
 
 const METHODS: AccessMethod[] = ['PAID', 'FREE', 'RECEIPT']
 const METHOD_HINT: Record<AccessMethod, string> = {
-  PAID: 'Bayar simulasi QRIS / VA',
-  FREE: 'Daftar gratis',
-  RECEIPT: 'Gratis dengan struk belanja',
+  PAID: 'Pengunjung bayar lewat QRIS atau VA (simulasi).',
+  FREE: 'Pengunjung cukup daftar, tanpa bayar.',
+  RECEIPT: 'Pengunjung menukar struk belanja di tenant SUMMABA.',
 }
 
 function Segmented({ id, value, onChange }: { id: string; value: AccessMethod; onChange: (v: AccessMethod) => void }) {
@@ -50,21 +50,21 @@ function ReceiptRulesPanel({ c, set, err, tenants }: { c: CatForm; set: (r: Rece
         <div className="min-w-0">
           <div className="text-sm font-bold">Aturan tukar struk</div>
           <p className="text-xs text-muted-foreground">
-            Preset umum mal: min Rp300.000, tanpa kelipatan, maks 3 struk, struk hari ini sebelum 22.00, bazaar dikecualikan.
+            Aturan yang biasa dipakai mal: belanja minimal Rp300.000, paling banyak 3 struk digabung, struk hari ini sebelum jam 22.00, struk Bazaar tidak diterima.
           </p>
         </div>
         <Button type="button" size="lg" variant={isPreset ? 'outline' : 'default'} className="h-10 shrink-0" onClick={() => set(preset)}>
-          {isPreset ? <Check /> : <Sparkles />} {isPreset ? 'Preset dipakai' : 'Pakai preset umum mal'}
+          {isPreset ? <Check /> : <Sparkles />} {isPreset ? 'Aturan standar dipakai' : 'Pakai aturan standar mal'}
         </Button>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field id={id('min')} label="Minimal belanja" error={err(f('minSpend'))} hint={Number.isFinite(rr.minSpend) ? `Total struk ≥ ${rupiahPlain(rr.minSpend)} untuk 1 pesanan` : undefined}>
+        <Field id={id('min')} label="Minimal belanja" error={err(f('minSpend'))} hint={Number.isFinite(rr.minSpend) ? `Total semua struk minimal ${rupiahPlain(rr.minSpend)} untuk 1 kali tukar.` : undefined}>
           <NumberInput id={id('min')} prefix="Rp" step={10000} min={0} value={rr.minSpend} invalid={!!err(f('minSpend'))} placeholder="mis. 300000" onChange={(n) => set({ ...rr, minSpend: n })} />
         </Field>
-        <Field id={id('maxr')} label="Maks struk digabung" error={err(f('maxReceipts'))}>
+        <Field id={id('maxr')} label="Gabung paling banyak" error={err(f('maxReceipts'))} hint={`Struk boleh digabung untuk mencapai minimal belanja. Lebih dari ${Number.isFinite(rr.maxReceiptsCombined) ? rr.maxReceiptsCombined : 3} struk ditolak.`}>
           <NumberInput id={id('maxr')} min={1} max={10} suffix="struk" value={rr.maxReceiptsCombined} invalid={!!err(f('maxReceipts'))} onChange={(n) => set({ ...rr, maxReceiptsCombined: n })} />
         </Field>
-        <Field id={id('cut')} label="Batas jam struk" error={err(f('cutoff'))} hint="Struk setelah jam ini ditolak otomatis.">
+        <Field id={id('cut')} label="Jam struk paling lambat" error={err(f('cutoff'))} hint="Struk dengan jam setelah ini tidak bisa ditukar. Contoh: batas 22.00, struk jam 22.15 ditolak.">
           <input
             id={id('cut')}
             type="time"
@@ -75,11 +75,13 @@ function ReceiptRulesPanel({ c, set, err, tenants }: { c: CatForm; set: (r: Rece
         </Field>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <ToggleRow id={id('multi')} checked={rr.allowMultiple} onChange={(v) => set({ ...rr, allowMultiple: v })} title="Berlaku kelipatan" description="Mati = Rp600.000 tetap dihitung 1 pesanan." />
-        <ToggleRow id={id('same')} checked={rr.sameDayRequired} onChange={(v) => set({ ...rr, sameDayRequired: v })} title="Hanya struk hari ini" description="Struk harus bertanggal hari penukaran." />
+        {/* "kelipatan" (Rp600.000 counting as two exchanges) is not enforced by the server yet, so it is not offered; every
+            exchange is one order, whatever the total above the minimum */}
+        <ToggleRow id={id('same')} checked={rr.sameDayRequired} onChange={(v) => set({ ...rr, sameDayRequired: v })} title="Hanya struk hari ini" description="Tanggal struk harus sama dengan hari pengunjung menukarnya. Struk kemarin ditolak." />
       </div>
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-semibold">Tenant dikecualikan</legend>
+        <legend className="text-sm font-semibold">Struk yang tidak diterima</legend>
+        <p className="-mt-1 mb-1 text-xs text-muted-foreground">Centang tenant yang struknya tidak bisa ditukar. Pengunjung yang mengunggah struk dari tenant ini langsung diberi tahu struknya tidak berlaku.</p>
         <div className="flex flex-wrap gap-2">
           {tenants.map((t) => {
             const checked = rr.excludedTenantIds.includes(t.id)
@@ -145,7 +147,7 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
             }
             description={
               general || c.noSeat
-                ? 'Tanpa nomor kursi · kapasitas dari kuota per sesi'
+                ? 'Tanpa nomor kursi. Jumlah tiket ikut kuota per sesi.'
                 : seats
                   ? `${seats} kursi di denah`
                   : 'Kursi diatur di langkah Denah'
@@ -185,7 +187,7 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
                     )
                   })}
                 </div>
-                <p className="text-xs text-muted-foreground">Bukan hijau/kuning/merah: warna itu khusus status kursi.</p>
+                <p className="text-xs text-muted-foreground">Hijau, kuning, dan merah tidak ada di sini karena dipakai untuk status kursi.</p>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -205,13 +207,13 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
                 <p className="text-xs text-muted-foreground">{METHOD_HINT[c.accessMethod]}</p>
               </div>
               {c.accessMethod === 'PAID' ? (
-                <Field id={id('price')} label="Harga per kursi" error={err(f('price'))} hint={Number.isFinite(c.price) && c.price > 0 ? rupiahPlain(c.price) : 'Kelipatan Rp1.000'}>
+                <Field id={id('price')} label="Harga per kursi" error={err(f('price'))} hint={Number.isFinite(c.price) && c.price > 0 ? rupiahPlain(c.price) : 'Minimal Rp1.000'}>
                   <NumberInput id={id('price')} prefix="Rp" step={5000} min={0} value={c.price} invalid={!!err(f('price'))} placeholder="mis. 50000" onChange={(n) => setCat(c.key, { price: n })} />
                 </Field>
               ) : (
                 <div className="flex flex-col justify-center rounded-lg bg-muted/60 p-3 text-sm">
                   <span className="font-semibold">Harga Rp0</span>
-                  <span className="text-xs text-muted-foreground">{c.accessMethod === 'FREE' ? 'Pengunjung cukup daftar.' : 'Pengunjung mengunggah struk belanja, panitia memverifikasi.'}</span>
+                  <span className="text-xs text-muted-foreground">{c.accessMethod === 'FREE' ? 'Tiket gratis, tidak perlu bayar.' : 'Tiket gratis setelah struk disetujui panitia.'}</span>
                 </div>
               )}
 
@@ -220,8 +222,8 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
                   id={id('noseat')}
                   checked={c.noSeat}
                   onChange={(v) => setCat(c.key, { noSeat: v, quota: v && !Number.isFinite(c.quota) ? 50 : c.quota })}
-                  title="Tanpa nomor kursi (area bebas)"
-                  description="Mis. area Festival berdiri. Tidak muncul di denah, pakai kuota."
+                  title="Tanpa nomor kursi"
+                  description="Untuk area bebas, misalnya Festival berdiri. Tidak ada di denah; jumlah tiket diatur lewat kuota."
                 />
               )}
               {(general || c.noSeat) && (
@@ -230,7 +232,7 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
                 </Field>
               )}
 
-              <Field id={id('sale')} label="Penjualan dibuka" error={err(f('saleStart'))} hint="Waktu WIB.">
+              <Field id={id('sale')} label="Penjualan dibuka" error={err(f('saleStart'))} hint="Jam WIB. Sebelum waktu ini pengunjung belum bisa memesan.">
                 <input
                   id={id('sale')}
                   type="datetime-local"
@@ -240,13 +242,13 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
                   className="h-10 w-full min-w-0 rounded-lg border border-input bg-card px-2.5 text-sm outline-none pointer-coarse:min-h-11 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive"
                 />
               </Field>
-              <Field id={id('close')} label="Penjualan ditutup" error={err(f('saleCloseMin'))} hint="Dihitung dari jam mulai tiap sesi.">
-                <NumberInput id={id('close')} min={0} max={1440} suffix="menit sebelum sesi" value={c.saleCloseMin} invalid={!!err(f('saleCloseMin'))} onChange={(n) => setCat(c.key, { saleCloseMin: n })} />
+              <Field id={id('close')} label="Penjualan ditutup" error={err(f('saleCloseMin'))} hint="Contoh: 30 berarti sesi jam 19.00 berhenti dijual jam 18.30. Isi 0 kalau tetap dijual sampai sesi mulai. Jam pastinya terlihat di langkah Sesi.">
+                <NumberInput id={id('close')} min={0} max={1440} suffix="menit sebelum sesi mulai" value={c.saleCloseMin} invalid={!!err(f('saleCloseMin'))} onChange={(n) => setCat(c.key, { saleCloseMin: n })} />
               </Field>
               <Field id={id('desc')} label="Keterangan singkat" optional className="md:col-span-2" hint="Tampil di legenda denah, mis. “Baris A–B, paling dekat panggung”.">
                 <TextInput id={id('desc')} value={c.description} onChange={(e) => setCat(c.key, { description: e.target.value })} />
               </Field>
-              <Field id={id('bonusN')} label="Bonus pembeli pertama" optional error={err(f('bonusN'))} hint="Dihitung per sesi. Kosongkan kalau tidak ada bonus.">
+              <Field id={id('bonusN')} label="Bonus untuk pemesan pertama" optional error={err(f('bonusN'))} hint="Contoh: 50 berarti 50 tiket pertama di tiap sesi dapat bonus. Kosongkan kalau tidak ada.">
                 <NumberInput
                   id={id('bonusN')}
                   min={1}
@@ -257,7 +259,7 @@ export function StepCategories({ form, update, err, tenants }: StepProps & { ten
                   onChange={(n) => setCat(c.key, { bonusFirstN: Number.isFinite(n) ? n : null })}
                 />
               </Field>
-              <Field id={id('bonusDesc')} label="Bonusnya" optional error={err(f('bonusDesc'))}>
+              <Field id={id('bonusDesc')} label="Isi bonus" optional error={err(f('bonusDesc'))}>
                 <TextInput id={id('bonusDesc')} value={c.bonusDesc ?? ''} placeholder="mis. Poster bertanda tangan" invalid={!!err(f('bonusDesc'))} onChange={(e) => setCat(c.key, { bonusDesc: e.target.value || null })} />
               </Field>
             </div>

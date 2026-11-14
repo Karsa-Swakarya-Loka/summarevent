@@ -86,9 +86,9 @@ if (only === 'all' || only === 'paid') {
   await page.getByRole('button', { name: /^Pesan( \d+)? (kursi|tiket)$/ }).click()
   await page.waitForURL(/\/checkout\//)
   await page.waitForTimeout(500)
-  // the hold timer reads as a word, a space, then the time
+  // the hold timer says what is held, a space, then the time (never a bare mm:ss, never "Sisa", which means places left)
   const holdTimer = ((await page.getByRole('timer').first().textContent()) ?? '').trim()
-  if (!/^Sisa \d{2}:\d{2}$/.test(holdTimer)) errors.push(`timer di halaman bayar tertulis "${holdTimer}", seharusnya "Sisa mm:dd"`)
+  if (!/^(Kursi|Tempat) ditahan \d{2}:\d{2}$/.test(holdTimer)) errors.push(`timer di halaman bayar tertulis "${holdTimer}", seharusnya "Kursi ditahan mm:dd"`)
   await shot(page, 'v2-checkout-guest')
   await login(page, '081299990001', 'Dewi Lestari')
   await page.waitForTimeout(600)

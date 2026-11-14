@@ -73,11 +73,11 @@ export default function Dashboard() {
       <section aria-label="Ringkasan angka" className="mt-4 grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatTile label="Pendaftar" value={s?.registrants} hint="Akun dengan pesanan aktif" loading={loading} />
         <StatTile label="Total tiket terjual" value={s?.ticketsSold} hint={s ? `Semua sesi, ${s.transactions.CONFIRMED} pesanan terkonfirmasi` : undefined} loading={loading} />
-        <StatTile label="Total pendapatan" value={s ? rupiahPlain(s.revenue) : undefined} hint="QRIS dan VA (simulasi)" loading={loading} />
+        <StatTile label="Total pendapatan" value={s ? rupiahPlain(s.revenue) : undefined} hint="Dari QRIS dan VA (simulasi)" loading={loading} />
         <StatTile
           label="Struk menunggu"
           value={s?.receiptsPending}
-          hint={s && s.receiptsPending > 0 ? 'Buka antrean verifikasi' : 'Antrean kosong'}
+          hint={s && s.receiptsPending > 0 ? 'Ketuk untuk memeriksa' : 'Tidak ada yang menunggu'}
           tone={s && s.receiptsPending > 0 ? 'warn' : 'default'}
           to="/admin/receipts"
           loading={loading}
@@ -132,7 +132,7 @@ function DeltaChip({ now, before, days }: { now: number; before: number; days: R
         {pct > 0 ? '+' : ''}
         {pct.toLocaleString('id-ID')}%
       </span>
-      vs {days} hari sebelumnya
+      dibanding {days} hari sebelumnya
     </span>
   )
 }
@@ -279,15 +279,15 @@ function AttendanceCard({ s, loading }: { s?: EventStats; loading: boolean }) {
   const top = s?.topTenants[0]
   const facts = [
     {
-      label: 'Hadir dari terjual',
+      label: 'Tiket terjual yang hadir',
       value: s ? `${sold ? Math.round((checkedIn / sold) * 100) : 0}%` : '',
     },
     {
-      label: 'Tidak hadir (sesi selesai)',
+      label: 'Tidak datang di sesi yang selesai',
       value: s ? (s.noShowPct == null ? '–' : `${s.noShowPct}%`) : '',
     },
     {
-      label: 'Nilai struk disetujui',
+      label: 'Belanja dari struk disetujui',
       value: s ? rupiahPlain(s.receiptTotal) : '',
     },
     { label: 'Tenant teratas', value: top ? top.tenant.name : '–' },

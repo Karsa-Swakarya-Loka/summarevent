@@ -64,7 +64,7 @@ function Stepper({ step, onPick, skipped, issuesByStep }: { step: StepId; onPick
                 </span>
                 {/* on a phone only the current step shows its name; the others keep it for screen readers */}
                 <span className={cn(!active && 'sr-only sm:not-sr-only')}>{s.label}</span>
-                {disabled && <span className="hidden text-xs font-normal lg:inline">(tidak perlu)</span>}
+                {disabled && <span className="hidden text-xs font-normal lg:inline">(tanpa denah)</span>}
               </button>
               {i < STEPS.length - 1 && <span className="h-px w-2 bg-border sm:w-6" aria-hidden />}
             </li>
@@ -195,7 +195,7 @@ export default function EventWizard() {
         try {
           const fresh = fromDraft((await api.admin.getEventDraft(saved.id)).draft).form
           update((f) => ({ ...f, seatingMode: fresh.seatingMode, layout: fresh.layout }))
-          setServerError(`${msg} Denah sudah dikembalikan ke versi tersimpan; tekan simpan lagi untuk menyimpan perubahan lainnya.`)
+          setServerError(`${msg} Denah dikembalikan ke versi terakhir. Tekan Simpan perubahan lagi untuk menyimpan perubahan lain.`)
         } catch {
           /* keep the original message */
         }
@@ -292,7 +292,7 @@ export default function EventWizard() {
         description={
           <>
             Langkah {idx + 1} dari {order.length}: {stepTitle}.{' '}
-            {!editing && step === 'info' && 'Isi seperlunya, sisanya sudah terisi nilai umum.'}
+            {!editing && step === 'info' && 'Isi yang perlu saja. Sisanya sudah terisi angka yang biasa dipakai.'}
             {editing && form.title && <span className="font-medium text-foreground">{form.title}</span>}
           </>
         }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { CalendarDays, ChevronDown, ChevronLeft, CircleCheck, Clock, DoorOpen, Gift, MapPin, Radio } from 'lucide-react'
 import type { EventDetail as EventDetailData, SessionSummary } from '@/api/contract'
-import { BackHeader } from '@/components/common/bits'
+import { BackHeader, Countdown } from '@/components/common/bits'
 import { DemoMenu } from '@/components/common/DemoMenu'
 import { Poster } from '@/components/common/Poster'
 import { POSTER_THEMES } from '@/components/common/posterThemes'
@@ -13,7 +13,7 @@ import { placeUnit, priceHint, recallSession, rememberSession, sessionName } fro
 import { cachedEvent, loadEvent, prefetchSeatMap, whenIdle } from '@/components/visitor/prefetch'
 import { saleState } from '@/domain/rules'
 import { useLive, useNow } from '@/hooks/useLive'
-import { fmtDate, fmtRange, fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
+import { fmtDate, fmtRange, fmtRelDay, fmtShortDate, fmtTime, rupiahPlain } from '@/lib/format'
 import { useBack } from '@/lib/navStack'
 import { eventJsonLd, useDocumentTitle } from '@/lib/seo'
 import { cn } from '@/lib/utils'
@@ -226,10 +226,14 @@ function Detail({ d, picked, onPick, onGo }: { d: EventDetailData; picked: strin
                           </span>
                         ) : (
                           <>
-                            {sessionName(s)} · {fmtShortDate(s.startAt)}
+                            {sessionName(s)} · {fmtRelDay(s.startAt, now)}
                           </>
                         )}
                       </span>
+                      {/* within a day of its start, the session says how long until it starts */}
+                      {!s.demoLive && st.open && Date.parse(s.startAt) > now.getTime() && Date.parse(s.startAt) - now.getTime() < 86_400_000 && (
+                        <Countdown to={s.startAt} label="Mulai dalam" className="mt-1.5 text-xs text-[#0b6b35]" />
+                      )}
                       <span className="mt-2.5 flex items-baseline justify-between gap-2 text-xs">
                         {st.open ? (
                           <span className={cn('font-bold', s.available === 0 ? 'text-[#a11b1b]' : 'text-foreground')}>
@@ -311,7 +315,7 @@ function terms(d: EventDetailData): string[] {
   const rr = receiptCat?.receiptRules
   if (rr) {
     const pre = d.categories.filter((c) => c.accessMethod === 'RECEIPT').length > 1 || d.categories.length > 1 ? `${receiptCat.name}: ` : ''
-    out.push(`${pre}belanja minimal ${rupiahPlain(rr.minSpend)} di tenant SUMMABA${rr.allowMultiple ? '' : ' (tidak berlaku kelipatan)'}.`)
+    out.push(`${pre}total struk minimal ${rupiahPlain(rr.minSpend)} dari tenant SUMMABA untuk satu pesanan.`)
     out.push(`${pre}struk ${rr.sameDayRequired ? 'tanggal hari ini' : ''} sebelum jam ${rr.cutoffTime.replace(':', '.')}.`.replace('  ', ' '))
     out.push(`${pre}maksimal ${rr.maxReceiptsCombined} struk digabung, satu struk hanya bisa dipakai sekali.`)
     const excluded = rr.excludedTenantIds.map((id) => d.tenants.find((t) => t.id === id)?.name).filter(Boolean)

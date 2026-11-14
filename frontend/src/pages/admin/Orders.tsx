@@ -83,7 +83,7 @@ export default function Orders() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Pesanan & peserta"
-        description="Cari pesanan, lalu kelola dari panel detailnya."
+        description="Cari pesanan, lalu buka untuk menandai lunas atau membatalkannya."
         actions={
           <>
             {/* short labels below lg so both fit beside the title on a tablet; the full name stays for screen readers */}
@@ -244,7 +244,7 @@ export default function Orders() {
             ))}
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">
-            {shown.length} pesanan{status !== 'ALL' ? ` berstatus ${ORDER_STATUS_LABEL[status].toLowerCase()}` : ''}. Pesanan berlabel Simulasi datang dari pembeli contoh dan tidak ikut CSV.
+            {shown.length} pesanan{status !== 'ALL' ? ` berstatus ${ORDER_STATUS_LABEL[status].toLowerCase()}` : ''}. Pesanan berlabel Simulasi dibuat sistem untuk demo dan tidak ikut diunduh ke CSV.
           </p>
         </>
       )}
@@ -315,7 +315,7 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
   const timeline: Array<{ at: string; label: string }> = [{ at: order.createdAt, label: 'Pesanan dibuat, kursi ditahan' }]
   for (const r of receipts) timeline.push({ at: r.createdAt, label: `Struk ${r.receiptNo} dikirim` })
   const reviewed = receipts.find((r) => r.reviewedAt)
-  if (reviewed?.reviewedAt) timeline.push({ at: reviewed.reviewedAt, label: `Struk direview: ${RECEIPT_STATUS_LABEL[reviewed.status].toLowerCase()}${reviewed.reason ? ` (${reviewed.reason})` : ''}` })
+  if (reviewed?.reviewedAt) timeline.push({ at: reviewed.reviewedAt, label: `Struk diperiksa: ${RECEIPT_STATUS_LABEL[reviewed.status].toLowerCase()}${reviewed.reason ? ` (${reviewed.reason})` : ''}` })
   if (order.confirmedAt) timeline.push({ at: order.confirmedAt, label: 'Terkonfirmasi, e-ticket terbit' })
   if (order.cancelledAt) {
     const by = order.cancelledBy === 'ADMIN' ? 'panitia' : 'pengunjung'
@@ -402,7 +402,7 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
               <li className="relative text-muted-foreground">
                 <span className="absolute top-1.5 -left-[1.3rem] size-2.5 rounded-full bg-status-warn ring-2 ring-card" aria-hidden />
                 <span className="block text-xs">{fmtDateTime(order.holdExpiresAt)}</span>
-                Batas tahan kursi
+                Batas waktu kursi ditahan
               </li>
             )}
           </ol>
@@ -410,7 +410,7 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
 
         {order.simulated && ACTIVE.includes(order.status) && (
           <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-            Pesanan simulasi dari pembeli contoh. Kursinya lepas sendiri saat waktu tahan habis, jadi tidak perlu diproses.
+            Pesanan simulasi untuk demo. Kursinya dilepas sendiri saat batas waktunya habis, jadi tidak perlu diproses.
           </p>
         )}
 
@@ -456,7 +456,7 @@ export function OrderDetailPanel({ row, askPaid = false }: { row: OrderRow; askP
             <DialogDescription>
               {seatSummary(order.items)} dilepas dan bisa dipesan orang lain.
               {order.status === 'CONFIRMED' ? ' E-ticket ikut dibatalkan dan pemesan mendapat pesan WA (simulasi).' : ''}
-              {refund ? ` ${rupiahPlain(refund)} dikembalikan penuh ke metode bayar asal (simulasi).` : ''} Pembatalan tidak bisa diurungkan.
+              {refund ? ` ${rupiahPlain(refund)} dikembalikan penuh ke metode bayar asal (simulasi).` : ''} Pesanan yang dibatalkan tidak bisa dipulihkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">

@@ -85,7 +85,7 @@ export default function Events() {
       <div className={compact ? 'flex flex-wrap items-center gap-2' : 'flex items-center justify-end gap-2'}>
         {ev.status === 'DRAFT' && (
           <Button size="lg" onClick={() => void publish(ev)} disabled={publishing === ev.id}>
-            <Rocket /> Publish
+            <Rocket /> Publikasikan
           </Button>
         )}
         {compact ? (
@@ -134,7 +134,7 @@ export default function Events() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Event"
-        description="Kategori, denah, dan sesi tiap event. Draft belum terlihat pengunjung."
+        description="Event berstatus Draft belum terlihat pengunjung sampai dipublikasikan."
         actions={
           <Button size="lg" className="h-11 sm:h-10" onClick={() => navigate('/admin/events/new')}>
             <Plus /> Buat event

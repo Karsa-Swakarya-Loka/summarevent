@@ -196,7 +196,7 @@ export function sessionSold(s: EventSummary['sessions'][number]): { sold: number
 }
 
 export function sessionLabel(s: { label?: string; startAt: string; endAt: string; demoLive?: boolean }): string {
-  if (s.demoLive) return s.label ?? 'Sesi demo'
+  if (s.demoLive) return s.label ?? 'Sesi uji coba'
   const time = `${fmtShortDate(s.startAt)}, ${new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(s.startAt)).replace(':', '.')}`
   return s.label ? `${s.label} · ${time}` : time
 }

@@ -163,7 +163,7 @@ for (const [label, type] of [['Unduh data peserta', 'peserta'], ['Unduh laporan 
 await page.goto(BASE + '/admin/live?event=evt_sangkuriang&session=ses_sk_16', { waitUntil: 'networkidle' })
 await page.waitForTimeout(800)
 await page.getByRole('button', { name: 'Simulasikan pembeli lain' }).click()
-await page.getByText(/Pembeli lain \(simulasi\) sedang memesan/).waitFor()
+await page.getByText(/Simulasi: orang lain sedang memesan/).waitFor()
 await page.waitForTimeout(600)
 await page.getByRole('button', { name: /Baris C nomor 7,/ }).first().click({ force: true })
 await page.waitForTimeout(400)

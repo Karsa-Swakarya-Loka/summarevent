@@ -14,7 +14,7 @@ import { LoginPanel } from '@/components/visitor/LoginPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DeskHead, LoadError, PhoneOnly, QtyStepper } from '@/components/visitor/Common'
 import { cachedSeatMap, forgetSeatMap, loadSeatMap } from '@/components/visitor/prefetch'
-import { continuePath, isPendingOrder, pendingTitle, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen, tapSeat } from '@/components/visitor/helpers'
+import { continuePath, holdLabel, isPendingOrder, pendingTitle, rememberSession, seatRangeLabel, seatsAdjacent, sessionName, sessionWhen, tapSeat } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { saleState, seatLabel, ticketAllowance, ticketLimitCheck, ticketsOwned } from '@/domain/rules'
 import type { Seat, SeatStatus, TicketCategory } from '@/domain/types'
@@ -449,7 +449,7 @@ function SeatPicker({ data, slug, sessionId }: { data: SeatMapData; slug: string
             <span className="min-w-0 flex-1 text-sm">
               <span className="block font-bold">Kamu masih punya pesanan di sesi ini</span>
               <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                {pendingTitle(pending)} · <Countdown to={pending.order.holdExpiresAt} className="text-xs" />
+                {pendingTitle(pending)} · <Countdown to={pending.order.holdExpiresAt} from={pending.order.createdAt} label={holdLabel(pending)} className="text-xs" />
               </span>
             </span>
             <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />

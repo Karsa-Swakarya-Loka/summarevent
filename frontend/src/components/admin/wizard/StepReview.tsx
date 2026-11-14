@@ -22,7 +22,7 @@ export function StepReview({ form, venues, issues, goTo }: { form: WizardForm; v
       {errors.length > 0 ? (
         <div role="alert" className="rounded-xl border border-status-invalid/30 bg-status-invalid/5 p-4">
           <div className="mb-2 flex items-center gap-2 font-semibold text-[#a11b1b]">
-            <AlertCircle className="size-5" aria-hidden /> {errors.length} hal perlu dilengkapi sebelum disimpan
+            <AlertCircle className="size-5" aria-hidden /> {errors.length} isian perlu dilengkapi sebelum event bisa disimpan
           </div>
           <ul className="flex flex-col gap-2 text-sm">
             {errors.map((e, i) => (
@@ -69,13 +69,13 @@ export function StepReview({ form, venues, issues, goTo }: { form: WizardForm; v
             <div>
               <dt className="text-xs text-muted-foreground">Aturan</dt>
               <dd className="font-medium">
-                Maks {form.rules.maxSeatsPerOrder} tiket per akun per sesi · tahan bayar {form.rules.paymentHoldMin} mnt · tahan struk {form.rules.receiptHoldMin} mnt
+                Maksimal {form.rules.maxSeatsPerOrder} tiket per akun tiap sesi · {form.rules.paymentHoldMin} menit untuk bayar · {form.rules.receiptHoldMin} menit untuk cek struk
               </dd>
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Check-in</dt>
               <dd className="font-medium">
-                Dibuka {form.rules.checkinOpenMin} mnt sebelum sesi · {form.rules.transferable ? 'bisa dipindahtangankan' : 'tidak dipindahtangankan'} · {form.rules.reentryAllowed ? 'boleh keluar-masuk' : 'sekali masuk'}
+                Mulai {form.rules.checkinOpenMin} menit sebelum sesi · {form.rules.transferable ? 'bisa dipindahtangankan' : 'tidak dipindahtangankan'} · {form.rules.reentryAllowed ? 'boleh keluar-masuk' : 'sekali masuk'}
               </dd>
             </div>
             <div className="sm:col-span-2">
@@ -95,8 +95,8 @@ export function StepReview({ form, venues, issues, goTo }: { form: WizardForm; v
                 {c.name.trim() || 'Tanpa nama'}
               </span>
               <span className="min-w-36">{accessSummary(c)}</span>
-              <span className="min-w-28 text-muted-foreground">{general || c.noSeat ? `Kuota ${Number.isFinite(c.quota) ? c.quota : '–'}/sesi` : `${counts.get(c.key) ?? 0} kursi`}</span>
-              <span className="text-xs text-muted-foreground">Jual mulai {c.saleStart ? fmtDateTime(localInputToIso(c.saleStart)) : '–'}</span>
+              <span className="min-w-28 text-muted-foreground">{general || c.noSeat ? `Kuota ${Number.isFinite(c.quota) ? c.quota : '–'} per sesi` : `${counts.get(c.key) ?? 0} kursi`}</span>
+              <span className="text-xs text-muted-foreground">Dijual mulai {c.saleStart ? fmtDateTime(localInputToIso(c.saleStart)) : '–'}</span>
             </li>
           ))}
         </ul>
@@ -106,7 +106,7 @@ export function StepReview({ form, venues, issues, goTo }: { form: WizardForm; v
         {!general && (
           <SectionCard title="Denah" actions={<Button variant="ghost" size="sm" onClick={() => goTo('denah')}>Ubah</Button>}>
             <p className="text-sm">
-              {L.rows} baris (A–{L.rows > 0 ? rowLetter(Math.min(L.rows, 26) - 1) : '?'}) × {L.seatsPerRow} kursi
+              {L.rows} baris (A–{L.rows > 0 ? rowLetter(Math.min(L.rows, 26) - 1) : '?'}), {L.seatsPerRow} kursi per baris
               {L.aisleAfter != null ? `, lorong setelah kursi ${L.aisleAfter}` : ', tanpa lorong'}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -120,7 +120,7 @@ export function StepReview({ form, venues, issues, goTo }: { form: WizardForm; v
               <li key={s.key} className="flex flex-wrap justify-between gap-2">
                 <span className="font-medium">{s.label.trim() || `Sesi ${i + 1}`}</span>
                 <span className="text-muted-foreground">
-                  {s.demoLive ? 'Selalu berlangsung (uji coba)' : s.date && s.start ? `${fmtShortDate(wibIso(s.date, s.start))}, ${s.start.replace(':', '.')}–${s.end.replace(':', '.')} WIB` : '–'}
+                  {s.demoLive ? 'Sesi uji coba, selalu berlangsung' : s.date && s.start ? `${fmtShortDate(wibIso(s.date, s.start))}, ${s.start.replace(':', '.')}–${s.end.replace(':', '.')} WIB` : '–'}
                 </span>
               </li>
             ))}

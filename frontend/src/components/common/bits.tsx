@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { ChevronLeft, Clock } from 'lucide-react'
 import type { Tone } from '@/domain/labels'
-import { fmtCountdown } from '@/lib/format'
+import { countdownUnits, fmtLeft } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useNow } from '@/hooks/useLive'
 import { useScrolled } from '@/hooks/useScrolled'
@@ -35,31 +35,111 @@ export function StatusBadge({ tone, children, className }: { tone: Tone; childre
   )
 }
 
-/* ---------- Countdown ---------- */
-export function Countdown({ to, className, onDone, prefix }: { to: string; className?: string; onDone?: () => void; prefix?: ReactNode }) {
+/* ---------- Time left ---------- */
+/*
+ * Every clock in the app says what it counts down to ("Bayar dalam", "Mulai dalam", "Kursi ditahan"), never a bare
+ * "09:52", and never with "Sisa", which on these screens means places left. Under an hour it reads mm:ss next to a ring
+ * that drains (when the start of the stretch is known); from an hour on it is words ("5 jam 12 mnt"). The big form is
+ * TimeTiles: one tile per unit, the seconds always ticking.
+ */
+const pad2 = (n: number) => String(n).padStart(2, '0')
+function clockText(ms: number) {
+  if (ms <= 0) return 'Waktu habis'
+  if (ms >= 3_600_000) return fmtLeft(ms, { seconds: false })
+  const t = Math.floor(ms / 1000)
+  return `${pad2(Math.floor(t / 60))}:${pad2(t % 60)}`
+}
+
+/** A small ring that empties as the time runs out; a clock face when the start is not known. */
+function TimeRing({ left, total, className }: { left: number; total?: number; className?: string }) {
+  if (!total || total <= 0) return <Clock className={cn('size-4 shrink-0', className)} aria-hidden />
+  const r = 6.25
+  const c = 2 * Math.PI * r
+  const frac = Math.max(0, Math.min(1, left / total))
+  return (
+    <svg viewBox="0 0 16 16" className={cn('size-4 shrink-0 -rotate-90', className)} aria-hidden>
+      <circle cx="8" cy="8" r={r} fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2.5" />
+      <circle cx="8" cy="8" r={r} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray={`${c * frac} ${c}`} className="transition-[stroke-dasharray] duration-1000 ease-linear" />
+    </svg>
+  )
+}
+
+/**
+ * The time left to `to`, with what it is for: "[ring] Bayar dalam 09:52". `from` (the start of the stretch, e.g. when
+ * the seats were held) lets the ring drain; in the last two minutes it turns red.
+ */
+export function Countdown({ to, label, from, className, onDone }: { to: string; label?: ReactNode; from?: string; className?: string; onDone?: () => void }) {
   const now = useNow(1000)
   const ms = new Date(to).getTime() - now.getTime()
   if (ms <= 0 && onDone) queueMicrotask(onDone)
   const urgent = ms < 2 * 60_000
+  const total = from ? new Date(to).getTime() - new Date(from).getTime() : undefined
   return (
-    <span className={cn('inline-flex items-center gap-1.5 font-semibold tabular-nums', urgent && 'text-status-invalid', className)} role="timer" aria-live="off">
-      <Clock className="size-4" aria-hidden />
-      {/* the prefix and the time are one run of text, so only a real space parts them */}
-      {prefix}
-      {prefix != null && ' '}
-      {ms <= 0 ? '00:00' : fmtCountdown(ms)}
+    <span className={cn('inline-flex items-center gap-1.5 font-semibold whitespace-nowrap tabular-nums', urgent && 'text-status-invalid', className)} role="timer" aria-live="off">
+      <TimeRing left={ms} total={total} />
+      {/* the label and the time are one run of text, so only a real space parts them */}
+      {label != null && <span className="font-medium">{label}</span>}
+      {label != null && ' '}
+      <span>{clockText(ms)}</span>
     </span>
   )
 }
 
-/** The hold countdown as a dark pill in an app bar, red in the last two minutes. */
-export function HoldPill({ to, label }: { to: string; label: string }) {
+/**
+ * The big countdown: what it counts to, then one tile per unit (hari, jam, mnt, dtk) with the seconds ticking.
+ * `tone` sets it on a light card, on ink, or as frosted glass over a picture.
+ */
+export function TimeTiles({ to, label, tone = 'light', className, onDone }: { to: string; label: ReactNode; tone?: 'light' | 'ink' | 'glass'; className?: string; onDone?: () => void }) {
   const now = useNow(1000)
-  const urgent = new Date(to).getTime() - now.getTime() < 2 * 60_000
+  const ms = new Date(to).getTime() - now.getTime()
+  if (ms <= 0 && onDone) queueMicrotask(onDone)
+  const urgent = ms > 0 && ms < 2 * 60_000
+  const tile = {
+    light: 'bg-ink text-white',
+    ink: 'bg-white/12 text-white ring-1 ring-white/15 ring-inset',
+    glass: 'bg-white/90 text-ink',
+  }[tone]
   return (
-    <span className={cn('inline-flex h-9 shrink-0 items-center rounded-full px-3 shadow-sm transition-colors duration-300', urgent ? 'bg-status-invalid' : 'bg-ink')}>
-      <span className="sr-only">{label}: </span>
-      <Countdown to={to} prefix="Sisa" className="text-sm text-white [&_svg]:size-3.5" />
+    <div className={cn('inline-flex flex-col gap-1.5', className)} role="timer" aria-live="off" aria-label={`${typeof label === 'string' ? label + ' ' : ''}${ms <= 0 ? 'waktu habis' : fmtLeft(ms)}`}>
+      <span className={cn('text-[0.7rem] leading-none font-bold tracking-[0.08em] uppercase', tone === 'light' ? 'text-muted-foreground' : 'text-white/85')} aria-hidden>
+        {label}
+      </span>
+      <span className="flex items-stretch gap-1" aria-hidden>
+        {ms <= 0 ? (
+          <span className={cn('rounded-lg px-2.5 py-1.5 text-sm font-bold', tile)}>Waktu habis</span>
+        ) : (
+          countdownUnits(ms).map((u) => (
+            <span key={u.unit} className={cn('flex min-w-[2.6rem] flex-col items-center rounded-lg px-1.5 pt-1 pb-0.5 shadow-xs', tile, urgent && 'bg-status-invalid text-white')}>
+              <span className="text-[1.05rem] leading-tight font-extrabold tabular-nums">{u.unit === 'hari' ? u.value : pad2(u.value)}</span>
+              <span className="text-[0.62rem] leading-tight font-semibold uppercase opacity-75">{u.unit}</span>
+            </span>
+          ))
+        )}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * The hold countdown as a dark pill in an app bar: a draining ring, what is held, and mm:ss. Red in the last two
+ * minutes.
+ */
+export function HoldPill({ to, from, label }: { to: string; from?: string; label: string }) {
+  const now = useNow(1000)
+  const ms = new Date(to).getTime() - now.getTime()
+  const urgent = ms < 2 * 60_000
+  const total = from ? new Date(to).getTime() - new Date(from).getTime() : undefined
+  return (
+    <span
+      className={cn('inline-flex h-10 shrink-0 items-center gap-2 rounded-full py-1 pr-3.5 pl-2.5 text-white shadow-sm transition-colors duration-300', urgent ? 'bg-status-invalid' : 'bg-ink')}
+      role="timer"
+      aria-live="off"
+    >
+      <TimeRing left={ms} total={total} className="size-5" />
+      <span className="flex flex-col leading-none">
+        <span className="text-[0.62rem] font-semibold tracking-wide text-white/80 uppercase">{label}</span>{' '}
+        <span className="mt-0.5 text-sm font-bold tabular-nums">{clockText(ms)}</span>
+      </span>
     </span>
   )
 }

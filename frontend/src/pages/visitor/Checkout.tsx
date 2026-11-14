@@ -219,7 +219,7 @@ function CheckoutBody({ detail, user, onLogin }: { detail: OrderDetail; user: Us
     </div>
   )
 
-  const hold = <HoldPill to={order.holdExpiresAt} label={seats.length ? 'Kursi ditahan' : 'Tempat ditahan'} />
+  const hold = <HoldPill to={order.holdExpiresAt} from={order.createdAt} label={seats.length ? 'Kursi ditahan' : 'Tempat ditahan'} />
   // the step's one action: in the phone's bottom bar, on a laptop under the order summary on the right
   const action =
     user && access === 'PAID' ? (

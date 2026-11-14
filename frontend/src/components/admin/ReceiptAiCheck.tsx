@@ -108,7 +108,7 @@ function Result({ matches, shown }: { matches: FieldMatch[]; shown: (field: Rece
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-muted-foreground">Kolom tengah adalah yang terbaca di foto. AI bisa salah baca, jadi keputusan tetap di panitia.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Teks di tengah adalah hasil baca AI dari foto. AI bisa salah baca, jadi keputusan tetap di panitia.</p>
     </>
   )
 }

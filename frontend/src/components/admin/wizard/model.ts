@@ -330,10 +330,10 @@ export function validate(form: WizardForm, venues: Venue[]): Issue[] {
   const img = posterImageCheck(form.posterImage)
   if (!img.ok) add('info', 'posterImage', img.reason)
   const r = form.rules
-  if (!intIn(r.maxSeatsPerOrder, 1, 10)) add('info', 'rules.maxSeatsPerOrder', 'Isi angka 1–10 tiket per akun per sesi.')
-  if (!intIn(r.paymentHoldMin, 3, 60)) add('info', 'rules.paymentHoldMin', 'Isi 3–60 menit. Disarankan 10 menit.')
-  if (!intIn(r.receiptHoldMin, 5, 180)) add('info', 'rules.receiptHoldMin', 'Isi 5–180 menit. Disarankan 30 menit supaya panitia sempat cek struk.')
-  if (!intIn(r.checkinOpenMin, 0, 240)) add('info', 'rules.checkinOpenMin', 'Isi 0–240 menit sebelum sesi mulai.')
+  if (!intIn(r.maxSeatsPerOrder, 1, 10)) add('info', 'rules.maxSeatsPerOrder', 'Isi antara 1 dan 10 tiket.')
+  if (!intIn(r.paymentHoldMin, 3, 60)) add('info', 'rules.paymentHoldMin', 'Isi antara 3 dan 60 menit. Biasanya 10 menit.')
+  if (!intIn(r.receiptHoldMin, 5, 180)) add('info', 'rules.receiptHoldMin', 'Isi antara 5 dan 180 menit. Biasanya 30 menit, supaya panitia sempat memeriksa struk.')
+  if (!intIn(r.checkinOpenMin, 0, 240)) add('info', 'rules.checkinOpenMin', 'Isi antara 0 dan 240 menit.')
 
   /* kategori */
   if (!form.categories.length) add('kategori', 'categories', 'Tambahkan minimal 1 kategori tiket.')
@@ -348,7 +348,7 @@ export function validate(form: WizardForm, venues: Venue[]): Issue[] {
     const needsQuota = form.seatingMode === 'GENERAL' || c.noSeat
     if (needsQuota && !intIn(c.quota, 1, 5000)) add('kategori', f('quota'), `Isi kuota per sesi untuk ${label} (1–5000 orang).`)
     if (!c.saleStart) add('kategori', f('saleStart'), 'Isi kapan penjualan dibuka.')
-    if (!intIn(c.saleCloseMin, 0, 1440)) add('kategori', f('saleCloseMin'), 'Isi 0–1440 menit (0 = tutup tepat saat sesi mulai).')
+    if (!intIn(c.saleCloseMin, 0, 1440)) add('kategori', f('saleCloseMin'), 'Isi antara 0 dan 1440 menit. Isi 0 kalau penjualan tutup tepat saat sesi mulai.')
     const hasBonusN = c.bonusFirstN != null && Number.isFinite(c.bonusFirstN)
     if (hasBonusN || c.bonusDesc?.trim()) {
       if (!hasBonusN || !intIn(c.bonusFirstN as number, 1, 10000)) add('kategori', f('bonusN'), 'Isi berapa tiket pertama yang dapat bonus (1–10.000), atau kosongkan dua kolom bonus.')
@@ -356,9 +356,9 @@ export function validate(form: WizardForm, venues: Venue[]): Issue[] {
     }
     if (c.accessMethod === 'RECEIPT') {
       const rr = c.receiptRules
-      if (!rr || !(Number.isFinite(rr.minSpend) && rr.minSpend >= 1000)) add('kategori', f('minSpend'), 'Isi minimal belanja (mis. Rp300.000) atau pakai tombol "Pakai preset umum mal".')
-      if (rr && !intIn(rr.maxReceiptsCombined, 1, 10)) add('kategori', f('maxReceipts'), 'Isi 1–10 struk yang boleh digabung.')
-      if (rr && !/^\d{2}:\d{2}$/.test(rr.cutoffTime)) add('kategori', f('cutoff'), 'Isi jam batas struk, misalnya 22:00.')
+      if (!rr || !(Number.isFinite(rr.minSpend) && rr.minSpend >= 1000)) add('kategori', f('minSpend'), 'Isi minimal belanja (mis. Rp300.000) atau tekan "Pakai aturan standar mal".')
+      if (rr && !intIn(rr.maxReceiptsCombined, 1, 10)) add('kategori', f('maxReceipts'), 'Isi antara 1 dan 10 struk.')
+      if (rr && !/^\d{2}:\d{2}$/.test(rr.cutoffTime)) add('kategori', f('cutoff'), 'Isi jam paling lambat di struk, misalnya 22.00.')
     }
   }
   if (form.seatingMode === 'RESERVED' && form.categories.length && !seatCategories(form).length) {
@@ -420,7 +420,7 @@ export function validate(form: WizardForm, venues: Venue[]): Issue[] {
   const venue = venues.find((v) => v.id === form.venueId)
   const cap = capacityOf(form)
   if (venue && cap > venue.capacity) {
-    add(form.seatingMode === 'RESERVED' ? 'denah' : 'kategori', 'capacity', `Kapasitas per sesi ${cap} orang melebihi kapasitas ${venue.name} (${venue.capacity}, asumsi). Kurangi kursi/kuota bila perlu.`, true)
+    add(form.seatingMode === 'RESERVED' ? 'denah' : 'kategori', 'capacity', `Kapasitas per sesi ${cap} orang melebihi kapasitas ${venue.name} (${venue.capacity} orang). Kurangi kursi atau kuota kalau perlu.`, true)
   }
   return out
 }

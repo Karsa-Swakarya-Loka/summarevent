@@ -14,7 +14,7 @@ import { Poster } from '@/components/common/Poster'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LoadError, TabHeader } from '@/components/visitor/Common'
-import { continuePath, isPendingOrder, pendingTitle, seatRangeLabel } from '@/components/visitor/helpers'
+import { continuePath, holdLabel, isPendingOrder, pendingTitle, seatRangeLabel } from '@/components/visitor/helpers'
 import { useVisitor } from '@/components/visitor/hooks'
 import { TICKET_STATUS_LABEL } from '@/domain/labels'
 import { errorMessage, useLive, useNow } from '@/hooks/useLive'
@@ -91,7 +91,7 @@ export default function MyPass() {
               <span className="block font-bold">{pendingTitle(d)}</span>
               <span className="flex items-center gap-2 text-xs">
                 <span className="min-w-0 truncate font-semibold text-[#7a5600]">{d.event.title}</span>
-                <Countdown to={d.order.holdExpiresAt} className="shrink-0 text-xs" />
+                <Countdown to={d.order.holdExpiresAt} from={d.order.createdAt} label={holdLabel(d)} className="shrink-0 text-xs" />
               </span>
             </span>
             <ChevronRight className="size-5 shrink-0 text-[#7a5600]" aria-hidden />

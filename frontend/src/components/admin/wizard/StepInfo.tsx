@@ -47,7 +47,7 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
             <TextInput id="ev-title" value={form.title} invalid={!!err('title')} placeholder='mis. Pentas Musikal Keluarga "Sangkuriang"' onChange={(e) => update((f) => ({ ...f, title: e.target.value }))} />
           </Field>
           <Field id="ev-subtitle" label="Subjudul" optional className="md:col-span-2">
-            <TextInput id="ev-subtitle" value={form.subtitle} placeholder="Satu kalimat pemikat" onChange={(e) => update((f) => ({ ...f, subtitle: e.target.value }))} />
+            <TextInput id="ev-subtitle" value={form.subtitle} placeholder="mis. Drama musikal 60 menit untuk anak dan orang tua" onChange={(e) => update((f) => ({ ...f, subtitle: e.target.value }))} />
           </Field>
           <Field id="ev-desc" label="Deskripsi" error={err('description')} hint="Isi acara, durasi, dan cocok untuk siapa." className="md:col-span-2">
             <Textarea
@@ -60,7 +60,7 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
               onChange={(e) => update((f) => ({ ...f, description: e.target.value }))}
             />
           </Field>
-          <Field id="ev-venue" label="Venue" error={err('venueId')} hint={editing ? undefined : 'Ukuran denah awal ikut kapasitas venue.'}>
+          <Field id="ev-venue" label="Venue" error={err('venueId')} hint={editing ? undefined : 'Denah awal dibuat sesuai kapasitas venue.'}>
             {/* a saved event keeps its seat map; only a new one follows the venue */}
             <Select value={form.venueId} onValueChange={(v) => update((f) => (editing ? { ...f, venueId: v } : changeVenue(f, v, venues)))}>
               <SelectTrigger id="ev-venue" className="w-full bg-card data-[size=default]:h-10" aria-invalid={!!err('venueId') || undefined}>
@@ -82,7 +82,7 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
         <PosterImageField value={form.posterImage} onChange={(posterImage) => update((f) => ({ ...f, posterImage }))} error={err('posterImage')} />
       </SectionCard>
 
-      <SectionCard title="Tema poster" description={form.posterImage ? 'Jenis acara dan warna e-ticket. Posternya memakai gambar di atas.' : 'Poster dibuat otomatis dari judul: pilih gayanya, lalu warnanya kalau mau. Tiket pengunjung memakai tema yang sama.'}>
+      <SectionCard title="Tema poster" description={form.posterImage ? 'Menentukan warna e-ticket. Poster tetap memakai gambar yang diunggah.' : 'Poster dibuat dari judul event. Pilih gayanya; e-ticket pengunjung ikut tema ini.'}>
         <div role="radiogroup" aria-label="Tema poster" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {THEMES.map((t) => {
             const active = form.posterTheme === t.id
@@ -128,7 +128,7 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
         </div>
       </SectionCard>
 
-      <SectionCard title="Mode kursi" description={layoutLocked ? 'Mode kursi terkunci karena event ini sudah punya pesanan.' : 'Bisa diubah sebelum ada pesanan.'}>
+      <SectionCard title="Mode kursi" description={layoutLocked ? 'Tidak bisa diubah karena sudah ada pesanan.' : 'Bisa diubah selama belum ada pesanan.'}>
         <ChoiceCards<SeatingMode>
           label="Mode kursi"
           value={form.seatingMode}
@@ -137,14 +137,14 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
           className="sm:grid-cols-2"
           options={[
             { value: 'RESERVED', icon: <Armchair />, title: 'Kursi bernomor', description: 'Pengunjung memilih kursi di denah. Bisa ditambah area tanpa nomor (mis. Festival).' },
-            { value: 'GENERAL', icon: <Users />, title: 'Tanpa nomor kursi', description: 'Cukup pilih sesi & jumlah orang. Kapasitas dari kuota per kategori.' },
+            { value: 'GENERAL', icon: <Users />, title: 'Tanpa nomor kursi', description: 'Pengunjung cukup memilih sesi dan jumlah orang. Kapasitas diatur lewat kuota tiap kategori.' },
           ]}
         />
       </SectionCard>
 
       <SectionCard
-        title="Pengaturan lanjutan"
-        description="Aturan untuk semua kategori dan sesi. Nilai umumnya sudah terisi."
+        title="Aturan pemesanan"
+        description="Berlaku untuk semua kategori dan sesi. Sudah terisi angka yang biasa dipakai."
         actions={
           !rulesError && (
             <button
@@ -162,27 +162,27 @@ export function StepInfo({ form, update, err, venues, layoutLocked, editing }: S
       >
         {!showRules && (
           <p className="text-sm text-muted-foreground">
-            Maks {rules.maxSeatsPerOrder} tiket per akun per sesi · tahan bayar {rules.paymentHoldMin} menit · tahan struk {rules.receiptHoldMin} menit · check-in dibuka {rules.checkinOpenMin} menit sebelum mulai · {rules.transferable ? 'bisa dipindahtangankan' : 'tidak dipindahtangankan'} · {rules.reentryAllowed ? 'boleh keluar-masuk' : 'sekali masuk'}
+            Maksimal {rules.maxSeatsPerOrder} tiket per akun tiap sesi · kursi ditahan {rules.paymentHoldMin} menit untuk bayar · {rules.receiptHoldMin} menit untuk cek struk · check-in mulai {rules.checkinOpenMin} menit sebelum sesi · {rules.transferable ? 'boleh dipindahtangankan' : 'tidak bisa dipindahtangankan'} · {rules.reentryAllowed ? 'boleh keluar-masuk' : 'sekali masuk'}
           </p>
         )}
         <div id="rules-body" hidden={!showRules}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field id="rule-max" label="Maks tiket per akun per sesi" error={err('rules.maxSeatsPerOrder')}>
+            <Field id="rule-max" label="Maksimal tiket per akun" hint="Per sesi, dihitung dari semua pesanan akun itu." error={err('rules.maxSeatsPerOrder')}>
               <NumberInput id="rule-max" value={rules.maxSeatsPerOrder} min={1} max={10} suffix="tiket" invalid={!!err('rules.maxSeatsPerOrder')} onChange={(n) => setRule('maxSeatsPerOrder', n)} />
             </Field>
-            <Field id="rule-pay" label="Waktu tahan bayar" error={err('rules.paymentHoldMin')} hint="Kursi ditahan selama pembayaran.">
+            <Field id="rule-pay" label="Kursi ditahan untuk bayar" error={err('rules.paymentHoldMin')} hint="Belum bayar sampai waktunya habis, pesanan kedaluwarsa dan kursi dilepas.">
               <NumberInput id="rule-pay" value={rules.paymentHoldMin} min={3} max={60} suffix="menit" invalid={!!err('rules.paymentHoldMin')} onChange={(n) => setRule('paymentHoldMin', n)} />
             </Field>
-            <Field id="rule-rcp" label="Waktu tahan struk" error={err('rules.receiptHoldMin')} hint="Selama struk diverifikasi panitia.">
+            <Field id="rule-rcp" label="Kursi ditahan untuk cek struk" error={err('rules.receiptHoldMin')} hint="Kalau struk belum diputuskan sampai waktunya habis, pesanan kedaluwarsa.">
               <NumberInput id="rule-rcp" value={rules.receiptHoldMin} min={5} max={180} suffix="menit" invalid={!!err('rules.receiptHoldMin')} onChange={(n) => setRule('receiptHoldMin', n)} />
             </Field>
-            <Field id="rule-checkin" label="Check-in dibuka" error={err('rules.checkinOpenMin')} hint="Sebelum sesi mulai.">
+            <Field id="rule-checkin" label="Check-in mulai" error={err('rules.checkinOpenMin')} hint="Menit sebelum sesi mulai. Isi 0 kalau check-in baru dibuka saat sesi mulai.">
               <NumberInput id="rule-checkin" value={rules.checkinOpenMin} min={0} max={240} suffix="menit" invalid={!!err('rules.checkinOpenMin')} onChange={(n) => setRule('checkinOpenMin', n)} />
             </Field>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <ToggleRow id="rule-transfer" checked={rules.transferable} onChange={(v) => setRule('transferable', v)} title="Tiket bisa dipindahtangankan" description="Nama peserta boleh diganti setelah tiket terbit." />
-            <ToggleRow id="rule-reentry" checked={rules.reentryAllowed} onChange={(v) => setRule('reentryAllowed', v)} title="Boleh keluar-masuk" description="QR bisa dipindai ulang di sesi yang sama." />
+            <ToggleRow id="rule-transfer" checked={rules.transferable} onChange={(v) => setRule('transferable', v)} title="Tiket boleh dipindahtangankan" description="Nama peserta boleh diganti setelah tiket terbit." />
+            <ToggleRow id="rule-reentry" checked={rules.reentryAllowed} onChange={(v) => setRule('reentryAllowed', v)} title="Boleh keluar-masuk" description="Pengunjung yang sudah check-in boleh keluar, lalu scan QR lagi untuk masuk di sesi yang sama." />
           </div>
         </div>
       </SectionCard>

@@ -277,7 +277,7 @@ function AccountMenu({ user, onSignOut }: { user: { name: string; email?: string
           <Link to="/app">Buka aplikasi pengunjung</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/staff">Buka app petugas</Link>
+          <Link to="/staff">Buka aplikasi petugas</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut}>

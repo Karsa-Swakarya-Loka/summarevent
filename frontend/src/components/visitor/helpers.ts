@@ -113,6 +113,27 @@ export function pendingTitle(d: Pick<OrderDetail, 'order' | 'receipts'>, short =
   return short ? 'Bayar' : 'Tinggal bayar'
 }
 
+/**
+ * The clock an event card shows: while a session runs, when it ends; before that, when the next one starts; nothing once
+ * every session is over.
+ */
+export function eventClock(sessions: Array<Pick<Session, 'startAt' | 'endAt'>>, now: Date): { label: 'Berakhir dalam' | 'Mulai dalam'; to: string; live: boolean } | null {
+  const t = now.getTime()
+  const by = (k: 'startAt' | 'endAt') => (a: Pick<Session, 'startAt' | 'endAt'>, b: Pick<Session, 'startAt' | 'endAt'>) => Date.parse(a[k]) - Date.parse(b[k])
+  const running = sessions.filter((s) => Date.parse(s.startAt) <= t && Date.parse(s.endAt) > t).sort(by('endAt'))[0]
+  if (running) return { label: 'Berakhir dalam', to: running.endAt, live: true }
+  const next = sessions.filter((s) => Date.parse(s.startAt) > t).sort(by('startAt'))[0]
+  return next ? { label: 'Mulai dalam', to: next.startAt, live: false } : null
+}
+
+/** What the hold countdown of a waiting order counts down to, as the words before the time ("Bayar dalam 09:52"). */
+export function holdLabel(d: Pick<OrderDetail, 'order' | 'receipts'>): string {
+  const { order, receipts } = d
+  if (order.status === 'AWAITING_VERIFICATION') return receipts.some((r) => r.status === 'PENDING') ? 'Ditahan' : 'Kirim dalam'
+  if (order.paymentMethod === 'FREE' || order.totalAmount === 0) return 'Konfirmasi dalam'
+  return 'Bayar dalam'
+}
+
 /** Where a visitor should continue an order. */
 export function continuePath(d: Pick<OrderDetail, 'order' | 'receipts'>): string {
   const { order, receipts } = d

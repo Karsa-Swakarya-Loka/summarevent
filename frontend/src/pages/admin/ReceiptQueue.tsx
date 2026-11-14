@@ -35,7 +35,7 @@ export default function ReceiptQueue() {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <PageHeader title="Verifikasi struk" description="Cek foto dan hasil cek otomatis, lalu putuskan. Kursi pengunjung tetap ditahan selama menunggu." />
+      <PageHeader title="Verifikasi struk" description="Periksa foto dan syarat struk, lalu putuskan. Kursi pengunjung tetap ditahan sampai kamu memutuskan atau batas waktunya habis." />
 
       <div className="mb-4 inline-flex rounded-xl bg-panel p-1" role="tablist" aria-label="Filter antrean">
         {(

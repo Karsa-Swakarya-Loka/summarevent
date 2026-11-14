@@ -194,7 +194,7 @@ Jalur paling cepat kalau waktunya mepet: halaman awal → **Masuk sebagai pengun
 
 | Angka | Sumber |
 | --- | --- |
-| 114 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
+| 122 unit test logika inti, 23 tes backend, 9 suite end-to-end | `npm test` di `frontend/` dan `backend/`, `npm run e2e` |
 | 61 layar lolos WCAG 2.1 AA, semua target sentuh di HP minimal 44 px | Suite `a11y.mjs` |
 | Lighthouse 13.6: 100 untuk Performance, Accessibility, Best Practices, dan SEO di halaman awal, Beranda, masuk panitia, dan masuk petugas, HP dan laptop. Halaman event 98 di HP. CLS 0 di semua halaman | `npx lighthouse@13.6.0 https://summarevent.vercel.app/` (tambah `--preset=desktop` untuk laptop), 13 November 2026 |
 | Mozilla HTTP Observatory A+ (135/100, 12 dari 12 tes) | [developer.mozilla.org/observatory](https://developer.mozilla.org/en-US/observatory/analyze?host=summarevent.vercel.app) |

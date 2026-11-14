@@ -83,7 +83,6 @@ export default function RolePicker() {
       <StickerSlap
         wordmark="summarevent"
         className="sev-landing"
-        wordmarkMaxHeight="clamp(84px, 16svh, 200px)"
         badge={{
           label: live ? 'live' : 'demo',
           title: live ? 'Terhubung ke server Summarevent. Pembayaran, OTP, dan WA/email masih simulasi.' : 'Versi cadangan: data tersimpan di browser ini. Pembayaran, OTP, dan WA/email disimulasikan.',

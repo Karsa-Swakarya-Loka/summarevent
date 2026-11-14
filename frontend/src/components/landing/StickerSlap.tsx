@@ -1,6 +1,7 @@
 /**
  * Sticker Slap: the landing page as a loud, friendly studio footer. A cream frame, a green panel with the three roles
- * as columns, and a fat script wordmark, whole, along the bottom with die-cut stickers slapped on it.
+ * as columns, and a fat script wordmark across the whole bottom edge, sinking into it on a laptop and whole on a phone,
+ * with die-cut stickers slapped on it.
  *
  * The storyboard, once per visit: the panel grows out of the frame and its corners settle; the column tags pop and
  * the lines rise out of their masks; the wordmark writes itself in one continuous marker stroke (t-crosses and
@@ -65,6 +66,8 @@ export interface StickerSlapProps {
   className?: string
 }
 
+/** On a laptop the panel's bottom edge cuts the wordmark this far below the baseline, in script units. */
+const CUT = -1.2
 const STROKE = 3.3
 /** The script leans: tan(9°). */
 const SLANT = 0.1584
@@ -111,7 +114,7 @@ const CSS =
   '.ssf-slide{min-width:0;min-height:0;height:100%}' +
   // the wordmark stage
   '.ssf-stage{position:relative;z-index:1;margin-top:auto;width:min(100%,calc(var(--ssf-wmh) * var(--ssf-ar)));align-self:center;padding:0 clamp(6px,.8cqw,12px)}' +
-  '.ssf-stage-in{position:relative;container-type:inline-size}' +
+  '.ssf-stage-in{position:relative;container-type:inline-size;margin-bottom:var(--ssf-sink,0)}' +
   '.ssf-wm-btn{display:block;width:100%;border-radius:0 !important;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
   '.ssf-wm{width:100%;height:auto;color:var(--ssf-cream)}' +
   '.ssf-wm path{fill:none;stroke:currentColor;stroke-width:' + STROKE + ';stroke-linecap:round;stroke-linejoin:round}' +
@@ -130,7 +133,7 @@ const CSS =
   '.ssf-st-btn:hover .ssf-sheen{transform:translateX(130%);transition:transform .9s cubic-bezier(.4,0,.2,1)}' +
   '.ssf-ring{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:2px solid var(--ssf-cream);opacity:0;pointer-events:none}' +
   // on a phone the wordmark stays whole across the panel; two stickers stand on it, the other two would cover the word
-  '@container (max-width: 760px){.ssf-top{padding-bottom:14px}.ssf-slides{padding-top:60px;min-height:260px}.ssf-stage{width:100%}.ssf-st:not(:nth-of-type(2)):not(:nth-of-type(3)){display:none}.ssf-st{translate:-50% -78%}.ssf-wm-btn{min-height:44px;display:flex;align-items:flex-end}}' +
+  '@container (max-width: 760px){.ssf-top{padding-bottom:14px}.ssf-slides{padding-top:60px;min-height:260px}.ssf-stage{width:100%}.ssf-stage-in{margin-bottom:0}.ssf-st:not(:nth-of-type(2)):not(:nth-of-type(3)){display:none}.ssf-st{translate:-50% -78%}.ssf-wm-btn{min-height:44px;display:flex;align-items:flex-end}}' +
   '@keyframes ssf-rewrite{0%{stroke-dashoffset:var(--l,120px)}100%{stroke-dashoffset:0}}' +
   // the storyboard: everything above is the finished state; motion only adds the way in
   '@media (prefers-reduced-motion: no-preference){' +
@@ -306,6 +309,7 @@ export function StickerSlap({
   const vbY = word.top - pad
   const vbW = Math.max(word.width, 1) + 2.8 + pad * 2 - word.top * SLANT
   const vbH = word.bottom + pad - vbY
+  const cutH = CUT - vbY
 
   const spots = React.useMemo(() => stickerSpots(word, stickers.length, 3), [word, stickers.length])
   const drawDur = clamp(0.7 + word.width / 45, 1.1, 2.6)
@@ -468,7 +472,8 @@ export function StickerSlap({
     '--ssf-accent': accent,
     '--ssf-sans': 'var(--font-sans)',
     '--ssf-wmh': wordmarkMaxHeight,
-    '--ssf-ar': String(round(vbW / vbH)),
+    // the width a height allows is that of the cut wordmark, so on a laptop it spans the panel edge to edge
+    '--ssf-ar': String(round(vbW / cutH)),
     minHeight: height,
   } as React.CSSProperties
 
@@ -541,7 +546,7 @@ export function StickerSlap({
         {children}
 
         <div className="ssf-stage">
-          <div className="ssf-stage-in" ref={stageRef}>
+          <div className="ssf-stage-in" ref={stageRef} style={{ '--ssf-sink': round(-((vbH - cutH) / vbW) * 100) + '%' } as React.CSSProperties}>
             <button type="button" className="ssf-wm-btn" onClick={replay} aria-label={'Tulis ulang ' + wordmark}>
               <svg key={run} className="ssf-wm" viewBox={[vbX, vbY, vbW, vbH].map(round).join(' ')} aria-hidden="true" focusable="false">
                 <g transform="skewX(-9)">

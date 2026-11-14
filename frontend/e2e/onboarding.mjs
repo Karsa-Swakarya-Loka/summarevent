@@ -219,8 +219,8 @@ await shot(tim, 'tim')
 console.log('tim: posters open, the arrows move between members, no scroll')
 await timCtx.close()
 
-// 8. The fan: a hovered poster stays whole, a tap on the front poster's body does nothing, a tap on a side poster brings
-// it to the front
+// 8. The fan: a hovered poster stays whole, a tap on the front poster opens it (it grows and stays whole, its letters
+// climb in) and a second tap closes it, a tap on a side poster brings it to the front
 for (const [width, height] of [[1680, 938], [1440, 780], [1280, 720], [360, 640]]) {
   const touch = width < 700
   const fanCtx = await browser.newContext(touch ? { ...phone, viewport: { width, height } } : { viewport: { width, height } })
@@ -252,14 +252,23 @@ for (const [width, height] of [[1680, 938], [1440, 780], [1280, 720], [360, 640]
     }
   }
   {
-    // a tap on the front poster's body does nothing: same size, same page
-    const front = () => fan.evaluate(() => [...document.querySelectorAll('.af-cartel')].find((c) => c.style.zIndex === '30')?.getBoundingClientRect().toJSON())
+    // a tap on the front poster's body opens it: it grows, stays whole, its letters climb in; a second tap closes it
+    const front = () =>
+      fan.evaluate(() => {
+        const c = [...document.querySelectorAll('.af-cartel')].find((k) => k.style.zIndex === '30')
+        return c && { ...c.getBoundingClientRect().toJSON(), open: c.classList.contains('af-abierto') }
+      })
     const before = await front()
     await fan.mouse.click(x, y - posterW * 0.3)
-    await fan.waitForTimeout(600)
-    const after = await front()
-    check(after && Math.abs(after.width - before.width) < 1 && Math.abs(after.top - before.top) < 1 && new URL(fan.url()).pathname === '/', `kipas ${width}x${height}: ketuk badan poster depan mengubah sesuatu`)
-    whole(await headroom(), 'depan setelah diketuk')
+    await fan.waitForTimeout(1200)
+    const opened = await front()
+    check(opened?.open && opened.width > before.width * 1.03 && new URL(fan.url()).pathname === '/', `kipas ${width}x${height}: ketuk badan poster depan tidak membukanya (lebar ${before.width} → ${opened?.width})`)
+    whole(await headroom(), 'yang dibuka')
+    await fan.mouse.click(x, y - posterW * 0.3)
+    await fan.waitForTimeout(1200)
+    const closed = await front()
+    check(closed && !closed.open && Math.abs(closed.width - before.width) < 1 && Math.abs(closed.top - before.top) < 1, `kipas ${width}x${height}: ketuk kedua tidak menutup poster`)
+    whole(await headroom(), 'depan setelah ditutup')
     // a tap on the right neighbour's edge brings it to the front, and the role buttons follow
     const right = await fan.evaluate(() => {
       const cards = [...document.querySelectorAll('.af-cartel')]
@@ -274,7 +283,7 @@ for (const [width, height] of [[1680, 938], [1440, 780], [1280, 720], [360, 640]
   }
   await fanCtx.close()
 }
-console.log('kipas: hovered posters stay whole, a tap on the front poster does nothing, a tap on a side poster brings it to the front')
+console.log('kipas: hovered posters stay whole, a tap opens the front poster whole and a second closes it, a tap on a side poster brings it to the front')
 
 // 9. The fan on a phone, with real touch: after every arrow press, swipe and press right after a swipe, the poster in
 // front is the one the circle Panitia → Pengunjung → Petugas says, and its two neighbours are mirrored (same offset and

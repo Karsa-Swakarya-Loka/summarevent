@@ -1,7 +1,8 @@
 /**
  * Afiche: a fan of tall posters, adapted from «Afiche» by Moxen (moxen.cl/recursos, licence in
  * docs/lisensi/moxen-afiche.txt). The motion lives in fan.ts: a swipe (also from a poster's button), the round arrows
- * under the fan, the arrow keys and a sideways trackpad swipe each bring the next poster to the front.
+ * under the fan, the arrow keys and a sideways trackpad swipe each bring the next poster to the front, and a tap opens a
+ * poster (it grows and its letters climb in).
  * Each poster has two actions, Masuk and Daftar, real buttons, so keyboard users press them directly; focusing one from
  * the keyboard brings its poster to the front.
  */

@@ -3,7 +3,8 @@
  * Three posters, one per role, each in one colour that reads against the green panel: cream, ink, amber. Shapes, a
  * sticker at rest, one huge word in Anton spanning the poster (fan.ts fits it), and the one action, which names the
  * role. The measures are in hundredths of the poster's width (--u), so a poster
- * reads the same at any size. Only transform and opacity animate; Afiche.tsx drives them with springs.
+ * reads the same at any size. Only transform and opacity animate; fan.ts drives them (a tap opens a poster: it grows,
+ * its letters climb in, its neighbours step aside under a green veil).
  */
 .af-escena {
   --af-cream: #fbf3e4;
@@ -45,12 +46,23 @@
   overflow: hidden;
   isolation: isolate;
   will-change: transform;
+  cursor: pointer;
   background: var(--fondo);
   color: var(--tinta);
   font-family: var(--font-sans);
   box-shadow:
     0 1px 0 rgb(255 255 255 / 0.4) inset,
     0 18px 28px -16px rgba(var(--af-shadow), 0.7);
+}
+.af-cartel::after {
+  /* the veil over the posters beside the open one (fan.ts sets --vel) */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background: var(--af-green);
+  opacity: var(--vel, 0);
 }
 .af-cartel > * {
   position: absolute;
@@ -293,13 +305,13 @@
 }
 /*
  * A laptop window that is wide but short (1366x768 and 1920x1080 at 125-150 % scaling, a window snapped to half the
- * screen): the header and the wordmark get compact so the posters keep a size their two actions fit, and below
- * 600 px of height the page scrolls a little instead of shrinking the posters until their labels spill out.
+ * screen): the header gets compact so the posters keep a size their two actions fit, and below 600 px of height the
+ * page scrolls a little instead of shrinking the posters until their labels spill out. The wordmark keeps the panel's
+ * full width.
  */
 @media (min-width: 700px) and (max-height: 760px) {
   .sev-landing {
     min-height: max(100svh, 600px) !important;
-    --ssf-wmh: clamp(60px, 13svh, 200px) !important;
   }
   .sev-landing .ssf-top {
     padding-top: 8px;
@@ -310,7 +322,33 @@
   }
 }
 
+/* opening a poster: the letters of its word climb in one by one, then its two actions rise */
+.af-cartel.af-abierto .af-palabra span {
+  animation: af-letra 0.85s var(--af-curve) both;
+  animation-delay: calc(var(--i) * 55ms + 120ms);
+}
+.af-cartel.af-abierto .af-pie {
+  animation: af-sube 0.8s var(--af-curve) both;
+  animation-delay: 0.35s;
+}
+@keyframes af-letra {
+  from {
+    transform: translateY(70%) rotate(9deg);
+    opacity: 0;
+  }
+}
+@keyframes af-sube {
+  from {
+    transform: translateY(calc(5 * var(--u)));
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .af-cartel.af-abierto .af-palabra span,
+  .af-cartel.af-abierto .af-pie {
+    animation: none;
+  }
   .af-flecha,
   .af-cta {
     transition: none;

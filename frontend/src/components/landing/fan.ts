@@ -11,7 +11,12 @@
  * turned and shrunk by the same amount on each side, fully opaque, everything inside the scene. The one poster that
  * has to change sides slides in behind the two posters in front, hidden and opaque, and out at the other side, so
  * nothing crosses the front. The stacking order is only ever which poster is closest to the centre. A drag past one
- * poster resists. Tapping a neighbour brings it to the front; a tap on the front poster's body does nothing.
+ * poster resists.
+ *
+ * Tapping a poster opens it: it comes to the front and grows, the letters of its word climb in one by one, and its
+ * neighbours step aside under a green veil. A tap on it again, beside the posters, outside the fan or Escape closes it;
+ * the arrows move on with the next poster open. The opening rides on springs on top of the resting poses, so a drag
+ * still follows the finger exactly (a drag closes it).
  *
  * The posters stay put under the mouse: no hover lift. Only transforms change; under reduced motion everything lands
  * at once.
@@ -51,6 +56,13 @@ const WHEEL_PX = 40
 const WHEEL_QUIET_MS = 450
 /** Past one poster a drag gives at most this much more, so the poster in front never gets further than the next one. */
 const RUBBER = 0.35
+/** An open poster grows up to this much, into the air above it and at most OPEN_BELOW px towards the arrows. */
+const OPEN_GROW = 1.1
+const OPEN_BELOW = 14
+/** The neighbours of an open poster: further out, lower, more turned, smaller, under a veil this opaque. */
+const ASIDE = { x: 1.3, drop: 0.06, turn: 1.15, k: 0.95, veil: 0.45 }
+/** The opening's spring (stiffness, damping): a touch under critical, so it lands with a small give. */
+const SPRING = [190, 21] as const
 
 interface Pose {
   x: number
@@ -66,7 +78,7 @@ interface FanOptions {
 }
 
 export interface Fan {
-  /** One poster on (1) or back (-1). */
+  /** One poster on (1) or back (-1); an open poster hands its opening on. */
   move: (step: 1 | -1) => void
   destroy: () => void
 }
@@ -91,6 +103,13 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
   let swallowClick = false
   let raf = 0
   const written = cards.map(() => '')
+  /** The poster opened by a tap, and the springs of the opening: each poster's own (0 to 1) and its neighbours' step aside. */
+  let open = -1
+  const opened = cards.map(() => ({ x: 0, v: 0 }))
+  const aside = { x: 0, v: 0 }
+  /** How much an open poster grows, and how far its centre moves (up) so it stays inside the scene. */
+  let grow = 1
+  let lift = 0
 
   function measure() {
     W = scene.clientWidth
@@ -98,8 +117,15 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
     // above its centre the front poster needs half its height and the air; beside it, the
     // neighbour's offset, its half width and the corner its turn swings out
     const room = (H - LEG) / 2 - EDGE
-    w = Math.max(120, Math.min(MAX_W, room / 0.7, (W / 2 - EDGE) / (OFF + SIDE / 2 + (TALL / 2) * SIDE * Math.sin(TURN))))
+    // a little air is kept above the front poster for it to grow into when it opens
+    w = Math.max(120, Math.min(MAX_W, room / 0.74, (W / 2 - EDGE) / (OFF + SIDE / 2 + (TALL / 2) * SIDE * Math.sin(TURN))))
     scene.style.setProperty('--af-w', Math.round(w) + 'px')
+    // opening: the poster grows into the air over it (up to the scene's top edge) and a little towards the arrows
+    const above = Math.max(0, room + EDGE - (TALL / 2) * w - 4)
+    grow = Math.max(1, Math.min(OPEN_GROW, 1 + (above + OPEN_BELOW) / (TALL * w), (W - 2 * EDGE) / w))
+    const extra = TALL * w * (grow - 1)
+    const below = Math.min(OPEN_BELOW, Math.max(extra / 2, extra - above))
+    lift = extra / 2 - below
   }
 
   /** Distance from the front the short way round, in posters, between -N/2 and N/2. */
@@ -125,7 +151,29 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
     o.onCentre(centre)
   }
 
+  /** The pose drawn: the resting pose, the step aside of an open poster's neighbours, and the opening itself. */
+  function shown(j: number): Pose & { veil: number } {
+    const p = pose(j)
+    const a = aside.x
+    const o = opened[j].x
+    if (Math.abs(a) < 1e-4 && Math.abs(o) < 1e-4) return { ...p, veil: 0 }
+    const off = { x: p.x * (1 + (ASIDE.x - 1) * a), y: p.y + ASIDE.drop * w * a, r: p.r * (1 + (ASIDE.turn - 1) * a), k: p.k * (1 + (ASIDE.k - 1) * a) }
+    const y0 = -LEG / 2 - lift
+    return {
+      x: off.x + (0 - off.x) * o,
+      y: off.y + (y0 - off.y) * o,
+      r: off.r + (0 - off.r) * o,
+      k: off.k + (grow - off.k) * o,
+      veil: ASIDE.veil * lim(a, 0, 1) * lim(1 - o, 0, 1),
+    }
+  }
+
   function z(j: number) {
+    // an open poster is on top at once, even while it is still on its way to the front
+    if (open >= 0) {
+      if (j === open) return 30
+      if (j === centre) return 25
+    }
     if (j === centre) return 30
     return Math.abs(dist(j)) > 1 ? 10 : 20
   }
@@ -148,6 +196,30 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
     settle(from + (mod(j - from + N / 2, N) - N / 2))
   }
   const step = (by: 1 | -1) => goTo(mod(Math.round(tween ? tween.to : s) + by, N))
+  const heading = () => mod(Math.round(tween ? tween.to : s), N)
+
+  function openCard(j: number) {
+    if (open >= 0 && open !== j) cards[open].classList.remove('af-abierto')
+    open = j
+    if (heading() !== j) goTo(j)
+    // the letters climb in again on every opening
+    const c = cards[j]
+    c.classList.remove('af-abierto')
+    void c.offsetWidth
+    c.classList.add('af-abierto')
+    scene.setAttribute('data-abierto', '')
+  }
+  function close() {
+    if (open < 0) return
+    cards[open].classList.remove('af-abierto')
+    open = -1
+    scene.removeAttribute('data-abierto')
+  }
+  /** The arrows, the keys and a trackpad swipe: one poster on, and an open poster hands its opening on. */
+  const move = (by: 1 | -1) => {
+    step(by)
+    if (open >= 0) openCard(heading())
+  }
 
   /** Which poster is under the pointer: the resting rectangles, front to back. */
   function under(px: number, py: number) {
@@ -196,6 +268,7 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
       }
       if (!drag.mov && Math.abs(dx) > SLOP) {
         drag.mov = true
+        close()
         // from here on the poster moves with the finger, without first jumping the slop
         drag.x0 = x
         // a press on a button only becomes ours once it moves; until then the button keeps its own tap
@@ -218,8 +291,7 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
       return
     }
     if (e.pointerType !== 'mouse' || !canHover) return
-    const j = under(x, y)
-    scene.style.cursor = j >= 0 && j !== centre ? 'pointer' : ''
+    scene.style.cursor = under(x, y) >= 0 ? 'pointer' : ''
   }
   const onClickCapture = (e: MouseEvent) => {
     if (!swallowClick) return
@@ -251,8 +323,15 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
       settle(to, Math.sign(to - s) === Math.sign(v) ? Math.abs(v) : 0)
       return
     }
-    // a tap on a neighbour brings it to the front
-    if (g.j >= 0 && g.j !== centre && e.type === 'pointerup') goTo(g.j)
+    if (e.type !== 'pointerup') return
+    // a tap opens the poster under it (a neighbour comes to the front first); on the open one, or beside the posters,
+    // it closes
+    if (open >= 0 && (g.j === open || g.j < 0)) close()
+    else if (g.j >= 0) openCard(g.j)
+  }
+  // a press anywhere outside the fan closes the open poster
+  const onDocDown = (e: PointerEvent) => {
+    if (open >= 0 && !scene.contains(e.target as Node)) close()
   }
   // Only the scene losing its own capture ends a gesture. A touch on a button is captured by that button first, and
   // the scene taking the capture over (once the press turns into a swipe) makes the button lose it; that event
@@ -261,11 +340,12 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
     if (e.target === scene) onUp(e)
   }
   const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') return close()
     const t = e.target as Element | null
     if (t?.closest('input, textarea, select, [contenteditable]')) return
     if (!scene.contains(t) && !scene.matches(':hover')) return
-    if (e.key === 'ArrowRight') step(1)
-    else if (e.key === 'ArrowLeft') step(-1)
+    if (e.key === 'ArrowRight') move(1)
+    else if (e.key === 'ArrowLeft') move(-1)
   }
   // A sideways trackpad swipe moves one poster, then waits for the gesture to end; an up-and-down wheel is the page's.
   let wheelSum = 0
@@ -283,12 +363,14 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
     wheelSum += e.deltaX
     if (Math.abs(wheelSum) < WHEEL_PX) return
     wheelSpent = true
-    step(wheelSum > 0 ? 1 : -1)
+    move(wheelSum > 0 ? 1 : -1)
   }
   // keyboard focus on a poster's actions brings that poster to the front; focus from a tap or a swipe does not
   const focusers = cards.map((c, j) => {
     const f = (e: FocusEvent) => {
-      if (!drag && j !== centre && (e.target as Element).matches(':focus-visible')) goTo(j)
+      if (drag || j === centre || !(e.target as Element).matches(':focus-visible')) return
+      if (open >= 0) openCard(j)
+      else goTo(j)
     }
     c.addEventListener('focusin', f)
     return f
@@ -300,6 +382,7 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
   // a finger lifted outside the scene, or a capture the browser took away, still ends the gesture
   document.addEventListener('pointerup', onUp)
   document.addEventListener('pointercancel', onUp)
+  document.addEventListener('pointerdown', onDocDown)
   scene.addEventListener('lostpointercapture', onLost)
   scene.addEventListener('click', onClickCapture, true)
   scene.addEventListener('wheel', onWheel, { passive: false })
@@ -322,7 +405,31 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
     words.forEach((el, j) => el?.style.setProperty('--fit', fits[j].toFixed(3)))
   }
 
-  function render() {
+  /** One step of a spring towards `to` over `h` seconds. */
+  const spring = (sp: { x: number; v: number }, to: number, h: number) => {
+    sp.v += (SPRING[0] * (to - sp.x) - SPRING[1] * sp.v) * h
+    sp.x += sp.v * h
+  }
+  function springs(dt: number) {
+    const all = [...opened.map((sp, j) => [sp, j === open ? 1 : 0] as const), [aside, open >= 0 ? 1 : 0] as const]
+    for (const [sp, to] of all) {
+      if (reduce || dt <= 0) {
+        if (reduce) {
+          sp.x = to
+          sp.v = 0
+        }
+        continue
+      }
+      for (let k = 0; k < 2; k++) spring(sp, to, dt / 2)
+      if (Math.abs(sp.x - to) < 1e-4 && Math.abs(sp.v) < 1e-4) {
+        sp.x = to
+        sp.v = 0
+      }
+    }
+  }
+
+  function render(dt = 0) {
+    springs(dt)
     if (tween) {
       const t = lim((performance.now() - tween.t0) / tween.ms, 0, 1)
       s = tween.from + (tween.to - tween.from) * easeOut(t)
@@ -335,21 +442,23 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
     if (!drag && !tween && Math.abs(s - Math.round(s)) > 1e-4) settle(Math.round(s))
     updateCentre()
     cards.forEach((c, j) => {
-      const p = pose(j)
+      const p = shown(j)
       const css =
         `translate3d(${p.x.toFixed(2)}px,${p.y.toFixed(2)}px,0) rotate(${p.r.toFixed(4)}rad) scale(${p.k.toFixed(4)})` +
-        `|${z(j)}`
+        `|${z(j)}|${p.veil.toFixed(3)}`
       if (css === written[j]) return
       written[j] = css
-      const [transform, zi] = css.split('|')
+      const [transform, zi, veil] = css.split('|')
       c.style.transform = transform
       c.style.zIndex = zi
+      c.style.setProperty('--vel', veil)
     })
   }
   // The ResizeObserver can miss a change: a page restored by Back after the window changed size, a pane resized while
   // the tab was in the background. Twice a second the frame compares the scene with the size the posters were made
   // for, so a poster never stays sized for a window that is gone.
   let checked = 0
+  let before = 0
   const resync = () => {
     if (scene.clientWidth !== W || scene.clientHeight !== H) measure()
   }
@@ -358,7 +467,8 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
       checked = ts
       resync()
     }
-    render()
+    render(lim((ts - (before || ts)) / 1000, 0, 1 / 30))
+    before = ts
     raf = requestAnimationFrame(frame)
   }
 
@@ -388,7 +498,7 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
   document.fonts?.addEventListener('loadingdone', refit)
 
   return {
-    move: step,
+    move,
     destroy() {
       cancelAnimationFrame(raf)
       ro.disconnect()
@@ -401,6 +511,7 @@ export function mountFan(scene: HTMLElement, o: FanOptions): Fan {
       scene.removeEventListener('pointercancel', onUp)
       document.removeEventListener('pointerup', onUp)
       document.removeEventListener('pointercancel', onUp)
+      document.removeEventListener('pointerdown', onDocDown)
       scene.removeEventListener('lostpointercapture', onLost)
       scene.removeEventListener('click', onClickCapture, true)
       scene.removeEventListener('wheel', onWheel)
